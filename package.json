@@ -1,0 +1,22 @@
+{
+  "name": "ai-agent-evaluation-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HaolongChen/AI-Agent-Evaluation-System.git"
+  },
+  "author": "Haolong Chen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HaolongChen/AI-Agent-Evaluation-System/issues"
+  },
+  "homepage": "https://github.com/HaolongChen/AI-Agent-Evaluation-System#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}

@@ -67,14 +67,21 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
 - **Apollo Server** - GraphQL API layer (for flexible querying of evaluation data)
 - **TypeGraphQL** - Type-safe GraphQL schema generation
 
-**Database**: PostgreSQL
-
-- Connects to existing AI Copilot database for reading session data
-- Separate schema/tables for evaluation framework data
+**Database**: PostgreSQL (Single Database)
+- Shares the same database with AI Copilot
+- Reads from existing Copilot tables (sessions, iterations, etc.)
+- Creates new tables/schema for evaluation framework data
+- Recommended: Use PostgreSQL schemas for logical separation:
+  - `copilot` schema: Existing Copilot tables (read-only)
+  - `evaluation` schema: New evaluation framework tables (read-write)
 
 **Development Tools**:
 
-- **TypeORM** - Database ORM with TypeScript support
+- **Prisma** - Modern ORM with excellent TypeScript support
+  - Best-in-class type safety and auto-completion
+  - Prisma Studio for visual database management
+  - Declarative schema management
+  - Can coexist with Copilot tables (won't interfere with existing migrations)
 - **ts-node** - TypeScript execution for development
 - **Jest** - Unit testing framework
 - **ESLint + Prettier** - Code quality and formatting

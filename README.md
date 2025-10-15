@@ -65,9 +65,12 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
 
 - **Express.js** - REST API server
 - **Apollo Server** - GraphQL API layer (for flexible querying of evaluation data)
-- **TypeGraphQL** - Type-safe GraphQL schema generation
+  - Write schema using standard GraphQL SDL (Schema Definition Language)
+  - Simple resolvers that call service layer functions
+  - No additional abstraction layers needed
 
 **Database**: PostgreSQL (Single Database)
+
 - Shares the same database with AI Copilot
 - Reads from existing Copilot tables (sessions, iterations, etc.)
 - Creates new tables/schema for evaluation framework data
@@ -83,7 +86,6 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
   - Declarative schema management
   - Can coexist with Copilot tables (won't interfere with existing migrations)
 - **ts-node** - TypeScript execution for development
-- **Jest** - Unit testing framework
 - **ESLint + Prettier** - Code quality and formatting
 
 ---
@@ -1118,15 +1120,3 @@ npx prisma migrate dev --name init
 - [Apollo Server Guide](https://www.apollographql.com/docs/apollo-server/)
 - [Express.js Guide](https://expressjs.com/en/guide/routing.html)
 - [PostgreSQL Schema Documentation](https://www.postgresql.org/docs/current/ddl-schemas.html)
-
----
-
-## Contributing
-
-(Add contribution guidelines when team grows)
-
----
-
-## License
-
-(Add appropriate license)

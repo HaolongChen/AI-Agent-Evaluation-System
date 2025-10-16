@@ -17,9 +17,6 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.1.0
-      parser:
-        specifier: ^0.1.4
-        version: 0.1.4
     devDependencies:
       '@eslint/css':
         specifier: ^0.13.0
@@ -448,9 +445,6 @@ packages:
   diff@4.0.2:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
     engines: {node: '>=0.3.1'}
-
-  disect@1.1.1:
-    resolution: {integrity: sha512-rr2Ym8FSAoqAJ1KfpUiQ/Io01HP0LZPHBuppbFsHozmSNf+YwrvyD5pm5tMTUApJFNwD7HeWJ5DGldSugScukA==}
 
   dotenv@17.2.3:
     resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
@@ -963,10 +957,6 @@ packages:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
     engines: {node: '>=6'}
 
-  parser@0.1.4:
-    resolution: {integrity: sha512-f6EM/mBtPzmIh96MpcbePfhkBOYRmLYWuOukJqMysMlvjp4s2MQSSQnFEekd9GV4JGTnDJ2uFt3Ztcqc9wCMJg==}
-    engines: {node: 0.4-0.9}
-
   parseurl@1.3.3:
     resolution: {integrity: sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==}
     engines: {node: '>= 0.8'}
@@ -1116,10 +1106,6 @@ packages:
   toidentifier@1.0.1:
     resolution: {integrity: sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==}
     engines: {node: '>=0.6'}
-
-  tokenizer@1.1.2:
-    resolution: {integrity: sha512-c/EYsBwEW/EX28q44UaSrJ9o5M2aI+N/xdJJ4Zl7dNq76OmWQHhmXH0T8DJQNjVYPc7NclV2CZQfyeUMfnEu/A==}
-    engines: {node: 0.10.x}
 
   touch@3.1.1:
     resolution: {integrity: sha512-r0eojU4bI8MnHr8c5bNo7lJDdI2qXlWWJk6a9EAFG7vbhTjElYhBVS3/miuE0uOuoLdb8Mc/rVfsmm6eo5o9GA==}
@@ -1666,8 +1652,6 @@ snapshots:
       dequal: 2.0.3
 
   diff@4.0.2: {}
-
-  disect@1.1.1: {}
 
   dotenv@17.2.3: {}
 
@@ -2384,10 +2368,6 @@ snapshots:
     dependencies:
       callsites: 3.1.0
 
-  parser@0.1.4:
-    dependencies:
-      tokenizer: 1.1.2
-
   parseurl@1.3.3: {}
 
   path-exists@4.0.0: {}
@@ -2538,10 +2518,6 @@ snapshots:
       is-number: 7.0.0
 
   toidentifier@1.0.1: {}
-
-  tokenizer@1.1.2:
-    dependencies:
-      disect: 1.1.1
 
   touch@3.1.1: {}
 

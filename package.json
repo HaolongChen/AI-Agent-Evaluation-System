@@ -1,34 +1,37 @@
 {
-  "name": "ai-agent-evaluation-system",
+  "name": "AI-Agent-Evaluation-System",
   "version": "1.0.0",
-  "description": "An evaluation framework for AI Copilot that allows rapid testing and quality assessment when new models are released. The system enables creation of golden datasets, adaptive rubric generation, and comprehensive evaluation metrics for different AI Copilot capabilities (Data Model Builder, UI Builder, Actionflow Builder, Log Analyzer, Agent Builder).",
+  "description": "",
   "main": "index.js",
   "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/index.js",
     "dev": "nodemon --exec ts-node src/index.ts",
-    "build": "tsc",
-    "watch": "tsc --watch"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/HaolongChen/AI-Agent-Evaluation-System.git"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/HaolongChen/AI-Agent-Evaluation-System/issues"
-  },
-  "homepage": "https://github.com/HaolongChen/AI-Agent-Evaluation-System#readme",
+  "packageManager": "pnpm@10.18.3",
   "devDependencies": {
+    "@eslint/css": "^0.13.0",
+    "@eslint/js": "^9.37.0",
+    "@eslint/json": "^0.13.2",
+    "@eslint/markdown": "^7.4.0",
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.2",
+    "eslint": "^9.37.0",
+    "globals": "^16.4.0",
+    "jiti": "^2.6.1",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "parser": "^0.1.4"
   }
 }

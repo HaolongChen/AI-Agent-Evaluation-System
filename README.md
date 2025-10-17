@@ -759,7 +759,6 @@ ai-agent-evaluation-system/
 │       └── formatters.ts
 │
 ├── tests/
-│   ├── unit/
 │   ├── integration/
 │   └── e2e/
 │
@@ -814,7 +813,6 @@ ai-agent-evaluation-system/
 
 ### Phase 5: Testing & Documentation (Week 5-6)
 
-- [ ] Unit tests
 - [ ] Integration tests
 - [ ] API documentation
 - [ ] User guides
@@ -855,7 +853,7 @@ LOG_LEVEL=info
 ## Security Considerations
 
 1. **API Authentication**: Use JWT or API keys for GraphQL/REST endpoints
-2. **Database Access**: Separate read-only connection for copilot DB
+2. **Database Access**: Read-only access to copilot schema, read-write to evaluation schema
 3. **LLM API Keys**: Store securely, rotate regularly
 4. **Input Validation**: Sanitize all user inputs
 5. **Rate Limiting**: Prevent abuse of expensive LLM operations
@@ -876,17 +874,12 @@ LOG_LEVEL=info
 
 ## Testing Strategy
 
-### Unit Tests
-
-- Service layer functions
-- Utility functions
-- Validators
-
 ### Integration Tests
 
 - GraphQL resolvers
 - Database operations
 - LLM integration
+- Service layer functions
 
 ### End-to-End Tests
 

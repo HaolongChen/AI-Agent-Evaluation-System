@@ -104,8 +104,99 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
   - Built-in retry logic and failure handling
   - Resource isolation per evaluation job
   - No external message broker required
+- **@kubernetes/client-node** - Official Kubernetes client library
+  - Submit and manage Job resources
+  - Monitor job status and lifecycle events
+  - Query pod status and logs
+  - Handle authentication (kubeconfig, service accounts)
 - **ts-node** - TypeScript execution for development
 - **ESLint + Prettier** - Code quality and formatting
+
+### High-Level Architecture
+
+```architecture
+┌─────────────────────────────────────────────────────────────────┐
+│                          Client Layer                           │
+│                    (GraphQL API Consumers)                      │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Express + Apollo Server                      │
+│                      (GraphQL API Layer)                        │
+│  • Queries: Get evaluations, rubrics, metrics                   │
+│  • Mutations: Create jobs, review rubrics, judge results        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+        ┌───────────────────┐   ┌──────────────────┐
+        │  Service Layer    │   │ Kubernetes API   │
+        │  (Business Logic) │   │     Client       │
+        └───────────────────┘   └──────────────────┘
+                    │                   │
+                    ▼                   ▼
+        ┌───────────────────┐   ┌──────────────────────────┐
+        │  Prisma Client    │   │  Job Creation/Monitoring │
+        │  (Database ORM)   │   │  • JobCreator            │
+        └───────────────────┘   │  • JobMonitor            │
+                    │           │  • manifestBuilder       │
+                    ▼           └──────────────────────────┘
+        ┌───────────────────┐               │
+        │   PostgreSQL DB   │               ▼
+        │                   │   ┌──────────────────────────┐
+        │ • copilot schema  │   │   Kubernetes Cluster     │
+        │   (read-only)     │   │                          │
+        │ • evaluation      │   │  ┌────────────────────┐  │
+        │   schema          │   │  │  Evaluation Job    │  │
+        │   (read-write)    │   │  │  Pod               │  │
+        └───────────────────┘   │  │                    │  │
+                    ▲           │  │ • Playwright       │  │
+                    │           │  │ • Copilot Control  │  │
+                    │           │  │ • Metrics          │  │
+                    └───────────┼──│   Collection       │  │
+                                │  │ • Direct DB Write  │  │
+                                │  └────────────────────┘  │
+                                │                          │
+                                │  ┌────────────────────┐  │
+                                │  │ Rubric Generation  │  │
+                                │  │ Job Pod            │  │
+                                │  │                    │  │
+                                │  │ • LangChain/Graph  │  │
+                                │  │ • LLM API Calls    │  │
+                                │  │ • Direct DB Write  │  │
+                                │  └────────────────────┘  │
+                                └──────────────────────────┘
+```
+
+### Key Architectural Decisions
+
+1. **Kubernetes Jobs for Async Processing**
+
+   - Backend submits jobs to K8s cluster via `@kubernetes/client-node`
+   - Jobs run as isolated pods with resource limits
+   - No message broker needed - database serves as shared state
+   - Jobs write results directly to PostgreSQL
+
+2. **Database as Communication Layer**
+
+   - Backend creates `evaluation_session` with status = `PENDING`
+   - Job updates status: `RUNNING` → `COMPLETED`/`FAILED`
+   - Client polls GraphQL API to check database status
+   - Simple, reliable, no distributed messaging complexity
+
+3. **Separate Job Runners**
+
+   - `EvaluationJobRunner.ts` - Runs Playwright automation
+   - `RubricGenerationJobRunner.ts` - Runs LangChain workflows
+   - Each compiled into separate Docker images
+   - Submitted as K8s Jobs with different resource profiles
+
+4. **Monitoring Strategy**
+   - Optional: Backend monitors K8s API for job lifecycle
+   - Primary: Jobs update database directly
+   - Clients poll GraphQL for real-time status
+   - K8s handles retries, timeouts, and cleanup automatically
 
 ---
 
@@ -690,6 +781,401 @@ async function judge(
 ): Promise<JudgeRecord>;
 ```
 
+### 8. Kubernetes Job Management Functions
+
+#### 8.1 `createEvaluationJob()`
+
+```typescript
+/**
+ * Create and submit a Kubernetes Job for copilot evaluation
+ * @param sessionId - Evaluation session ID
+ * @param schemaExId - Schema to evaluate
+ * @param copilotType - Type of copilot
+ * @param modelName - LLM model to use
+ * @returns Job name and submission status
+ */
+async function createEvaluationJob(
+  sessionId: string,
+  schemaExId: string,
+  copilotType: CopilotType,
+  modelName: string
+): Promise<{
+  jobName: string;
+  namespace: string;
+  created: boolean;
+}>;
+```
+
+#### 8.2 `createRubricGenerationJob()`
+
+```typescript
+/**
+ * Create and submit a Kubernetes Job for rubric generation
+ * @param sessionId - Evaluation session ID to generate rubrics for
+ * @returns Job name and submission status
+ */
+async function createRubricGenerationJob(sessionId: string): Promise<{
+  jobName: string;
+  namespace: string;
+  created: boolean;
+}>;
+```
+
+#### 8.3 `monitorJobStatus()`
+
+```typescript
+/**
+ * Monitor Kubernetes Job status and update database
+ * @param jobName - Name of the K8s job to monitor
+ * @param sessionId - Associated evaluation session ID
+ * @param onComplete - Optional callback when job completes
+ * @returns Job status monitoring handle
+ */
+async function monitorJobStatus(
+  jobName: string,
+  sessionId: string,
+  onComplete?: (status: 'SUCCESS' | 'FAILED') => Promise<void>
+): Promise<{
+  stop: () => void; // Function to stop monitoring
+  getStatus: () => Promise<JobStatus>;
+}>;
+```
+
+#### 8.4 `getJobStatus()`
+
+```typescript
+/**
+ * Get current status of a Kubernetes Job
+ * @param jobName - Name of the K8s job
+ * @returns Parsed job status
+ */
+async function getJobStatus(jobName: string): Promise<{
+  status: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+  startTime?: Date;
+  completionTime?: Date;
+  activePods: number;
+  succeededPods: number;
+  failedPods: number;
+  retriesLeft: number;
+}>;
+```
+
+#### 8.5 `deleteCompletedJob()`
+
+```typescript
+/**
+ * Delete a completed Kubernetes Job to free resources
+ * @param jobName - Name of the job to delete
+ * @returns Deletion confirmation
+ */
+async function deleteCompletedJob(jobName: string): Promise<{
+  deleted: boolean;
+  jobName: string;
+}>;
+```
+
+#### 8.6 `buildJobManifest()`
+
+```typescript
+/**
+ * Build a Kubernetes Job manifest from template
+ * @param templateName - Template file name ('evaluation-job' or 'rubric-job')
+ * @param variables - Template variables to interpolate
+ * @returns Kubernetes Job manifest object
+ */
+async function buildJobManifest(
+  templateName: 'evaluation-job' | 'rubric-job',
+  variables: {
+    sessionId: string;
+    schemaExId?: string;
+    copilotType?: CopilotType;
+    modelName?: string;
+    [key: string]: any;
+  }
+): Promise<V1Job>; // Kubernetes Job object
+```
+
+---
+
+## Kubernetes Job Integration
+
+### How K8s Jobs Execute Functions and Notify Backend
+
+**Architecture Overview:**
+
+- **Backend API Server**: Handles GraphQL requests, creates K8s jobs, monitors status
+- **Kubernetes Job Pods**: Standalone containers that run evaluation logic
+- **Shared Database**: Communication layer between backend and jobs
+- **K8s API**: Job lifecycle management and status monitoring
+
+### Complete Flow
+
+#### 1. Job Submission (GraphQL → K8s API)
+
+When a user triggers an evaluation:
+
+```graphql
+mutation {
+  runEvaluation(
+    input: {
+      schemaExId: "schema-123"
+      copilotType: DATA_MODEL_BUILDER
+      modelName: "gpt-4"
+    }
+  ) {
+    sessionId
+    status # Returns "PENDING"
+  }
+}
+```
+
+**Backend Process:**
+
+1. Creates `evaluation_session` record with `status = 'PENDING'`
+2. Calls `JobCreator.createEvaluationJob()`:
+   - Generates K8s Job manifest from template
+   - Injects environment variables (SESSION_ID, SCHEMA_EX_ID, DATABASE_URL, etc.)
+   - Submits job to Kubernetes API using `@kubernetes/client-node`
+   - Gets back job name (e.g., `eval-job-abc123`)
+3. Updates `evaluation_session.metadata` with `{k8sJobName: "eval-job-abc123"}`
+4. Returns response immediately (async processing)
+
+#### 2. Job Execution (K8s Pod runs standalone code)
+
+Kubernetes creates a pod that executes `EvaluationJobRunner.ts`:
+
+```typescript
+// src/jobs/EvaluationJobRunner.ts
+async function main() {
+  const sessionId = process.env.SESSION_ID!;
+  const schemaExId = process.env.SCHEMA_EX_ID!;
+  const copilotType = process.env.COPILOT_TYPE!;
+  const modelName = process.env.MODEL_NAME!;
+
+  // Initialize Prisma (connects to same DB as backend)
+  const prisma = new PrismaClient();
+
+  try {
+    // Update status to RUNNING
+    await prisma.evaluation_session.update({
+      where: { id: sessionId },
+      data: {
+        status: 'RUNNING',
+        started_at: new Date(),
+      },
+    });
+
+    // Execute evaluation with Playwright
+    const automation = new PlaywrightRunner();
+    const metrics = await automation.runCopilotEvaluation({
+      schemaExId,
+      copilotType,
+      modelName,
+    });
+
+    // Save results to database
+    await prisma.evaluation_session.update({
+      where: { id: sessionId },
+      data: {
+        status: 'COMPLETED',
+        completed_at: new Date(),
+        total_latency_ms: metrics.totalLatency,
+        roundtrip_count: metrics.roundtrips,
+        input_tokens: metrics.inputTokens,
+        output_tokens: metrics.outputTokens,
+        context_percentage: metrics.contextUsage,
+        metadata: metrics.additionalData,
+      },
+    });
+
+    console.log(`✓ Evaluation ${sessionId} completed successfully`);
+    process.exit(0); // Success - K8s marks job as completed
+  } catch (error) {
+    // Handle failure - update database
+    await prisma.evaluation_session.update({
+      where: { id: sessionId },
+      data: {
+        status: 'FAILED',
+        metadata: { error: error.message, stack: error.stack },
+      },
+    });
+
+    console.error(`✗ Evaluation ${sessionId} failed:`, error);
+    process.exit(1); // Failure - K8s will retry based on backoffLimit
+  }
+}
+
+main();
+```
+
+**Key Points:**
+
+- Job is **self-contained** - all logic bundled in Docker image
+- **Database as communication layer** - job writes directly to PostgreSQL
+- Job updates its own `evaluation_session` status (RUNNING → COMPLETED/FAILED)
+- Exit codes tell K8s whether to retry (exit 1) or complete (exit 0)
+
+#### 3. Backend Monitoring (K8s API → Backend)
+
+Backend monitors job status via Kubernetes API:
+
+```typescript
+// src/kubernetes/JobMonitor.ts
+export class JobMonitor {
+  private k8sApi: BatchV1Api;
+
+  async monitorJob(jobName: string, sessionId: string): Promise<void> {
+    // Poll job status every 10 seconds
+    const interval = setInterval(async () => {
+      const { body: job } = await this.k8sApi.readNamespacedJobStatus(
+        jobName,
+        KUBERNETES_NAMESPACE
+      );
+
+      if (job.status?.succeeded && job.status.succeeded > 0) {
+        console.log(`✓ Job ${jobName} succeeded`);
+        clearInterval(interval);
+
+        // Optionally: Trigger post-processing (e.g., generate rubrics)
+        await this.triggerRubricGeneration(sessionId);
+
+        // Clean up completed job after 1 hour
+        setTimeout(() => this.deleteJob(jobName), 3600000);
+      } else if (
+        job.status?.failed &&
+        job.status.failed >= job.spec?.backoffLimit!
+      ) {
+        console.error(`✗ Job ${jobName} failed after retries`);
+        clearInterval(interval);
+
+        // Database already updated by job, just cleanup
+        await this.deleteJob(jobName);
+      }
+    }, 10000);
+  }
+
+  private async triggerRubricGeneration(sessionId: string): Promise<void> {
+    // Create another K8s job for rubric generation
+    const jobCreator = new JobCreator();
+    await jobCreator.createRubricGenerationJob(sessionId);
+  }
+}
+```
+
+**Monitoring Options:**
+
+- **Polling**: Check job status periodically (simple, reliable)
+- **Watch API**: Stream job events in real-time (efficient, complex)
+- **Passive**: Don't monitor - just let jobs update database (simplest)
+
+#### 4. Client Polling (GraphQL Query)
+
+Client checks status by querying the database:
+
+```graphql
+query {
+  evaluationSession(sessionId: "abc123") {
+    status # PENDING → RUNNING → COMPLETED/FAILED
+    started_at
+    completed_at
+    total_latency_ms
+    roundtrip_count
+    input_tokens
+    output_tokens
+    # Full results available when status = COMPLETED
+  }
+}
+```
+
+### Job Manifest Template
+
+```yaml
+# kubernetes/templates/evaluation-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eval-{{sessionId}}
+  namespace: ai-evaluation
+  labels:
+    app: ai-copilot-evaluation
+    type: evaluation
+spec:
+  backoffLimit: 3 # Retry up to 3 times on failure
+  activeDeadlineSeconds: 3600 # Kill job after 1 hour
+  ttlSecondsAfterFinished: 86400 # Auto-delete after 24 hours
+  template:
+    metadata:
+      labels:
+        app: ai-copilot-evaluation
+        session-id: { { sessionId } }
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: evaluation-runner
+          image: { { KUBERNETES_JOB_IMAGE } }
+          imagePullPolicy: Always
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: url
+            - name: SESSION_ID
+              value: '{{sessionId}}'
+            - name: SCHEMA_EX_ID
+              value: '{{schemaExId}}'
+            - name: COPILOT_TYPE
+              value: '{{copilotType}}'
+            - name: MODEL_NAME
+              value: '{{modelName}}'
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-credentials
+                  key: openai-key
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-credentials
+                  key: anthropic-key
+          resources:
+            requests:
+              cpu: '{{KUBERNETES_JOB_CPU_REQUEST}}'
+              memory: '{{KUBERNETES_JOB_MEMORY_REQUEST}}'
+            limits:
+              cpu: '{{KUBERNETES_JOB_CPU_LIMIT}}'
+              memory: '{{KUBERNETES_JOB_MEMORY_LIMIT}}'
+          volumeMounts:
+            - name: playwright-cache
+              mountPath: /root/.cache/ms-playwright
+      volumes:
+        - name: playwright-cache
+          emptyDir: {}
+```
+
+### Key Design Decisions
+
+| Aspect            | Decision                      | Rationale                                     |
+| ----------------- | ----------------------------- | --------------------------------------------- |
+| **Communication** | Database as shared state      | No message broker needed, simple architecture |
+| **Job Updates**   | Jobs write directly to DB     | Self-contained, backend just monitors         |
+| **Retry Logic**   | K8s `backoffLimit: 3`         | Built-in retry with exponential backoff       |
+| **Timeout**       | `activeDeadlineSeconds: 3600` | Prevent hung jobs, force cleanup              |
+| **Cleanup**       | `ttlSecondsAfterFinished`     | Auto-delete completed jobs after 24h          |
+| **Monitoring**    | Optional K8s API polling      | Backend can trigger follow-up actions         |
+| **Isolation**     | One pod per evaluation        | Resource limits, no interference              |
+| **State**         | Stateless jobs                | All config via env vars, no mounted state     |
+
+### Benefits vs RabbitMQ
+
+✅ **No external broker** - Kubernetes is the orchestrator  
+✅ **Simpler architecture** - Database + K8s API only  
+✅ **Better resource control** - Per-job CPU/memory limits  
+✅ **Native retry/timeout** - Built into K8s Job spec  
+✅ **Visual monitoring** - K8s dashboard shows all jobs  
+✅ **Clean isolation** - Each evaluation in separate pod  
+✅ **Auto cleanup** - TTL deletes old jobs automatically
+
 ---
 
 ## System Workflow
@@ -821,9 +1307,15 @@ ai-agent-evaluation-system/
 │   │   └── RubricGenerationJobRunner.ts  # Standalone rubric generation job
 │   │
 │   ├── kubernetes/                 # Kubernetes client and job management
-│   │   ├── k8sClient.ts            # Kubernetes API client
-│   │   ├── JobCreator.ts           # Create and submit jobs
-│   │   └── JobMonitor.ts           # Monitor job status
+│   │   ├── k8sClient.ts            # Kubernetes API client initialization
+│   │   ├── JobCreator.ts           # Create and submit jobs to K8s API
+│   │   ├── JobMonitor.ts           # Monitor job status and lifecycle
+│   │   ├── templates/              # Job manifest templates
+│   │   │   ├── evaluation-job.yaml # Evaluation job template
+│   │   │   └── rubric-job.yaml     # Rubric generation job template
+│   │   └── utils/                  # K8s utility functions
+│   │       ├── manifestBuilder.ts  # Build job manifests from templates
+│   │       └── jobStatusParser.ts  # Parse K8s job status
 │   │
 │   ├── langchain/                  # LangChain configurations
 │   │   ├── chains/                 # LangChain chains

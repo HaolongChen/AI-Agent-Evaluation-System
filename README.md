@@ -98,10 +98,11 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
   - Multi-browser support (Chromium, Firefox, WebKit)
   - Auto-waiting and built-in debugging tools
   - Video recording and screenshot capture for test failures
-- **BullMQ** - Job queue for async processing
-  - Redis-based reliable job queue
+- **RabbitMQ** - Message broker for async processing and event-driven integration
+  - AMQP-based reliable message queue
   - Handle long-running copilot evaluations
-  - Retry logic and job prioritization
+  - Event-driven communication with Copilot system (no webhooks needed)
+  - Dead letter queues and retry logic
   - Separate worker processes for scalability
 - **ts-node** - TypeScript execution for development
 - **ESLint + Prettier** - Code quality and formatting
@@ -462,16 +463,12 @@ type TrendPoint {
 
 ### REST API Endpoints (Express.js)
 
-Minimal endpoints for health checks and webhooks:
+Minimal endpoints for health checks:
 
 ```typescript
 // Health & Status
-GET  /api/health
-GET  /api/status
-
-// Webhook endpoints (if copilot needs to notify completion)
-POST /api/webhook/session-complete
-  Body: { sessionId: number, status: string }
+GET / api / health;
+GET / api / status;
 ```
 
 ---
@@ -738,13 +735,17 @@ ai-agent-evaluation-system/
 │   │   ├── MetricsCollector.ts     # Collect metrics from copilot
 │   │   └── SchemaLoader.ts         # Load schemas from golden set
 │   │
-│   ├── workers/                    # BullMQ workers
-│   │   ├── CopilotEvaluationWorker.ts  # Process evaluation jobs
-│   │   └── RubricGenerationWorker.ts   # Process rubric generation jobs
+│   ├── workers/                    # RabbitMQ consumers
+│   │   ├── CopilotEvaluationConsumer.ts  # Process evaluation messages
+│   │   └── RubricGenerationConsumer.ts   # Process rubric generation messages
 │   │
-│   ├── queues/                     # BullMQ queue definitions
-│   │   ├── evaluationQueue.ts      # Copilot evaluation queue
-│   │   └── rubricQueue.ts          # Rubric generation queue
+│   ├── messaging/                  # RabbitMQ setup and publishers
+│   │   ├── rabbitmq.ts             # RabbitMQ connection and channel setup
+│   │   ├── publishers/             # Message publishers
+│   │   │   ├── EvaluationPublisher.ts
+│   │   │   └── RubricPublisher.ts
+│   │   └── consumers/              # Consumer setup
+│   │       └── index.ts
 │   │
 │   ├── langchain/                  # LangChain configurations
 │   │   ├── chains/                 # LangChain chains
@@ -801,10 +802,12 @@ ai-agent-evaluation-system/
   - [ ] Install and configure Playwright
   - [ ] Create base automation runner
   - [ ] Implement copilot controller for Zed editor
-- [ ] Setup BullMQ with Redis
-  - [ ] Configure job queues (evaluation, rubric generation)
-  - [ ] Create worker processes
-  - [ ] Implement job retry logic
+- [ ] Setup RabbitMQ message broker
+  - [ ] Install and configure RabbitMQ
+  - [ ] Create exchanges and queues (evaluation, rubric generation)
+  - [ ] Subscribe to Copilot event exchange for session completion
+  - [ ] Create consumer workers with retry logic and dead letter queues
+  - [ ] Implement message publishers for evaluation tasks
 - [ ] Test end-to-end copilot execution flow
 - [ ] Ensure zero impact on Copilot's existing tables
 
@@ -855,10 +858,16 @@ LLM_MAX_TOKENS=2000
 COPILOT_API_URL=http://localhost:3000/api
 COPILOT_API_KEY=...
 
-# BullMQ / Redis (for job queue)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=  # Optional
+# RabbitMQ (for message queue and events)
+RABBITMQ_URL=amqp://localhost:5672
+RABBITMQ_USER=guest
+RABBITMQ_PASSWORD=guest
+RABBITMQ_VHOST=/
+
+# RabbitMQ Queues
+RABBITMQ_EVALUATION_QUEUE=evaluation-jobs
+RABBITMQ_RUBRIC_QUEUE=rubric-generation
+RABBITMQ_COPILOT_EVENTS_EXCHANGE=copilot-events
 
 # Authentication (if needed)
 JWT_SECRET=...
@@ -883,11 +892,13 @@ LOG_LEVEL=info
 ## Performance Considerations
 
 1. **Database Indexes**: Index on frequently queried fields (schema_ex_id, session_id)
-2. **Caching**: Cache golden set schemas, rubrics in Redis
-3. **Async Processing**: Use BullMQ job queue for long-running copilot evaluations
-   - Separate worker processes from API server
-   - Configurable concurrency and rate limiting
+2. **Caching**: Cache golden set schemas, rubrics in Redis (optional)
+3. **Async Processing**: Use RabbitMQ message queue for long-running copilot evaluations
+   - Separate consumer processes from API server
+   - Configurable prefetch count for concurrency control
+   - Dead letter queues for failed messages
    - Automatic retry with exponential backoff
+   - Message acknowledgment for reliability
 4. **Pagination**: Paginate large result sets in GraphQL
 5. **Connection Pooling**: Efficient DB connection management
 6. **Metrics Storage**: Use JSONB efficiently, consider time-series DB for trends
@@ -904,17 +915,18 @@ LOG_LEVEL=info
   - Rubric generation chain
   - Review graph with human-in-the-loop
   - Prompt template variations
-- BullMQ job processing
-  - Queue job creation and execution
-  - Worker retry logic
-  - Job failure handling
+- RabbitMQ message processing
+  - Message publishing and consumption
+  - Consumer retry logic and dead letter queues
+  - Message acknowledgment and rejection
+  - Event-driven integration with Copilot
 - Service layer functions
 
 ### End-to-End Tests
 
 - Complete evaluation flow (with Playwright)
 - Copilot automation scenarios
-- CLI commands
+- Event-driven workflows with RabbitMQ
 
 ---
 

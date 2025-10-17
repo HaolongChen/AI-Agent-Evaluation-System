@@ -93,6 +93,16 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
   - State management for complex evaluation workflows
   - Conditional routing and feedback loops
   - Human-in-the-loop support for rubric review
+- **Playwright** - Browser automation for copilot execution
+  - Headless browser automation for web-based Zed editor
+  - Multi-browser support (Chromium, Firefox, WebKit)
+  - Auto-waiting and built-in debugging tools
+  - Video recording and screenshot capture for test failures
+- **BullMQ** - Job queue for async processing
+  - Redis-based reliable job queue
+  - Handle long-running copilot evaluations
+  - Retry logic and job prioritization
+  - Separate worker processes for scalability
 - **ts-node** - TypeScript execution for development
 - **ESLint + Prettier** - Code quality and formatting
 
@@ -756,6 +766,20 @@ ai-agent-evaluation-system/
 │   │   ├── CopilotDataReader.ts    # Read copilot schema tables via Prisma
 │   │   └── LangChainClient.ts      # LangChain/LangGraph for LLM operations
 │   │
+│   ├── automation/                 # Playwright automation
+│   │   ├── PlaywrightRunner.ts     # Main automation runner
+│   │   ├── CopilotController.ts    # Control copilot in Zed editor
+│   │   ├── MetricsCollector.ts     # Collect metrics from copilot
+│   │   └── SchemaLoader.ts         # Load schemas from golden set
+│   │
+│   ├── workers/                    # BullMQ workers
+│   │   ├── CopilotEvaluationWorker.ts  # Process evaluation jobs
+│   │   └── RubricGenerationWorker.ts   # Process rubric generation jobs
+│   │
+│   ├── queues/                     # BullMQ queue definitions
+│   │   ├── evaluationQueue.ts      # Copilot evaluation queue
+│   │   └── rubricQueue.ts          # Rubric generation queue
+│   │
 │   ├── langchain/                  # LangChain configurations
 │   │   ├── chains/                 # LangChain chains
 │   │   │   └── RubricGenerationChain.ts
@@ -815,8 +839,14 @@ ai-agent-evaluation-system/
 
 - [ ] Map Copilot schema tables in Prisma (read-only models)
 - [ ] Build CopilotDataReader service to query copilot tables
-- [ ] Implement copilot API client (if API exists)
-- [ ] Create execution automation (UI automation)
+- [ ] Setup Playwright for browser automation
+  - [ ] Install and configure Playwright
+  - [ ] Create base automation runner
+  - [ ] Implement copilot controller for Zed editor
+- [ ] Setup BullMQ with Redis
+  - [ ] Configure job queues (evaluation, rubric generation)
+  - [ ] Create worker processes
+  - [ ] Implement job retry logic
 - [ ] Test end-to-end copilot execution flow
 - [ ] Ensure zero impact on Copilot's existing tables
 
@@ -874,6 +904,11 @@ LLM_MAX_TOKENS=2000
 COPILOT_API_URL=http://localhost:3000/api
 COPILOT_API_KEY=...
 
+# BullMQ / Redis (for job queue)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=  # Optional
+
 # Authentication (if needed)
 JWT_SECRET=...
 
@@ -898,7 +933,10 @@ LOG_LEVEL=info
 
 1. **Database Indexes**: Index on frequently queried fields (schema_ex_id, session_id)
 2. **Caching**: Cache golden set schemas, rubrics in Redis
-3. **Async Processing**: Use job queue (Bull/BullMQ) for long-running evaluations
+3. **Async Processing**: Use BullMQ job queue for long-running copilot evaluations
+   - Separate worker processes from API server
+   - Configurable concurrency and rate limiting
+   - Automatic retry with exponential backoff
 4. **Pagination**: Paginate large result sets in GraphQL
 5. **Connection Pooling**: Efficient DB connection management
 6. **Metrics Storage**: Use JSONB efficiently, consider time-series DB for trends
@@ -915,12 +953,16 @@ LOG_LEVEL=info
   - Rubric generation chain
   - Review graph with human-in-the-loop
   - Prompt template variations
+- BullMQ job processing
+  - Queue job creation and execution
+  - Worker retry logic
+  - Job failure handling
 - Service layer functions
 
 ### End-to-End Tests
 
-- Complete evaluation flow
-- Dashboard user journeys
+- Complete evaluation flow (with Playwright)
+- Copilot automation scenarios
 - CLI commands
 
 ---

@@ -138,135 +138,160 @@ datasource db {
 // Copilot Tables (READ-ONLY - Don't migrate)
 // ============================================
 
-// Example: Map existing Copilot tables for reading
-// Adjust fields based on actual Copilot schema
-model CopilotSession {
-  id              BigInt   @id
-  userId          String?  @map("user_id")
-  totalLatency    Int?     @map("total_latency")
-  roundtripCount  Int?     @map("roundtrip_count")
-  inputTokens     Int?     @map("input_tokens")
-  outputTokens    Int?     @map("output_tokens")
-  createdAt       DateTime @map("created_at")
+// Map existing Copilot session table for reading
+model copilot_session {
+  id               BigInt    @id @default(autoincrement())
+  project_id       BigInt
+  account_id       BigInt
+  title            String?
+  job_state        Json?
+  copilot_messages Json?
+  terminated       Boolean?  @default(false)
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
 
-  @@map("sessions")
+  @@index([created_at], map: "idx_copilot_session_created_at")
+  @@index([project_id, account_id], map: "idx_copilot_session_project_id")
   @@schema("copilot")
 }
 
-// Add other Copilot models as needed:
-// - CopilotIteration
-// - CopilotAiResponse
-// - CopilotUserAction
+model copilot_error_log {
+  id         BigInt    @id @default(autoincrement())
+  session_id BigInt
+  error_info Json?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
 
-// ============================================
+  @@index([session_id], map: "idx_copilot_error_log_session_id")
+}
+
+model copilot_evaluation_log {
+  id         BigInt    @id @default(autoincrement())
+  session_id BigInt
+  message_id BigInt?
+  type       String?
+  content    String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([session_id], map: "idx_copilot_evaluation_log_session_id")
+}
+
+model copilot_llm_call_log {
+  id         BigInt    @id @default(autoincrement())
+  session_id BigInt
+  model      String?
+  content    Json?
+  response   Json?
+  time_cost  Int?
+  token_cost Int?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([session_id], map: "idx_copilot_llm_call_log_session_id")
+}
+
 // Evaluation Tables (Your migrations)
 // ============================================
 
 // Golden Set Management
-model GoldenSet {
-  id          BigInt   @id @default(autoincrement())
-  projectExId String   @map("project_ex_id")
-  schemaExId  String   @map("schema_ex_id")
-  copilotType String   @map("copilot_type") // 'data_model', 'ui_builder', 'actionflow', 'log_analyzer', 'agent_builder'
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  createdBy   String?  @map("created_by")
-  isActive    Boolean  @default(true) @map("is_active")
+model golden_set {
+  id             BigInt   @id @default(autoincrement())
+  project_ex_id  String
+  schema_ex_id   String
+  copilot_type   String   // 'data_model', 'ui_builder', 'actionflow', 'log_analyzer', 'agent_builder'
+  description    String?
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  created_by     String?
+  is_active      Boolean  @default(true)
 
-  @@unique([projectExId, schemaExId, copilotType])
-  @@index([schemaExId], name: "idx_golden_set_schema")
-  @@map("golden_set")
+  @@unique([project_ex_id, schema_ex_id, copilot_type])
+  @@index([schema_ex_id], map: "idx_golden_set_schema")
   @@schema("evaluation")
 }
 
 // Execution Sessions (references copilot schema tables)
-model EvaluationSession {
-  id                BigInt    @id @default(autoincrement())
-  schemaExId        String    @map("schema_ex_id")
-  copilotType       String    @map("copilot_type")
-  modelName         String    @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-  sessionIdRef      BigInt?   @map("session_id_ref") // Reference to copilot.sessions
-  startedAt         DateTime  @default(now()) @map("started_at")
-  completedAt       DateTime? @map("completed_at")
-  status            String    @default("running") // 'running', 'completed', 'failed'
+model evaluation_session {
+  id                 BigInt              @id @default(autoincrement())
+  schema_ex_id       String
+  copilot_type       String
+  model_name         String              // e.g., 'gpt-4', 'claude-3-opus'
+  session_id_ref     BigInt?             // Reference to copilot_session.id
+  started_at         DateTime            @default(now()) @db.Timestamptz(6)
+  completed_at       DateTime?           @db.Timestamptz(6)
+  status             String              @default("running") // 'running', 'completed', 'failed'
 
   // Performance Metrics
-  totalLatencyMs    Int?      @map("total_latency_ms")
-  roundtripCount    Int?      @map("roundtrip_count")
-  inputTokens       Int?      @map("input_tokens")
-  outputTokens      Int?      @map("output_tokens")
-  contextPercentage Decimal?  @map("context_percentage") @db.Decimal(5, 2) // % of max context window used
+  total_latency_ms   Int?
+  roundtrip_count    Int?
+  input_tokens       Int?
+  output_tokens      Int?
+  context_percentage Decimal?            @db.Decimal(5, 2) // % of max context window used
 
   // Metadata
-  metadata          Json?
+  metadata           Json?
 
   // Relations
-  rubrics           AdaptiveRubric[]
-  result            EvaluationResult?
+  rubrics            adaptive_rubric[]
+  result             evaluation_result?
 
-  @@index([schemaExId], name: "idx_evaluation_session_schema")
-  @@map("evaluation_session")
+  @@index([schema_ex_id], map: "idx_evaluation_session_schema")
   @@schema("evaluation")
 }
 
 // Adaptive Rubrics (AI-generated evaluation questions)
-model AdaptiveRubric {
-  id             BigInt    @id @default(autoincrement())
-  projectExId    String    @map("project_ex_id")
-  schemaExId     String    @map("schema_ex_id")
-  sessionId      BigInt    @map("session_id")
+model adaptive_rubric {
+  id              BigInt              @id @default(autoincrement())
+  project_ex_id   String
+  schema_ex_id    String
+  session_id      BigInt
 
   // Rubric Content
-  content        String    // The actual question/rubric
-  rubricType     String?   @map("rubric_type") // e.g., 'completeness', 'correctness', 'naming_convention'
-  category       String?   // e.g., 'entity_coverage', 'attribute_completeness'
-  expectedAnswer String?   @map("expected_answer") // 'yes' or 'no'
+  content         String              // The actual question/rubric
+  rubric_type     String?             // e.g., 'completeness', 'correctness', 'naming_convention'
+  category        String?             // e.g., 'entity_coverage', 'attribute_completeness'
+  expected_answer String?             // 'yes' or 'no'
 
   // Status
-  reviewStatus   String    @default("pending") @map("review_status") // 'pending', 'approved', 'rejected', 'modified'
-  isActive       Boolean   @default(true) @map("is_active")
+  review_status   String              @default("pending") // 'pending', 'approved', 'rejected', 'modified'
+  is_active       Boolean             @default(true)
 
   // Timestamps
-  generatedAt    DateTime  @default(now()) @map("generated_at")
-  reviewedAt     DateTime? @map("reviewed_at")
-  reviewedBy     String?   @map("reviewed_by")
+  generated_at    DateTime            @default(now()) @db.Timestamptz(6)
+  reviewed_at     DateTime?           @db.Timestamptz(6)
+  reviewed_by     String?
 
   // Relations
-  session        EvaluationSession @relation(fields: [sessionId], references: [id])
-  judgeRecords   JudgeRecord[]
+  session         evaluation_session  @relation(fields: [session_id], references: [id])
+  judge_records   adaptive_rubric_judge_record[]
 
-  @@index([sessionId], name: "idx_adaptive_rubric_session")
-  @@map("adaptive_rubric")
+  @@index([session_id], map: "idx_adaptive_rubric_session")
   @@schema("evaluation")
 }
 
 // Rubric Judgments (human reviews)
-model JudgeRecord {
-  id                BigInt   @id @default(autoincrement())
-  adaptiveRubricId  BigInt   @map("adaptive_rubric_id")
-  accountId         String   @map("account_id")
-  result            Boolean  // true = pass, false = fail
-  confidenceScore   Int?     @map("confidence_score") // 1-5 scale
-  notes             String?
-  judgedAt          DateTime @default(now()) @map("judged_at")
+model adaptive_rubric_judge_record {
+  id                  BigInt          @id @default(autoincrement())
+  adaptive_rubric_id  BigInt
+  account_id          String
+  result              Boolean         // true = pass, false = fail
+  confidence_score    Int?            // 1-5 scale
+  notes               String?
+  judged_at           DateTime        @default(now()) @db.Timestamptz(6)
 
   // Relations
-  rubric            AdaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
+  rubric              adaptive_rubric @relation(fields: [adaptive_rubric_id], references: [id])
 
-  @@index([adaptiveRubricId], name: "idx_rubric_judge_rubric")
-  @@map("adaptive_rubric_judge_record")
+  @@index([adaptive_rubric_id], map: "idx_rubric_judge_rubric")
   @@schema("evaluation")
 }
 
 // Evaluation Results Summary (aggregated metrics)
-model EvaluationResult {
-  id           BigInt   @id @default(autoincrement())
-  sessionId    BigInt   @unique @map("session_id")
-  schemaExId   String   @map("schema_ex_id")
+model evaluation_result {
+  id            BigInt             @id @default(autoincrement())
+  session_id    BigInt             @unique
+  schema_ex_id  String
 
   // Quality Metrics (specific to copilot type)
-  // Flexible storage for different metric types
-  metrics      Json // Examples:
+  metrics       Json               // Flexible storage for different metric types
+  // Examples:
   // Data Model Builder: {
   //   "entity_coverage": 0.95,
   //   "attribute_completeness": 0.87,
@@ -287,14 +312,13 @@ model EvaluationResult {
   // }
 
   // Overall Score
-  overallScore Decimal  @map("overall_score") @db.Decimal(5, 2)
+  overall_score Decimal            @db.Decimal(5, 2)
 
-  createdAt    DateTime @default(now()) @map("created_at")
+  created_at    DateTime           @default(now()) @db.Timestamptz(6)
 
   // Relations
-  session      EvaluationSession @relation(fields: [sessionId], references: [id])
+  session       evaluation_session @relation(fields: [session_id], references: [id])
 
-  @@map("evaluation_result")
   @@schema("evaluation")
 }
 ```

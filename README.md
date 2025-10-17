@@ -462,23 +462,12 @@ type TrendPoint {
 
 ### REST API Endpoints (Express.js)
 
-For operations that don't fit GraphQL well:
+Minimal endpoints for health checks and webhooks:
 
 ```typescript
 // Health & Status
 GET  /api/health
 GET  /api/status
-
-// CLI Support (simpler than GraphQL for automation)
-POST /api/cli/run-evaluation
-  Body: {
-    schemaExId: string,
-    copilotType: string,
-    modelName: string
-  }
-
-GET  /api/cli/export-results/:sessionId
-  Returns: JSON or CSV export
 
 // Webhook endpoints (if copilot needs to notify completion)
 POST /api/webhook/session-complete
@@ -629,7 +618,7 @@ async function judge(
 
 ### Complete Evaluation Flow
 
-```
+```plan
 1. SETUP GOLDEN SET
    ├─> Add projects/schemas to golden set
    └─> Version control golden set
@@ -704,32 +693,9 @@ Different copilot types have different evaluation criteria:
 
 ---
 
-## CLI Tool
-
-For automation and CI/CD integration:
-
-```bash
-# Run evaluation
-npm run eval -- --schema <schema_id> --type <copilot_type> --model <model_name>
-
-# Generate rubrics
-npm run rubrics:gen -- --session <session_id>
-
-# Export results
-npm run export -- --session <session_id> --format csv
-
-# Batch evaluation (run all golden set schemas)
-npm run eval:batch -- --type data_model --model gpt-4
-
-# Check status
-npm run status -- --session <session_id>
-```
-
----
-
 ## Project Structure
 
-```
+```directory
 ai-agent-evaluation-system/
 ├── prisma/
 │   ├── schema.prisma               # Prisma schema definition
@@ -792,14 +758,6 @@ ai-agent-evaluation-system/
 │   │   └── parsers/                # Output parsers
 │   │       └── RubricParser.ts
 │   │
-│   ├── api/                        # REST endpoints
-│   │   ├── routes.ts
-│   │   └── controllers/
-│   │
-│   ├── cli/                        # CLI tool
-│   │   ├── index.ts
-│   │   └── commands/
-│   │
 │   └── utils/
 │       ├── logger.ts
 │       ├── validators.ts
@@ -860,14 +818,7 @@ ai-agent-evaluation-system/
 - [ ] Implement human-in-the-loop review with LangGraph
 - [ ] Add retry logic and error handling
 
-### Phase 4: CLI & Automation (Week 4-5)
-
-- [ ] Build CLI tool
-- [ ] Add batch processing
-- [ ] Create export utilities
-- [ ] Setup CI/CD integration examples
-
-### Phase 5: Testing & Documentation (Week 5-6)
+### Phase 4: Testing & Documentation (Week 4-5)
 
 - [ ] Integration tests
 - [ ] API documentation

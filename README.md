@@ -98,12 +98,12 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
   - Multi-browser support (Chromium, Firefox, WebKit)
   - Auto-waiting and built-in debugging tools
   - Video recording and screenshot capture for test failures
-- **RabbitMQ** - Message broker for async processing and event-driven integration
-  - AMQP-based reliable message queue
-  - Handle long-running copilot evaluations
-  - Event-driven communication with Copilot system (no webhooks needed)
-  - Dead letter queues and retry logic
-  - Separate worker processes for scalability
+- **Kubernetes Jobs** - Orchestrate concurrent evaluation workloads
+  - Native job scheduling and execution
+  - Horizontal scaling with parallel job execution
+  - Built-in retry logic and failure handling
+  - Resource isolation per evaluation job
+  - No external message broker required
 - **ts-node** - TypeScript execution for development
 - **ESLint + Prettier** - Code quality and formatting
 
@@ -152,7 +152,6 @@ model copilot_session {
 
   @@index([created_at], map: "idx_copilot_session_created_at")
   @@index([project_id, account_id], map: "idx_copilot_session_project_id")
-  @@schema("copilot")
 }
 
 model copilot_error_log {
@@ -817,17 +816,14 @@ ai-agent-evaluation-system/
 │   │   ├── MetricsCollector.ts     # Collect metrics from copilot
 │   │   └── SchemaLoader.ts         # Load schemas from golden set
 │   │
-│   ├── workers/                    # RabbitMQ consumers
-│   │   ├── CopilotEvaluationConsumer.ts  # Process evaluation messages
-│   │   └── RubricGenerationConsumer.ts   # Process rubric generation messages
+│   ├── jobs/                       # Kubernetes Job runners
+│   │   ├── EvaluationJobRunner.ts  # Standalone evaluation job
+│   │   └── RubricGenerationJobRunner.ts  # Standalone rubric generation job
 │   │
-│   ├── messaging/                  # RabbitMQ setup and publishers
-│   │   ├── rabbitmq.ts             # RabbitMQ connection and channel setup
-│   │   ├── publishers/             # Message publishers
-│   │   │   ├── EvaluationPublisher.ts
-│   │   │   └── RubricPublisher.ts
-│   │   └── consumers/              # Consumer setup
-│   │       └── index.ts
+│   ├── kubernetes/                 # Kubernetes client and job management
+│   │   ├── k8sClient.ts            # Kubernetes API client
+│   │   ├── JobCreator.ts           # Create and submit jobs
+│   │   └── JobMonitor.ts           # Monitor job status
 │   │
 │   ├── langchain/                  # LangChain configurations
 │   │   ├── chains/                 # LangChain chains
@@ -884,12 +880,13 @@ ai-agent-evaluation-system/
   - [ ] Install and configure Playwright
   - [ ] Create base automation runner
   - [ ] Implement copilot controller for Zed editor
-- [ ] Setup RabbitMQ message broker
-  - [ ] Install and configure RabbitMQ
-  - [ ] Create exchanges and queues (evaluation, rubric generation)
-  - [ ] Subscribe to Copilot event exchange for session completion
-  - [ ] Create consumer workers with retry logic and dead letter queues
-  - [ ] Implement message publishers for evaluation tasks
+- [ ] Setup Kubernetes Job orchestration
+  - [ ] Install Kubernetes client library (@kubernetes/client-node)
+  - [ ] Create Job manifest templates (YAML)
+  - [ ] Implement JobCreator to submit evaluation jobs
+  - [ ] Implement JobMonitor to track job status and completion
+  - [ ] Configure job resource limits and retry policies
+  - [ ] Create standalone job runners (Docker containers)
 - [ ] Test end-to-end copilot execution flow
 - [ ] Ensure zero impact on Copilot's existing tables
 
@@ -940,16 +937,15 @@ LLM_MAX_TOKENS=2000
 COPILOT_API_URL=http://localhost:3000/api
 COPILOT_API_KEY=...
 
-# RabbitMQ (for message queue and events)
-RABBITMQ_URL=amqp://localhost:5672
-RABBITMQ_USER=guest
-RABBITMQ_PASSWORD=guest
-RABBITMQ_VHOST=/
-
-# RabbitMQ Queues
-RABBITMQ_EVALUATION_QUEUE=evaluation-jobs
-RABBITMQ_RUBRIC_QUEUE=rubric-generation
-RABBITMQ_COPILOT_EVENTS_EXCHANGE=copilot-events
+# Kubernetes (for job orchestration)
+KUBERNETES_NAMESPACE=ai-evaluation
+KUBERNETES_JOB_IMAGE=your-registry/evaluation-worker:latest
+KUBERNETES_JOB_CPU_REQUEST=500m
+KUBERNETES_JOB_MEMORY_REQUEST=1Gi
+KUBERNETES_JOB_CPU_LIMIT=2000m
+KUBERNETES_JOB_MEMORY_LIMIT=4Gi
+KUBERNETES_JOB_BACKOFF_LIMIT=3  # Retry count
+KUBERNETES_JOB_ACTIVE_DEADLINE_SECONDS=3600  # 1 hour timeout
 
 # Authentication (if needed)
 JWT_SECRET=...
@@ -975,12 +971,13 @@ LOG_LEVEL=info
 
 1. **Database Indexes**: Index on frequently queried fields (schema_ex_id, session_id)
 2. **Caching**: Cache golden set schemas, rubrics in Redis (optional)
-3. **Async Processing**: Use RabbitMQ message queue for long-running copilot evaluations
-   - Separate consumer processes from API server
-   - Configurable prefetch count for concurrency control
-   - Dead letter queues for failed messages
-   - Automatic retry with exponential backoff
-   - Message acknowledgment for reliability
+3. **Async Processing**: Use Kubernetes Jobs for long-running copilot evaluations
+   - Parallel job execution with horizontal scaling
+   - Configurable resource requests and limits per job
+   - Built-in retry logic with backoffLimit
+   - Active deadline for job timeout (prevents hung jobs)
+   - Job completion tracking and cleanup
+   - Isolated execution environment per evaluation
 4. **Pagination**: Paginate large result sets in GraphQL
 5. **Connection Pooling**: Efficient DB connection management
 6. **Metrics Storage**: Use JSONB efficiently, consider time-series DB for trends
@@ -997,18 +994,18 @@ LOG_LEVEL=info
   - Rubric generation chain
   - Review graph with human-in-the-loop
   - Prompt template variations
-- RabbitMQ message processing
-  - Message publishing and consumption
-  - Consumer retry logic and dead letter queues
-  - Message acknowledgment and rejection
-  - Event-driven integration with Copilot
+- Kubernetes Job orchestration
+  - Job creation and submission
+  - Job status monitoring and completion tracking
+  - Job retry behavior and failure handling
+  - Resource limit enforcement
 - Service layer functions
 
 ### End-to-End Tests
 
 - Complete evaluation flow (with Playwright)
 - Copilot automation scenarios
-- Event-driven workflows with RabbitMQ
+- Kubernetes Job execution and monitoring
 
 ---
 

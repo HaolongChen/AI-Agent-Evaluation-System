@@ -85,6 +85,14 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
   - Prisma Studio for visual database management
   - Declarative schema management
   - Can coexist with Copilot tables (won't interfere with existing migrations)
+- **LangChain.js** - LLM application framework
+  - Unified interface for multiple LLM providers (OpenAI, Anthropic, etc.)
+  - Prompt templates and chain composition
+  - Output parsers for structured responses
+- **LangGraph.js** - Graph-based LLM workflow orchestration
+  - State management for complex evaluation workflows
+  - Conditional routing and feedback loops
+  - Human-in-the-loop support for rubric review
 - **ts-node** - TypeScript execution for development
 - **ESLint + Prettier** - Code quality and formatting
 
@@ -545,10 +553,11 @@ async function genAdaptiveRubricsBySchemaExId(
 
 // Implementation notes:
 // 1. Fetch copilot output from session
-// 2. Call LLM with prompt to generate evaluation questions
-// 3. Parse LLM response into structured rubrics
+// 2. Use LangChain to call LLM with prompt template for copilot type
+// 3. Use custom output parser to extract structured rubrics (JSON)
 // 4. Save as adaptive_rubric with reviewStatus='pending'
-// 5. For Actionflow Builder example:
+// 5. LangGraph manages the workflow state and retry logic
+// 6. For Actionflow Builder example:
 //    - "Does the workflow query the database for invoices? Yes/No."
 //    - "Does the workflow check if invoice is unpaid? Yes/No."
 //    - "Does the workflow check if invoice age > 30 days? Yes/No."
@@ -624,7 +633,9 @@ async function judge(
 
 3. GENERATE RUBRICS
    ├─> Read copilot output from session
-   ├─> Call LLM to generate evaluation questions
+   ├─> Initialize LangGraph workflow
+   ├─> Use LangChain prompt template for copilot type
+   ├─> Call LLM and parse response with custom parser
    ├─> Create adaptive rubrics (status: pending)
    └─> Store rubrics linked to session
 
@@ -743,7 +754,19 @@ ai-agent-evaluation-system/
 │   ├── integrations/               # External integrations
 │   │   ├── CopilotAPIClient.ts     # Interface with copilot API (if exists)
 │   │   ├── CopilotDataReader.ts    # Read copilot schema tables via Prisma
-│   │   └── LLMClient.ts            # LLM for rubric generation
+│   │   └── LangChainClient.ts      # LangChain/LangGraph for LLM operations
+│   │
+│   ├── langchain/                  # LangChain configurations
+│   │   ├── chains/                 # LangChain chains
+│   │   │   └── RubricGenerationChain.ts
+│   │   ├── graphs/                 # LangGraph workflows
+│   │   │   └── RubricReviewGraph.ts
+│   │   ├── prompts/                # Prompt templates
+│   │   │   ├── dataModelRubric.ts
+│   │   │   ├── uiBuilderRubric.ts
+│   │   │   └── actionflowRubric.ts
+│   │   └── parsers/                # Output parsers
+│   │       └── RubricParser.ts
 │   │
 │   ├── api/                        # REST endpoints
 │   │   ├── routes.ts
@@ -799,10 +822,13 @@ ai-agent-evaluation-system/
 
 ### Phase 3: Rubric Generation (Week 3-4)
 
-- [ ] Integrate LLM API (OpenAI/Anthropic)
-- [ ] Build rubric generation prompts
-- [ ] Implement rubric parsing and validation
-- [ ] Create review workflow
+- [ ] Setup LangChain.js with multiple LLM providers
+- [ ] Build LangGraph workflow for rubric generation
+  - [ ] Prompt templates for different copilot types
+  - [ ] Output parser for structured rubric format
+  - [ ] State management for multi-step generation
+- [ ] Implement human-in-the-loop review with LangGraph
+- [ ] Add retry logic and error handling
 
 ### Phase 4: CLI & Automation (Week 4-5)
 
@@ -832,10 +858,17 @@ DATABASE_URL=postgresql://user:password@localhost:5432/copilot_db?schema=evaluat
 PORT=4000
 NODE_ENV=development
 
-# LLM API (for rubric generation)
+# LLM API (for rubric generation via LangChain)
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
-LLM_MODEL=gpt-4  # or claude-3-opus-20240229
+LANGCHAIN_TRACING_V2=true  # Optional: Enable LangSmith tracing
+LANGCHAIN_API_KEY=...      # Optional: For LangSmith
+
+# LLM Configuration
+LLM_PROVIDER=openai  # or anthropic
+LLM_MODEL=gpt-4      # or claude-3-opus-20240229
+LLM_TEMPERATURE=0.7
+LLM_MAX_TOKENS=2000
 
 # Copilot Integration
 COPILOT_API_URL=http://localhost:3000/api
@@ -878,7 +911,10 @@ LOG_LEVEL=info
 
 - GraphQL resolvers
 - Database operations
-- LLM integration
+- LangChain/LangGraph workflows
+  - Rubric generation chain
+  - Review graph with human-in-the-loop
+  - Prompt template variations
 - Service layer functions
 
 ### End-to-End Tests

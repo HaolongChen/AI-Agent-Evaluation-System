@@ -111,145 +111,203 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
 
 ## Data Model Design
 
-### Database Schema
+### Prisma Schema
 
 **Schema Organization:**
 
-```sql
--- Create separate schemas for logical separation
-CREATE SCHEMA IF NOT EXISTS evaluation;
-CREATE SCHEMA IF NOT EXISTS copilot; -- Copilot team manages this
+Prisma supports multi-schema with PostgreSQL. You'll have two schemas:
 
--- Set search path
-SET search_path TO evaluation, copilot, public;
+- `copilot` schema: Existing Copilot tables (read-only)
+- `evaluation` schema: New evaluation framework tables (read-write)
+
+**Complete Prisma Schema (`prisma/schema.prisma`):**
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["evaluation", "copilot"]
+}
+
+// ============================================
+// Copilot Tables (READ-ONLY - Don't migrate)
+// ============================================
+
+// Example: Map existing Copilot tables for reading
+// Adjust fields based on actual Copilot schema
+model CopilotSession {
+  id              BigInt   @id
+  userId          String?  @map("user_id")
+  totalLatency    Int?     @map("total_latency")
+  roundtripCount  Int?     @map("roundtrip_count")
+  inputTokens     Int?     @map("input_tokens")
+  outputTokens    Int?     @map("output_tokens")
+  createdAt       DateTime @map("created_at")
+
+  @@map("sessions")
+  @@schema("copilot")
+}
+
+// Add other Copilot models as needed:
+// - CopilotIteration
+// - CopilotAiResponse
+// - CopilotUserAction
+
+// ============================================
+// Evaluation Tables (Your migrations)
+// ============================================
+
+// Golden Set Management
+model GoldenSet {
+  id          BigInt   @id @default(autoincrement())
+  projectExId String   @map("project_ex_id")
+  schemaExId  String   @map("schema_ex_id")
+  copilotType String   @map("copilot_type") // 'data_model', 'ui_builder', 'actionflow', 'log_analyzer', 'agent_builder'
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  createdBy   String?  @map("created_by")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  @@unique([projectExId, schemaExId, copilotType])
+  @@index([schemaExId], name: "idx_golden_set_schema")
+  @@map("golden_set")
+  @@schema("evaluation")
+}
+
+// Execution Sessions (references copilot schema tables)
+model EvaluationSession {
+  id                BigInt    @id @default(autoincrement())
+  schemaExId        String    @map("schema_ex_id")
+  copilotType       String    @map("copilot_type")
+  modelName         String    @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
+  sessionIdRef      BigInt?   @map("session_id_ref") // Reference to copilot.sessions
+  startedAt         DateTime  @default(now()) @map("started_at")
+  completedAt       DateTime? @map("completed_at")
+  status            String    @default("running") // 'running', 'completed', 'failed'
+
+  // Performance Metrics
+  totalLatencyMs    Int?      @map("total_latency_ms")
+  roundtripCount    Int?      @map("roundtrip_count")
+  inputTokens       Int?      @map("input_tokens")
+  outputTokens      Int?      @map("output_tokens")
+  contextPercentage Decimal?  @map("context_percentage") @db.Decimal(5, 2) // % of max context window used
+
+  // Metadata
+  metadata          Json?
+
+  // Relations
+  rubrics           AdaptiveRubric[]
+  result            EvaluationResult?
+
+  @@index([schemaExId], name: "idx_evaluation_session_schema")
+  @@map("evaluation_session")
+  @@schema("evaluation")
+}
+
+// Adaptive Rubrics (AI-generated evaluation questions)
+model AdaptiveRubric {
+  id             BigInt    @id @default(autoincrement())
+  projectExId    String    @map("project_ex_id")
+  schemaExId     String    @map("schema_ex_id")
+  sessionId      BigInt    @map("session_id")
+
+  // Rubric Content
+  content        String    // The actual question/rubric
+  rubricType     String?   @map("rubric_type") // e.g., 'completeness', 'correctness', 'naming_convention'
+  category       String?   // e.g., 'entity_coverage', 'attribute_completeness'
+  expectedAnswer String?   @map("expected_answer") // 'yes' or 'no'
+
+  // Status
+  reviewStatus   String    @default("pending") @map("review_status") // 'pending', 'approved', 'rejected', 'modified'
+  isActive       Boolean   @default(true) @map("is_active")
+
+  // Timestamps
+  generatedAt    DateTime  @default(now()) @map("generated_at")
+  reviewedAt     DateTime? @map("reviewed_at")
+  reviewedBy     String?   @map("reviewed_by")
+
+  // Relations
+  session        EvaluationSession @relation(fields: [sessionId], references: [id])
+  judgeRecords   JudgeRecord[]
+
+  @@index([sessionId], name: "idx_adaptive_rubric_session")
+  @@map("adaptive_rubric")
+  @@schema("evaluation")
+}
+
+// Rubric Judgments (human reviews)
+model JudgeRecord {
+  id                BigInt   @id @default(autoincrement())
+  adaptiveRubricId  BigInt   @map("adaptive_rubric_id")
+  accountId         String   @map("account_id")
+  result            Boolean  // true = pass, false = fail
+  confidenceScore   Int?     @map("confidence_score") // 1-5 scale
+  notes             String?
+  judgedAt          DateTime @default(now()) @map("judged_at")
+
+  // Relations
+  rubric            AdaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
+
+  @@index([adaptiveRubricId], name: "idx_rubric_judge_rubric")
+  @@map("adaptive_rubric_judge_record")
+  @@schema("evaluation")
+}
+
+// Evaluation Results Summary (aggregated metrics)
+model EvaluationResult {
+  id           BigInt   @id @default(autoincrement())
+  sessionId    BigInt   @unique @map("session_id")
+  schemaExId   String   @map("schema_ex_id")
+
+  // Quality Metrics (specific to copilot type)
+  // Flexible storage for different metric types
+  metrics      Json // Examples:
+  // Data Model Builder: {
+  //   "entity_coverage": 0.95,
+  //   "attribute_completeness": 0.87,
+  //   "naming_convention_adherence": 0.92,
+  //   "relational_integrity": 0.88,
+  //   "normalization_level": 0.85
+  // }
+  // UI Builder: {
+  //   "component_choice_relevance": 0.91,
+  //   "layout_coherence": 0.89,
+  //   "style_adherence": 0.94,
+  //   "responsiveness_check": 0.86
+  // }
+  // Actionflow Builder: {
+  //   "task_adherence": 0.93,
+  //   "logical_correctness": 0.90,
+  //   "efficiency": 0.85
+  // }
+
+  // Overall Score
+  overallScore Decimal  @map("overall_score") @db.Decimal(5, 2)
+
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  session      EvaluationSession @relation(fields: [sessionId], references: [id])
+
+  @@map("evaluation_result")
+  @@schema("evaluation")
+}
 ```
 
-**Evaluation Framework Tables (in `evaluation` schema):**
+**Key Prisma Features Used:**
 
-```sql
--- Golden Set Management
-CREATE TABLE evaluation.golden_set (
-    id BIGSERIAL PRIMARY KEY,
-    project_ex_id TEXT NOT NULL,
-    schema_ex_id TEXT NOT NULL,
-    copilot_type VARCHAR(50) NOT NULL, -- 'data_model', 'ui_builder', 'actionflow', 'log_analyzer', 'agent_builder'
-    description TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    created_by TEXT,
-    is_active BOOLEAN DEFAULT TRUE,
-    UNIQUE(project_ex_id, schema_ex_id, copilot_type)
-);
-
--- Execution Sessions (references copilot schema tables)
-CREATE TABLE evaluation.evaluation_session (
-    id BIGSERIAL PRIMARY KEY,
-    schema_ex_id TEXT NOT NULL,
-    copilot_type VARCHAR(50) NOT NULL,
-    model_name VARCHAR(100) NOT NULL, -- e.g., 'gpt-4', 'claude-3-opus', etc.
-    session_id_ref BIGINT, -- Reference to actual copilot session
-    started_at TIMESTAMP DEFAULT NOW(),
-    completed_at TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'running', -- 'running', 'completed', 'failed'
-
-    -- Performance Metrics
-    total_latency_ms INTEGER,
-    roundtrip_count INTEGER,
-    input_tokens INTEGER,
-    output_tokens INTEGER,
-    context_percentage DECIMAL(5,2), -- % of max context window used
-
-    -- Metadata
-    metadata JSONB
-);
-
--- Adaptive Rubrics (AI-generated evaluation questions)
-CREATE TABLE evaluation.adaptive_rubric (
-    id BIGSERIAL PRIMARY KEY,
-    project_ex_id TEXT NOT NULL,
-    schema_ex_id TEXT NOT NULL,
-    session_id BIGINT REFERENCES evaluation_session(id),
-
-    -- Rubric Content
-    content TEXT NOT NULL, -- The actual question/rubric
-    rubric_type VARCHAR(50), -- e.g., 'completeness', 'correctness', 'naming_convention'
-    category VARCHAR(50), -- e.g., 'entity_coverage', 'attribute_completeness'
-    expected_answer VARCHAR(10), -- 'yes' or 'no'
-
-    -- Status
-    review_status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected', 'modified'
-    is_active BOOLEAN DEFAULT TRUE,
-
-    -- Timestamps
-    generated_at TIMESTAMP DEFAULT NOW(),
-    reviewed_at TIMESTAMP,
-    reviewed_by TEXT
-);
-
--- Rubric Judgments (human reviews)
-CREATE TABLE evaluation.adaptive_rubric_judge_record (
-    id BIGSERIAL PRIMARY KEY,
-    adaptive_rubric_id BIGINT REFERENCES adaptive_rubric(id),
-    account_id TEXT NOT NULL,
-    result BOOLEAN NOT NULL, -- true = pass, false = fail
-    confidence_score INTEGER, -- 1-5 scale
-    notes TEXT,
-    judged_at TIMESTAMP DEFAULT NOW()
-);
-
--- Evaluation Results Summary (aggregated metrics)
-CREATE TABLE evaluation.evaluation_result (
-    id BIGSERIAL PRIMARY KEY,
-    session_id BIGINT REFERENCES evaluation_session(id),
-    schema_ex_id TEXT NOT NULL,
-
-    -- Quality Metrics (specific to copilot type)
-    metrics JSONB NOT NULL, -- Flexible storage for different metric types
-
-    -- Examples:
-    -- Data Model Builder: {
-    --   "entity_coverage": 0.95,
-    --   "attribute_completeness": 0.87,
-    --   "naming_convention_adherence": 0.92,
-    --   "relational_integrity": 0.88,
-    --   "normalization_level": 0.85
-    -- }
-    -- UI Builder: {
-    --   "component_choice_relevance": 0.91,
-    --   "layout_coherence": 0.89,
-    --   "style_adherence": 0.94,
-    --   "responsiveness_check": 0.86
-    -- }
-    -- Actionflow Builder: {
-    --   "task_adherence": 0.93,
-    --   "logical_correctness": 0.90,
-    --   "efficiency": 0.85
-    -- }
-
-    -- Overall Score
-    overall_score DECIMAL(5,2),
-
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Indexes for performance
-CREATE INDEX idx_golden_set_schema ON evaluation.golden_set(schema_ex_id);
-CREATE INDEX idx_evaluation_session_schema ON evaluation.evaluation_session(schema_ex_id);
-CREATE INDEX idx_adaptive_rubric_session ON evaluation.adaptive_rubric(session_id);
-CREATE INDEX idx_rubric_judge_rubric ON evaluation.adaptive_rubric_judge_record(adaptive_rubric_id);
-```
-
-**Reading Copilot Tables (in `copilot` schema - read-only):**
-
-```sql
--- Example: Copilot's existing tables (you only read from these)
--- copilot.sessions
--- copilot.iterations
--- copilot.ai_responses
--- copilot.user_actions
--- (Exact schema depends on Copilot's implementation)
-
--- Your app reads but never writes to copilot schema
-```
+1. **Multi-Schema Support**: `@@schema("evaluation")` and `@@schema("copilot")`
+2. **Indexes**: `@@index([schemaExId])` for query performance
+3. **Relations**: `@relation(fields: [...], references: [...])` for type-safe queries
+4. **Default Values**: `@default(now())`, `@default(true)`, `@default("running")`
+5. **Field Mapping**: `@map("snake_case")` to match database naming conventions
+6. **JSON Fields**: `Json` type for flexible metrics storage
+7. **Decimal Precision**: `@db.Decimal(5, 2)` for scores and percentages
 
 ---
 

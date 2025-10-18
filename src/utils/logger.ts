@@ -1,3 +1,5 @@
+import { NODE_ENV } from "../config/env.ts";
+
 export const logger = {
   info: (message: string, ...args: unknown[]) => {
     console.log(`[INFO] ${new Date().toISOString()} - ${message}`, ...args);
@@ -9,7 +11,7 @@ export const logger = {
     console.warn(`[WARN] ${new Date().toISOString()} - ${message}`, ...args);
   },
   debug: (message: string, ...args: unknown[]) => {
-    if (process.env['NODE_ENV'] === 'development') {
+    if (NODE_ENV === 'development') {
       console.debug(
         `[DEBUG] ${new Date().toISOString()} - ${message}`,
         ...args

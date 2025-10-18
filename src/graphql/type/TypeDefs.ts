@@ -1,6 +1,8 @@
-import { gql } from 'apollo-server-express';
+export const typeDefs = `#graphql
+  # Scalar types
+  scalar DateTime
+  scalar JSON
 
-export const typeDefs = gql`
   # Types
   type GoldenSet {
     id: ID!

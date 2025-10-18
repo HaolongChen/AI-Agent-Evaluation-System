@@ -1,23 +1,25 @@
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware } from '@as-integrations/express5';
 import express from 'express';
-import { ApolloServer } from 'apollo-server-express';
-import { typeDefs } from './schema/typeDefs.js';
-import { resolvers } from './schema/resolvers.js';
-import type { Express as ExpressApplication } from 'express-serve-static-core';
+import cors from 'cors';
+import { typeDefs, resolvers } from './graphql/schema.ts';
+import { PORT } from './config/env.ts';
 
-const server: ApolloServer = new ApolloServer({
+const app = express();
+console.log('Starting server...');
+const server = new ApolloServer({
   typeDefs,
   resolvers,
   introspection: true,
 });
-await server.start();
-const app: ExpressApplication = express();
-const port: number = (process.env['PORT'] as unknown as number) || 4000;
-server.applyMiddleware({ app, path: '/api/graphql' });
 
-app.get('/health', (_, res) => {
+await server.start();
+
+app.use('/graphql', cors(), express.json(), expressMiddleware(server));
+app.get('/health', (_req: express.Request, res: express.Response) => {
   res.send('server is healthy');
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen({ port: PORT }, () => {
+  console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
 });

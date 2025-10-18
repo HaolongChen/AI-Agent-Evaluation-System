@@ -55,7 +55,7 @@ export class ExecutionService {
       inputTokens?: number;
       outputTokens?: number;
       contextPercentage?: number;
-      metadata?: any;
+      metadata?: object;
     }
   ) {
     return prisma.evaluation_session.update({

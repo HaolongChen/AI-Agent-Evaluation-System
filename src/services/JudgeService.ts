@@ -13,8 +13,8 @@ export class JudgeService {
         adaptive_rubric_id: BigInt(adaptiveRubricId),
         account_id: accountId,
         result,
-        confidence_score: confidenceScore,
-        notes,
+        confidence_score: confidenceScore ?? null,
+        notes: notes ?? null,
       },
     });
   }

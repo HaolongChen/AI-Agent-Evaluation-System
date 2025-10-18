@@ -16,14 +16,14 @@ export class GoldenSetService {
         },
       },
       update: {
-        description,
+        ...(description !== undefined && { description }),
         is_active: true,
       },
       create: {
         project_ex_id: projectExId,
         schema_ex_id: schemaExId,
         copilot_type: copilotType,
-        description,
+        ...(description !== undefined && { description }),
       },
     });
   }

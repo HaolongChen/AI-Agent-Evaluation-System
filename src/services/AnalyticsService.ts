@@ -13,7 +13,7 @@ export class AnalyticsService {
   async createEvaluationResult(
     sessionId: string,
     schemaExId: string,
-    metrics: any,
+    metrics: object,
     overallScore: number
   ) {
     return prisma.evaluation_result.create({
@@ -69,7 +69,7 @@ export class AnalyticsService {
 
       return {
         modelName,
-        metrics: modelSessions[0].result?.metrics || {},
+        metrics: modelSessions[0]?.result?.metrics || {},
         overallScore: avgScore,
         avgLatencyMs: Math.round(avgLatency),
         avgTokens: Math.round(avgTokens),

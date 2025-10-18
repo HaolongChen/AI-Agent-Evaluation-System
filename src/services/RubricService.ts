@@ -19,9 +19,9 @@ export class RubricService {
         schema_ex_id: r.schemaExId,
         session_id: BigInt(r.sessionId),
         content: r.content,
-        rubric_type: r.rubricType,
-        category: r.category,
-        expected_answer: r.expectedAnswer,
+        rubric_type: r.rubricType ?? null,
+        category: r.category ?? null,
+        expected_answer: r.expectedAnswer ?? null,
         review_status: REVIEW_STATUS.PENDING,
       })),
     });

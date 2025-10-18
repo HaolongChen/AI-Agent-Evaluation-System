@@ -1,10 +1,11 @@
 import { prisma } from '../config/prisma.ts';
+import type { copilotType } from '../utils/types.ts';
 
 export class GoldenSetService {
   async updateGoldenSetProject(
     projectExId: string,
     schemaExId: string,
-    copilotType: string,
+    copilotType: copilotType,
     description?: string
   ) {
     return prisma.golden_set.upsert({
@@ -28,7 +29,7 @@ export class GoldenSetService {
     });
   }
 
-  async getGoldenSetSchemas(copilotType?: string) {
+  async getGoldenSetSchemas(copilotType?: copilotType) {
     const results = await prisma.golden_set.findMany({
       where: {
         is_active: true,
@@ -43,7 +44,7 @@ export class GoldenSetService {
     return results.map((r) => r.schema_ex_id);
   }
 
-  async getGoldenSet(projectExId?: string, copilotType?: string) {
+  async getGoldenSet(projectExId?: string, copilotType?: copilotType) {
     return prisma.golden_set.findMany({
       where: {
         is_active: true,

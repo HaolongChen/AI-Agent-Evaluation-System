@@ -2,16 +2,17 @@ import { goldenSetService } from '../../services/GoldenSetService.ts';
 import { executionService } from '../../services/ExecutionService.ts';
 import { rubricService } from '../../services/RubricService.ts';
 import { judgeService } from '../../services/JudgeService.ts';
+import type { copilotType } from '../../utils/types.ts';
 
 export const resolvers = {
   Query: {
-    getGoldenSetSchemas: async (_: unknown, args: { copilotType?: string }) => {
+    getGoldenSetSchemas: async (_: unknown, args: { copilotType?: copilotType }) => {
       return goldenSetService.getGoldenSetSchemas(args.copilotType);
     },
 
     getGoldenSet: async (
       _: unknown,
-      args: { projectExId?: string; copilotType?: string }
+      args: { projectExId?: string; copilotType?: copilotType }
     ) => {
       return goldenSetService.getGoldenSet(args.projectExId, args.copilotType);
     },
@@ -22,7 +23,7 @@ export const resolvers = {
 
     getSessions: async (
       _: unknown,
-      args: { schemaExId?: string; copilotType?: string; modelName?: string }
+      args: { schemaExId?: string; copilotType?: copilotType; modelName?: string }
     ) => {
       return executionService.getSessions(args);
     },
@@ -86,7 +87,7 @@ export const resolvers = {
       args: {
         projectExId: string;
         schemaExId: string;
-        copilotType: string;
+        copilotType: copilotType;
         description?: string;
       }
     ) => {
@@ -94,7 +95,7 @@ export const resolvers = {
         args.projectExId,
         args.schemaExId,
         args.copilotType,
-        args.description
+        args.description ?? undefined
       );
     },
 
@@ -102,7 +103,7 @@ export const resolvers = {
       _: unknown,
       args: {
         schemaExId: string;
-        copilotType: string;
+        copilotType: copilotType;
         modelName: string;
       }
     ) => {

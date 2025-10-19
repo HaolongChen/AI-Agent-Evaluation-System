@@ -5,7 +5,7 @@ export class AnalyticsService {
   async getEvaluationResult(sessionId: string) {
     try {
       return prisma.evaluationResult.findUnique({
-        where: { sessionId: BigInt(sessionId) },
+        where: { sessionId: parseInt(sessionId) },
         include: {
           session: true,
         },
@@ -25,7 +25,7 @@ export class AnalyticsService {
     try {
       return prisma.evaluationResult.create({
         data: {
-          sessionId: BigInt(sessionId),
+          sessionId: parseInt(sessionId),
           schemaExId: schemaExId,
           metrics,
           overallScore: overallScore,

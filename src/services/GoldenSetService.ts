@@ -66,13 +66,15 @@ export class GoldenSetService {
     copilotType?: keyof typeof COPILOT_TYPES
   ) {
     try {
-      return prisma.goldenSet.findMany({
+      const results = await prisma.goldenSet.findMany({
         where: {
           isActive: true,
           ...(projectExId && { projectExId }),
           ...(copilotType && { copilotType: COPILOT_TYPES[copilotType] }),
         },
       });
+      logger.debug('Fetched golden set:', results);
+      return results;
     } catch (error) {
       logger.error('Error fetching golden set:', error);
       throw new Error('Failed to fetch golden set');

@@ -20,7 +20,7 @@ export class RubricService {
         data: rubrics.map((r) => ({
           projectExId: r.projectExId,
           schemaExId: r.schemaExId,
-          sessionId: BigInt(r.sessionId),
+          sessionId: parseInt(r.sessionId),
           content: r.content,
           rubricType: r.rubricType,
           category: r.category,
@@ -55,7 +55,7 @@ export class RubricService {
     try {
       return prisma.adaptiveRubric.findMany({
         where: {
-          sessionId: BigInt(sessionId),
+          sessionId: parseInt(sessionId),
           isActive: true,
         },
         include: {
@@ -96,7 +96,7 @@ export class RubricService {
   ) {
     try {
       return prisma.adaptiveRubric.update({
-        where: { id: BigInt(rubricId) },
+        where: { id: parseInt(rubricId) },
         data: {
           reviewStatus: reviewStatus,
           reviewedAt: new Date(),

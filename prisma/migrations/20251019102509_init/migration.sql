@@ -1,15 +1,8 @@
-/*
-  Warnings:
-
-  - You are about to drop the `adaptive_rubric` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `adaptive_rubric_judge_record` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `evaluation_result` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `evaluation_session` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `golden_set` table. If the table is not empty, all the data it contains will be lost.
-
-*/
 -- CreateEnum
-CREATE TYPE "SessionStatus" AS ENUM ('running', 'completed', 'failed');
+CREATE TYPE "CopilotType" AS ENUM ('dataModel', 'uiBuilder', 'actionflow', 'logAnalyzer', 'agentBuilder');
+
+-- CreateEnum
+CREATE TYPE "SessionStatus" AS ENUM ('running', 'completed', 'failed', 'pending');
 
 -- CreateEnum
 CREATE TYPE "EvaluationStatus" AS ENUM ('pending', 'in_progress', 'completed', 'failed');
@@ -18,38 +11,11 @@ CREATE TYPE "EvaluationStatus" AS ENUM ('pending', 'in_progress', 'completed', '
 CREATE TYPE "RubricReviewStatus" AS ENUM ('pending', 'approved', 'rejected', 'modified');
 
 -- CreateEnum
-CREATE TYPE "JudgmentResult" AS ENUM ('pass', 'fail');
-
--- CreateEnum
 CREATE TYPE "ExpectedAnswer" AS ENUM ('yes', 'no');
-
--- DropForeignKey
-ALTER TABLE "public"."adaptive_rubric" DROP CONSTRAINT "adaptive_rubric_session_id_fkey";
-
--- DropForeignKey
-ALTER TABLE "public"."adaptive_rubric_judge_record" DROP CONSTRAINT "adaptive_rubric_judge_record_adaptive_rubric_id_fkey";
-
--- DropForeignKey
-ALTER TABLE "public"."evaluation_result" DROP CONSTRAINT "evaluation_result_session_id_fkey";
-
--- DropTable
-DROP TABLE "public"."adaptive_rubric";
-
--- DropTable
-DROP TABLE "public"."adaptive_rubric_judge_record";
-
--- DropTable
-DROP TABLE "public"."evaluation_result";
-
--- DropTable
-DROP TABLE "public"."evaluation_session";
-
--- DropTable
-DROP TABLE "public"."golden_set";
 
 -- CreateTable
 CREATE TABLE "goldenSet" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "project_ex_id" TEXT NOT NULL,
     "schema_ex_id" TEXT NOT NULL,
     "copilot_type" "CopilotType" NOT NULL,
@@ -65,12 +31,12 @@ CREATE TABLE "goldenSet" (
 
 -- CreateTable
 CREATE TABLE "evaluationSession" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "project_ex_id" TEXT NOT NULL,
     "schema_ex_id" TEXT NOT NULL,
     "copilot_type" "CopilotType" NOT NULL,
     "model_name" TEXT NOT NULL,
-    "session_id_ref" BIGINT,
+    "session_id_ref" INTEGER,
     "started_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "completed_at" TIMESTAMPTZ(6),
     "status" "SessionStatus" NOT NULL DEFAULT 'running',
@@ -86,10 +52,10 @@ CREATE TABLE "evaluationSession" (
 
 -- CreateTable
 CREATE TABLE "adaptiveRubric" (
-    "id" BIGSERIAL NOT NULL,
+    "id" SERIAL NOT NULL,
     "project_ex_id" TEXT NOT NULL,
     "schema_ex_id" TEXT NOT NULL,
-    "session_id" BIGINT NOT NULL,
+    "session_id" INTEGER NOT NULL,
     "content" TEXT[],
     "rubric_type" TEXT[],
     "category" TEXT[],
@@ -105,8 +71,8 @@ CREATE TABLE "adaptiveRubric" (
 
 -- CreateTable
 CREATE TABLE "adaptiveRubricJudgeRecord" (
-    "id" BIGSERIAL NOT NULL,
-    "adaptive_rubric_id" BIGINT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "adaptive_rubric_id" INTEGER NOT NULL,
     "account_id" TEXT NOT NULL,
     "result" BOOLEAN NOT NULL,
     "confidence_score" DECIMAL(5,2)[],
@@ -118,8 +84,8 @@ CREATE TABLE "adaptiveRubricJudgeRecord" (
 
 -- CreateTable
 CREATE TABLE "evaluationResult" (
-    "id" BIGSERIAL NOT NULL,
-    "session_id" BIGINT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "session_id" INTEGER NOT NULL,
     "schema_ex_id" TEXT NOT NULL,
     "evaluation_status" "EvaluationStatus" NOT NULL DEFAULT 'pending',
     "metrics" JSONB NOT NULL,

@@ -29,7 +29,7 @@ export class ExecutionService {
   async getSession(id: string) {
     try {
       return prisma.evaluationSession.findUnique({
-        where: { id: BigInt(id) },
+        where: { id: parseInt(id) },
         include: {
           rubrics: true,
           result: true,
@@ -79,7 +79,7 @@ export class ExecutionService {
   ) {
     try {
       return prisma.evaluationSession.update({
-        where: { id: BigInt(sessionId) },
+        where: { id: parseInt(sessionId) },
         data: {
           status,
           ...(status === SESSION_STATUS.COMPLETED && {

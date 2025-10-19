@@ -12,7 +12,7 @@ export class JudgeService {
     try {
       return prisma.adaptiveRubricJudgeRecord.create({
         data: {
-          adaptiveRubricId: BigInt(adaptiveRubricId),
+          adaptiveRubricId: parseInt(adaptiveRubricId),
           accountId: accountId,
           result,
           confidenceScore: confidenceScore ?? [],
@@ -29,7 +29,7 @@ export class JudgeService {
     try {
       return prisma.adaptiveRubricJudgeRecord.findMany({
         where: {
-          adaptiveRubricId: BigInt(rubricId),
+          adaptiveRubricId: parseInt(rubricId),
         },
         orderBy: { judgedAt: 'desc' },
       });

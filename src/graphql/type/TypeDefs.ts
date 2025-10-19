@@ -154,6 +154,8 @@ export const typeDefs = `#graphql
       schemaExId: String!
       copilotType: CopilotType!
       description: String
+      promptTemplate: String!
+      idealResponse: JSON!
     ): GoldenSet!
 
     # TODO: add version control for golden set

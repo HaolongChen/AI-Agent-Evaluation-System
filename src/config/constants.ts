@@ -1,9 +1,9 @@
 export const COPILOT_TYPES = {
-  DATA_MODEL_BUILDER: 'data_model_builder',
-  UI_BUILDER: 'ui_builder',
-  ACTIONFLOW_BUILDER: 'actionflow_builder',
-  LOG_ANALYZER: 'log_analyzer',
-  AGENT_BUILDER: 'agent_builder',
+  DATA_MODEL_BUILDER: 'dataModel',
+  UI_BUILDER: 'uiBuilder',
+  ACTIONFLOW_BUILDER: 'actionflow',
+  LOG_ANALYZER: 'logAnalyzer',
+  AGENT_BUILDER: 'agentBuilder',
 } as const;
 
 export const SESSION_STATUS = {

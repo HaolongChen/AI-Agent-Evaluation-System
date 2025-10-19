@@ -88,26 +88,32 @@ export const resolvers = {
         projectExId: string;
         schemaExId: string;
         copilotType: copilotType;
-        description?: string;
+        description: string;
+        promptTemplate: string;
+        idealResponse: object;
       }
     ) => {
       return goldenSetService.updateGoldenSetProject(
         args.projectExId,
         args.schemaExId,
         args.copilotType,
-        args.description ?? undefined
+        args.description,
+        args.promptTemplate,
+        args.idealResponse
       );
     },
 
     execAiCopilotByTypeAndModel: async (
       _: unknown,
       args: {
+        projectExId: string;
         schemaExId: string;
         copilotType: copilotType;
         modelName: string;
       }
     ) => {
       return executionService.createEvaluationSession(
+        args.projectExId,
         args.schemaExId,
         args.copilotType,
         args.modelName

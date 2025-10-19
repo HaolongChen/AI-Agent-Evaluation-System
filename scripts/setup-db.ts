@@ -1,5 +1,5 @@
-import { prisma } from '../src/config/prisma';
-import { logger } from '../src/utils/logger';
+import { prisma } from '../src/config/prisma.ts';
+import { logger } from '../src/utils/logger.ts';
 
 async function setupDatabase() {
   try {

@@ -1,5 +1,6 @@
-import { prisma } from '../src/config/prisma';
-import { logger } from '../src/utils/logger';
+import { prisma } from '../src/config/prisma.ts';
+import { logger } from '../src/utils/logger.ts';
+import { CopilotType } from '../src/generated/prisma/index.js'; // Import the enum
 
 async function seedGoldenSet() {
   try {
@@ -8,26 +9,30 @@ async function seedGoldenSet() {
     // Example seed data
     const goldenSetData = [
       {
-        project_ex_id: 'example-project-1',
-        schema_ex_id: 'example-schema-1',
-        copilot_type: 'data_model_builder',
+        projectExId: 'example-project-1',
+        schemaExId: 'example-schema-1',
+        copilotType: CopilotType.dataModel, // Use enum
         description: 'Example data model for e-commerce',
+        promptTemplate: 'Create a data model for an e-commerce system',
+        idealResponse: { entities: ['User', 'Product', 'Order'] },
       },
       {
-        project_ex_id: 'example-project-2',
-        schema_ex_id: 'example-schema-2',
-        copilot_type: 'ui_builder',
+        projectExId: 'example-project-2',
+        schemaExId: 'example-schema-2',
+        copilotType: CopilotType.uiBuilder, // Use enum
         description: 'Example UI for dashboard',
+        promptTemplate: 'Create a dashboard UI with charts and tables',
+        idealResponse: { components: ['Chart', 'Table', 'Card'] },
       },
     ];
 
     for (const data of goldenSetData) {
       await prisma.golden_set.upsert({
         where: {
-          project_ex_id_schema_ex_id_copilot_type: {
-            project_ex_id: data.project_ex_id,
-            schema_ex_id: data.schema_ex_id,
-            copilot_type: data.copilot_type,
+          projectExId_schemaExId_copilotType: {
+            projectExId: data.projectExId,
+            schemaExId: data.schemaExId,
+            copilotType: data.copilotType,
           },
         },
         update: {},

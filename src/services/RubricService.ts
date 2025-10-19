@@ -15,14 +15,14 @@ export class RubricService {
   ) {
     return prisma.adaptive_rubric.createMany({
       data: rubrics.map((r) => ({
-        project_ex_id: r.projectExId,
-        schema_ex_id: r.schemaExId,
-        session_id: BigInt(r.sessionId),
+        projectExId: r.projectExId,
+        schemaExId: r.schemaExId,
+        sessionId: BigInt(r.sessionId),
         content: r.content,
-        rubric_type: r.rubricType ?? null,
+        rubricType: r.rubricType ?? null,
         category: r.category ?? null,
-        expected_answer: r.expectedAnswer ?? null,
-        review_status: REVIEW_STATUS.PENDING,
+        expectedAnswer: r.expectedAnswer ?? null,
+        reviewStatus: REVIEW_STATUS.PENDING,
       })),
     });
   }
@@ -30,11 +30,11 @@ export class RubricService {
   async getRubricsBySchemaExId(schemaExId: string) {
     return prisma.adaptive_rubric.findMany({
       where: {
-        schema_ex_id: schemaExId,
-        is_active: true,
+        schemaExId: schemaExId,
+        isActive: true,
       },
       include: {
-        judge_records: true,
+        judgeRecords: true,
       },
     });
   }
@@ -42,11 +42,11 @@ export class RubricService {
   async getRubricsBySession(sessionId: string) {
     return prisma.adaptive_rubric.findMany({
       where: {
-        session_id: BigInt(sessionId),
-        is_active: true,
+        sessionId: BigInt(sessionId),
+        isActive: true,
       },
       include: {
-        judge_records: true,
+        judgeRecords: true,
       },
     });
   }
@@ -54,13 +54,13 @@ export class RubricService {
   async getRubricsForReview(reviewStatus?: string) {
     return prisma.adaptive_rubric.findMany({
       where: {
-        is_active: true,
-        ...(reviewStatus && { review_status: reviewStatus }),
+        isActive: true,
+        ...(reviewStatus && { reviewStatus: reviewStatus }),
       },
       include: {
-        judge_records: true,
+        judgeRecords: true,
       },
-      orderBy: { generated_at: 'desc' },
+      orderBy: { generatedAt: 'desc' },
     });
   }
 
@@ -73,9 +73,9 @@ export class RubricService {
     return prisma.adaptive_rubric.update({
       where: { id: BigInt(rubricId) },
       data: {
-        review_status: reviewStatus,
-        reviewed_at: new Date(),
-        reviewed_by: reviewerAccountId,
+        reviewStatus: reviewStatus,
+        reviewedAt: new Date(),
+        reviewedBy: reviewerAccountId,
         ...(modifiedContent && { content: modifiedContent }),
       },
     });

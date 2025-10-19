@@ -6,25 +6,29 @@ export class GoldenSetService {
     projectExId: string,
     schemaExId: string,
     copilotType: copilotType,
-    description?: string
+    promptTemplate: string,
+    idealResponse: object,
+    description: string
   ) {
     return prisma.golden_set.upsert({
       where: {
-        project_ex_id_schema_ex_id_copilot_type: {
-          project_ex_id: projectExId,
-          schema_ex_id: schemaExId,
-          copilot_type: copilotType,
+        projectExId_schemaExId_copilotType: {
+          projectExId,
+          schemaExId,
+          copilotType,
         },
       },
       update: {
-        ...(description !== undefined && { description }),
-        is_active: true,
+        description,
+        isActive: true,
       },
       create: {
-        project_ex_id: projectExId,
-        schema_ex_id: schemaExId,
-        copilot_type: copilotType,
-        ...(description !== undefined && { description }),
+        projectExId,
+        schemaExId,
+        copilotType,
+        description,
+        promptTemplate,
+        idealResponse,
       },
     });
   }
@@ -32,24 +36,24 @@ export class GoldenSetService {
   async getGoldenSetSchemas(copilotType?: copilotType) {
     const results = await prisma.golden_set.findMany({
       where: {
-        is_active: true,
-        ...(copilotType && { copilot_type: copilotType }),
+        isActive: true,
+        ...(copilotType && { copilotType }),
       },
       select: {
-        schema_ex_id: true,
+        schemaExId: true,
       },
-      distinct: ['schema_ex_id'],
+      distinct: ['schemaExId'],
     });
 
-    return results.map((r) => r.schema_ex_id);
+    return results.map((r) => r.schemaExId);
   }
 
   async getGoldenSet(projectExId?: string, copilotType?: copilotType) {
     return prisma.golden_set.findMany({
       where: {
-        is_active: true,
-        ...(projectExId && { project_ex_id: projectExId }),
-        ...(copilotType && { copilot_type: copilotType }),
+        isActive: true,
+        ...(projectExId && { projectExId }),
+        ...(copilotType && { copilotType }),
       },
     });
   }

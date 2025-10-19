@@ -3,7 +3,7 @@ import { prisma } from '../config/prisma.ts';
 export class AnalyticsService {
   async getEvaluationResult(sessionId: string) {
     return prisma.evaluation_result.findUnique({
-      where: { session_id: BigInt(sessionId) },
+      where: { sessionId: BigInt(sessionId) },
       include: {
         session: true,
       },
@@ -18,10 +18,10 @@ export class AnalyticsService {
   ) {
     return prisma.evaluation_result.create({
       data: {
-        session_id: BigInt(sessionId),
-        schema_ex_id: schemaExId,
+        sessionId: BigInt(sessionId),
+        schemaExId: schemaExId,
         metrics,
-        overall_score: overallScore,
+        overallScore: overallScore,
       },
     });
   }
@@ -29,8 +29,8 @@ export class AnalyticsService {
   async compareModels(schemaExId: string, modelNames: string[]) {
     const sessions = await prisma.evaluation_session.findMany({
       where: {
-        schema_ex_id: schemaExId,
-        model_name: { in: modelNames },
+        schemaExId: schemaExId,
+        modelName: { in: modelNames },
         status: 'completed',
       },
       include: {
@@ -40,7 +40,7 @@ export class AnalyticsService {
 
     // Group by model and calculate aggregated metrics
     const modelPerformance = modelNames.map((modelName) => {
-      const modelSessions = sessions.filter((s) => s.model_name === modelName);
+      const modelSessions = sessions.filter((s) => s.modelName === modelName);
 
       if (modelSessions.length === 0) {
         return {
@@ -54,16 +54,16 @@ export class AnalyticsService {
       }
 
       const avgLatency =
-        modelSessions.reduce((sum, s) => sum + (s.total_latency_ms || 0), 0) /
+        modelSessions.reduce((sum, s) => sum + (s.totalLatencyMs || 0), 0) /
         modelSessions.length;
       const avgTokens =
         modelSessions.reduce(
-          (sum, s) => sum + (s.input_tokens || 0) + (s.output_tokens || 0),
+          (sum, s) => sum + (s.inputTokens || 0) + (s.outputTokens || 0),
           0
         ) / modelSessions.length;
       const avgScore =
         modelSessions.reduce(
-          (sum, s) => sum + (s.result ? Number(s.result.overall_score) : 0),
+          (sum, s) => sum + (s.result ? Number(s.result.overallScore) : 0),
           0
         ) / modelSessions.length;
 
@@ -92,10 +92,10 @@ export class AnalyticsService {
     const sessions = await prisma.evaluation_session.findMany({
       where: {
         status: 'completed',
-        ...(filters.copilotType && { copilot_type: filters.copilotType }),
-        ...(filters.modelName && { model_name: filters.modelName }),
-        ...(filters.startDate && { started_at: { gte: filters.startDate } }),
-        ...(filters.endDate && { started_at: { lte: filters.endDate } }),
+        ...(filters.copilotType && { copilotType: filters.copilotType as 'dataModel' | 'uiBuilder' | 'actionflow' | 'logAnalyzer' | 'agentBuilder' }),
+        ...(filters.modelName && { modelName: filters.modelName }),
+        ...(filters.startDate && { startedAt: { gte: filters.startDate } }),
+        ...(filters.endDate && { startedAt: { lte: filters.endDate } }),
       },
       include: {
         result: true,
@@ -105,15 +105,15 @@ export class AnalyticsService {
     const totalSessions = sessions.length;
     const avgOverallScore =
       sessions.reduce(
-        (sum, s) => sum + (s.result ? Number(s.result.overall_score) : 0),
+        (sum, s) => sum + (s.result ? Number(s.result.overallScore) : 0),
         0
       ) / totalSessions;
     const avgLatencyMs =
-      sessions.reduce((sum, s) => sum + (s.total_latency_ms || 0), 0) /
+      sessions.reduce((sum, s) => sum + (s.totalLatencyMs || 0), 0) /
       totalSessions;
     const avgTokenUsage =
       sessions.reduce(
-        (sum, s) => sum + (s.input_tokens || 0) + (s.output_tokens || 0),
+        (sum, s) => sum + (s.inputTokens || 0) + (s.outputTokens || 0),
         0
       ) / totalSessions;
 

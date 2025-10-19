@@ -10,6 +10,8 @@ export const typeDefs = `#graphql
     schemaExId: String!
     copilotType: CopilotType!
     description: String
+    promptTemplate: String!
+    idealResponse: JSON!
     createdAt: DateTime!
     createdBy: String
     isActive: Boolean!
@@ -25,6 +27,7 @@ export const typeDefs = `#graphql
 
   type EvaluationSession {
     id: ID!
+    projectExId: String!
     schemaExId: String!
     copilotType: CopilotType!
     modelName: String!
@@ -38,6 +41,7 @@ export const typeDefs = `#graphql
     roundtripCount: Int
     inputTokens: Int
     outputTokens: Int
+    totalTokens: Int
     contextPercentage: Float
 
     # Relations

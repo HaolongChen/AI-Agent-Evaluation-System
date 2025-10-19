@@ -437,6 +437,8 @@ type GoldenSet {
   schemaExId: String!
   copilotType: CopilotType!
   description: String
+  promptTemplate: String!
+  idealResponse: JSON!
   createdAt: DateTime!
   createdBy: String
   isActive: Boolean!
@@ -452,6 +454,7 @@ enum CopilotType {
 
 type EvaluationSession {
   id: ID!
+  projectExId: String!
   schemaExId: String!
   copilotType: CopilotType!
   modelName: String!

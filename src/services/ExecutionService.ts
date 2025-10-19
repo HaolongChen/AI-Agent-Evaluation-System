@@ -1,17 +1,20 @@
 import { prisma } from '../config/prisma.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
+import type { CopilotType } from '../../generated/prisma/index.js';
 
 export class ExecutionService {
   async createEvaluationSession(
+    projectExId: string,
     schemaExId: string,
-    copilotType: string,
+    copilotType: CopilotType,
     modelName: string
   ) {
     return prisma.evaluation_session.create({
       data: {
-        schema_ex_id: schemaExId,
-        copilot_type: copilotType,
-        model_name: modelName,
+        projectExId: projectExId,
+        schemaExId: schemaExId,
+        copilotType: copilotType,
+        modelName: modelName,
         status: SESSION_STATUS.PENDING,
       },
     });
@@ -29,20 +32,20 @@ export class ExecutionService {
 
   async getSessions(filters: {
     schemaExId?: string;
-    copilotType?: string;
+    copilotType?: CopilotType;
     modelName?: string;
   }) {
     return prisma.evaluation_session.findMany({
       where: {
-        ...(filters.schemaExId && { schema_ex_id: filters.schemaExId }),
-        ...(filters.copilotType && { copilot_type: filters.copilotType }),
-        ...(filters.modelName && { model_name: filters.modelName }),
+        ...(filters.schemaExId && { schemaExId: filters.schemaExId }),
+        ...(filters.copilotType && { copilotType: filters.copilotType }),
+        ...(filters.modelName && { modelName: filters.modelName }),
       },
       include: {
         rubrics: true,
         result: true,
       },
-      orderBy: { started_at: 'desc' },
+      orderBy: { startedAt: 'desc' },
     });
   }
 
@@ -63,14 +66,14 @@ export class ExecutionService {
       data: {
         status,
         ...(status === SESSION_STATUS.COMPLETED && {
-          completed_at: new Date(),
+          completedAt: new Date(),
         }),
         ...(metrics && {
-          total_latency_ms: metrics.totalLatencyMs,
-          roundtrip_count: metrics.roundtripCount,
-          input_tokens: metrics.inputTokens,
-          output_tokens: metrics.outputTokens,
-          context_percentage: metrics.contextPercentage,
+          totalLatencyMs: metrics.totalLatencyMs,
+          roundtripCount: metrics.roundtripCount,
+          inputTokens: metrics.inputTokens,
+          outputTokens: metrics.outputTokens,
+          contextPercentage: metrics.contextPercentage,
           metadata: metrics.metadata,
         }),
       },

@@ -12,6 +12,7 @@ export class GoldenSetService {
     idealResponse: object
   ) {
     try {
+      logger.debug(typeof idealResponse);
       return prisma.goldenSet.upsert({
         where: {
           projectExId_schemaExId_copilotType: {

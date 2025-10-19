@@ -24,7 +24,9 @@ export const goldenResolver = {
           return {
             ...gs,
             copilotType: Object.keys(COPILOT_TYPES).find(
-              (key) => COPILOT_TYPES[key as keyof typeof COPILOT_TYPES] === gs.copilotType
+              (key) =>
+                COPILOT_TYPES[key as keyof typeof COPILOT_TYPES] ===
+                gs.copilotType
             ) as keyof typeof COPILOT_TYPES,
           };
         });
@@ -48,14 +50,29 @@ export const goldenResolver = {
         idealResponse: object;
       }
     ) => {
-      return goldenSetService.updateGoldenSetProject(
-        args.projectExId,
-        args.schemaExId,
-        args.copilotType,
-        args.description,
-        args.promptTemplate,
-        args.idealResponse
-      );
+      try {
+        const result = await goldenSetService.updateGoldenSetProject(
+          args.projectExId,
+          args.schemaExId,
+          args.copilotType,
+          args.description,
+          args.promptTemplate,
+          args.idealResponse
+        );
+        const newResult = {
+          ...result,
+          copilotType: Object.keys(COPILOT_TYPES).find(
+            (key) =>
+              COPILOT_TYPES[key as keyof typeof COPILOT_TYPES] ===
+              result.copilotType
+          ) as keyof typeof COPILOT_TYPES,
+        };
+        logger.debug('Updated golden set project:', newResult);
+        return newResult;
+      } catch (error) {
+        logger.error('Error updating golden set project:', error);
+        throw new Error('Failed to update golden set project');
+      }
     },
   },
 };

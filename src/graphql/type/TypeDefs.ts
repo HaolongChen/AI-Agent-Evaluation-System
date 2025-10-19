@@ -50,10 +50,10 @@ export const typeDefs = `#graphql
   }
 
   enum SessionStatus {
+    PENDING
     RUNNING
     COMPLETED
     FAILED
-    PENDING
   }
 
   enum ExpectedAnswer {
@@ -80,10 +80,10 @@ export const typeDefs = `#graphql
     projectExId: String!
     schemaExId: String!
     sessionId: Int!
-    content: String[!]!
-    rubricType: String[!]!
-    category: String[!]!
-    expectedAnswer: ExpectedAnswer[!]!
+    content: [String!]!
+    rubricType: [String!]!
+    category: [String!]!
+    expectedAnswer: [ExpectedAnswer!]!
     reviewStatus: RubricReviewStatus!
     isActive: Boolean!
     generatedAt: DateTime!
@@ -99,7 +99,7 @@ export const typeDefs = `#graphql
     adaptiveRubricId: Int!
     accountId: String!
     result: Boolean!
-    confidenceScore: Float[!]!
+    confidenceScore: [Float!]!
     notes: String
     judgedAt: DateTime!
   }
@@ -135,15 +135,15 @@ export const typeDefs = `#graphql
 
     # Results & Analytics
     getEvaluationResult(sessionId: Int!): EvaluationResult
-    // compareModels(schemaExId: String!, modelNames: [String!]!): ModelComparison!
+    compareModels(schemaExId: String!, modelNames: [String!]!): ModelComparison!
 
     # Dashboard Metrics
-    // getDashboardMetrics(
-    //   copilotType: CopilotType
-    //   modelName: String
-    //   startDate: DateTime
-    //   endDate: DateTime
-    // ): DashboardMetrics!
+    getDashboardMetrics(
+      copilotType: CopilotType
+      modelName: String
+      startDate: DateTime
+      endDate: DateTime
+    ): DashboardMetrics!
   }
 
   # Mutations
@@ -156,7 +156,7 @@ export const typeDefs = `#graphql
       description: String
     ): GoldenSet!
 
-    // TODO: add version control for golden set
+    # TODO: add version control for golden set
 
     # Execution
     execAiCopilotByTypeAndModel(
@@ -184,7 +184,7 @@ export const typeDefs = `#graphql
       adaptiveRubricId: Int!
       accountId: String!
       result: Boolean!
-      confidenceScore: Float[!]!
+      confidenceScore: [Float!]!
       notes: String
     ): JudgeRecord!
   }

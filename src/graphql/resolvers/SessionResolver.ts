@@ -19,22 +19,5 @@ export const sessionResolver = {
     },
   },
 
-  Mutation: {
-    execAiCopilotByTypeAndModel: async (
-      _: unknown,
-      args: {
-        projectExId: string;
-        schemaExId: string;
-        copilotType: copilotType;
-        modelName: string;
-      }
-    ) => {
-      return executionService.createEvaluationSession(
-        args.projectExId,
-        args.schemaExId,
-        args.copilotType,
-        args.modelName
-      );
-    },
-  },
+  Mutation: {},
 };

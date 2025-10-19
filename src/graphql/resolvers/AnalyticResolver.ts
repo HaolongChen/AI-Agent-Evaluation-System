@@ -1,3 +1,6 @@
+import { executionService } from "../../services/ExecutionService.ts";
+import type { copilotType } from "../../utils/types.ts";
+
 export const analyticResolver = {
   Query: {
     getEvaluationResult: async (
@@ -10,27 +13,44 @@ export const analyticResolver = {
       return null;
     },
 
-    // compareModels: async (
-    //   _: unknown,
-    //   args: { schemaExId: string; modelNames: string[] }
-    // ) => {
-    //   // TODO: Implement model comparison
-    //   return { schemaExId: args.schemaExId, models: [] };
-    // },
+    compareModels: async (
+      _: unknown,
+      args: { schemaExId: string; modelNames: string[] }
+    ) => {
+      // TODO: Implement model comparison
+      return { schemaExId: args.schemaExId, models: [] };
+    },
 
-    // // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // getDashboardMetrics: async (_: unknown, _args: Record<string, unknown>) => {
-    //   // TODO: Implement dashboard metrics
-    //   return {
-    //     totalSessions: 0,
-    //     avgOverallScore: 0,
-    //     avgLatencyMs: 0,
-    //     avgTokenUsage: 0,
-    //     passRateByCategory: [],
-    //     modelPerformanceTrend: [],
-    //   };
-    // },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    getDashboardMetrics: async (_: unknown, _args: Record<string, unknown>) => {
+      // TODO: Implement dashboard metrics
+      return {
+        totalSessions: 0,
+        avgOverallScore: 0,
+        avgLatencyMs: 0,
+        avgTokenUsage: 0,
+        passRateByCategory: [],
+        modelPerformanceTrend: [],
+      };
+    },
   },
 
-  Mutation: {},
+  Mutation: {
+    execAiCopilotByTypeAndModel: async (
+      _: unknown,
+      args: {
+        projectExId: string;
+        schemaExId: string;
+        copilotType: copilotType;
+        modelName: string;
+      }
+    ) => {
+      return executionService.createEvaluationSession(
+        args.projectExId,
+        args.schemaExId,
+        args.copilotType,
+        args.modelName
+      );
+    },
+  },
 };

@@ -16,7 +16,13 @@ const server = new ApolloServer({
 
 await server.start();
 
-app.use('/graphql', cors(), express.json(), expressMiddleware(server));
+app.use(
+  '/graphql',
+  cors(),
+  express.json(),
+  express.urlencoded({ extended: true }),
+  expressMiddleware(server)
+);
 app.get('/health', (_req: express.Request, res: express.Response) => {
   res.send('server is healthy');
 });

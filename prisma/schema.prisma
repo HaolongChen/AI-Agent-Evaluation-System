@@ -127,7 +127,7 @@ model adaptiveRubricJudgeRecord {
   adaptiveRubricId BigInt   @map("adaptive_rubric_id")
   accountId        String   @map("account_id")
   result           Boolean // true = pass, false = fail
-  confidenceScore  Int?     @map("confidence_score") // 1-5 scale
+  confidenceScore  Decimal? @map("confidence_score") @db.Decimal(5, 2) // 0.00 - 1.00 scale
   notes            String?
   judgedAt         DateTime @default(now()) @map("judged_at") @db.Timestamptz(6)
 

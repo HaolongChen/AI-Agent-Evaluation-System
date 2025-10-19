@@ -98,7 +98,7 @@ export const typeDefs = `#graphql
     adaptiveRubricId: Int!
     accountId: String!
     result: Boolean!
-    confidenceScore: Int
+    confidenceScore: Float
     notes: String
     judgedAt: DateTime!
   }

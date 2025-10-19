@@ -1,13 +1,19 @@
 import { prisma } from '../config/prisma.ts';
+import { logger } from '../utils/logger.ts';
 
 export class AnalyticsService {
   async getEvaluationResult(sessionId: string) {
-    return prisma.evaluationResult.findUnique({
-      where: { sessionId: BigInt(sessionId) },
-      include: {
-        session: true,
-      },
-    });
+    try {
+      return prisma.evaluationResult.findUnique({
+        where: { sessionId: BigInt(sessionId) },
+        include: {
+          session: true,
+        },
+      });
+    } catch (error) {
+      logger.error('Error fetching evaluation result:', error);
+      throw new Error('Failed to fetch evaluation result');
+    }
   }
 
   async createEvaluationResult(
@@ -16,71 +22,81 @@ export class AnalyticsService {
     metrics: object,
     overallScore: number
   ) {
-    return prisma.evaluationResult.create({
-      data: {
-        sessionId: BigInt(sessionId),
-        schemaExId: schemaExId,
-        metrics,
-        overallScore: overallScore,
-      },
-    });
+    try {
+      return prisma.evaluationResult.create({
+        data: {
+          sessionId: BigInt(sessionId),
+          schemaExId: schemaExId,
+          metrics,
+          overallScore: overallScore,
+        },
+      });
+    } catch (error) {
+      logger.error('Error creating evaluation result:', error);
+      throw new Error('Failed to create evaluation result');
+    }
   }
 
   async compareModels(schemaExId: string, modelNames: string[]) {
-    const sessions = await prisma.evaluationSession.findMany({
-      where: {
-        schemaExId: schemaExId,
-        modelName: { in: modelNames },
-        status: 'completed',
-      },
-      include: {
-        result: true,
-      },
-    });
+    try {
+      const sessions = await prisma.evaluationSession.findMany({
+        where: {
+          schemaExId: schemaExId,
+          modelName: { in: modelNames },
+          status: 'completed',
+        },
+        include: {
+          result: true,
+        },
+      });
 
-    // Group by model and calculate aggregated metrics
-    const modelPerformance = modelNames.map((modelName) => {
-      const modelSessions = sessions.filter((s) => s.modelName === modelName);
+      // Group by model and calculate aggregated metrics
+      const modelPerformance = modelNames.map((modelName) => {
+        const modelSessions = sessions.filter((s) => s.modelName === modelName);
 
-      if (modelSessions.length === 0) {
+        if (modelSessions.length === 0) {
+          return {
+            modelName,
+            metrics: {},
+            overallScore: 0,
+            avgLatencyMs: 0,
+            avgTokens: 0,
+            passRate: 0,
+          };
+        }
+
+        const avgLatency =
+          modelSessions.reduce((sum, s) => sum + (s.totalLatencyMs || 0), 0) /
+          modelSessions.length;
+        const avgTokens =
+          modelSessions.reduce(
+            (sum, s) => sum + (s.inputTokens || 0) + (s.outputTokens || 0),
+            0
+          ) / modelSessions.length;
+        const avgScore =
+          modelSessions.reduce(
+            (sum, s) => sum + (s.result ? Number(s.result.overallScore) : 0),
+            0
+          ) / modelSessions.length;
+
         return {
           modelName,
-          metrics: {},
-          overallScore: 0,
-          avgLatencyMs: 0,
-          avgTokens: 0,
-          passRate: 0,
+          metrics: modelSessions[0]?.result?.metrics || {},
+          overallScore: avgScore,
+          avgLatencyMs: Math.round(avgLatency),
+          avgTokens: Math.round(avgTokens),
+          passRate: avgScore / 100, // Assuming score is 0-100
         };
-      }
-
-      const avgLatency =
-        modelSessions.reduce((sum, s) => sum + (s.totalLatencyMs || 0), 0) /
-        modelSessions.length;
-      const avgTokens =
-        modelSessions.reduce(
-          (sum, s) => sum + (s.inputTokens || 0) + (s.outputTokens || 0),
-          0
-        ) / modelSessions.length;
-      const avgScore =
-        modelSessions.reduce(
-          (sum, s) => sum + (s.result ? Number(s.result.overallScore) : 0),
-          0
-        ) / modelSessions.length;
+      });
 
       return {
-        modelName,
-        metrics: modelSessions[0]?.result?.metrics || {},
-        overallScore: avgScore,
-        avgLatencyMs: Math.round(avgLatency),
-        avgTokens: Math.round(avgTokens),
-        passRate: avgScore / 100, // Assuming score is 0-100
+        schemaExId,
+        models: modelPerformance,
       };
-    });
-
-    return {
-      schemaExId,
-      models: modelPerformance,
-    };
+    } catch (error) {
+      logger.error('Error comparing models:', error);
+      throw new Error('Failed to compare models');
+    }
   }
 
   async getDashboardMetrics(filters: {
@@ -89,49 +105,54 @@ export class AnalyticsService {
     startDate?: Date;
     endDate?: Date;
   }) {
-    const sessions = await prisma.evaluationSession.findMany({
-      where: {
-        status: 'completed',
-        ...(filters.copilotType && {
-          copilotType: filters.copilotType as
-            | 'dataModel'
-            | 'uiBuilder'
-            | 'actionflow'
-            | 'logAnalyzer'
-            | 'agentBuilder',
-        }),
-        ...(filters.modelName && { modelName: filters.modelName }),
-        ...(filters.startDate && { startedAt: { gte: filters.startDate } }),
-        ...(filters.endDate && { startedAt: { lte: filters.endDate } }),
-      },
-      include: {
-        result: true,
-      },
-    });
+    try {
+      const sessions = await prisma.evaluationSession.findMany({
+        where: {
+          status: 'completed',
+          ...(filters.copilotType && {
+            copilotType: filters.copilotType as
+              | 'dataModel'
+              | 'uiBuilder'
+              | 'actionflow'
+              | 'logAnalyzer'
+              | 'agentBuilder',
+          }),
+          ...(filters.modelName && { modelName: filters.modelName }),
+          ...(filters.startDate && { startedAt: { gte: filters.startDate } }),
+          ...(filters.endDate && { startedAt: { lte: filters.endDate } }),
+        },
+        include: {
+          result: true,
+        },
+      });
 
-    const totalSessions = sessions.length;
-    const avgOverallScore =
-      sessions.reduce(
-        (sum, s) => sum + (s.result ? Number(s.result.overallScore) : 0),
-        0
-      ) / totalSessions;
-    const avgLatencyMs =
-      sessions.reduce((sum, s) => sum + (s.totalLatencyMs || 0), 0) /
-      totalSessions;
-    const avgTokenUsage =
-      sessions.reduce(
-        (sum, s) => sum + (s.inputTokens || 0) + (s.outputTokens || 0),
-        0
-      ) / totalSessions;
+      const totalSessions = sessions.length;
+      const avgOverallScore =
+        sessions.reduce(
+          (sum, s) => sum + (s.result ? Number(s.result.overallScore) : 0),
+          0
+        ) / totalSessions;
+      const avgLatencyMs =
+        sessions.reduce((sum, s) => sum + (s.totalLatencyMs || 0), 0) /
+        totalSessions;
+      const avgTokenUsage =
+        sessions.reduce(
+          (sum, s) => sum + (s.inputTokens || 0) + (s.outputTokens || 0),
+          0
+        ) / totalSessions;
 
-    return {
-      totalSessions,
-      avgOverallScore: Math.round(avgOverallScore * 100) / 100,
-      avgLatencyMs: Math.round(avgLatencyMs),
-      avgTokenUsage: Math.round(avgTokenUsage),
-      passRateByCategory: [], // TODO: Implement category-based analysis
-      modelPerformanceTrend: [], // TODO: Implement trend analysis
-    };
+      return {
+        totalSessions,
+        avgOverallScore: Math.round(avgOverallScore * 100) / 100,
+        avgLatencyMs: Math.round(avgLatencyMs),
+        avgTokenUsage: Math.round(avgTokenUsage),
+        passRateByCategory: [], // TODO: Implement category-based analysis
+        modelPerformanceTrend: [], // TODO: Implement trend analysis
+      };
+    } catch (error) {
+      logger.error('Error fetching dashboard metrics:', error);
+      throw new Error('Failed to fetch dashboard metrics');
+    }
   }
 }
 

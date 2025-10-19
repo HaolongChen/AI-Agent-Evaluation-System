@@ -1,18 +1,18 @@
 import { goldenSetService } from '../../services/GoldenSetService.ts';
-import type { copilotType } from '../../utils/types.ts';
+import { COPILOT_TYPES } from '../../config/constants.ts';
 
 export const goldenResolver = {
   Query: {
     getGoldenSetSchemas: async (
       _: unknown,
-      args: { copilotType?: copilotType }
+      args: { copilotType?: keyof typeof COPILOT_TYPES }
     ) => {
       return goldenSetService.getGoldenSetSchemas(args.copilotType);
     },
 
     getGoldenSet: async (
       _: unknown,
-      args: { projectExId?: string; copilotType?: copilotType }
+      args: { projectExId?: string; copilotType?: keyof typeof COPILOT_TYPES }
     ) => {
       return goldenSetService.getGoldenSet(args.projectExId, args.copilotType);
     },
@@ -24,7 +24,7 @@ export const goldenResolver = {
       args: {
         projectExId: string;
         schemaExId: string;
-        copilotType: copilotType;
+        copilotType: keyof typeof COPILOT_TYPES;
         description: string;
         promptTemplate: string;
         idealResponse: object;

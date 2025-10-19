@@ -4,9 +4,10 @@ import express from 'express';
 import cors from 'cors';
 import { typeDefs, resolvers } from './graphql/schema.ts';
 import { PORT } from './config/env.ts';
+import { logger } from './utils/logger.ts';
 
 const app = express();
-console.log('Starting server...');
+logger.info('Starting server...');
 const server = new ApolloServer({
   typeDefs,
   resolvers,
@@ -21,5 +22,5 @@ app.get('/health', (_req: express.Request, res: express.Response) => {
 });
 
 app.listen({ port: PORT }, () => {
-  console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
+  logger.info(`🚀 Server ready at http://localhost:${PORT}/graphql`);
 });

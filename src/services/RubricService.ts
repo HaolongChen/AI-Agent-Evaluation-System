@@ -1,6 +1,7 @@
 import { prisma } from '../config/prisma.ts';
 import { REVIEW_STATUS } from '../config/constants.ts';
 import type { expectedAnswerType, rubricContentType } from '../utils/types.ts';
+import { logger } from '../utils/logger.ts';
 
 export class RubricService {
   async createRubrics(
@@ -14,75 +15,110 @@ export class RubricService {
       expectedAnswer: expectedAnswerType[];
     }>
   ) {
-    return prisma.adaptiveRubric.createMany({
-      data: rubrics.map((r) => ({
-        projectExId: r.projectExId,
-        schemaExId: r.schemaExId,
-        sessionId: BigInt(r.sessionId),
-        content: r.content,
-        rubricType: r.rubricType,
-        category: r.category,
-        expectedAnswer: r.expectedAnswer,
-        reviewStatus: REVIEW_STATUS.PENDING,
-      })),
-    });
+    try {
+      return prisma.adaptiveRubric.createMany({
+        data: rubrics.map((r) => ({
+          projectExId: r.projectExId,
+          schemaExId: r.schemaExId,
+          sessionId: BigInt(r.sessionId),
+          content: r.content,
+          rubricType: r.rubricType,
+          category: r.category,
+          expectedAnswer: r.expectedAnswer,
+          reviewStatus: REVIEW_STATUS.PENDING,
+        })),
+      });
+    } catch (error) {
+      logger.error('Error creating rubrics:', error);
+      throw new Error('Failed to create rubrics');
+    }
   }
 
   async getRubricsBySchemaExId(schemaExId: string) {
-    return prisma.adaptiveRubric.findMany({
-      where: {
-        schemaExId: schemaExId,
-        isActive: true,
-      },
-      include: {
-        judgeRecords: true,
-      },
-    });
+    try {
+      return prisma.adaptiveRubric.findMany({
+        where: {
+          schemaExId: schemaExId,
+          isActive: true,
+        },
+        include: {
+          judgeRecords: true,
+        },
+      });
+    } catch (error) {
+      logger.error('Error fetching rubrics by schemaExId:', error);
+      throw new Error('Failed to fetch rubrics by schemaExId');
+    }
   }
 
   async getRubricsBySession(sessionId: string) {
-    return prisma.adaptiveRubric.findMany({
-      where: {
-        sessionId: BigInt(sessionId),
-        isActive: true,
-      },
-      include: {
-        judgeRecords: true,
-      },
-    });
+    try {
+      return prisma.adaptiveRubric.findMany({
+        where: {
+          sessionId: BigInt(sessionId),
+          isActive: true,
+        },
+        include: {
+          judgeRecords: true,
+        },
+      });
+    } catch (error) {
+      logger.error('Error fetching rubrics by sessionId:', error);
+      throw new Error('Failed to fetch rubrics by sessionId');
+    }
   }
 
-  async getRubricsForReview(reviewStatus: typeof REVIEW_STATUS[keyof typeof REVIEW_STATUS]) {
-    return prisma.adaptiveRubric.findMany({
-      where: {
-        isActive: true,
-        reviewStatus
-      },
-      include: {
-        judgeRecords: true,
-      },
-      orderBy: { generatedAt: 'desc' },
-    });
+  async getRubricsForReview(
+    reviewStatus: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS]
+  ) {
+    try {
+      return prisma.adaptiveRubric.findMany({
+        where: {
+          isActive: true,
+          reviewStatus,
+        },
+        include: {
+          judgeRecords: true,
+        },
+        orderBy: { generatedAt: 'desc' },
+      });
+    } catch (error) {
+      logger.error('Error fetching rubrics for review:', error);
+      throw new Error('Failed to fetch rubrics for review');
+    }
   }
 
   async reviewRubric(
     rubricId: string,
-    reviewStatus: typeof REVIEW_STATUS[keyof typeof REVIEW_STATUS],
+    reviewStatus: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS],
     reviewerAccountId: string,
     modifiedRubricContent?: rubricContentType
   ) {
-    return prisma.adaptiveRubric.update({
-      where: { id: BigInt(rubricId) },
-      data: {
-        reviewStatus: reviewStatus,
-        reviewedAt: new Date(),
-        reviewedBy: reviewerAccountId,
-        ...(modifiedRubricContent?.content && { content: modifiedRubricContent.content }),
-        ...(modifiedRubricContent?.rubricType && { rubricType: modifiedRubricContent.rubricType }),
-        ...(modifiedRubricContent?.category && { category: modifiedRubricContent.category }),
-        ...(modifiedRubricContent?.expectedAnswer && { expectedAnswer: modifiedRubricContent.expectedAnswer }),
-      },
-    });
+    try {
+      return prisma.adaptiveRubric.update({
+        where: { id: BigInt(rubricId) },
+        data: {
+          reviewStatus: reviewStatus,
+          reviewedAt: new Date(),
+          reviewedBy: reviewerAccountId,
+          ...(modifiedRubricContent?.content && {
+            content: modifiedRubricContent.content,
+          }),
+          ...(modifiedRubricContent?.rubricType && {
+            rubricType: modifiedRubricContent.rubricType,
+          }),
+          ...(modifiedRubricContent?.category && {
+            category: modifiedRubricContent.category,
+          }),
+          ...(modifiedRubricContent?.expectedAnswer && {
+            expectedAnswer: modifiedRubricContent.expectedAnswer,
+          }),
+        },
+      });
+    } catch (error) {
+      logger.error('Error reviewing rubric:', error);
+      throw new Error('Failed to review rubric');
+    }
   }
 }
 

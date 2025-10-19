@@ -16,7 +16,37 @@ enum CopilotType {
   agentBuilder
 }
 
-model golden_set {
+enum SessionStatus {
+  running
+  completed
+  failed
+}
+
+enum EvaluationStatus {
+  pending
+  in_progress
+  completed
+  failed
+}
+
+enum RubricReviewStatus {
+  pending
+  approved
+  rejected
+  modified
+}
+
+enum JudgmentResult {
+  pass
+  fail
+}
+
+enum ExpectedAnswer {
+  yes
+  no
+}
+
+model goldenSet {
   id             BigInt      @id @default(autoincrement())
   projectExId    String      @map("project_ex_id")
   schemaExId     String      @map("schema_ex_id")
@@ -33,16 +63,16 @@ model golden_set {
 }
 
 // Execution Sessions (references copilot schema tables)
-model evaluation_session {
-  id           BigInt      @id @default(autoincrement())
-  projectExId  String      @map("project_ex_id")
-  schemaExId   String      @map("schema_ex_id")
-  copilotType  CopilotType @map("copilot_type")
-  modelName    String      @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-  sessionIdRef BigInt?     @map("session_id_ref") // Reference to copilot_session.id
-  startedAt    DateTime    @default(now()) @map("started_at") @db.Timestamptz(6)
-  completedAt  DateTime?   @map("completed_at") @db.Timestamptz(6)
-  status       String      @default("running") // 'running', 'completed', 'failed'
+model evaluationSession {
+  id           BigInt        @id @default(autoincrement())
+  projectExId  String        @map("project_ex_id")
+  schemaExId   String        @map("schema_ex_id")
+  copilotType  CopilotType   @map("copilot_type")
+  modelName    String        @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
+  sessionIdRef BigInt?       @map("session_id_ref") // Reference to copilot_session.id
+  startedAt    DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt  DateTime?     @map("completed_at") @db.Timestamptz(6)
+  status       SessionStatus @default(running)
 
   // Performance Metrics
   totalLatencyMs    Int?     @map("total_latency_ms")
@@ -56,14 +86,14 @@ model evaluation_session {
   // metadata Json? TODO: figure out what metadata to store
 
   // Relations
-  rubrics adaptive_rubric[]
-  result  evaluation_result?
+  rubrics adaptiveRubric[]
+  result  evaluationResult?
 
   @@index([schemaExId], map: "idx_evaluation_session_schema")
 }
 
 // Adaptive Rubrics (AI-generated evaluation questions)
-model adaptive_rubric {
+model adaptiveRubric {
   id          BigInt @id @default(autoincrement())
   projectExId String @map("project_ex_id")
   schemaExId  String @map("schema_ex_id")
@@ -73,10 +103,10 @@ model adaptive_rubric {
   content        String // The actual question/rubric
   rubricType     String? @map("rubric_type") // e.g., 'completeness', 'correctness', 'naming_convention'
   category       String? // e.g., 'entity_coverage', 'attribute_completeness'
-  expectedAnswer String? @map("expected_answer") // 'yes' or 'no'
+  expectedAnswer ExpectedAnswer? @map("expected_answer")
 
   // Status
-  reviewStatus String  @default("pending") @map("review_status") // 'pending', 'approved', 'rejected', 'modified'
+  reviewStatus RubricReviewStatus @default(pending) @map("review_status") 
   isActive     Boolean @default(true) @map("is_active")
 
   // Timestamps
@@ -85,14 +115,14 @@ model adaptive_rubric {
   reviewedBy  String?   @map("reviewed_by")
 
   // Relations
-  session      evaluation_session             @relation(fields: [sessionId], references: [id])
-  judgeRecords adaptive_rubric_judge_record[] @relation("judgeRecords")
+  session      evaluationSession             @relation(fields: [sessionId], references: [id])
+  judgeRecords adaptiveRubricJudgeRecord[] @relation("judgeRecords")
 
   @@index([sessionId], map: "idx_adaptive_rubric_session")
 }
 
 // Rubric Judgments (human reviews)
-model adaptive_rubric_judge_record {
+model adaptiveRubricJudgeRecord {
   id               BigInt   @id @default(autoincrement())
   adaptiveRubricId BigInt   @map("adaptive_rubric_id")
   accountId        String   @map("account_id")
@@ -102,13 +132,13 @@ model adaptive_rubric_judge_record {
   judgedAt         DateTime @default(now()) @map("judged_at") @db.Timestamptz(6)
 
   // Relations
-  rubric adaptive_rubric @relation(fields: [adaptiveRubricId], references: [id], name: "judgeRecords")
+  rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id], name: "judgeRecords")
 
   @@index([adaptiveRubricId], map: "idx_rubric_judge_rubric")
 }
 
 // Evaluation Results Summary (aggregated metrics)
-model evaluation_result {
+model evaluationResult {
   id         BigInt @id @default(autoincrement())
   sessionId  BigInt @unique @map("session_id")
   schemaExId String @map("schema_ex_id")
@@ -141,5 +171,5 @@ model evaluation_result {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relations
-  session evaluation_session @relation(fields: [sessionId], references: [id])
+  session evaluationSession @relation(fields: [sessionId], references: [id])
 }

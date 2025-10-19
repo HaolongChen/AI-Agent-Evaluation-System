@@ -92,7 +92,14 @@ export class AnalyticsService {
     const sessions = await prisma.evaluation_session.findMany({
       where: {
         status: 'completed',
-        ...(filters.copilotType && { copilotType: filters.copilotType as 'dataModel' | 'uiBuilder' | 'actionflow' | 'logAnalyzer' | 'agentBuilder' }),
+        ...(filters.copilotType && {
+          copilotType: filters.copilotType as
+            | 'dataModel'
+            | 'uiBuilder'
+            | 'actionflow'
+            | 'logAnalyzer'
+            | 'agentBuilder',
+        }),
         ...(filters.modelName && { modelName: filters.modelName }),
         ...(filters.startDate && { startedAt: { gte: filters.startDate } }),
         ...(filters.endDate && { startedAt: { lte: filters.endDate } }),

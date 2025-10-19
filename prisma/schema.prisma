@@ -143,6 +143,8 @@ model evaluationResult {
   sessionId  BigInt @unique @map("session_id")
   schemaExId String @map("schema_ex_id")
 
+  evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
+
   // Quality Metrics (specific to copilot type)
   metrics Json // Flexible storage for different metric types
   // Examples:

@@ -55,6 +55,25 @@ export const typeDefs = `#graphql
     FAILED
   }
 
+  enum ExpectedAnswer {
+    YES
+    NO
+  }
+
+  enum RubricReviewStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    MODIFIED
+  }
+
+  enum EvaluationStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    FAILED
+  }
+
   type AdaptiveRubric {
     id: ID!
     projectExId: String!
@@ -63,8 +82,8 @@ export const typeDefs = `#graphql
     content: String!
     rubricType: String
     category: String
-    expectedAnswer: String
-    reviewStatus: ReviewStatus!
+    expectedAnswer: ExpectedAnswer
+    reviewStatus: RubricReviewStatus!
     isActive: Boolean!
     generatedAt: DateTime!
     reviewedAt: DateTime
@@ -72,13 +91,6 @@ export const typeDefs = `#graphql
 
     # Relations
     judgeRecords: [JudgeRecord!]!
-  }
-
-  enum ReviewStatus {
-    PENDING
-    APPROVED
-    REJECTED
-    MODIFIED
   }
 
   type JudgeRecord {
@@ -95,6 +107,7 @@ export const typeDefs = `#graphql
     id: ID!
     sessionId: Int!
     schemaExId: String!
+    evaluationStatus: EvaluationStatus!
     metrics: JSON!
     overallScore: Float!
     createdAt: DateTime!
@@ -117,7 +130,7 @@ export const typeDefs = `#graphql
     # Adaptive Rubrics
     getAdaptiveRubricsBySchemaExId(schemaExId: String!): [AdaptiveRubric!]!
     getAdaptiveRubricsBySession(sessionId: Int!): [AdaptiveRubric!]!
-    getRubricsForReview(reviewStatus: ReviewStatus): [AdaptiveRubric!]!
+    getRubricsForReview(reviewStatus: RubricReviewStatus): [AdaptiveRubric!]!
 
     # Results & Analytics
     getEvaluationResult(sessionId: Int!): EvaluationResult
@@ -142,6 +155,8 @@ export const typeDefs = `#graphql
       description: String
     ): GoldenSet!
 
+    // TODO: add version control for golden set
+
     # Execution
     execAiCopilotByTypeAndModel(
       schemaExId: String!
@@ -158,7 +173,7 @@ export const typeDefs = `#graphql
     # Rubric Review
     reviewAdaptiveRubric(
       rubricId: Int!
-      reviewStatus: ReviewStatus!
+      reviewStatus: RubricReviewStatus!
       reviewerAccountId: String!
       modifiedContent: String
     ): AdaptiveRubric!

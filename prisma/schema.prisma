@@ -97,13 +97,13 @@ model adaptiveRubric {
 
   // Rubric Content
   content        String[] // The actual question/rubric
-  rubricType     String[] @map("rubric_type") // e.g., 'completeness', 'correctness', 'naming_convention'
+  rubricType     String[]         @map("rubric_type") // e.g., 'completeness', 'correctness', 'naming_convention'
   category       String[] // e.g., 'entity_coverage', 'attribute_completeness'
   expectedAnswer ExpectedAnswer[] @map("expected_answer")
 
   // Status
-  reviewStatus RubricReviewStatus @default(pending) @map("review_status") 
-  isActive     Boolean @default(true) @map("is_active")
+  reviewStatus RubricReviewStatus @default(pending) @map("review_status")
+  isActive     Boolean            @default(true) @map("is_active")
 
   // Timestamps
   generatedAt DateTime  @default(now()) @map("generated_at") @db.Timestamptz(6)
@@ -111,7 +111,7 @@ model adaptiveRubric {
   reviewedBy  String?   @map("reviewed_by") // account ID of the reviewer
 
   // Relations
-  session      evaluationSession             @relation(fields: [sessionId], references: [id])
+  session      evaluationSession           @relation(fields: [sessionId], references: [id])
   judgeRecords adaptiveRubricJudgeRecord[] @relation("judgeRecords")
 
   @@index([sessionId], map: "idx_adaptive_rubric_session")
@@ -119,13 +119,13 @@ model adaptiveRubric {
 
 // Rubric Judgments (human reviews)
 model adaptiveRubricJudgeRecord {
-  id               BigInt   @id @default(autoincrement())
-  adaptiveRubricId BigInt   @map("adaptive_rubric_id")
-  accountId        String   @map("account_id") // ID of the human judge but probably unnecessary to store
+  id               BigInt    @id @default(autoincrement())
+  adaptiveRubricId BigInt    @map("adaptive_rubric_id")
+  accountId        String    @map("account_id") // ID of the human judge but probably unnecessary to store
   result           Boolean // true = pass, false = fail
   confidenceScore  Decimal[] @map("confidence_score") @db.Decimal(5, 2) // 0.00 - 1.00 scale
   notes            String?
-  judgedAt         DateTime @default(now()) @map("judged_at") @db.Timestamptz(6)
+  judgedAt         DateTime  @default(now()) @map("judged_at") @db.Timestamptz(6)
 
   // Relations
   rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id], name: "judgeRecords")

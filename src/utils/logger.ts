@@ -1,4 +1,4 @@
-import { NODE_ENV } from "../config/env.ts";
+import { NODE_ENV } from '../config/env.ts';
 
 export const logger = {
   info: (message: string, ...args: unknown[]) => {

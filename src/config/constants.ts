@@ -13,6 +13,13 @@ export const SESSION_STATUS = {
   FAILED: 'failed',
 } as const;
 
+export const EVALUATION_STATUS = {
+  PENDING: 'pending',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+} as const;
+
 export const REVIEW_STATUS = {
   PENDING: 'pending',
   APPROVED: 'approved',

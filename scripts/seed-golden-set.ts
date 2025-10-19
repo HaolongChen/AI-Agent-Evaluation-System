@@ -27,7 +27,7 @@ async function seedGoldenSet() {
     ];
 
     for (const data of goldenSetData) {
-      await prisma.golden_set.upsert({
+      await prisma.goldenSet.upsert({
         where: {
           projectExId_schemaExId_copilotType: {
             projectExId: data.projectExId,

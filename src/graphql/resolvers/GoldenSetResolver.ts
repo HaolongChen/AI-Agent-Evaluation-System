@@ -2,7 +2,8 @@ import { goldenSetService } from '../../services/GoldenSetService.ts';
 import { executionService } from '../../services/ExecutionService.ts';
 import { rubricService } from '../../services/RubricService.ts';
 import { judgeService } from '../../services/JudgeService.ts';
-import type { copilotType } from '../../utils/types.ts';
+import type { copilotType, rubricContentType } from '../../utils/types.ts';
+import type { REVIEW_STATUS } from '../../config/constants.ts';
 
 export const resolvers = {
   Query: {
@@ -44,7 +45,7 @@ export const resolvers = {
 
     getRubricsForReview: async (
       _: unknown,
-      args: { reviewStatus?: string }
+      args: { reviewStatus: typeof REVIEW_STATUS[keyof typeof REVIEW_STATUS] }
     ) => {
       return rubricService.getRubricsForReview(args.reviewStatus);
     },
@@ -134,16 +135,16 @@ export const resolvers = {
       _: unknown,
       args: {
         rubricId: string;
-        reviewStatus: string;
+        reviewStatus: typeof REVIEW_STATUS[keyof typeof REVIEW_STATUS];
         reviewerAccountId: string;
-        modifiedContent?: string;
+        modifiedRubricContent?: rubricContentType;
       }
     ) => {
       return rubricService.reviewRubric(
         args.rubricId,
         args.reviewStatus,
         args.reviewerAccountId,
-        args.modifiedContent
+        args.modifiedRubricContent
       );
     },
 
@@ -153,7 +154,7 @@ export const resolvers = {
         adaptiveRubricId: string;
         accountId: string;
         result: boolean;
-        confidenceScore?: number;
+        confidenceScore: number[];
         notes?: string;
       }
     ) => {

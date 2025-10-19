@@ -2,7 +2,7 @@ import { prisma } from '../config/prisma.ts';
 
 export class AnalyticsService {
   async getEvaluationResult(sessionId: string) {
-    return prisma.evaluation_result.findUnique({
+    return prisma.evaluationResult.findUnique({
       where: { sessionId: BigInt(sessionId) },
       include: {
         session: true,
@@ -16,7 +16,7 @@ export class AnalyticsService {
     metrics: object,
     overallScore: number
   ) {
-    return prisma.evaluation_result.create({
+    return prisma.evaluationResult.create({
       data: {
         sessionId: BigInt(sessionId),
         schemaExId: schemaExId,
@@ -27,7 +27,7 @@ export class AnalyticsService {
   }
 
   async compareModels(schemaExId: string, modelNames: string[]) {
-    const sessions = await prisma.evaluation_session.findMany({
+    const sessions = await prisma.evaluationSession.findMany({
       where: {
         schemaExId: schemaExId,
         modelName: { in: modelNames },
@@ -89,7 +89,7 @@ export class AnalyticsService {
     startDate?: Date;
     endDate?: Date;
   }) {
-    const sessions = await prisma.evaluation_session.findMany({
+    const sessions = await prisma.evaluationSession.findMany({
       where: {
         status: 'completed',
         ...(filters.copilotType && {

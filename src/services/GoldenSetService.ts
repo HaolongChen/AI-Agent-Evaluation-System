@@ -10,7 +10,7 @@ export class GoldenSetService {
     promptTemplate: string,
     idealResponse: object
   ) {
-    return prisma.golden_set.upsert({
+    return prisma.goldenSet.upsert({
       where: {
         projectExId_schemaExId_copilotType: {
           projectExId,
@@ -36,7 +36,7 @@ export class GoldenSetService {
   }
 
   async getGoldenSetSchemas(copilotType?: copilotType) {
-    const results = await prisma.golden_set.findMany({
+    const results = await prisma.goldenSet.findMany({
       where: {
         isActive: true,
         ...(copilotType && { copilotType }),
@@ -51,7 +51,7 @@ export class GoldenSetService {
   }
 
   async getGoldenSet(projectExId?: string, copilotType?: copilotType) {
-    return prisma.golden_set.findMany({
+    return prisma.goldenSet.findMany({
       where: {
         isActive: true,
         ...(projectExId && { projectExId }),

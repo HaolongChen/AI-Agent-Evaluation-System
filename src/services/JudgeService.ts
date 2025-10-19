@@ -5,22 +5,22 @@ export class JudgeService {
     adaptiveRubricId: string,
     accountId: string,
     result: boolean,
-    confidenceScore?: number,
+    confidenceScore: number[],
     notes?: string
   ) {
-    return prisma.adaptive_rubric_judge_record.create({
+    return prisma.adaptiveRubricJudgeRecord.create({
       data: {
         adaptiveRubricId: BigInt(adaptiveRubricId),
         accountId: accountId,
         result,
-        confidenceScore: confidenceScore ?? null,
+        confidenceScore: confidenceScore ?? [],
         notes: notes ?? null,
       },
     });
   }
 
   async getJudgeRecordsByRubric(rubricId: string) {
-    return prisma.adaptive_rubric_judge_record.findMany({
+    return prisma.adaptiveRubricJudgeRecord.findMany({
       where: {
         adaptiveRubricId: BigInt(rubricId),
       },

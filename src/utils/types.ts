@@ -4,3 +4,14 @@ export type copilotType =
     | 'actionflow'
     | 'logAnalyzer'
     | 'agentBuilder';
+
+export type expectedAnswerType = 
+    | 'yes'
+    | 'no';
+
+export type rubricContentType = {
+    content: string[],
+    rubricType: string[],
+    category: string[],
+    expectedAnswer: expectedAnswerType[]
+}

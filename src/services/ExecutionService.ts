@@ -9,7 +9,7 @@ export class ExecutionService {
     copilotType: CopilotType,
     modelName: string
   ) {
-    return prisma.evaluation_session.create({
+    return prisma.evaluationSession.create({
       data: {
         projectExId: projectExId,
         schemaExId: schemaExId,
@@ -21,7 +21,7 @@ export class ExecutionService {
   }
 
   async getSession(id: string) {
-    return prisma.evaluation_session.findUnique({
+    return prisma.evaluationSession.findUnique({
       where: { id: BigInt(id) },
       include: {
         rubrics: true,
@@ -35,7 +35,7 @@ export class ExecutionService {
     copilotType?: CopilotType;
     modelName?: string;
   }) {
-    return prisma.evaluation_session.findMany({
+    return prisma.evaluationSession.findMany({
       where: {
         ...(filters.schemaExId && { schemaExId: filters.schemaExId }),
         ...(filters.copilotType && { copilotType: filters.copilotType }),
@@ -51,7 +51,7 @@ export class ExecutionService {
 
   async updateSessionStatus(
     sessionId: string,
-    status: string,
+    status: typeof SESSION_STATUS[keyof typeof SESSION_STATUS],
     metrics?: {
       totalLatencyMs?: number;
       roundtripCount?: number;
@@ -61,7 +61,7 @@ export class ExecutionService {
       metadata?: object;
     }
   ) {
-    return prisma.evaluation_session.update({
+    return prisma.evaluationSession.update({
       where: { id: BigInt(sessionId) },
       data: {
         status,

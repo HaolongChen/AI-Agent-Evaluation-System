@@ -6,9 +6,9 @@ export class GoldenSetService {
     projectExId: string,
     schemaExId: string,
     copilotType: copilotType,
+    description: string,
     promptTemplate: string,
-    idealResponse: object,
-    description: string
+    idealResponse: object
   ) {
     return prisma.golden_set.upsert({
       where: {
@@ -20,6 +20,8 @@ export class GoldenSetService {
       },
       update: {
         description,
+        promptTemplate,
+        idealResponse,
         isActive: true,
       },
       create: {

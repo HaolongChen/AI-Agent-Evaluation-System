@@ -1,6 +1,6 @@
 import { prisma } from '../config/prisma.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
-import type { CopilotType } from '../../generated/prisma/index.js';
+import type { CopilotType } from '../generated/prisma/index.ts';
 
 export class ExecutionService {
   async createEvaluationSession(

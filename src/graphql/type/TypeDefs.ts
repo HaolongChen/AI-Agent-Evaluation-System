@@ -79,10 +79,10 @@ export const typeDefs = `#graphql
     projectExId: String!
     schemaExId: String!
     sessionId: Int!
-    content: String!
-    rubricType: String
-    category: String
-    expectedAnswer: ExpectedAnswer
+    content: String[!]!
+    rubricType: String[!]!
+    category: String[!]!
+    expectedAnswer: ExpectedAnswer[!]!
     reviewStatus: RubricReviewStatus!
     isActive: Boolean!
     generatedAt: DateTime!
@@ -98,7 +98,7 @@ export const typeDefs = `#graphql
     adaptiveRubricId: Int!
     accountId: String!
     result: Boolean!
-    confidenceScore: Float
+    confidenceScore: Float[!]!
     notes: String
     judgedAt: DateTime!
   }
@@ -134,15 +134,15 @@ export const typeDefs = `#graphql
 
     # Results & Analytics
     getEvaluationResult(sessionId: Int!): EvaluationResult
-    compareModels(schemaExId: String!, modelNames: [String!]!): ModelComparison!
+    // compareModels(schemaExId: String!, modelNames: [String!]!): ModelComparison!
 
     # Dashboard Metrics
-    getDashboardMetrics(
-      copilotType: CopilotType
-      modelName: String
-      startDate: DateTime
-      endDate: DateTime
-    ): DashboardMetrics!
+    // getDashboardMetrics(
+    //   copilotType: CopilotType
+    //   modelName: String
+    //   startDate: DateTime
+    //   endDate: DateTime
+    // ): DashboardMetrics!
   }
 
   # Mutations
@@ -162,20 +162,20 @@ export const typeDefs = `#graphql
       schemaExId: String!
       copilotType: CopilotType!
       modelName: String!
-    ): EvaluationSession!
+    ): Boolean!
 
     # Rubric Generation
     generateAdaptiveRubricsBySchemaExId(
       schemaExId: String!
       sessionId: Int!
-    ): [AdaptiveRubric!]!
+    ): Boolean!
 
     # Rubric Review
     reviewAdaptiveRubric(
       rubricId: Int!
       reviewStatus: RubricReviewStatus!
       reviewerAccountId: String!
-      modifiedContent: String
+      modifiedRubricContent: JSON!
     ): AdaptiveRubric!
 
     # Judge
@@ -183,7 +183,7 @@ export const typeDefs = `#graphql
       adaptiveRubricId: Int!
       accountId: String!
       result: Boolean!
-      confidenceScore: Int
+      confidenceScore: Float[!]!
       notes: String
     ): JudgeRecord!
   }

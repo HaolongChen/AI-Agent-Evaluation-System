@@ -1,5 +1,6 @@
-import { executionService } from "../../services/ExecutionService.ts";
-import type { copilotType } from "../../utils/types.ts";
+import { executionService } from '../../services/ExecutionService.ts';
+import { logger } from '../../utils/logger.ts';
+import type { copilotType } from '../../utils/types.ts';
 
 export const analyticResolver = {
   Query: {
@@ -45,12 +46,19 @@ export const analyticResolver = {
         modelName: string;
       }
     ) => {
-      return executionService.createEvaluationSession(
-        args.projectExId,
-        args.schemaExId,
-        args.copilotType,
-        args.modelName
-      );
+      try {
+        const result = await executionService.createEvaluationSession(
+          args.projectExId,
+          args.schemaExId,
+          args.copilotType,
+          args.modelName
+        );
+        // TODO: implement actual execution logic
+        return result ? true : false;
+      } catch (error) {
+        logger.error('Error executing AI copilot:', error);
+        throw new Error('Failed to execute AI copilot');
+      }
     },
   },
 };

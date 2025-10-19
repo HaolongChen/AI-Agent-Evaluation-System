@@ -118,7 +118,7 @@ export const typeDefs = `#graphql
   type Query {
     # Golden Set
     getGoldenSetSchemas(copilotType: CopilotType): [String!]!
-    getGoldenSet(projectExId: String, copilotType: CopilotType): [GoldenSet!]!
+    getGoldenSets(projectExId: String, copilotType: CopilotType): [GoldenSet!]!
 
     # Evaluation Sessions
     getSession(id: ID!): EvaluationSession

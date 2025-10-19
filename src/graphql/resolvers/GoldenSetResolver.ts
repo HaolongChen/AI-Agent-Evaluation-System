@@ -1,5 +1,6 @@
 import { goldenSetService } from '../../services/GoldenSetService.ts';
 import { COPILOT_TYPES } from '../../config/constants.ts';
+import { logger } from '../../utils/logger.ts';
 
 export const goldenResolver = {
   Query: {
@@ -10,11 +11,28 @@ export const goldenResolver = {
       return goldenSetService.getGoldenSetSchemas(args.copilotType);
     },
 
-    getGoldenSet: async (
+    getGoldenSets: async (
       _: unknown,
       args: { projectExId?: string; copilotType?: keyof typeof COPILOT_TYPES }
     ) => {
-      return goldenSetService.getGoldenSet(args.projectExId, args.copilotType);
+      try {
+        const goldenSets = await goldenSetService.getGoldenSets(
+          args.projectExId,
+          args.copilotType
+        );
+        const results = goldenSets.map((gs) => {
+          return {
+            ...gs,
+            copilotType: Object.keys(COPILOT_TYPES).find(
+              (key) => COPILOT_TYPES[key as keyof typeof COPILOT_TYPES] === gs.copilotType
+            ) as keyof typeof COPILOT_TYPES,
+          };
+        });
+        return results;
+      } catch (error) {
+        logger.error('Error fetching golden sets:', error);
+        throw new Error('Failed to fetch golden sets');
+      }
     },
   },
 

@@ -61,7 +61,7 @@ export class GoldenSetService {
     }
   }
 
-  async getGoldenSet(
+  async getGoldenSets(
     projectExId?: string,
     copilotType?: keyof typeof COPILOT_TYPES
   ) {
@@ -73,11 +73,11 @@ export class GoldenSetService {
           ...(copilotType && { copilotType: COPILOT_TYPES[copilotType] }),
         },
       });
-      logger.debug('Fetched golden set:', results);
+      logger.debug('Fetched golden sets:', results);
       return results;
     } catch (error) {
-      logger.error('Error fetching golden set:', error);
-      throw new Error('Failed to fetch golden set');
+      logger.error('Error fetching golden sets:', error);
+      throw new Error('Failed to fetch golden sets');
     }
   }
 }

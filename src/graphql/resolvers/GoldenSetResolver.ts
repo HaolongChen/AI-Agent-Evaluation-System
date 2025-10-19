@@ -67,7 +67,6 @@ export const goldenResolver = {
               result.copilotType
           ) as keyof typeof COPILOT_TYPES,
         };
-        logger.debug('Updated golden set project:', newResult);
         return newResult;
       } catch (error) {
         logger.error('Error updating golden set project:', error);

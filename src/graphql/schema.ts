@@ -1,3 +1,5 @@
+import GraphQLJSON from 'graphql-type-json';
+import { DateTimeResolver } from 'graphql-scalars';
 import { analyticResolver } from './resolvers/AnalyticResolver.ts';
 import { goldenResolver } from './resolvers/GoldenSetResolver.ts';
 import { rubricResolver } from './resolvers/RubricResolver.ts';
@@ -17,6 +19,8 @@ const resolvers = {
     ...rubricResolver.Mutation,
     ...sessionResolver.Mutation,
   },
+  JSON: GraphQLJSON,
+  DateTime: DateTimeResolver,
 };
 
 export { typeDefs, resolvers };

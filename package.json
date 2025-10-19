@@ -50,6 +50,8 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "graphql": "^16.11.0",
+    "graphql-scalars": "^1.25.0",
+    "graphql-type-json": "^0.3.2",
     "langchain": "^1.0.1",
     "zod": "^4.1.12"
   }

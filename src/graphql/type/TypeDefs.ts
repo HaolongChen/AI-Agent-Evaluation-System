@@ -53,6 +53,7 @@ export const typeDefs = `#graphql
     RUNNING
     COMPLETED
     FAILED
+    PENDING
   }
 
   enum ExpectedAnswer {

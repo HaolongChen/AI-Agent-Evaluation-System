@@ -37,11 +37,6 @@ enum RubricReviewStatus {
   modified
 }
 
-enum JudgmentResult {
-  pass
-  fail
-}
-
 enum ExpectedAnswer {
   yes
   no

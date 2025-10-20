@@ -48,3 +48,72 @@ export const METRIC_CATEGORIES = {
     'summary_completeness',
   ],
 } as const;
+
+export const CALL_GRAPHQL = {
+  QUERY: {
+    GET_GOLDEN_SET_SCHEMAS: `
+    query GetGoldenSetSchemas {
+      getGoldenSetSchemas(copilotType: $copilotType) 
+    }
+    `,
+    GET_GOLDEN_SETS: `
+    query GetGoldenSets {
+      getGoldenSets(projectExId: $projectExId, copilotType: $copilotType) {
+        id
+        projectExId
+        schemaExId
+        copilotType
+        description
+        promptTemplate
+        idealResponse
+        createdAt
+        createdBy
+        isActive
+      }
+    }
+    `,
+    GET_SESSION: `
+    query GetSession {
+      getSession(id: $id) {
+        id
+        projectExId
+        schemaExId
+        copilotType
+        modelName
+        sessionIdRef
+        startedAt
+        completedAt
+        status
+        totalLatencyMs
+        roundtripCount
+        inputTokens
+        outputTokens
+        totalTokens
+        contextPercentage
+      }
+    }
+    `,
+    GET_SESSIONS: `
+    query GetSessions {
+      getSessions(schemaExId: $schemaExId, copilotType: $copilotType, modelName: $modelName) {
+        id
+        projectExId
+        schemaExId
+        copilotType
+        modelName
+        sessionIdRef
+        startedAt
+        completedAt
+        status
+        totalLatencyMs
+        roundtripCount
+        inputTokens
+        outputTokens
+        totalTokens
+        contextPercentage
+      }
+    }
+    `,
+    
+  },
+};

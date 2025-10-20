@@ -58,6 +58,19 @@ model goldenSet {
   @@index([schemaExId], map: "idx_golden_set_schema")
 }
 
+model nextGoldenSet {
+  id             Int      @id @default(autoincrement())
+  description    String?
+  promptTemplate String      @map("prompt_template")
+  idealResponse  Json        @map("ideal_response")
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy      String?     @map("created_by")
+  isActive       Boolean     @default(true) @map("is_active")
+  rubric        adaptiveRubric[] @relation()
+  result       evaluationResult[] @relation()
+  @@index([id], map: "idx_next_golden_set_id")
+}
+
 // Execution Sessions (references copilot schema tables)
 model evaluationSession {
   id           Int        @id @default(autoincrement())
@@ -94,6 +107,7 @@ model adaptiveRubric {
   projectExId String @map("project_ex_id")
   schemaExId  String @map("schema_ex_id")
   sessionId   Int @map("session_id")
+  newGoldenSetId Int? @map("new_golden_set_id") // Reference to nextGoldenSet.id
 
   // Rubric Content
   content        String[] // The actual question/rubric
@@ -112,7 +126,8 @@ model adaptiveRubric {
 
   // Relations
   session      evaluationSession           @relation(fields: [sessionId], references: [id])
-  judgeRecords adaptiveRubricJudgeRecord[] @relation("judgeRecords")
+  judgeRecords adaptiveRubricJudgeRecord?
+  newGoldenSet nextGoldenSet?               @relation(fields: [newGoldenSetId], references: [id])
 
   @@index([sessionId], map: "idx_adaptive_rubric_session")
 }
@@ -120,15 +135,15 @@ model adaptiveRubric {
 // Rubric Judgments (human reviews)
 model adaptiveRubricJudgeRecord {
   id               Int    @id @default(autoincrement())
-  adaptiveRubricId Int    @map("adaptive_rubric_id")
+  adaptiveRubricId Int    @unique @map("adaptive_rubric_id")
   accountId        String    @map("account_id") // ID of the human judge but probably unnecessary to store
-  result           Boolean // true = pass, false = fail
+  result           Boolean[] // true = pass, false = fail
   confidenceScore  Decimal[] @map("confidence_score") @db.Decimal(5, 2) // 0.00 - 1.00 scale
   notes            String?
   judgedAt         DateTime  @default(now()) @map("judged_at") @db.Timestamptz(6)
 
   // Relations
-  rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id], name: "judgeRecords")
+  rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
 
   @@index([adaptiveRubricId], map: "idx_rubric_judge_rubric")
 }
@@ -138,8 +153,11 @@ model evaluationResult {
   id         Int @id @default(autoincrement())
   sessionId  Int @unique @map("session_id")
   schemaExId String @map("schema_ex_id")
+  nextGoldenSetId Int? @map("next_golden_set_id") // Reference to nextGoldenSet.id
 
   evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
+
+  newGoldenSet nextGoldenSet? @relation(fields: [nextGoldenSetId], references: [id])
 
   // Quality Metrics (specific to copilot type)
   metrics Json // Flexible storage for different metric types

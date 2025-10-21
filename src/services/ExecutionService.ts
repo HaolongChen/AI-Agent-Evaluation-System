@@ -13,16 +13,21 @@ export class ExecutionService {
     modelName: string
   ) {
     try {
-      await goldenSetService.getGoldenSets(undefined, REVERSE_COPILOT_TYPES[copilotType]);
-      return prisma.evaluationSession.create({
-        data: {
-          projectExId: projectExId,
-          schemaExId: schemaExId,
-          copilotType: copilotType,
-          modelName: modelName,
-          status: SESSION_STATUS.PENDING,
-        },
-      });
+      const goldenSets = await goldenSetService.getGoldenSets(undefined, REVERSE_COPILOT_TYPES[copilotType]);
+      if (!goldenSets || goldenSets.length === 0) {
+        throw new Error('No golden sets found');
+      }
+      // TODO: access to copilot with each golden set
+      // return prisma.evaluationSession.create({
+      //   data: {
+      //     projectExId: projectExId,
+      //     schemaExId: schemaExId,
+      //     copilotType: copilotType,
+      //     modelName: modelName,
+      //     status: SESSION_STATUS.PENDING,
+      //   },
+      // });
+      // and store initial rubric for each job
     } catch (error) {
       logger.error('Error creating evaluation session:', error);
       throw new Error('Failed to create evaluation session');

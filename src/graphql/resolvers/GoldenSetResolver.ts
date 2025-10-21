@@ -59,6 +59,11 @@ export const goldenResolver = {
           args.promptTemplate,
           args.idealResponse
         );
+        // TODO: implement error handling for missing result
+        if (!result) {
+          logger.warn('No result returned from updateGoldenSetProject');
+          throw new Error('Failed to update golden set project');
+        }
         const newResult = {
           ...result,
           copilotType: Object.keys(COPILOT_TYPES).find(

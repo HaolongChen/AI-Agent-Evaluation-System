@@ -158,8 +158,6 @@ export const typeDefs = `#graphql
       idealResponse: JSON!
     ): GoldenSet!
 
-    # TODO: add version control for golden set
-
     # Execution
     execAiCopilotByTypeAndModel(
       schemaExId: String!

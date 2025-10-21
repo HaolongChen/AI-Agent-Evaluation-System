@@ -2,6 +2,8 @@ import { prisma } from '../config/prisma.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../generated/prisma/index.ts';
 import { logger } from '../utils/logger.ts';
+import { goldenSetService } from './GoldenSetService.ts';
+import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
 
 export class ExecutionService {
   async createEvaluationSession(
@@ -11,6 +13,7 @@ export class ExecutionService {
     modelName: string
   ) {
     try {
+      await goldenSetService.getGoldenSets(undefined, REVERSE_COPILOT_TYPES[copilotType]);
       return prisma.evaluationSession.create({
         data: {
           projectExId: projectExId,

@@ -6,6 +6,14 @@ export const COPILOT_TYPES = {
   AGENT_BUILDER: 'agentBuilder',
 } as const;
 
+export const REVERSE_COPILOT_TYPES: { [key: string]: keyof typeof COPILOT_TYPES } = {
+  dataModel: 'DATA_MODEL_BUILDER',
+  uiBuilder: 'UI_BUILDER',
+  actionflow: 'ACTIONFLOW_BUILDER',
+  logAnalyzer: 'LOG_ANALYZER',
+  agentBuilder: 'AGENT_BUILDER',
+};
+
 export const SESSION_STATUS = {
   PENDING: 'pending',
   RUNNING: 'running',

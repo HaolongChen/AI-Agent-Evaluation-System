@@ -5,7 +5,7 @@ export class JudgeService {
   async createJudgeRecord(
     adaptiveRubricId: string,
     accountId: string,
-    result: boolean,
+    result: boolean[],
     confidenceScore: number[],
     notes?: string
   ) {

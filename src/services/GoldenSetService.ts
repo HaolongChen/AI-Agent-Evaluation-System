@@ -54,24 +54,34 @@ export class GoldenSetService {
     ReturnType<typeof this.simplyUpdateGoldenSetProject> | { message: string }
   > {
     try {
-      const evaluationSessions = await executionService.getSessions({
+      const originalGoldenSets = await this.getGoldenSets(
+        projectExId,
         schemaExId,
-        copilotType: COPILOT_TYPES[copilotType],
-      });
-      if (!evaluationSessions || evaluationSessions.length === 0) {
-        logger.info(
-          `No evaluation sessions found for schemaExId: ${schemaExId} and copilotType: ${copilotType}`
-        );
-        const result = await this.simplyUpdateGoldenSetProject(
-          projectExId,
-          schemaExId,
-          copilotType,
-          description,
-          promptTemplate,
-          idealResponse
-        );
-        return result;
+        copilotType
+      );
+      if(originalGoldenSets.length !== 1 || !originalGoldenSets[0]) {
+        logger.error('Golden set not found or ambiguous for update');
+        return { message: 'Golden set not found or ambiguous' };
       }
+      const originalGoldenSet = originalGoldenSets[0];
+      if(originalGoldenSet?.nextGoldenSetId) {
+        logger.error('A next golden set is already pending for this golden set');
+        return { message: 'A next golden set is already pending for this golden set' };
+      }
+      const nextGoldenSet = await this.createNextGoldenSet(
+        description,
+        promptTemplate,
+        idealResponse
+      );
+      return prisma.goldenSet.update({
+        where: {
+          id: originalGoldenSet.id,
+        },
+        data: {
+          nextGoldenSetId: nextGoldenSet.id,
+        },
+      });
+      
     } catch (error) {
       logger.error('Error updating golden set project:', error);
       throw new Error('Failed to update golden set project');
@@ -100,6 +110,7 @@ export class GoldenSetService {
 
   async getGoldenSets(
     projectExId?: string,
+    schemaExId?: string,
     copilotType?: keyof typeof COPILOT_TYPES
   ) {
     try {
@@ -107,8 +118,12 @@ export class GoldenSetService {
         where: {
           isActive: true,
           ...(projectExId && { projectExId }),
+          ...(schemaExId && { schemaExId }),
           ...(copilotType && { copilotType: COPILOT_TYPES[copilotType] }),
         },
+        include: {
+          nextGoldenSet: true,
+        }
       });
       logger.debug('Fetched golden sets:', results);
       return results;

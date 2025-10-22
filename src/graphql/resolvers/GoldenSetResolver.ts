@@ -18,6 +18,7 @@ export const goldenResolver = {
       try {
         const goldenSets = await goldenSetService.getGoldenSets(
           args.projectExId,
+          undefined, // ensure correct arg position for schemaExId
           args.copilotType
         );
         const results = goldenSets.map((gs) => {
@@ -63,6 +64,10 @@ export const goldenResolver = {
         if (!result) {
           logger.warn('No result returned from updateGoldenSetProject');
           throw new Error('Failed to update golden set project');
+        }
+        // use type guard to narrow union type
+        if ('message' in result) {
+          throw new Error(result.message);
         }
         const newResult = {
           ...result,

@@ -1,8 +1,6 @@
 import { prisma } from '../config/prisma.ts';
 import { COPILOT_TYPES } from '../config/constants.ts';
 import { logger } from '../utils/logger.ts';
-import { executionService } from './ExecutionService.ts';
-import { rubricService } from './RubricService.ts';
 
 export class GoldenSetService {
   async simplyUpdateGoldenSetProject(

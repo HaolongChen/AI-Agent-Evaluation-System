@@ -60,12 +60,10 @@ export const goldenResolver = {
           args.promptTemplate,
           args.idealResponse
         );
-        // TODO: implement error handling for missing result
         if (!result) {
           logger.warn('No result returned from updateGoldenSetProject');
           throw new Error('Failed to update golden set project');
         }
-        // use type guard to narrow union type
         if ('message' in result) {
           throw new Error(result.message);
         }

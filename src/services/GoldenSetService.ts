@@ -57,14 +57,16 @@ export class GoldenSetService {
         schemaExId,
         copilotType
       );
-      if(originalGoldenSets.length !== 1 || !originalGoldenSets[0]) {
+      if (originalGoldenSets.length !== 1 || !originalGoldenSets[0]) {
         logger.error('Golden set not found or ambiguous for update');
         return { message: 'Golden set not found or ambiguous' };
       }
       const originalGoldenSet = originalGoldenSets[0];
-      if(originalGoldenSet?.nextGoldenSetId) {
-        logger.error('A next golden set is already pending for this golden set');
-        return { message: 'A next golden set is already pending for this golden set' };
+      if (originalGoldenSet?.nextGoldenSetId) {
+        logger.info('A next golden set is already pending for this golden set');
+        return {
+          message: 'A next golden set is already pending for this golden set',
+        };
       }
       const nextGoldenSet = await this.createNextGoldenSet(
         description,
@@ -79,7 +81,6 @@ export class GoldenSetService {
           nextGoldenSetId: nextGoldenSet.id,
         },
       });
-      
     } catch (error) {
       logger.error('Error updating golden set project:', error);
       throw new Error('Failed to update golden set project');
@@ -121,7 +122,7 @@ export class GoldenSetService {
         },
         include: {
           nextGoldenSet: true,
-        }
+        },
       });
       logger.debug('Fetched golden sets:', results);
       return results;

@@ -46,6 +46,7 @@ model goldenSet {
   id             Int      @id @default(autoincrement())
   projectExId    String      @map("project_ex_id")
   schemaExId     String      @map("schema_ex_id")
+  nextGoldenSetId Int?      @unique @map("next_golden_set_id")
   copilotType    CopilotType @map("copilot_type")
   description    String?
   promptTemplate String      @map("prompt_template")
@@ -53,6 +54,8 @@ model goldenSet {
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy      String?     @map("created_by")
   isActive       Boolean     @default(true) @map("is_active")
+
+  nextGoldenSet nextGoldenSet? @relation(fields: [nextGoldenSetId], references: [id])
 
   @@unique([projectExId, schemaExId, copilotType])
   @@index([schemaExId], map: "idx_golden_set_schema")
@@ -66,8 +69,8 @@ model nextGoldenSet {
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy      String?     @map("created_by")
   isActive       Boolean     @default(true) @map("is_active")
-  rubric        adaptiveRubric[] @relation()
-  result       evaluationResult[] @relation()
+
+  goldenSet goldenSet?
   @@index([id], map: "idx_next_golden_set_id")
 }
 
@@ -95,7 +98,7 @@ model evaluationSession {
   // metadata Json? TODO: figure out what metadata to store
 
   // Relations
-  rubrics adaptiveRubric[]
+  rubrics adaptiveRubric?
   result  evaluationResult?
 
   @@index([schemaExId], map: "idx_evaluation_session_schema")
@@ -106,8 +109,8 @@ model adaptiveRubric {
   id          Int @id @default(autoincrement())
   projectExId String @map("project_ex_id")
   schemaExId  String @map("schema_ex_id")
-  sessionId   Int @map("session_id")
-  newGoldenSetId Int? @map("new_golden_set_id") // Reference to nextGoldenSet.id
+  sessionId   Int @unique @map("session_id")
+  newGoldenSetId Int? @unique @map("new_golden_set_id") // Reference to nextGoldenSet.id
 
   // Rubric Content
   content        String[] // The actual question/rubric
@@ -127,7 +130,6 @@ model adaptiveRubric {
   // Relations
   session      evaluationSession           @relation(fields: [sessionId], references: [id])
   judgeRecords adaptiveRubricJudgeRecord?
-  newGoldenSet nextGoldenSet?               @relation(fields: [newGoldenSetId], references: [id])
 
   @@index([sessionId], map: "idx_adaptive_rubric_session")
 }
@@ -153,11 +155,9 @@ model evaluationResult {
   id         Int @id @default(autoincrement())
   sessionId  Int @unique @map("session_id")
   schemaExId String @map("schema_ex_id")
-  nextGoldenSetId Int? @map("next_golden_set_id") // Reference to nextGoldenSet.id
+  nextGoldenSetId Int? @unique @map("next_golden_set_id") // Reference to nextGoldenSet.id
 
   evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
-
-  newGoldenSet nextGoldenSet? @relation(fields: [nextGoldenSetId], references: [id])
 
   // Quality Metrics (specific to copilot type)
   metrics Json // Flexible storage for different metric types

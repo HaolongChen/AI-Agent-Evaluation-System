@@ -2,6 +2,7 @@ import { prisma } from '../config/prisma.ts';
 import { COPILOT_TYPES } from '../config/constants.ts';
 import { logger } from '../utils/logger.ts';
 import { executionService } from './ExecutionService.ts';
+import { rubricService } from './RubricService.ts';
 
 export class GoldenSetService {
   async simplyUpdateGoldenSetProject(
@@ -49,17 +50,19 @@ export class GoldenSetService {
     description: string,
     promptTemplate: string,
     idealResponse: object
-  ) {
+  ): Promise<
+    ReturnType<typeof this.simplyUpdateGoldenSetProject> | { message: string }
+  > {
     try {
       const evaluationSessions = await executionService.getSessions({
         schemaExId,
-        copilotType: COPILOT_TYPES[copilotType]
+        copilotType: COPILOT_TYPES[copilotType],
       });
       if (!evaluationSessions || evaluationSessions.length === 0) {
         logger.info(
           `No evaluation sessions found for schemaExId: ${schemaExId} and copilotType: ${copilotType}`
         );
-        return this.simplyUpdateGoldenSetProject(
+        const result = await this.simplyUpdateGoldenSetProject(
           projectExId,
           schemaExId,
           copilotType,
@@ -67,13 +70,7 @@ export class GoldenSetService {
           promptTemplate,
           idealResponse
         );
-      }
-      
-      const pendingSession = evaluationSessions.find(session => session.status === 'pending' || session.status === 'running');
-
-      if (pendingSession) {
-        logger.info(`Found pending session for schemaExId: ${schemaExId} and copilotType: ${copilotType}`);
-        
+        return result;
       }
     } catch (error) {
       logger.error('Error updating golden set project:', error);
@@ -124,7 +121,7 @@ export class GoldenSetService {
   async createNextGoldenSet(
     description: string,
     promptTemplate: string,
-    idealResponse: object,
+    idealResponse: object
   ) {
     try {
       return prisma.nextGoldenSet.create({

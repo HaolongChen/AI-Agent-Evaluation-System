@@ -108,8 +108,6 @@ export class ExecutionService {
       throw new Error('Failed to update evaluation session status');
     }
   }
-
-  async updateSession()
 }
 
 export const executionService = new ExecutionService();

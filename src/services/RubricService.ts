@@ -9,10 +9,11 @@ export class RubricService {
       projectExId: string;
       schemaExId: string;
       sessionId: string;
-      content: string[];
-      rubricType: string[];
-      category: string[];
-      expectedAnswer: expectedAnswerType[];
+      content?: string[];
+      rubricType?: string[];
+      category?: string[];
+      expectedAnswer?: expectedAnswerType[];
+      newGoldenSetId?: number;
     }>
   ) {
     try {
@@ -21,11 +22,12 @@ export class RubricService {
           projectExId: r.projectExId,
           schemaExId: r.schemaExId,
           sessionId: parseInt(r.sessionId),
-          content: r.content,
-          rubricType: r.rubricType,
-          category: r.category,
-          expectedAnswer: r.expectedAnswer,
+          ...(r.content && { content: r.content }),
+          ...(r.rubricType && { rubricType: r.rubricType }),
+          ...(r.category && { category: r.category }),
+          ...(r.expectedAnswer && { expectedAnswer: r.expectedAnswer }),
           reviewStatus: REVIEW_STATUS.PENDING,
+          ...(r.newGoldenSetId && { newGoldenSetId: r.newGoldenSetId }),
         })),
       });
     } catch (error) {

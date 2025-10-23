@@ -87,9 +87,9 @@ export class JudgeService {
         return finalResult;
 
       };
-      Promise.allSettled([createRecord(), createResult()]).then((results) => {
-        
-      })
+      const finalRecord = await createRecord();
+      const finalResult = await createResult();
+      return { finalRecord, finalResult };
     } catch (error) {
       logger.error('Error creating judge record:', error);
       throw new Error('Failed to create judge record');

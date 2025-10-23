@@ -49,7 +49,7 @@ export class GoldenSetService {
     promptTemplate: string,
     idealResponse: object
   ): Promise<
-    ReturnType<typeof this.simplyUpdateGoldenSetProject> | { message: string }
+    Awaited<ReturnType<typeof this.simplyUpdateGoldenSetProject>> | { message: string }
   > {
     try {
       const originalGoldenSets = await this.getGoldenSets(

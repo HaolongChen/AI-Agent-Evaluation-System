@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma.ts';
 import { logger } from '../utils/logger.ts';
+import { COPILOT_TYPES } from '../config/constants.ts';
 
 export class AnalyticsService {
   async getEvaluationResult(sessionId: string) {
@@ -19,6 +20,8 @@ export class AnalyticsService {
   async createEvaluationResult(
     sessionId: string,
     schemaExId: string,
+    copilotType: typeof COPILOT_TYPES[keyof typeof COPILOT_TYPES],
+    modelName: string,
     metrics: object,
     overallScore: number
   ) {
@@ -27,6 +30,8 @@ export class AnalyticsService {
         data: {
           sessionId: parseInt(sessionId),
           schemaExId: schemaExId,
+          copilotType: copilotType,
+          modelName: modelName,
           metrics,
           overallScore: overallScore,
         },
@@ -100,7 +105,7 @@ export class AnalyticsService {
   }
 
   async getDashboardMetrics(filters: {
-    copilotType?: string;
+    copilotType?: typeof COPILOT_TYPES[keyof typeof COPILOT_TYPES];
     modelName?: string;
     startDate?: Date;
     endDate?: Date;

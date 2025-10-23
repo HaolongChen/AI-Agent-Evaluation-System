@@ -53,6 +53,19 @@ export class RubricService {
     }
   }
 
+  async getRubricById(rubricId: string) {
+    try {
+      return prisma.adaptiveRubric.findUnique({
+        where: {
+          id: parseInt(rubricId),
+        },
+      });
+    } catch (error) {
+      logger.error('Error fetching rubric by id:', error);
+      throw new Error('Failed to fetch rubric by id');
+    }
+  }
+
   async getRubricsBySession(sessionId: string) {
     try {
       return prisma.adaptiveRubric.findMany({

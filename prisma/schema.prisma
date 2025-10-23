@@ -110,7 +110,6 @@ model adaptiveRubric {
   projectExId String @map("project_ex_id")
   schemaExId  String @map("schema_ex_id")
   sessionId   Int @unique @map("session_id")
-  newGoldenSetId Int? @unique @map("new_golden_set_id") // Reference to nextGoldenSet.id
 
   // Rubric Content
   content        String[] // The actual question/rubric
@@ -155,7 +154,8 @@ model evaluationResult {
   id         Int @id @default(autoincrement())
   sessionId  Int @unique @map("session_id")
   schemaExId String @map("schema_ex_id")
-  nextGoldenSetId Int? @unique @map("next_golden_set_id") // Reference to nextGoldenSet.id
+  copilotType CopilotType @map("copilot_type")
+  modelName  String @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
 
   evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
 

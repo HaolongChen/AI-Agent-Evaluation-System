@@ -108,6 +108,8 @@ export const typeDefs = `#graphql
     id: ID!
     sessionId: Int!
     schemaExId: String!
+    copilotType: CopilotType!
+    modelName: String!
     evaluationStatus: EvaluationStatus!
     metrics: JSON!
     overallScore: Float!
@@ -191,13 +193,18 @@ export const typeDefs = `#graphql
       result: [Boolean!]!
       confidenceScore: [Float!]!
       notes: String
-    ): JudgeRecord!
+    ): JudgeResult!
   }
 
   # Custom Types for Analytics
   type ModelComparison {
     schemaExId: String!
     models: [ModelPerformance!]!
+  }
+
+  type JudgeResult {
+    finalRecord: JudgeRecord!
+    finalResult: EvaluationResult!
   }
 
   type ModelPerformance {

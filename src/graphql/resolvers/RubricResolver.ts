@@ -36,10 +36,18 @@ export const rubricResolver = {
 
     getRubricsForReview: async (
       _: unknown,
-      args: { reviewStatus: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS] }
+      args: {
+        sessionId?: number;
+        projectExId?: string;
+        schemaExId?: string; 
+        reviewStatus?: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS];
+      }
     ) => {
       try {
         const rubrics = await rubricService.getRubricsForReview(
+          args.sessionId,
+          args.projectExId,
+          args.schemaExId,
           args.reviewStatus
         );
         return rubrics;

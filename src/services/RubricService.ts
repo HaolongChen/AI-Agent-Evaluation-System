@@ -71,16 +71,23 @@ export class RubricService {
   }
 
   async getRubricsForReview(
-    reviewStatus: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS]
+    sessionId?: number,
+    projectExId?: string,
+    schemaExId?: string,
+    reviewStatus?: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS]
   ) {
     try {
       return prisma.adaptiveRubric.findMany({
         where: {
           isActive: true,
-          reviewStatus,
+          ...(reviewStatus && { reviewStatus }),
+          ...(sessionId && { sessionId }),
+          ...(projectExId && { projectExId }),
+          ...(schemaExId && { schemaExId }),
         },
         include: {
           judgeRecords: true,
+          session: true,
         },
         orderBy: { generatedAt: 'desc' },
       });

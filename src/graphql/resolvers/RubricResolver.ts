@@ -39,7 +39,7 @@ export const rubricResolver = {
       args: {
         sessionId?: number;
         projectExId?: string;
-        schemaExId?: string; 
+        schemaExId?: string;
         reviewStatus?: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS];
       }
     ) => {
@@ -48,7 +48,7 @@ export const rubricResolver = {
           args.sessionId,
           args.projectExId,
           args.schemaExId,
-          args.reviewStatus
+          args.reviewStatus ?? 'pending'
         );
         return rubrics;
       } catch (error) {

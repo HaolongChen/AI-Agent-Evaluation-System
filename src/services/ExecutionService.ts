@@ -53,6 +53,7 @@ export class ExecutionService {
     schemaExId?: string;
     copilotType?: CopilotType;
     modelName?: string;
+    status?: (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS];
   }) {
     try {
       return prisma.evaluationSession.findMany({
@@ -60,6 +61,7 @@ export class ExecutionService {
           ...(filters.schemaExId && { schemaExId: filters.schemaExId }),
           ...(filters.copilotType && { copilotType: filters.copilotType }),
           ...(filters.modelName && { modelName: filters.modelName }),
+          ...(filters.status && { status: filters.status }),
         },
         include: {
           rubrics: true,

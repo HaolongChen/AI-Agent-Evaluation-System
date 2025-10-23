@@ -131,7 +131,12 @@ export const typeDefs = `#graphql
     # Adaptive Rubrics
     getAdaptiveRubricsBySchemaExId(schemaExId: String!): [AdaptiveRubric!]!
     getAdaptiveRubricsBySession(sessionId: Int!): [AdaptiveRubric!]!
-    getRubricsForReview(reviewStatus: RubricReviewStatus): [AdaptiveRubric!]!
+    getRubricsForReview(
+      sessionId: Int,
+      projectExId: String,
+      schemaExId: String,
+      reviewStatus: RubricReviewStatus
+    ): [AdaptiveRubric!]!
 
     # Results & Analytics
     getEvaluationResult(sessionId: Int!): EvaluationResult
@@ -183,7 +188,7 @@ export const typeDefs = `#graphql
     judge(
       adaptiveRubricId: Int!
       accountId: String!
-      result: Boolean!
+      result: [Boolean!]!
       confidenceScore: [Float!]!
       notes: String
     ): JudgeRecord!

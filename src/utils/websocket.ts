@@ -24,8 +24,9 @@ class WebSocketClient {
     });
   }
 
-  messageResolver(message: WebSocket.RawData): void {
+  messageResolver(message: WebSocket.RawData, fn: (data: WebSocket.RawData) => void): void {
     console.log("Resolving message:", message);
+    fn(message);
   }
 
   sendMessage(message: string): void {

@@ -44,6 +44,7 @@
   "dependencies": {
     "@apollo/server": "^5.0.0",
     "@as-integrations/express5": "^1.1.2",
+    "@functorz/ztype": "^2.8.26",
     "@langchain/core": "^1.0.1",
     "@langchain/langgraph": "^1.0.0",
     "@prisma/client": "^6.17.1",

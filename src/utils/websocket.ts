@@ -2,6 +2,11 @@ import { WebSocket } from "ws";
 
 class WebSocketClient {
   private socket: WebSocket | null = null;
+  private fn: (message: WebSocket.RawData) => void;
+
+  constructor(fn: (message: WebSocket.RawData) => void) {
+    this.fn = fn;
+  }
 
   connect(url: string): void {
     this.socket = new WebSocket(url);
@@ -24,9 +29,9 @@ class WebSocketClient {
     });
   }
 
-  messageResolver(message: WebSocket.RawData, fn: (data: WebSocket.RawData) => void): void {
+  messageResolver(message: WebSocket.RawData): void {
     console.log("Resolving message:", message);
-    fn(message);
+    this.fn(message);
   }
 
   sendMessage(message: string): void {

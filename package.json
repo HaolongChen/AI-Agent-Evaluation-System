@@ -50,6 +50,7 @@
     "@langchain/langgraph": "^1.0.0",
     "@prisma/client": "^6.17.1",
     "@types/js-yaml": "^4.0.9",
+    "@types/ws": "^8.18.1",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -59,6 +60,7 @@
     "graphql-type-json": "^0.3.2",
     "js-yaml": "^4.1.0",
     "langchain": "^1.0.1",
+    "ws": "^8.18.3",
     "zod": "^4.1.12"
   }
 }

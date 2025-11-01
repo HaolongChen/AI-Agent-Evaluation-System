@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 
-class WebSocketClient {
+export class WebSocketClient {
   private socket: WebSocket | null = null;
   private fn: (message: WebSocket.RawData) => void;
 
@@ -49,5 +49,3 @@ class WebSocketClient {
     }
   }
 }
-
-export default WebSocketClient;

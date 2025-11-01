@@ -8,6 +8,20 @@ export const DATABASE_URL =
   process.env['DATABASE_URL'] || process.env['DATABASE_URL_DEVELOPMENT'];
 
 export const URL = process.env['URL'] || `http://localhost:${PORT}`;
+if (
+  !process.env['WS_URL'] ||
+  !process.env['userToken'] ||
+  !process.env['projectExId']
+) {
+  throw new Error(
+    'Missing required environment variables: WS_URL, userToken, or projectExId'
+  );
+}
+
+export const WS_URL =
+  NODE_ENV === 'development'
+    ? `${process.env['WS_URL']}userToken=${process.env['userToken']}&projectExId=${process.env['projectExId']}`
+    : `${process.env['WS_URL']}userToken=${process.env['userToken']}&projectExId=${process.env['projectExId']}`; // TODO: modify WS_URL for production mode
 // // LLM Configuration
 // export const OPENAI_API_KEY = process.env['OPENAI_API_KEY'];
 // export const ANTHROPIC_API_KEY = process.env['ANTHROPIC_API_KEY'];

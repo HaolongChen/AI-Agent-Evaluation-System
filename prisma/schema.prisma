@@ -43,17 +43,18 @@ enum ExpectedAnswer {
 }
 
 model goldenSet {
-  id             Int      @id @default(autoincrement())
-  projectExId    String      @map("project_ex_id")
-  schemaExId     String      @map("schema_ex_id")
-  nextGoldenSetId Int?      @unique @map("next_golden_set_id")
-  copilotType    CopilotType @map("copilot_type")
-  description    String?
-  promptTemplate String      @map("prompt_template")
-  idealResponse  Json        @map("ideal_response")
-  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy      String?     @map("created_by")
-  isActive       Boolean     @default(true) @map("is_active")
+  id              Int         @id @default(autoincrement())
+  projectExId     String      @map("project_ex_id")
+  schemaExId      String      @map("schema_ex_id")
+  nextGoldenSetId Int?        @unique @map("next_golden_set_id")
+  copilotType     CopilotType @map("copilot_type")
+  description     String?
+  promptTemplate  String      @map("prompt_template")
+  // TODO: implement context if needed
+  idealResponse   Json        @map("ideal_response")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy       String?     @map("created_by")
+  isActive        Boolean     @default(true) @map("is_active")
 
   nextGoldenSet nextGoldenSet? @relation(fields: [nextGoldenSetId], references: [id])
 
@@ -64,24 +65,25 @@ model goldenSet {
 model nextGoldenSet {
   id             Int      @id @default(autoincrement())
   description    String?
-  promptTemplate String      @map("prompt_template")
-  idealResponse  Json        @map("ideal_response")
-  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy      String?     @map("created_by")
-  isActive       Boolean     @default(true) @map("is_active")
+  promptTemplate String   @map("prompt_template")
+  idealResponse  Json     @map("ideal_response")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy      String?  @map("created_by")
+  isActive       Boolean  @default(true) @map("is_active")
 
   goldenSet goldenSet?
+
   @@index([id], map: "idx_next_golden_set_id")
 }
 
 // Execution Sessions (references copilot schema tables)
 model evaluationSession {
-  id           Int        @id @default(autoincrement())
+  id           Int           @id @default(autoincrement())
   projectExId  String        @map("project_ex_id")
   schemaExId   String        @map("schema_ex_id")
   copilotType  CopilotType   @map("copilot_type")
   modelName    String        @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-  sessionIdRef Int?       @map("session_id_ref") // Reference to copilot_session.id
+  sessionIdRef Int?          @map("session_id_ref") // Reference to copilot_session.id
   startedAt    DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
   completedAt  DateTime?     @map("completed_at") @db.Timestamptz(6)
   status       SessionStatus @default(running)
@@ -106,10 +108,10 @@ model evaluationSession {
 
 // Adaptive Rubrics (AI-generated evaluation questions)
 model adaptiveRubric {
-  id          Int @id @default(autoincrement())
+  id          Int    @id @default(autoincrement())
   projectExId String @map("project_ex_id")
   schemaExId  String @map("schema_ex_id")
-  sessionId   Int @unique @map("session_id")
+  sessionId   Int    @unique @map("session_id")
 
   // Rubric Content
   content        String[] // The actual question/rubric
@@ -127,7 +129,7 @@ model adaptiveRubric {
   reviewedBy  String?   @map("reviewed_by") // account ID of the reviewer
 
   // Relations
-  session      evaluationSession           @relation(fields: [sessionId], references: [id])
+  session      evaluationSession          @relation(fields: [sessionId], references: [id])
   judgeRecords adaptiveRubricJudgeRecord?
 
   @@index([sessionId], map: "idx_adaptive_rubric_session")
@@ -135,8 +137,8 @@ model adaptiveRubric {
 
 // Rubric Judgments (human reviews)
 model adaptiveRubricJudgeRecord {
-  id               Int    @id @default(autoincrement())
-  adaptiveRubricId Int    @unique @map("adaptive_rubric_id")
+  id               Int       @id @default(autoincrement())
+  adaptiveRubricId Int       @unique @map("adaptive_rubric_id")
   accountId        String    @map("account_id") // ID of the human judge but probably unnecessary to store
   result           Boolean[] // true = pass, false = fail
   confidenceScore  Decimal[] @map("confidence_score") @db.Decimal(5, 2) // 0.00 - 1.00 scale
@@ -151,11 +153,11 @@ model adaptiveRubricJudgeRecord {
 
 // Evaluation Results Summary (aggregated metrics)
 model evaluationResult {
-  id         Int @id @default(autoincrement())
-  sessionId  Int @unique @map("session_id")
-  schemaExId String @map("schema_ex_id")
+  id          Int         @id @default(autoincrement())
+  sessionId   Int         @unique @map("session_id")
+  schemaExId  String      @map("schema_ex_id")
   copilotType CopilotType @map("copilot_type")
-  modelName  String @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
+  modelName   String      @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
 
   evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
 

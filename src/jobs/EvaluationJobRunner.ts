@@ -1,7 +1,15 @@
 import WebSocketClient from "../utils/websocket.ts";
 
 export class EvaluationJobRunner {
-    private 
+    private projectExId: string;
+    private wsUrl: string;
+    private promptTemplate: string;
+
+    constructor(projectExId: string, wsUrl: string, promptTemplate: string) {
+        this.projectExId = projectExId;
+        this.wsUrl = wsUrl;
+        this.promptTemplate = promptTemplate;
+    }
     // TODO: implement instances like goldenSets, schemaExId, copilotType, modelName, etc.
 //   private wsClient: WebSocketClient;
 

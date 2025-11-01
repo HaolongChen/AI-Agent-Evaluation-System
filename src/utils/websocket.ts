@@ -1,4 +1,5 @@
 import { WebSocket } from "ws";
+import { logger } from "./logger.ts";
 
 export class WebSocketClient {
   private socket: WebSocket | null = null;
@@ -12,25 +13,25 @@ export class WebSocketClient {
     this.socket = new WebSocket(url);
 
     this.socket.on("open", () => {
-      console.log("WebSocket connection established.");
+      logger.info("WebSocket connection established.");
     });
 
     this.socket.on("message", (data) => {
       this.messageResolver(data);
-      console.log("Received message:", data);
+      logger.info("Received message:", data);
     });
 
     this.socket.on("close", () => {
-      console.log("WebSocket connection closed.");
+      logger.info("WebSocket connection closed.");
     });
 
     this.socket.on("error", (error) => {
-      console.error("WebSocket error:", error);
+      logger.error("WebSocket error:", error);
     });
   }
 
   messageResolver(message: WebSocket.RawData): void {
-    console.log("Resolving message:", message);
+    logger.info("Resolving message:", message);
     this.fn(message);
   }
 
@@ -38,7 +39,7 @@ export class WebSocketClient {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(message);
     } else {
-      console.error("WebSocket is not connected.");
+      logger.error("WebSocket is not connected.");
     }
   }
 

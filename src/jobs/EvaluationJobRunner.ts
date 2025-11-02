@@ -183,6 +183,7 @@ export class EvaluationJobRunner {
     // Add timeout handling
     this.timeoutId = setTimeout(() => {
       if (!this.isCompleted && this.rejectCompletion) {
+        this.timeoutId = null;
         this.isCompleted = true;
         this.rejectCompletion(new Error(`Job execution timeout after ${timeoutMs}ms`));
       }

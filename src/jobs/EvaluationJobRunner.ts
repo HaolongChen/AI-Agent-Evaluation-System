@@ -3,6 +3,14 @@ import * as z from 'zod';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import { logger } from '../utils/logger.ts';
 import { appendFileSync } from 'fs';
+import {
+  CopilotMessageType,
+  type CopilotMessage,
+  type HumanInputMessage,
+  type InitialStateMessage,
+} from '../utils/types.ts';
+
+const DISCONNECT = true;
 
 export class EvaluationJobRunner {
   private projectExId: string;
@@ -19,6 +27,10 @@ export class EvaluationJobRunner {
 
   connect(): void {
     this.socket = new WebSocket(this.wsUrl);
+
+    if (DISCONNECT) {
+      this.stopJob();
+    }
 
     this.socket.on('open', () => {
       logger.info('WebSocket connection established.');
@@ -38,7 +50,7 @@ export class EvaluationJobRunner {
   }
 
   handleMessage(message: WebSocket.RawData): void {
-    const data = JSON.parse(message.toString());
+    const data: CopilotMessage[] = JSON.parse(message.toString());
     const logEntry = `${new Date().toISOString()} - Job Update: ${JSON.stringify(
       data,
       null,
@@ -49,13 +61,32 @@ export class EvaluationJobRunner {
     //   `Project ${this.projectExId} - Status: ${data.at(-1)}, Progress: ${data.progress}%, promptTemplate: ${this.promptTemplate}`
     // );
     // Handle job updates here (e.g., update database, notify users, etc.)
-    if (data.terminated) {
-			logger.error(`Job for project ${this.projectExId} has terminated.`);
+    switch (data[0]?.type) {
+      case CopilotMessageType.INITIAL_STATE:
+        this.handleInitialStateMessage(data[0] as InitialStateMessage);
+        break;
+      // Handle other message types as needed
+      default:
+        logger.info(
+          `Received message of type ${data[0]?.type} for project ${this.projectExId}.`
+        );
+    }
+  }
+
+  handleInitialStateMessage(message: InitialStateMessage): void {
+    if (message.terminated) {
+      logger.error(`Job for project ${this.projectExId} has terminated.`);
       this.stopJob();
     }
-		if(data.at(-1) === 'completed'){
-			this.stopJob();
-		}
+    if (message.currentJobIsRunning === true) {
+      logger.info(`Job for project ${this.projectExId} is running.`);
+    }
+    logger.info(`Received initial state for project ${this.projectExId}.`);
+    const response: HumanInputMessage = {
+      type: CopilotMessageType.HUMAN_INPUT,
+      content: this.promptTemplate,
+    };
+    this.socket?.send(JSON.stringify(response));
   }
 
   startJob(): void {

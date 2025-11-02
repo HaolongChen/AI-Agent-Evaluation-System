@@ -22,6 +22,7 @@
     "db:pull": "npx prisma db pull",
     "db:studio": "npx prisma studio",
     "db:reset": "npx prisma migrate reset --force",
+    "db:delete": "ts-node scripts/delete-golden-sets.ts",
     "eval": "tsx src/jobs/EvaluationJobRunner.ts"
   },
   "keywords": [],

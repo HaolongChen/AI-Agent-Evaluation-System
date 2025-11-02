@@ -53,7 +53,6 @@ export enum CopilotMessageType {
 export interface InitialStateMessage {
   type: CopilotMessageType.INITIAL_STATE;
   sessionId: string;
-  // eslint-disable-next-line no-use-before-define
   copilotMessages: CopilotMessage[];
   currentJobIsRunning: boolean;
   terminated?: boolean;

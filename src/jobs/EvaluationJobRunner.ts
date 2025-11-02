@@ -170,18 +170,19 @@ export class EvaluationJobRunner {
   }
 
   /**
-   * Wait for the job to complete with an optional timeout
+   * Wait for the job to complete with an optional timeout.
+   * Can be called multiple times; all calls will receive the same promise.
+   * If called after completion, returns the already resolved/rejected promise.
    * @param timeoutMs Optional timeout in milliseconds (default: 5 minutes)
    * @returns Promise that resolves with the response when job completes
    */
   async waitForCompletion(timeoutMs: number = 300000): Promise<string> {
-    // Clear any existing timeout before setting a new one
+    // Clear any existing timeout before setting a new one (for multiple calls)
     this.clearTimeout();
     
     // Add timeout handling
     this.timeoutId = setTimeout(() => {
       if (!this.isCompleted && this.rejectCompletion) {
-        this.clearTimeout();
         this.isCompleted = true;
         this.rejectCompletion(new Error(`Job execution timeout after ${timeoutMs}ms`));
       }
@@ -191,6 +192,8 @@ export class EvaluationJobRunner {
   }
 
   stopJob(): void {
+    // Clean up timeout when stopping the job
+    this.clearTimeout();
     // this.socket?.send(JSON.stringify({ action: "stop", jobId }));
     this.socket?.close();
   }

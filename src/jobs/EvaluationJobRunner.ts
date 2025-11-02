@@ -12,12 +12,13 @@ import {
   type ToolCallsMessage,
 } from '../utils/types.ts';
 
-const DISCONNECT = true;
+const DISCONNECT = false;
 
 export class EvaluationJobRunner {
   private projectExId: string;
   private wsUrl: string;
   private promptTemplate: string;
+  response: string = '';
 
   constructor(projectExId: string, wsUrl: string, promptTemplate: string) {
     this.projectExId = projectExId;
@@ -69,6 +70,9 @@ export class EvaluationJobRunner {
       case CopilotMessageType.TOOL_CALLS:
         this.handleToolCallsMessage(data[0] as ToolCallsMessage);
         break;
+      case CopilotMessageType.AI_RESPONSE:
+        this.handleAIResponseMessage(data[0] as CopilotMessage);
+        break;
       default:
         logger.info(
           `Received message of type ${data[0]?.type} for project ${this.projectExId}.`
@@ -105,7 +109,18 @@ export class EvaluationJobRunner {
         message
       )}.`
     );
-    // Handle tool calls message as needed
+    // TODO:Handle tool calls message as needed
+  }
+
+  handleAIResponseMessage(message: CopilotMessage): void {
+    logger.info(
+      `Received AI response for project ${this.projectExId}: ${JSON.stringify(
+        message
+      )}.`
+    );
+    this.response = JSON.stringify(message);
+    this.stopJob();
+    // TODO:Handle AI response message as needed
   }
 
   startJob(): void {

@@ -29,7 +29,7 @@ export class ExecutionService {
       const response = await applyAndWatchJob(
         `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
         'default',
-        './dist/jobs/evaluationJob.js',
+        './src/jobs/evaluationJobRunner.ts',
         300000,
         projectExId,
         WS_URL,

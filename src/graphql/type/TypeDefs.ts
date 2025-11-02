@@ -167,9 +167,10 @@ export const typeDefs = `#graphql
 
     # Execution
     execAiCopilotByTypeAndModel(
+      projectExId: String!
       schemaExId: String!
       copilotType: CopilotType!
-      modelName: String!
+      # modelName: String!
     ): Boolean!
 
     # Rubric Generation

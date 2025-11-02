@@ -1,5 +1,4 @@
 import { WebSocket } from 'ws';
-import { logger } from '../utils/logger.ts';
 import * as z from 'zod';
 
 class EvaluationJobRunner {
@@ -19,7 +18,7 @@ class EvaluationJobRunner {
     this.socket = new WebSocket(this.wsUrl);
 
     this.socket.on("open", () => {
-      logger.info("WebSocket connection established.");
+      console.log("WebSocket connection established.");
     });
 
     this.socket.on("message", (data) => {
@@ -27,18 +26,18 @@ class EvaluationJobRunner {
     });
 
     this.socket.on("close", () => {
-      logger.info("WebSocket connection closed.");
+      console.log("WebSocket connection closed.");
     });
 
     this.socket.on("error", (error) => {
-      logger.error("WebSocket error:", error);
+      console.error("WebSocket error:", error);
     });
   }
 
   handleMessage(message: WebSocket.RawData): void {
     const data = JSON.parse(message.toString());
-    logger.info("Job Update:", data);
-		logger.info(`Project ${this.projectExId} - Status: ${data.status}, Progress: ${data.progress}%, promptTemplate: ${this.promptTemplate}`);
+    console.log("Job Update:", data);
+    console.log(`Project ${this.projectExId} - Status: ${data.status}, Progress: ${data.progress}%, promptTemplate: ${this.promptTemplate}`);
     // Handle job updates here (e.g., update database, notify users, etc.)
   }
 

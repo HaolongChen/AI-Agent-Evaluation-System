@@ -24,24 +24,30 @@ export async function applyAndWatchJob(
   wsUrl: string,
   promptTemplate: string
 ): Promise<JobResult> {
+  // Normalize job name to be lowercase and RFC 1123 compliant
+  const normalizedName = name
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .substring(0, 63);
+
   // Kubernetes Job YAML configuration
   const JOB_YAML = `
   apiVersion: batch/v1
   kind: Job
   metadata:
-    name: ${name}
+    name: ${normalizedName}
     namespace: ${namespace}
   spec:
     template:
       spec:
         containers:
         - name: evaluator
-          image: node:18-alpine
-          command: ["node", "${path}", "${projectExId}", "${wsUrl}", "${promptTemplate}"]
+          image: evaluation
+          command: ["tsx", "${path}", "${projectExId}", "${wsUrl}", "${promptTemplate}"]
           env:
           - name: NODE_ENV
             value: "production"
-        restartPolicy: Always
+        restartPolicy: OnFailure
     backoffLimit: 3
   `;
 
@@ -58,7 +64,7 @@ export async function applyAndWatchJob(
     throw new Error('Invalid Job spec configuration');
   }
 
-  const jobName = jobSpec.metadata.name;
+  const jobName = normalizedName;
 
   // Apply the Job (create or patch)
   jobSpec.metadata.annotations = jobSpec.metadata.annotations || {};
@@ -79,7 +85,7 @@ export async function applyAndWatchJob(
 
     await client.read(header);
     // Job exists, delete and recreate it (Jobs are immutable)
-    await batchV1Api.deleteNamespacedJob({name: jobName, namespace});
+    await batchV1Api.deleteNamespacedJob({ name: jobName, namespace });
     // Wait a bit for the deletion to complete
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await client.create(jobSpec);
@@ -125,7 +131,7 @@ async function watchJobStatus(
         // Get the current Job status
         const jobResponse = await batchV1Api.readNamespacedJobStatus({
           name: jobName,
-          namespace
+          namespace,
         });
         const job = jobResponse;
 

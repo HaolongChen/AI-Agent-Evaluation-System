@@ -9,8 +9,18 @@ import {
   type HumanInputMessage,
   type InitialStateMessage,
   type SystemStatusMessage,
+  type ToolCall,
   type ToolCallsMessage,
 } from '../utils/types.ts';
+import {
+  ClientType,
+  Copilot,
+  Locale,
+  Product,
+  type CopilotApiResult,
+} from '../utils/TypeSystem.ts';
+
+import { NODE_ENV } from '../config/env.ts';
 
 const DISCONNECT = false;
 
@@ -122,6 +132,66 @@ export class EvaluationJobRunner {
     this.stopJob();
     // TODO:Handle AI response message as needed
   }
+
+  runToolCalls = async (toolCalls: ToolCall[]) => {
+    const product = (() => {
+      return false;
+    })()
+      ? Product.MOMEN
+      : Product.ZION;
+    const clientType =
+      (() => {
+        return false;
+      })()
+        ? ClientType.WECHAT_MINI_PROGRAM
+        : ClientType.WEB;
+    const locale = (() => {
+      return true;
+    })()
+      ? Locale.ZH
+      : Locale.EN;
+    
+    try {
+      const result: CopilotApiResult = Copilot.toolCalls(
+        assertNotNull(typeSystemStore.schemaGraph),
+        product,
+        clientType,
+        locale,
+        toolCalls
+      );
+      if (NODE_ENV === 'development') {
+        logger.debug('toolCall---result:', result, toolCalls);
+      }
+      const errorMessage = get(result, 'error');
+      if (errorMessage) {
+        throw getError(errorMessage, result);
+      }
+      const schemaDiff = get(result, 'schemaDiff');
+      if (isNil(schemaDiff)) {
+        return { result, successful: true };
+      }
+      if (NODE_ENV === 'development') {
+        logger.debug('toolCall---schemaDiff:', schemaDiff);
+      }
+      const applyResult = applyLocalCrdtDiff(schemaDiff, {
+        isPendingApplication: true,
+      });
+      if (applyResult.successful) {
+        return { result, successful: true };
+      }
+      throw getError(JSON.stringify(applyResult.errorContent), result);
+    } catch (error: any) {
+      if (isDev()) {
+        // eslint-disable-next-line no-console
+        console.log('toolCall---error:', error, toolCalls);
+      }
+      return {
+        successful: false,
+        errorMessage: error.message,
+        result: error.result,
+      };
+    }
+  };
 
   startJob(): void {
     this.connect();

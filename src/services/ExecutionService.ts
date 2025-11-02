@@ -6,8 +6,8 @@ import { goldenSetService } from './GoldenSetService.ts';
 import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
 import { WS_URL } from '../config/env.ts';
 import { applyAndWatchJob } from '../kubernetes/utils/apply-from-file.ts';
-import { promisify } from 'util';
-import { exec } from 'child_process';
+import { EvaluationJobRunner } from '../jobs/EvaluationJobRunner.ts';
+import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 
 export class ExecutionService {
   async createEvaluationSession(
@@ -17,7 +17,7 @@ export class ExecutionService {
     // modelName: string
   ) {
     try {
-      const USE_KUBERNETES_JOBS = false;
+      const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
 
       const goldenSets = await goldenSetService.getGoldenSets(
         undefined,
@@ -46,26 +46,14 @@ export class ExecutionService {
         logger.info('Evaluation job started with response:', response);
         return response;
       } else {
-        const execAsync = promisify(exec);
-        const command = `tsx ./src/jobs/EvaluationJobRunner.ts ${JSON.stringify(
-          projectExId
-        )} ${JSON.stringify(WS_URL)} ${JSON.stringify(
+        const jobRunner = new EvaluationJobRunner(
+          projectExId,
+          WS_URL,
           goldenSet.promptTemplate
-        )}`;
-        logger.info('Starting evaluation job with command:', command);
-        execAsync(command)
-          .then(({ stdout, stderr }) => {
-            if (stdout) {
-              logger.info(`Evaluation job stdout: ${stdout}`);
-            }
-            if (stderr) {
-              logger.error(`Evaluation job stderr: ${stderr}`);
-            }
-          })
-          .catch((error) => {
-            logger.error('Error executing evaluation job:', error);
-          });
-        return { message: 'Evaluation job started' };
+        );
+        const result = await jobRunner.startJob();
+        logger.info('Evaluation job completed with result:', result);
+        return result;
       }
       // TODO: access to copilot with each golden set
       // return prisma.evaluationSession.create({

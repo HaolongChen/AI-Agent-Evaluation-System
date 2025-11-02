@@ -18,6 +18,8 @@ if (
   );
 }
 
+export const RUN_KUBERNETES_JOBS = process.env['RUN_KUBERNETES_JOBS'] === 'true';
+
 export const WS_URL =
   NODE_ENV === 'development'
     ? `${process.env['WS_URL']}userToken=${process.env['userToken']}&projectExId=${process.env['projectExId']}`

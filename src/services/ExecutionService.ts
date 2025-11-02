@@ -6,37 +6,67 @@ import { goldenSetService } from './GoldenSetService.ts';
 import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
 import { WS_URL } from '../config/env.ts';
 import { applyAndWatchJob } from '../kubernetes/utils/apply-from-file.ts';
+import { promisify } from 'util';
+import { exec } from 'child_process';
 
 export class ExecutionService {
   async createEvaluationSession(
     projectExId: string,
     schemaExId: string,
-    copilotType: CopilotType,
+    copilotType: CopilotType
     // modelName: string
   ) {
     try {
-      const goldenSets = await goldenSetService.getGoldenSets(undefined, REVERSE_COPILOT_TYPES[copilotType]);
+      const USE_KUBERNETES_JOBS = false;
+
+      const goldenSets = await goldenSetService.getGoldenSets(
+        undefined,
+        REVERSE_COPILOT_TYPES[copilotType]
+      );
       if (!goldenSets || goldenSets.length === 0) {
         throw new Error('No golden sets found');
       }
-      if(goldenSets.length > 1) {
+      if (goldenSets.length > 1) {
         throw new Error('Multiple golden sets found, expected only one');
       }
       const goldenSet = goldenSets[0];
-      if(!goldenSet) {
+      if (!goldenSet) {
         throw new Error('Golden set is undefined');
       }
-      const response = await applyAndWatchJob(
-        `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
-        'default',
-        './src/jobs/evaluationJobRunner.ts',
-        300000,
-        projectExId,
-        WS_URL,
-        goldenSet.promptTemplate
-      );
-      logger.info('Evaluation job started with response:', response);
-      return response;
+      if (USE_KUBERNETES_JOBS) {
+        const response = await applyAndWatchJob(
+          `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
+          'default',
+          './src/jobs/EvaluationJobRunner.ts',
+          300000,
+          projectExId,
+          WS_URL,
+          goldenSet.promptTemplate
+        );
+        logger.info('Evaluation job started with response:', response);
+        return response;
+      } else {
+        const execAsync = promisify(exec);
+        const command = `tsx ./src/jobs/EvaluationJobRunner.ts ${JSON.stringify(
+          projectExId
+        )} ${JSON.stringify(WS_URL)} ${JSON.stringify(
+          goldenSet.promptTemplate
+        )}`;
+        logger.info('Starting evaluation job with command:', command);
+        execAsync(command)
+          .then(({ stdout, stderr }) => {
+            if (stdout) {
+              logger.info(`Evaluation job stdout: ${stdout}`);
+            }
+            if (stderr) {
+              logger.error(`Evaluation job stderr: ${stderr}`);
+            }
+          })
+          .catch((error) => {
+            logger.error('Error executing evaluation job:', error);
+          });
+        return { message: 'Evaluation job started' };
+      }
       // TODO: access to copilot with each golden set
       // return prisma.evaluationSession.create({
       //   data: {

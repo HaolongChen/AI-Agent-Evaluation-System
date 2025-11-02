@@ -52,8 +52,8 @@ export class ExecutionService {
           goldenSet.promptTemplate
         );
         jobRunner.startJob();
-        // TODO: Implement proper waiting mechanism for job completion
-        return jobRunner.response;
+        const response = await jobRunner.waitForCompletion(300000);
+        return response;
       }
       // TODO: access to copilot with each golden set
       // return prisma.evaluationSession.create({

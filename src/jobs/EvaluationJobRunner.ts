@@ -19,6 +19,9 @@ export class EvaluationJobRunner {
   private wsUrl: string;
   private promptTemplate: string;
   response: string = '';
+  private completionPromise: Promise<string> | null = null;
+  private resolveCompletion: ((value: string) => void) | null = null;
+  private rejectCompletion: ((reason: Error) => void) | null = null;
 
   constructor(projectExId: string, wsUrl: string, promptTemplate: string) {
     this.projectExId = projectExId;
@@ -45,10 +48,16 @@ export class EvaluationJobRunner {
 
     this.socket.on('close', () => {
       logger.info('WebSocket connection closed.');
+      if (this.rejectCompletion && !this.response) {
+        this.rejectCompletion(new Error('WebSocket connection closed before job completion'));
+      }
     });
 
     this.socket.on('error', (error) => {
       logger.error('WebSocket error:', error);
+      if (this.rejectCompletion) {
+        this.rejectCompletion(error instanceof Error ? error : new Error(String(error)));
+      }
     });
   }
 
@@ -83,7 +92,11 @@ export class EvaluationJobRunner {
   handleInitialStateMessage(message: InitialStateMessage): void {
     if (message.terminated) {
       logger.error(`Job for project ${this.projectExId} has terminated.`);
+      if (this.rejectCompletion) {
+        this.rejectCompletion(new Error('Job has terminated'));
+      }
       this.stopJob();
+      return;
     }
     if (message.currentJobIsRunning === true) {
       logger.info(`Job for project ${this.projectExId} is running.`);
@@ -119,6 +132,9 @@ export class EvaluationJobRunner {
       )}.`
     );
     this.response = JSON.stringify(message);
+    if (this.resolveCompletion) {
+      this.resolveCompletion(this.response);
+    }
     this.stopJob();
     // TODO:Handle AI response message as needed
   }
@@ -126,6 +142,29 @@ export class EvaluationJobRunner {
   startJob(): void {
     this.connect();
     // this.socket?.send(JSON.stringify({ action: "start", jobId }));
+  }
+
+  /**
+   * Wait for the job to complete with an optional timeout
+   * @param timeoutMs Optional timeout in milliseconds (default: 5 minutes)
+   * @returns Promise that resolves with the response when job completes
+   */
+  async waitForCompletion(timeoutMs: number = 300000): Promise<string> {
+    if (!this.completionPromise) {
+      this.completionPromise = new Promise<string>((resolve, reject) => {
+        this.resolveCompletion = resolve;
+        this.rejectCompletion = reject;
+      });
+    }
+
+    // Add timeout handling
+    const timeoutPromise = new Promise<string>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Job execution timeout after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    return Promise.race([this.completionPromise, timeoutPromise]);
   }
 
   stopJob(): void {

@@ -19,14 +19,21 @@ export class EvaluationJobRunner {
   private wsUrl: string;
   private promptTemplate: string;
   response: string = '';
-  private completionPromise: Promise<string> | null = null;
+  private completionPromise: Promise<string>;
   private resolveCompletion: ((value: string) => void) | null = null;
   private rejectCompletion: ((reason: Error) => void) | null = null;
+  private isCompleted: boolean = false;
+  private timeoutId: NodeJS.Timeout | null = null;
 
   constructor(projectExId: string, wsUrl: string, promptTemplate: string) {
     this.projectExId = projectExId;
     this.wsUrl = wsUrl;
     this.promptTemplate = promptTemplate;
+    // Create the completion promise in the constructor
+    this.completionPromise = new Promise<string>((resolve, reject) => {
+      this.resolveCompletion = resolve;
+      this.rejectCompletion = reject;
+    });
   }
 
   socket: WebSocket | null = null;
@@ -48,14 +55,16 @@ export class EvaluationJobRunner {
 
     this.socket.on('close', () => {
       logger.info('WebSocket connection closed.');
-      if (this.rejectCompletion && !this.response) {
+      if (!this.isCompleted && this.rejectCompletion) {
+        this.clearTimeout();
         this.rejectCompletion(new Error('WebSocket connection closed before job completion'));
       }
     });
 
     this.socket.on('error', (error) => {
       logger.error('WebSocket error:', error);
-      if (this.rejectCompletion) {
+      if (!this.isCompleted && this.rejectCompletion) {
+        this.clearTimeout();
         this.rejectCompletion(error instanceof Error ? error : new Error(String(error)));
       }
     });
@@ -92,7 +101,9 @@ export class EvaluationJobRunner {
   handleInitialStateMessage(message: InitialStateMessage): void {
     if (message.terminated) {
       logger.error(`Job for project ${this.projectExId} has terminated.`);
-      if (this.rejectCompletion) {
+      if (!this.isCompleted && this.rejectCompletion) {
+        this.clearTimeout();
+        this.isCompleted = true;
         this.rejectCompletion(new Error('Job has terminated'));
       }
       this.stopJob();
@@ -132,7 +143,9 @@ export class EvaluationJobRunner {
       )}.`
     );
     this.response = JSON.stringify(message);
-    if (this.resolveCompletion) {
+    if (!this.isCompleted && this.resolveCompletion) {
+      this.clearTimeout();
+      this.isCompleted = true;
       this.resolveCompletion(this.response);
     }
     this.stopJob();
@@ -145,26 +158,30 @@ export class EvaluationJobRunner {
   }
 
   /**
+   * Clear the timeout if set
+   */
+  private clearTimeout(): void {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+  }
+
+  /**
    * Wait for the job to complete with an optional timeout
    * @param timeoutMs Optional timeout in milliseconds (default: 5 minutes)
    * @returns Promise that resolves with the response when job completes
    */
   async waitForCompletion(timeoutMs: number = 300000): Promise<string> {
-    if (!this.completionPromise) {
-      this.completionPromise = new Promise<string>((resolve, reject) => {
-        this.resolveCompletion = resolve;
-        this.rejectCompletion = reject;
-      });
-    }
-
     // Add timeout handling
-    const timeoutPromise = new Promise<string>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error(`Job execution timeout after ${timeoutMs}ms`));
-      }, timeoutMs);
-    });
+    this.timeoutId = setTimeout(() => {
+      if (!this.isCompleted && this.rejectCompletion) {
+        this.isCompleted = true;
+        this.rejectCompletion(new Error(`Job execution timeout after ${timeoutMs}ms`));
+      }
+    }, timeoutMs);
 
-    return Promise.race([this.completionPromise, timeoutPromise]);
+    return this.completionPromise;
   }
 
   stopJob(): void {

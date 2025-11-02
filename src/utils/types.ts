@@ -1,25 +1,22 @@
-import type { JobState, ToolResult } from "./graph-states.ts";
+import type { JobState, ToolResult } from './graph-states.ts';
 
 export type copilotType =
-    | 'dataModel'
-    | 'uiBuilder'
-    | 'actionflow'
-    | 'logAnalyzer'
-    | 'agentBuilder';
+  | 'dataModel'
+  | 'uiBuilder'
+  | 'actionflow'
+  | 'logAnalyzer'
+  | 'agentBuilder';
 
-export type expectedAnswerType = 
-    | 'yes'
-    | 'no';
+export type expectedAnswerType = 'yes' | 'no';
 
 export type rubricContentType = {
-    content: string[],
-    rubricType: string[],
-    category: string[],
-    expectedAnswer: expectedAnswerType[]
-}
+  content: string[];
+  rubricType: string[];
+  category: string[];
+  expectedAnswer: expectedAnswerType[];
+};
 
 // --- COPY FROM COPILOT TYPES DEFINITION ---
-
 
 export interface WithMessageId {
   messageId: string;
@@ -178,7 +175,7 @@ const MESSAGE_TYPES_TO_SAVE = [
 export const filterCopilotMessagesToSave = (
   copilotMessages: CopilotMessage[]
 ): CopilotMessage[] =>
-  copilotMessages.filter(message =>
+  copilotMessages.filter((message) =>
     MESSAGE_TYPES_TO_SAVE.includes(message.type)
   );
 

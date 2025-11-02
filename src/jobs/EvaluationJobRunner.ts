@@ -8,8 +8,8 @@ import {
   type CopilotMessage,
   type HumanInputMessage,
   type InitialStateMessage,
-	type SystemStatusMessage,
-	type ToolCallsMessage,
+  type SystemStatusMessage,
+  type ToolCallsMessage,
 } from '../utils/types.ts';
 
 const DISCONNECT = true;
@@ -63,12 +63,12 @@ export class EvaluationJobRunner {
       case CopilotMessageType.INITIAL_STATE:
         this.handleInitialStateMessage(data[0] as InitialStateMessage);
         break;
-			case CopilotMessageType.SYSTEM_STATUS:
-				this.handleSystemStatusMessage(data[0] as SystemStatusMessage);
-				break;
-			case CopilotMessageType.TOOL_CALLS:
+      case CopilotMessageType.SYSTEM_STATUS:
+        this.handleSystemStatusMessage(data[0] as SystemStatusMessage);
+        break;
+      case CopilotMessageType.TOOL_CALLS:
         this.handleToolCallsMessage(data[0] as ToolCallsMessage);
-				break;
+        break;
       default:
         logger.info(
           `Received message of type ${data[0]?.type} for project ${this.projectExId}.`
@@ -92,15 +92,21 @@ export class EvaluationJobRunner {
     this.socket?.send(JSON.stringify(response));
   }
 
-	handleSystemStatusMessage(message: SystemStatusMessage): void {
-		logger.info(`Received system status for project ${this.projectExId}: ${message.content}.`);
-		// Handle system status message as needed
-	}
+  handleSystemStatusMessage(message: SystemStatusMessage): void {
+    logger.info(
+      `Received system status for project ${this.projectExId}: ${message.content}.`
+    );
+    // Handle system status message as needed
+  }
 
-	handleToolCallsMessage(message: ToolCallsMessage): void {
-		logger.info(`Received tool calls for project ${this.projectExId}: ${JSON.stringify(message)}.`);
-		// Handle tool calls message as needed
-	}
+  handleToolCallsMessage(message: ToolCallsMessage): void {
+    logger.info(
+      `Received tool calls for project ${this.projectExId}: ${JSON.stringify(
+        message
+      )}.`
+    );
+    // Handle tool calls message as needed
+  }
 
   startJob(): void {
     this.connect();

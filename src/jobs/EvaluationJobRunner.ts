@@ -57,6 +57,7 @@ export class EvaluationJobRunner {
       logger.info('WebSocket connection closed.');
       if (!this.isCompleted && this.rejectCompletion) {
         this.clearTimeout();
+        this.isCompleted = true;
         this.rejectCompletion(new Error('WebSocket connection closed before job completion'));
       }
     });
@@ -65,6 +66,7 @@ export class EvaluationJobRunner {
       logger.error('WebSocket error:', error);
       if (!this.isCompleted && this.rejectCompletion) {
         this.clearTimeout();
+        this.isCompleted = true;
         this.rejectCompletion(error instanceof Error ? error : new Error(String(error)));
       }
     });
@@ -173,9 +175,13 @@ export class EvaluationJobRunner {
    * @returns Promise that resolves with the response when job completes
    */
   async waitForCompletion(timeoutMs: number = 300000): Promise<string> {
+    // Clear any existing timeout before setting a new one
+    this.clearTimeout();
+    
     // Add timeout handling
     this.timeoutId = setTimeout(() => {
       if (!this.isCompleted && this.rejectCompletion) {
+        this.clearTimeout();
         this.isCompleted = true;
         this.rejectCompletion(new Error(`Job execution timeout after ${timeoutMs}ms`));
       }

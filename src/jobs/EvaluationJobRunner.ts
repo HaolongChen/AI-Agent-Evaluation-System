@@ -8,6 +8,7 @@ import {
   type CopilotMessage,
   type HumanInputMessage,
   type InitialStateMessage,
+	type SystemStatusMessage,
 } from '../utils/types.ts';
 
 const DISCONNECT = true;
@@ -57,15 +58,13 @@ export class EvaluationJobRunner {
       2
     )}\n`;
     appendFileSync('logs.txt', logEntry);
-    // logger.info(
-    //   `Project ${this.projectExId} - Status: ${data.at(-1)}, Progress: ${data.progress}%, promptTemplate: ${this.promptTemplate}`
-    // );
-    // Handle job updates here (e.g., update database, notify users, etc.)
     switch (data[0]?.type) {
       case CopilotMessageType.INITIAL_STATE:
         this.handleInitialStateMessage(data[0] as InitialStateMessage);
         break;
-      // Handle other message types as needed
+			case CopilotMessageType.SYSTEM_STATUS:
+				this.handleSystemStatusMessage(data[0] as SystemStatusMessage);
+				break;
       default:
         logger.info(
           `Received message of type ${data[0]?.type} for project ${this.projectExId}.`
@@ -88,6 +87,11 @@ export class EvaluationJobRunner {
     };
     this.socket?.send(JSON.stringify(response));
   }
+
+	handleSystemStatusMessage(message: SystemStatusMessage): void {
+		logger.info(`Received system status for project ${this.projectExId}: ${message.content}.`);
+		// Handle system status message as needed
+	}
 
   startJob(): void {
     this.connect();

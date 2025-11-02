@@ -16,6 +16,9 @@ export interface JobResult {
  * @return Job result with name and final status
  */
 export async function applyAndWatchJob(
+  name: string,
+  namespace: string,
+  path: string,
   timeoutMs: number = 300000,
   projectExId: string,
   wsUrl: string,
@@ -26,19 +29,19 @@ export async function applyAndWatchJob(
   apiVersion: batch/v1
   kind: Job
   metadata:
-    name: evaluation-job
-    namespace: default
+    name: ${name}
+    namespace: ${namespace}
   spec:
     template:
       spec:
         containers:
         - name: evaluator
-          image: your-image:latest
-          command: ["node", "dist/index.js", "${projectExId}", "${wsUrl}", "${promptTemplate}"]
+          image: node:18-alpine
+          command: ["node", "${path}", "${projectExId}", "${wsUrl}", "${promptTemplate}"]
           env:
           - name: NODE_ENV
             value: "production"
-        restartPolicy: Never
+        restartPolicy: Always
     backoffLimit: 3
   `;
 
@@ -56,7 +59,6 @@ export async function applyAndWatchJob(
   }
 
   const jobName = jobSpec.metadata.name;
-  const namespace = jobSpec.metadata.namespace || 'default';
 
   // Apply the Job (create or patch)
   jobSpec.metadata.annotations = jobSpec.metadata.annotations || {};

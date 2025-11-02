@@ -49,7 +49,13 @@ export class EvaluationJobRunner {
     //   `Project ${this.projectExId} - Status: ${data.at(-1)}, Progress: ${data.progress}%, promptTemplate: ${this.promptTemplate}`
     // );
     // Handle job updates here (e.g., update database, notify users, etc.)
-    this.stopJob();
+    if (data.terminated) {
+			logger.error(`Job for project ${this.projectExId} has terminated.`);
+      this.stopJob();
+    }
+		if(data.at(-1) === 'completed'){
+			this.stopJob();
+		}
   }
 
   startJob(): void {

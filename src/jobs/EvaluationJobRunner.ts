@@ -2,6 +2,7 @@ import { WebSocket } from 'ws';
 import * as z from 'zod';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import { logger } from '../utils/logger.ts';
+import { appendFileSync } from 'fs';
 
 export class EvaluationJobRunner {
   private projectExId: string;
@@ -38,11 +39,17 @@ export class EvaluationJobRunner {
 
   handleMessage(message: WebSocket.RawData): void {
     const data = JSON.parse(message.toString());
-    logger.info('Job Update:', data);
-    logger.info(
-      `Project ${this.projectExId} - Status: ${data.at(-1)}, Progress: ${data.progress}%, promptTemplate: ${this.promptTemplate}`
-    );
+    const logEntry = `${new Date().toISOString()} - Job Update: ${JSON.stringify(
+      data,
+      null,
+      2
+    )}\n`;
+    appendFileSync('logs.txt', logEntry);
+    // logger.info(
+    //   `Project ${this.projectExId} - Status: ${data.at(-1)}, Progress: ${data.progress}%, promptTemplate: ${this.promptTemplate}`
+    // );
     // Handle job updates here (e.g., update database, notify users, etc.)
+    this.stopJob();
   }
 
   startJob(): void {

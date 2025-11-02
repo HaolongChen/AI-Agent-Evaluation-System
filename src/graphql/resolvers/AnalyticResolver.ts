@@ -51,7 +51,7 @@ export const analyticResolver = {
           args.projectExId,
           args.schemaExId,
           args.copilotType,
-          args.modelName
+          // args.modelName
         );
         // TODO: implement actual execution logic
         return result ? true : false;

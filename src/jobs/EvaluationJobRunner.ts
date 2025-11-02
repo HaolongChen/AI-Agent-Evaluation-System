@@ -38,15 +38,16 @@ class EvaluationJobRunner {
   handleMessage(message: WebSocket.RawData): void {
     const data = JSON.parse(message.toString());
     logger.info("Job Update:", data);
+		logger.info(`Project ${this.projectExId} - Status: ${data.status}, Progress: ${data.progress}%, promptTemplate: ${this.promptTemplate}`);
     // Handle job updates here (e.g., update database, notify users, etc.)
   }
 
-  startJob(jobId: string): void {
+  startJob(): void {
     this.connect();
     // this.socket?.send(JSON.stringify({ action: "start", jobId }));
   }
 
-  stopJob(jobId: string): void {
+  stopJob(): void {
     // this.socket?.send(JSON.stringify({ action: "stop", jobId }));
     this.socket?.close();
   }
@@ -68,4 +69,4 @@ const evaluationJobRunner = new EvaluationJobRunner(
 	args.promptTemplate
 );
 
-evaluationJobRunner.startJob("example-job-id");
+evaluationJobRunner.startJob();

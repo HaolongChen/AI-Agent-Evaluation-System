@@ -4,19 +4,39 @@ import type { CopilotType } from '../generated/prisma/index.ts';
 import { logger } from '../utils/logger.ts';
 import { goldenSetService } from './GoldenSetService.ts';
 import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
+import { WS_URL } from '../config/env.ts';
+import { applyAndWatchJob } from '../kubernetes/utils/apply-from-file.ts';
 
 export class ExecutionService {
   async createEvaluationSession(
     projectExId: string,
     schemaExId: string,
     copilotType: CopilotType,
-    modelName: string
+    // modelName: string
   ) {
     try {
       const goldenSets = await goldenSetService.getGoldenSets(undefined, REVERSE_COPILOT_TYPES[copilotType]);
       if (!goldenSets || goldenSets.length === 0) {
         throw new Error('No golden sets found');
       }
+      if(goldenSets.length > 1) {
+        throw new Error('Multiple golden sets found, expected only one');
+      }
+      const goldenSet = goldenSets[0];
+      if(!goldenSet) {
+        throw new Error('Golden set is undefined');
+      }
+      const response = await applyAndWatchJob(
+        `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
+        'default',
+        './dist/jobs/evaluationJob.js',
+        300000,
+        projectExId,
+        WS_URL,
+        goldenSet.promptTemplate
+      );
+      logger.info('Evaluation job started with response:', response);
+      return response;
       // TODO: access to copilot with each golden set
       // return prisma.evaluationSession.create({
       //   data: {

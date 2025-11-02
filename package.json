@@ -19,7 +19,8 @@
     "db:migrate": "npx prisma migrate dev",
     "db:pull": "npx prisma db pull",
     "db:studio": "npx prisma studio",
-    "db:reset": "npx prisma migrate reset --force"
+    "db:reset": "npx prisma migrate reset --force",
+    "eval": "ts-node src/jobs/EvaluationJobRunner.ts"
   },
   "keywords": [],
   "author": "",

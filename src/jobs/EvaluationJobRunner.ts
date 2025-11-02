@@ -1,35 +1,71 @@
-import WebSocketClient from "../utils/websocket.ts";
+import { WebSocket } from 'ws';
+import { logger } from '../utils/logger.ts';
+import * as z from 'zod';
 
-export class EvaluationJobRunner {
-    private projectExId: string;
-    private wsUrl: string;
-    private promptTemplate: string;
+class EvaluationJobRunner {
+  private projectExId: string;
+  private wsUrl: string;
+  private promptTemplate: string;
 
-    constructor(projectExId: string, wsUrl: string, promptTemplate: string) {
-        this.projectExId = projectExId;
-        this.wsUrl = wsUrl;
-        this.promptTemplate = promptTemplate;
-    }
-    // TODO: implement instances like goldenSets, schemaExId, copilotType, modelName, etc.
-//   private wsClient: WebSocketClient;
+  constructor(projectExId: string, wsUrl: string, promptTemplate: string) {
+    this.projectExId = projectExId;
+    this.wsUrl = wsUrl;
+    this.promptTemplate = promptTemplate;
+  }
 
-//   constructor() {
-//     this.wsClient = new WebSocketClient(this.handleMessage.bind(this));
-//   }
+  socket: WebSocket | null = null;
 
-//   startJob(jobId: string, wsUrl: string): void {
-//     this.wsClient.connect(wsUrl);
-//     this.wsClient.sendMessage(JSON.stringify({ action: "start", jobId }));
-//   }
+	connect(): void {
+    this.socket = new WebSocket(this.wsUrl);
 
-//   handleMessage(message: WebSocket.RawData): void {
-//     const data = JSON.parse(message.toString());
-//     console.log("Job Update:", data);
-//     // Handle job updates here (e.g., update database, notify users, etc.)
-//   }
+    this.socket.on("open", () => {
+      logger.info("WebSocket connection established.");
+    });
 
-//   stopJob(jobId: string): void {
-//     this.wsClient.sendMessage(JSON.stringify({ action: "stop", jobId }));
-//     this.wsClient.disconnect();
-//   }
+    this.socket.on("message", (data) => {
+      this.handleMessage(data);
+    });
+
+    this.socket.on("close", () => {
+      logger.info("WebSocket connection closed.");
+    });
+
+    this.socket.on("error", (error) => {
+      logger.error("WebSocket error:", error);
+    });
+  }
+
+  handleMessage(message: WebSocket.RawData): void {
+    const data = JSON.parse(message.toString());
+    logger.info("Job Update:", data);
+    // Handle job updates here (e.g., update database, notify users, etc.)
+  }
+
+  startJob(jobId: string): void {
+    this.connect();
+    // this.socket?.send(JSON.stringify({ action: "start", jobId }));
+  }
+
+  stopJob(jobId: string): void {
+    // this.socket?.send(JSON.stringify({ action: "stop", jobId }));
+    this.socket?.close();
+  }
 }
+
+const args = z.object({
+	projectExId: z.string().min(1, "projectExId is required"),
+	wsUrl: z.url("wsUrl must be a valid URL"),
+	promptTemplate: z.string().min(1, "promptTemplate is required"),
+}).parse({
+	projectExId: process.argv[2] || "",
+	wsUrl: process.argv[3] || "",
+	promptTemplate: process.argv[4] || "",
+});
+
+const evaluationJobRunner = new EvaluationJobRunner(
+	args.projectExId,
+	args.wsUrl,
+	args.promptTemplate
+);
+
+evaluationJobRunner.startJob("example-job-id");

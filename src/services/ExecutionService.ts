@@ -52,7 +52,7 @@ export class ExecutionService {
           goldenSet.promptTemplate
         );
         jobRunner.startJob();
-        const response = await jobRunner.waitForCompletion(300000);
+        const response = await jobRunner.waitForCompletion();
         return response;
       }
       // TODO: access to copilot with each golden set

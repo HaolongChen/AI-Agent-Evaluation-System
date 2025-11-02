@@ -13,6 +13,7 @@ import {
 } from '../utils/types.ts';
 
 const DISCONNECT = false;
+const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
 export class EvaluationJobRunner {
   private projectExId: string;
@@ -176,7 +177,7 @@ export class EvaluationJobRunner {
    * @param timeoutMs Optional timeout in milliseconds (default: 5 minutes)
    * @returns Promise that resolves with the response when job completes
    */
-  async waitForCompletion(timeoutMs: number = 300000): Promise<string> {
+  async waitForCompletion(timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<string> {
     // Clear any existing timeout before setting a new one (for multiple calls)
     this.clearTimeout();
     

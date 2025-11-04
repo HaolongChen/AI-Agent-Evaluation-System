@@ -23,6 +23,8 @@ import {
 import { NODE_ENV } from '../config/env.ts';
 
 import { isNil, get } from 'lodash-es';
+import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
+import { assertNotNull, getError } from '../utils/zed/helpers.ts';
 
 const DISCONNECT = false;
 
@@ -155,7 +157,7 @@ export class EvaluationJobRunner {
     
     try {
       const result: CopilotApiResult = Copilot.toolCalls(
-        assertNotNull(typeSystemStore.schemaGraph),
+        assertNotNull(TypeSystemStore.schemaGraph),
         product,
         clientType,
         locale,
@@ -182,15 +184,12 @@ export class EvaluationJobRunner {
         return { result, successful: true };
       }
       throw getError(JSON.stringify(applyResult.errorContent), result);
-    } catch (error: any) {
-      if (isDev()) {
-        // eslint-disable-next-line no-console
-        console.log('toolCall---error:', error, toolCalls);
-      }
+    } catch (error: unknown) {
+      console.log('toolCall---error:', error, toolCalls);
       return {
         successful: false,
-        errorMessage: error.message,
-        result: error.result,
+        errorMessage: (error as unknown as { message: string }).message,
+        result: (error as unknown as { result: unknown }).result,
       };
     }
   };

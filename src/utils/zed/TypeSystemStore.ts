@@ -1,10 +1,7 @@
-import { CoreStore } from "./CoreStore.ts";
 import { ZTypeSystem, type OpaqueSchemaGraph } from "./TypeSystem.ts";
-// import { Diff } from 'zed/types/Diff';
-// import { assertNotNull, isDefinedAndNotNull } from 'zed/utils/utils';
-// import { LoggingEvent } from 'zed/utils/logging/LogSingleLineToServer';
-// import { TypeSystemHelper } from 'zed/utils/TypeSystemHelper';
-// import { trackExecutionTime } from 'zed/utils/ExecutionTimeUtil';
+import { QueryBuilder } from "../graphql-builder.ts";
+import { graphqlUtils } from "../graphql-utils.ts";
+import { logger } from "../logger.ts";
 
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
@@ -15,6 +12,13 @@ export class TypeSystemStore {
 
   rehydrate(): void {
     // const zSchema = ZTypeSystem.parseZSchemaFromJsObject(CoreStore);
+    // FetchAppDetailByExId
+    const query = new QueryBuilder('FetchAppDetailByExId')
+    .withVariable('projectExId', projectExId)
+    .withVariable('appExId', null)
+    .select(
+        'lastUploadedSchema'
+    )
     this.currSchemaGraph = ZTypeSystem.resolveZSchemaToSchemaGraph(zSchema);
   }
 }

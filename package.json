@@ -50,7 +50,7 @@
   "dependencies": {
     "@apollo/server": "^5.0.0",
     "@as-integrations/express5": "^1.1.2",
-    "@functorz/ztype": "^2.8.26",
+    "@functorz/ztype": "^2.8.33",
     "@kubernetes/client-node": "^1.4.0",
     "@langchain/core": "^1.0.1",
     "@langchain/langgraph": "^1.0.0",

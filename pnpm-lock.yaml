@@ -15,8 +15,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@apollo/server@5.0.0(graphql@16.11.0))(express@5.1.0)
       '@functorz/ztype':
-        specifier: ^2.8.26
-        version: 2.8.26
+        specifier: ^2.8.33
+        version: 2.8.33
       '@kubernetes/client-node':
         specifier: ^1.4.0
         version: 1.4.0
@@ -435,8 +435,8 @@ packages:
     resolution: {integrity: sha512-sB5uyeq+dwCWyPi31B2gQlVlo+j5brPlWx4yZBrEaRo/nhdDE8Xke1gsGgtiBdaBTxuTkceLVuVt/pclrasb0A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@functorz/ztype@2.8.26':
-    resolution: {integrity: sha512-w/Ejhz8ILgodo+M/WkfR3aesrzNs12UTd3tdK2JNiwCjHXaBqR8Rlrmn6OveThiwJLw0B9CfU52zjAL5F0VtWA==}
+  '@functorz/ztype@2.8.33':
+    resolution: {integrity: sha512-ySY5yZzLgXhQvtPvtV3MGT+v42b2eC6KVEAJeim1OVxWeCXNmDF8p6E97rqgVBCZaemjDKavmU5ArWcAUkIAGA==}
 
   '@graphql-tools/merge@9.1.1':
     resolution: {integrity: sha512-BJ5/7Y7GOhTuvzzO5tSBFL4NGr7PVqTJY3KeIDlVTT8YLcTXtBR+hlrC3uyEym7Ragn+zyWdHeJ9ev+nRX1X2w==}
@@ -2352,7 +2352,7 @@ snapshots:
       '@eslint/core': 0.16.0
       levn: 0.4.1
 
-  '@functorz/ztype@2.8.26': {}
+  '@functorz/ztype@2.8.33': {}
 
   '@graphql-tools/merge@9.1.1(graphql@16.11.0)':
     dependencies:

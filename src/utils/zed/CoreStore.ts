@@ -5,41 +5,41 @@ import { makeAutoObservable } from 'mobx';
 //   WEB_PLATFORM_BREAKPOINT_CONFIG,
 //   WECHAT_PLATFORM_BREAKPOINT_CONFIG,
 // } from 'zed/constants';
-// import { DEFAULT_AUTHENTICATION_CONFIG, DEFAULT_DATA_MODEL } from 'zed/constants/Schema/ZSchema';
+import { DEFAULT_AUTHENTICATION_CONFIG, DEFAULT_DATA_MODEL } from './ZSchema.ts';
 // import { getConfiguration } from 'zed/hooks/useConfiguration';
 // import { AllStores } from 'zed/mobx/StoreContexts';
-// import BaseComponentModel from 'zed/models/base/BaseComponentModel';
+import BaseComponentModel from 'zed/models/base/BaseComponentModel';
 import {
-  ApiWorkSpace,
-  AuthenticationConfig,
-  BackendActionFlow,
-  CallbackConfiguration,
-  ClientsSchema,
-  ClientType,
-  ColorTheme,
-  Component,
-  ConfiguredCodeComponentRepo,
-  CustomLLMConfig,
-  CustomTypeDefinition,
-  DataModel,
-  MobileClientConfiguration,
-  PageGroupConfiguration,
-  PaymentConfiguration,
-  PaymentType,
-  Platform,
-  RoleConfig,
-  ScheduledJobConfiguration,
-  ServerEditorConfiguration,
-  ServerSchema,
-  ThirdPartyApiConfig,
-  TriggerConfiguration,
-  TypeConversionDefinition,
-  TypeDefinition,
-  TypeDefinitionGroupConfiguration,
-  WebClientConfiguration,
-  WechatMiniProgramClientConfiguration,
-  ZAiConfig,
-} from 'zed/types/Schema';
+  type ApiWorkSpace,
+  type AuthenticationConfig,
+  type BackendActionFlow,
+  type CallbackConfiguration,
+  type ClientsSchema,
+  type ClientType,
+  type ColorTheme,
+  type Component,
+  type ConfiguredCodeComponentRepo,
+  type CustomLLMConfig,
+  type CustomTypeDefinition,
+  type DataModel,
+  type MobileClientConfiguration,
+  type PageGroupConfiguration,
+  type PaymentConfiguration,
+  type PaymentType,
+  type Platform,
+  type RoleConfig,
+  type ScheduledJobConfiguration,
+  type ServerEditorConfiguration,
+  type ServerSchema,
+  type ThirdPartyApiConfig,
+  type TriggerConfiguration,
+  type TypeConversionDefinition,
+  type TypeDefinition,
+  type TypeDefinitionGroupConfiguration,
+  type WebClientConfiguration,
+  type WechatMiniProgramClientConfiguration,
+  type ZAiConfig,
+} from './index.ts';
 import { ZTypeSystem } from './TypeSystem.ts';
 
 export class CoreStore {
@@ -76,14 +76,15 @@ export class CoreStore {
   }
 
   get mRefMap(): Record<string, BaseComponentModel> {
-    return (this.clients?.clientById[this.clientExId]?.componentMetaById ?? {}) as Record<
-      string,
-      BaseComponentModel
-    >;
+    return (this.clients?.clientById[this.clientExId]?.componentMetaById ??
+      {}) as Record<string, BaseComponentModel>;
   }
 
   get componentById() {
-    return this.clients?.clientById[this.clientExId]?.componentById as Record<string, Component>;
+    return this.clients?.clientById[this.clientExId]?.componentById as Record<
+      string,
+      Component
+    >;
   }
 
   get isComponentRefactor() {
@@ -91,13 +92,18 @@ export class CoreStore {
   }
 
   get colorTheme(): Record<string, ColorTheme> {
-    return this.clients?.clientById[this.clientExId]?.configuration.colorThemeById ?? {};
+    return (
+      this.clients?.clientById[this.clientExId]?.configuration.colorThemeById ??
+      {}
+    );
   }
 
   get scrollBarEnabled(): boolean {
     return (
-      (this.clients?.clientById[this.clientExId]?.configuration as WebClientConfiguration)
-        .showScrollBar ?? false
+      (
+        this.clients?.clientById[this.clientExId]
+          ?.configuration as WebClientConfiguration
+      ).showScrollBar ?? false
     );
   }
 
@@ -143,7 +149,10 @@ export class CoreStore {
   }
 
   get codeComponentRepos(): ConfiguredCodeComponentRepo[] {
-    return this.clients?.clientById[this.clientExId]?.configuration?.customRepos ?? [];
+    return (
+      this.clients?.clientById[this.clientExId]?.configuration?.customRepos ??
+      []
+    );
   }
 
   get authenticationConfig(): AuthenticationConfig {
@@ -206,7 +215,9 @@ export class CoreStore {
     return this.server.types?.definitionById ?? {};
   }
 
-  get typeDefinitionGroupConfiguration(): TypeDefinitionGroupConfiguration | undefined {
+  get typeDefinitionGroupConfiguration():
+    | TypeDefinitionGroupConfiguration
+    | undefined {
     return this.server.types?.groupConfiguration;
   }
 
@@ -219,7 +230,8 @@ export class CoreStore {
     this.pendingActionFlows.forEach((item) => {
       if (
         !result[item.uniqueId] ||
-        (result[item.uniqueId] && result[item.uniqueId].versionId < item.versionId)
+        (result[item.uniqueId] &&
+          result[item.uniqueId].versionId < item.versionId)
       ) {
         result[item.uniqueId] = item;
       }
@@ -252,7 +264,9 @@ export class CoreStore {
       case Platform.MOBILE:
         return ClientType.MOBILE;
       default:
-        throw new Error(`unsupported editorPlatform, ${editorStore.editorPlatform}`);
+        throw new Error(
+          `unsupported editorPlatform, ${editorStore.editorPlatform}`
+        );
     }
   }
 

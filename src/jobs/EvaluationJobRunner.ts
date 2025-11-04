@@ -18,7 +18,7 @@ import {
   Locale,
   Product,
   type CopilotApiResult,
-} from '../utils/TypeSystem.ts';
+} from '../utils/zed/TypeSystem.ts';
 
 import { NODE_ENV } from '../config/env.ts';
 

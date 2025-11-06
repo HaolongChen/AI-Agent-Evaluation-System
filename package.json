@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "test": "ts-node ./tests/graphql.ts",
+    "test:graphql": "ts-node ./tests/graphql.ts",
+    "test:fetch": "ts-node ./tests/fetch.ts",
     "start": "node dist/index.js",
     "dev": "nodemon --exec tsx src/index.ts",
     "build": "tsx --tsconfig tsconfig.build.json src/index.ts",
@@ -55,6 +56,7 @@
     "@apollo/server": "^5.0.0",
     "@as-integrations/express5": "^1.1.2",
     "@functorz/ztype": "2.8.33",
+    "@js-joda/core": "^5.6.5",
     "@kubernetes/client-node": "^1.4.0",
     "@langchain/core": "^1.0.1",
     "@langchain/langgraph": "^1.0.0",

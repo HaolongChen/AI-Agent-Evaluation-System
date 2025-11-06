@@ -99,10 +99,6 @@ export class TypeSystemStore {
       throw new Error(`No schema found for project: ${projectExId}`);
     }
 
-    // TODO: Fetch the schema from crdtModelUrl and parse it
-    // const zSchema = await fetchAndParseSchema(crdtModelUrl);
-    // this.currSchemaGraph = ZTypeSystem.resolveZSchemaToSchemaGraph(zSchema);
-
     // 2. Download the binary CRDT model
     const response = await fetch(lastUploadedSchema.crdtModelUrl);
     const arrayBuffer = await response.arrayBuffer();

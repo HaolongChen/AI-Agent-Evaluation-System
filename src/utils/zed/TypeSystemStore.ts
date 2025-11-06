@@ -1,6 +1,7 @@
-import { ZTypeSystem, type OpaqueSchemaGraph } from './TypeSystem.ts';
-import { logger } from '../logger.ts';
-import { graphqlUtils } from '../graphql-utils.ts';
+import { ZTypeSystem, type OpaqueSchemaGraph } from "./TypeSystem.ts";
+import { logger } from "../logger.ts";
+import { graphqlUtils } from "../graphql-utils.ts";
+import { Crdt } from "@functorz/crdt-helper";
 
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
@@ -9,7 +10,13 @@ export class TypeSystemStore {
     return this.currSchemaGraph;
   }
 
-  async fetchAppDetailByExId(projectExId: string): Promise<string | null> {
+  async fetchAppDetailByExId(projectExId: string): Promise<{
+    crdtModelUrl: string;
+    crdtPatches?: {
+      lastPatchExId: string;
+      patches: Array<{ patchBase64: string }>;
+    };
+  } | null> {
     const query = `
       query FetchAppDetailByExId {
         fetchAppDetailByExId(
@@ -20,16 +27,34 @@ export class TypeSystemStore {
           ... on WechatMiniProgramApp {
             lastUploadedSchema {
               crdtModelUrl
+              crdtPatches {
+                lastPatchExId
+                patches {
+                  patchBase64
+                }
+              }
             }
           }
           ... on Project {
             lastUploadedSchema {
               crdtModelUrl
+              crdtPatches {
+                lastPatchExId
+                patches {
+                  patchBase64
+                }
+              }
             }
           }
           ... on WebApp {
             lastUploadedSchema {
               crdtModelUrl
+              crdtPatches {
+                lastPatchExId
+                patches {
+                  patchBase64
+                }
+              }
             }
           }
         }
@@ -41,30 +66,36 @@ export class TypeSystemStore {
       const data = response as {
         data?: {
           fetchAppDetailByExId?: {
-            lastUploadedSchema?: { crdtModelUrl?: string };
+            lastUploadedSchema?: {
+              crdtModelUrl: string;
+              crdtPatches?: {
+                lastPatchExId: string;
+                patches: Array<{ patchBase64: string }>;
+              };
+            };
           };
         };
       };
-      const crdtModelUrl =
-        data.data?.fetchAppDetailByExId?.lastUploadedSchema?.crdtModelUrl;
+      const lastUploadedSchema =
+        data.data?.fetchAppDetailByExId?.lastUploadedSchema;
 
-      if (crdtModelUrl) {
-        logger.info('Fetched crdtModelUrl:', crdtModelUrl);
-        return crdtModelUrl;
+      if (lastUploadedSchema) {
+        logger.info("Fetched lastUploadedSchema:", lastUploadedSchema);
+        return lastUploadedSchema;
       } else {
-        logger.warn('No crdtModelUrl found for project:', projectExId);
+        logger.warn("No lastUploadedSchema found for project:", projectExId);
         return null;
       }
     } catch (error) {
-      logger.error('Error fetching app detail:', error);
+      logger.error("Error fetching app detail:", error);
       throw error;
     }
   }
 
-  async rehydrate(projectExId: string): Promise<void> {
-    const crdtModelUrl = await this.fetchAppDetailByExId(projectExId);
+  async rehydrate(projectExId: string): Promise<OpaqueSchemaGraph> {
+    const lastUploadedSchema = await this.fetchAppDetailByExId(projectExId);
 
-    if (!crdtModelUrl) {
+    if (!lastUploadedSchema) {
       throw new Error(`No schema found for project: ${projectExId}`);
     }
 
@@ -72,6 +103,34 @@ export class TypeSystemStore {
     // const zSchema = await fetchAndParseSchema(crdtModelUrl);
     // this.currSchemaGraph = ZTypeSystem.resolveZSchemaToSchemaGraph(zSchema);
 
-    logger.info('Schema URL fetched, ready to rehydrate:', crdtModelUrl);
+    // 2. Download the binary CRDT model
+    const response = await fetch(lastUploadedSchema.crdtModelUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const modelBinary = new Uint8Array(arrayBuffer);
+
+    // 3. Initialize CRDT model and apply patches
+    const patchBase64Strings = lastUploadedSchema.crdtPatches?.patches.map(
+      (patch) => patch.patchBase64
+    );
+    const model = Crdt.initModelByBinary(
+      modelBinary,
+      patchBase64Strings as any
+    );
+
+    // 4. Get the schema JSON
+    const schemaJson = model.view();
+
+    // 5. Merge with backend-only schema if needed
+    const fullSchema = {
+      ...schemaJson,
+      // server: latestBackendOnlyAppSchema, // For non-backend-editable apps
+    };
+
+    // 6. Parse to ZSchema and create SchemaGraph
+    const zSchema = ZTypeSystem.parseZSchemaFromJsObject(fullSchema);
+    const schemaGraph = ZTypeSystem.resolveZSchemaToSchemaGraph(zSchema);
+
+    this.currSchemaGraph = schemaGraph;
+    return schemaGraph;
   }
 }

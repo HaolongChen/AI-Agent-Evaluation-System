@@ -156,8 +156,10 @@ export class EvaluationJobRunner {
       : Locale.EN;
     
     try {
+      const typeSystemStore = new TypeSystemStore();
+      await typeSystemStore.rehydrate(this.projectExId);
       const result: CopilotApiResult = Copilot.toolCalls(
-        assertNotNull(TypeSystemStore.schemaGraph),
+        assertNotNull(typeSystemStore.schemaGraph),
         product,
         clientType,
         locale,

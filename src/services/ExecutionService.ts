@@ -53,6 +53,7 @@ export class ExecutionService {
         );
         jobRunner.startJob();
         const response = await jobRunner.waitForCompletion();
+        logger.info('Evaluation job completed with response:', response);
         return response;
       }
       // TODO: access to copilot with each golden set

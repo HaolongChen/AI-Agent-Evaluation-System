@@ -13,7 +13,7 @@ async function seedGoldenSet() {
         schemaExId: 'example-schema-1',
         copilotType: CopilotType.dataModel, // Use enum
         description: 'Example data model for e-commerce',
-        promptTemplate: 'who are you?',
+        promptTemplate: 'who are you?', // TODO: implement meaningful prompt templates
         idealResponse: { entities: ['User', 'Product', 'Order'] },
       },
       // {

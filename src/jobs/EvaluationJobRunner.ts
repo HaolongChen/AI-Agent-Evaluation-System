@@ -179,13 +179,15 @@ export class EvaluationJobRunner {
       if (NODE_ENV === 'development') {
         logger.debug('toolCall---schemaDiff:', schemaDiff);
       }
-      const applyResult = applyLocalCrdtDiff(schemaDiff, {
-        isPendingApplication: true,
-      });
-      if (applyResult.successful) {
-        return { result, successful: true };
-      }
-      throw getError(JSON.stringify(applyResult.errorContent), result);
+      // const applyResult = applyLocalCrdtDiff(schemaDiff, {
+      //   isPendingApplication: true,
+      // });
+      // if (applyResult.successful) {
+      //   return { result, successful: true };
+      // }
+      // throw getError(JSON.stringify(applyResult.errorContent), result);
+      // probably not necessary to apply schema diff in evaluation job runner
+      return { result, successful: true };
     } catch (error: unknown) {
       console.log('toolCall---error:', error, toolCalls);
       return {

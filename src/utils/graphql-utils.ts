@@ -53,6 +53,7 @@ class GraphQLUtils {
     try {
       query = z.string().nonempty().parse(query);
       const endpoint = useBackendEndpoint ? this.backendGqlUrl : this.gqlUrl;
+      const headers = this.getAuthHeaders();
       // logger.info('GraphQL Query to:', endpoint);
       // console.debug('GraphQL Query:', query);
       const response = await axios.post(
@@ -61,10 +62,10 @@ class GraphQLUtils {
           query,
         },
         {
-          headers: this.getAuthHeaders(),
+          headers: Object.fromEntries(headers.entries()),
         }
       );
-      logger.debug('request: ', { endpoint, query, headers: this.getAuthHeaders() });
+      logger.debug('request: ', { endpoint, query, headers: Object.fromEntries(headers.entries()) });
       return response.data;
     } catch (error) {
       logger.error('Error accessing GraphQL endpoint:', error);
@@ -79,6 +80,7 @@ class GraphQLUtils {
     try {
       mutation = z.string().nonempty().parse(mutation);
       const endpoint = useBackendEndpoint ? this.backendGqlUrl : this.gqlUrl;
+      const headers = this.getAuthHeaders();
       logger.info('GraphQL Mutation to:', endpoint);
       console.debug('GraphQL Mutation:', mutation);
       const response = await axios.post(
@@ -87,7 +89,7 @@ class GraphQLUtils {
           query: mutation,
         },
         {
-          headers: this.getAuthHeaders(),
+          headers: Object.fromEntries(headers.entries()),
         }
       );
       return response.data;

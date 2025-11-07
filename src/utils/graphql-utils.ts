@@ -28,10 +28,10 @@ class GraphQLUtils {
 
   public isTokenValid(): boolean {
     return true;
-    if (!this.accessToken || !this.tokenExpiry) {
-      return false;
-    }
-    return Date.now() < this.tokenExpiry;
+    // if (!this.accessToken || !this.tokenExpiry) {
+    //   return false;
+    // }
+    // return Date.now() < this.tokenExpiry;
   }
 
   private getAuthHeaders(): Record<string, string> {
@@ -64,6 +64,7 @@ class GraphQLUtils {
           headers: this.getAuthHeaders(),
         }
       );
+      logger.debug('request: ', { endpoint, query, headers: this.getAuthHeaders() });
       return response.data;
     } catch (error) {
       logger.error('Error accessing GraphQL endpoint:', error);

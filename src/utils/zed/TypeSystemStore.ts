@@ -105,7 +105,8 @@ export class TypeSystemStore {
         logger.info('Fetched lastUploadedSchema:', lastUploadedSchema);
         return lastUploadedSchema;
       } else {
-        logger.warn('No lastUploadedSchema found for project:', projectExId);
+        logger.error('No lastUploadedSchema found for project:', projectExId);
+        logger.debug('All information:', )
         return null;
       }
     } catch (error) {

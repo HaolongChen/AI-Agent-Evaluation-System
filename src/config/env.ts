@@ -8,6 +8,13 @@ export const DATABASE_URL =
   process.env['DATABASE_URL'] || process.env['DATABASE_URL_DEVELOPMENT'];
 
 export const URL = process.env['URL'] || `http://localhost:${PORT}`;
+// Functorz backend GraphQL endpoint (NOT the copilot WebSocket service)
+// This should be the main backend API that has queries like fetchAppDetailByExId
+// Common endpoints: https://backend.functorz.com/graphql, https://api.functorz.com/graphql
+export const BACKEND_GRAPHQL_URL =
+  process.env['COPILOT_GRAPHQL_URL'] ||
+  'https://zionbackend.functorz.work/api/graphql';
+
 if (
   !process.env['WS_URL'] ||
   !process.env['userToken'] ||
@@ -18,7 +25,8 @@ if (
   );
 }
 
-export const RUN_KUBERNETES_JOBS = process.env['RUN_KUBERNETES_JOBS'] === 'true';
+export const RUN_KUBERNETES_JOBS =
+  process.env['RUN_KUBERNETES_JOBS'] === 'true';
 
 export const WS_URL =
   NODE_ENV === 'development'

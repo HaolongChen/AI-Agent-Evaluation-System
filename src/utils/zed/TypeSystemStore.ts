@@ -1,7 +1,7 @@
-import { ZTypeSystem, type OpaqueSchemaGraph } from "./TypeSystem.ts";
-import { logger } from "../logger.ts";
-import { graphqlUtils } from "../graphql-utils.ts";
-import { Crdt } from "@functorz/crdt-helper";
+import { ZTypeSystem, type OpaqueSchemaGraph } from './TypeSystem.ts';
+import { logger } from '../logger.ts';
+import { graphqlUtils } from '../graphql-utils.ts';
+import { Crdt } from '@functorz/crdt-helper';
 
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
@@ -62,7 +62,7 @@ export class TypeSystemStore {
     `;
 
     try {
-      const response = await graphqlUtils.accessEndpointWithQuery(query);
+      const response = await graphqlUtils.accessEndpointWithQuery(query, true);
       const data = response as {
         data?: {
           fetchAppDetailByExId?: {
@@ -78,16 +78,16 @@ export class TypeSystemStore {
       };
       const lastUploadedSchema =
         data.data?.fetchAppDetailByExId?.lastUploadedSchema;
-
+      logger.info('GraphQL response for fetchAppDetailByExId:', data);
       if (lastUploadedSchema) {
-        logger.info("Fetched lastUploadedSchema:", lastUploadedSchema);
+        logger.info('Fetched lastUploadedSchema:', lastUploadedSchema);
         return lastUploadedSchema;
       } else {
-        logger.warn("No lastUploadedSchema found for project:", projectExId);
+        logger.warn('No lastUploadedSchema found for project:', projectExId);
         return null;
       }
     } catch (error) {
-      logger.error("Error fetching app detail:", error);
+      logger.error('Error fetching app detail:', error);
       throw error;
     }
   }
@@ -110,7 +110,7 @@ export class TypeSystemStore {
     );
     const model = Crdt.initModelByBinary(
       modelBinary,
-      patchBase64Strings as string[],
+      patchBase64Strings as string[]
     );
 
     // 4. Get the schema JSON

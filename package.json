@@ -8,6 +8,7 @@
   "scripts": {
     "test:graphql": "ts-node ./tests/graphql.ts",
     "test:fetch": "ts-node ./tests/fetch.ts",
+    "test:introspection": "ts-node ./tests/introspection.ts",
     "start": "node dist/index.js",
     "dev": "nodemon --exec tsx src/index.ts",
     "build": "tsx --tsconfig tsconfig.build.json src/index.ts",
@@ -44,6 +45,7 @@
     "eslint": "^9.38.0",
     "globals": "^16.4.0",
     "jiti": "^2.6.1",
+    "json-joy": "16.18.0",
     "lodash-es": "^4.17.21",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
@@ -73,7 +75,6 @@
     "graphql-type-json": "^0.3.2",
     "js-base64": "^3.7.7",
     "js-yaml": "^4.1.0",
-    "json-joy": "^16.18.0",
     "langchain": "^1.0.1",
     "mobx": "^6.15.0",
     "uuid": "^8.1.0",

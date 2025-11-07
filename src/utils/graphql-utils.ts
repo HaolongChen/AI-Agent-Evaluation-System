@@ -34,13 +34,13 @@ class GraphQLUtils {
     // return Date.now() < this.tokenExpiry;
   }
 
-  private getAuthHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
+  private getAuthHeaders(): Headers {
+    const headers = new Headers({
       'Content-Type': 'application/json',
-    };
+    });
 
     if (this.accessToken && this.isTokenValid()) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
+      headers.set('Authorization', `Bearer ${this.accessToken}`);
     }
 
     return headers;

@@ -2,12 +2,33 @@ import { ZTypeSystem, type OpaqueSchemaGraph } from './TypeSystem.ts';
 import { logger } from '../logger.ts';
 import { graphqlUtils } from '../graphql-utils.ts';
 import { Crdt } from '@functorz/crdt-helper';
+import { login } from '../login.ts';
+import { FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD } from '../../config/env.ts';
 
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
 
   get schemaGraph(): OpaqueSchemaGraph | null {
     return this.currSchemaGraph;
+  }
+
+  private async ensureAuthenticated(): Promise<void> {
+    if (graphqlUtils.isTokenValid()) {
+      logger.info('Access token is still valid');
+      return;
+    }
+
+    logger.info('Access token expired or missing, logging in...');
+
+    if (!FUNCTORZ_PHONE_NUMBER || !FUNCTORZ_PASSWORD) {
+      throw new Error(
+        'Missing FUNCTORZ_PHONE_NUMBER or FUNCTORZ_PASSWORD in environment variables'
+      );
+    }
+
+    const accessToken = await login(FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD);
+    graphqlUtils.setAccessToken(accessToken);
+    logger.info('Successfully authenticated');
   }
 
   async fetchAppDetailByExId(projectExId: string): Promise<{
@@ -62,6 +83,7 @@ export class TypeSystemStore {
     `;
 
     try {
+      await this.ensureAuthenticated();
       const response = await graphqlUtils.accessEndpointWithQuery(query, true);
       const data = response as {
         data?: {

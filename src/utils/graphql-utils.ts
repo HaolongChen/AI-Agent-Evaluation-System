@@ -6,6 +6,43 @@ import { logger } from './logger.ts';
 class GraphQLUtils {
   private gqlUrl: string = URL + '/graphql';
   private backendGqlUrl: string = BACKEND_GRAPHQL_URL;
+  private accessToken: string | null = null;
+  private tokenExpiry: number | null = null;
+  private readonly TOKEN_TTL_MS = 3600000; // 1 hour default TTL
+
+  public setAccessToken(token: string): void {
+    this.accessToken = token;
+    this.tokenExpiry = Date.now() + this.TOKEN_TTL_MS;
+    logger.info(
+      'Access token set, expires in',
+      this.TOKEN_TTL_MS / 1000,
+      'seconds'
+    );
+  }
+
+  public clearAccessToken(): void {
+    this.accessToken = null;
+    this.tokenExpiry = null;
+  }
+
+  public isTokenValid(): boolean {
+    if (!this.accessToken || !this.tokenExpiry) {
+      return false;
+    }
+    return Date.now() < this.tokenExpiry;
+  }
+
+  private getAuthHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (this.accessToken && this.isTokenValid()) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
+
+    return headers;
+  }
 
   public accessEndpointWithQuery = async (
     query: string,
@@ -22,9 +59,7 @@ class GraphQLUtils {
           query,
         },
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: this.getAuthHeaders(),
         }
       );
       return response.data;
@@ -49,9 +84,7 @@ class GraphQLUtils {
           query: mutation,
         },
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: this.getAuthHeaders(),
         }
       );
       return response.data;

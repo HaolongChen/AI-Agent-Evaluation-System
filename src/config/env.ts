@@ -15,6 +15,9 @@ export const BACKEND_GRAPHQL_URL =
   process.env['COPILOT_GRAPHQL_URL'] ||
   'https://zionbackend.functorz.work/api/graphql';
 
+export const FUNCTORZ_PHONE_NUMBER = process.env['FUNCTORZ_PHONE_NUMBER'];
+export const FUNCTORZ_PASSWORD = process.env['FUNCTORZ_PASSWORD'];
+
 if (
   !process.env['WS_URL'] ||
   !process.env['userToken'] ||

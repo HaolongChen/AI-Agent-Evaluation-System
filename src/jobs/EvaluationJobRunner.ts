@@ -27,17 +27,28 @@ import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
 import { assertNotNull, getError } from '../utils/zed/helpers.ts';
 
 const DISCONNECT = false;
+const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
 export class EvaluationJobRunner {
   private projectExId: string;
   private wsUrl: string;
   private promptTemplate: string;
   response: string = '';
+  private completionPromise: Promise<string>;
+  private resolveCompletion: ((value: string) => void) | null = null;
+  private rejectCompletion: ((reason: Error) => void) | null = null;
+  private isCompleted: boolean = false;
+  private timeoutId: NodeJS.Timeout | null = null;
 
   constructor(projectExId: string, wsUrl: string, promptTemplate: string) {
     this.projectExId = projectExId;
     this.wsUrl = wsUrl;
     this.promptTemplate = promptTemplate;
+    // Create the completion promise in the constructor
+    this.completionPromise = new Promise<string>((resolve, reject) => {
+      this.resolveCompletion = resolve;
+      this.rejectCompletion = reject;
+    });
   }
 
   socket: WebSocket | null = null;
@@ -59,10 +70,20 @@ export class EvaluationJobRunner {
 
     this.socket.on('close', () => {
       logger.info('WebSocket connection closed.');
+      if (!this.isCompleted && this.rejectCompletion) {
+        this.clearTimeout();
+        this.isCompleted = true;
+        this.rejectCompletion(new Error('WebSocket connection closed before job completion'));
+      }
     });
 
     this.socket.on('error', (error) => {
       logger.error('WebSocket error:', error);
+      if (!this.isCompleted && this.rejectCompletion) {
+        this.clearTimeout();
+        this.isCompleted = true;
+        this.rejectCompletion(error instanceof Error ? error : new Error(String(error)));
+      }
     });
   }
 
@@ -97,7 +118,13 @@ export class EvaluationJobRunner {
   handleInitialStateMessage(message: InitialStateMessage): void {
     if (message.terminated) {
       logger.error(`Job for project ${this.projectExId} has terminated.`);
+      if (!this.isCompleted && this.rejectCompletion) {
+        this.clearTimeout();
+        this.isCompleted = true;
+        this.rejectCompletion(new Error('Job has terminated'));
+      }
       this.stopJob();
+      return;
     }
     if (message.currentJobIsRunning === true) {
       logger.info(`Job for project ${this.projectExId} is running.`);
@@ -133,6 +160,11 @@ export class EvaluationJobRunner {
       )}.`
     );
     this.response = JSON.stringify(message);
+    if (!this.isCompleted && this.resolveCompletion) {
+      this.clearTimeout();
+      this.isCompleted = true;
+      this.resolveCompletion(this.response);
+    }
     this.stopJob();
     // TODO:Handle AI response message as needed
   }
@@ -203,7 +235,42 @@ export class EvaluationJobRunner {
     // this.socket?.send(JSON.stringify({ action: "start", jobId }));
   }
 
+  /**
+   * Clear the timeout if set
+   */
+  private clearTimeout(): void {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+  }
+
+  /**
+   * Wait for the job to complete with an optional timeout.
+   * Can be called multiple times; all calls will receive the same promise.
+   * If called after completion, returns the already resolved/rejected promise.
+   * @param timeoutMs Optional timeout in milliseconds (default: 5 minutes)
+   * @returns Promise that resolves with the response when job completes
+   */
+  async waitForCompletion(timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<string> {
+    // Clear any existing timeout before setting a new one (for multiple calls)
+    this.clearTimeout();
+    
+    // Add timeout handling
+    this.timeoutId = setTimeout(() => {
+      if (!this.isCompleted && this.rejectCompletion) {
+        this.timeoutId = null;
+        this.isCompleted = true;
+        this.rejectCompletion(new Error(`Job execution timeout after ${timeoutMs}ms`));
+      }
+    }, timeoutMs);
+
+    return this.completionPromise;
+  }
+
   stopJob(): void {
+    // Clean up timeout when stopping the job
+    this.clearTimeout();
     // this.socket?.send(JSON.stringify({ action: "stop", jobId }));
     this.socket?.close();
   }

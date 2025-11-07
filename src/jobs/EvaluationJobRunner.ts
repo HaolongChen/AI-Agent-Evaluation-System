@@ -141,7 +141,7 @@ export class EvaluationJobRunner {
     logger.info(
       `Received system status for project ${this.projectExId}: ${message.content}.`
     );
-    // Handle system status message as needed
+    // TODO: Handle system status message as needed
   }
 
   handleToolCallsMessage(message: ToolCallsMessage): void {

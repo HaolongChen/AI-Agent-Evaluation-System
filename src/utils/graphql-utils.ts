@@ -2,11 +2,12 @@ import { URL, BACKEND_GRAPHQL_URL } from '../config/env.ts';
 import axios from 'axios';
 import * as z from 'zod';
 import { logger } from './logger.ts';
+import { ACCESS_TOKEN } from '../config/env.ts';
 
 class GraphQLUtils {
   private gqlUrl: string = URL + '/graphql';
   private backendGqlUrl: string = BACKEND_GRAPHQL_URL;
-  private accessToken: string | null = null;
+  private accessToken: string | null = ACCESS_TOKEN;
   private tokenExpiry: number | null = null;
   private readonly TOKEN_TTL_MS = 3600000; // 1 hour default TTL
 

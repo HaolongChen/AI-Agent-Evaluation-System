@@ -35,6 +35,8 @@ export const WS_URL =
   NODE_ENV === 'development'
     ? `${process.env['WS_URL']}userToken=${process.env['userToken']}&projectExId=${process.env['projectExId']}`
     : `${process.env['WS_URL']}userToken=${process.env['userToken']}&projectExId=${process.env['projectExId']}`; // TODO: modify WS_URL for production mode
+
+export const ACCESS_TOKEN = process.env['ACCESS_TOKEN'] || null;
 // // LLM Configuration
 // export const OPENAI_API_KEY = process.env['OPENAI_API_KEY'];
 // export const ANTHROPIC_API_KEY = process.env['ANTHROPIC_API_KEY'];

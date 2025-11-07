@@ -109,7 +109,7 @@ export class EvaluationJobRunner {
     this.send({ type: CopilotMessageType.TERMINATE });
   }
 
-  handleMessage(message: WebSocket.RawData): void {
+  async handleMessage(message: WebSocket.RawData): Promise<void> {
     const data: CopilotMessage[] = JSON.parse(message.toString());
     const logEntry = `${new Date().toISOString()} - Job Update: ${JSON.stringify(
       data,
@@ -125,10 +125,29 @@ export class EvaluationJobRunner {
         this.handleSystemStatusMessage(data[0] as SystemStatusMessage);
         break;
       case CopilotMessageType.TOOL_CALLS:
-        this.handleToolCallsMessage(data[0] as ToolCallsMessage);
+        await this.handleToolCallsMessage(data[0] as ToolCallsMessage);
         break;
       case CopilotMessageType.AI_RESPONSE:
         this.handleAIResponseMessage(data[0] as CopilotMessage);
+        break;
+      case CopilotMessageType.ERROR:
+        logger.error(
+          `Received error message for project ${this.projectExId}: ${JSON.stringify(
+            data[0]
+          )}.`
+        );
+        if (!this.isCompleted && this.rejectCompletion) {
+          this.clearTimeout();
+          this.isCompleted = true;
+          this.rejectCompletion(
+            new Error(
+              `Job execution error: ${
+                (data[0] as { content: string }).content
+              }`
+            )
+          );
+        }
+        this.stopJob();
         break;
       default:
         logger.info(
@@ -166,13 +185,24 @@ export class EvaluationJobRunner {
     // TODO: Handle system status message as needed
   }
 
-  handleToolCallsMessage(message: ToolCallsMessage): void {
+  async handleToolCallsMessage(message: ToolCallsMessage): Promise<void> {
     logger.info(
       `Received tool calls for project ${this.projectExId}: ${JSON.stringify(
         message
       )}.`
     );
-    // TODO:Handle tool calls message as needed
+    const { result, successful } = await this.runToolCalls(message.toolCalls);
+    if (successful) {
+      logger.info(
+        `Tool calls result for project ${this.projectExId}: ${JSON.stringify(
+          result
+        )}.`
+      );
+    } else {
+      logger.error(
+        `Tool calls execution failed for project ${this.projectExId}: ${result}`
+      );
+    }
   }
 
   handleAIResponseMessage(message: CopilotMessage): void {

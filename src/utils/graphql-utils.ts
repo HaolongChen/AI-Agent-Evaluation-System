@@ -35,9 +35,8 @@ class GraphQLUtils {
   }
 
   private getAuthHeaders(): Headers {
-    const headers = new Headers({
-      'Content-Type': 'application/json',
-    });
+    const headers = new Headers();
+    headers.set('Content-Type', 'application/json');
 
     if (this.accessToken && this.isTokenValid()) {
       headers.set('Authorization', `Bearer ${this.accessToken}`);
@@ -54,6 +53,7 @@ class GraphQLUtils {
       query = z.string().nonempty().parse(query);
       const endpoint = useBackendEndpoint ? this.backendGqlUrl : this.gqlUrl;
       const headers = this.getAuthHeaders();
+      const headersObject = Object.fromEntries(headers.entries());
       // logger.info('GraphQL Query to:', endpoint);
       // console.debug('GraphQL Query:', query);
       const response = await axios.post(
@@ -62,10 +62,10 @@ class GraphQLUtils {
           query,
         },
         {
-          headers: Object.fromEntries(headers.entries()),
+          headers: headersObject,
         }
       );
-      logger.debug('request: ', { endpoint, query, headers: Object.fromEntries(headers.entries()) });
+      logger.debug('request: ', { endpoint, query, headers: headersObject });
       return response.data;
     } catch (error) {
       logger.error('Error accessing GraphQL endpoint:', error);
@@ -81,6 +81,7 @@ class GraphQLUtils {
       mutation = z.string().nonempty().parse(mutation);
       const endpoint = useBackendEndpoint ? this.backendGqlUrl : this.gqlUrl;
       const headers = this.getAuthHeaders();
+      const headersObject = Object.fromEntries(headers.entries());
       logger.info('GraphQL Mutation to:', endpoint);
       console.debug('GraphQL Mutation:', mutation);
       const response = await axios.post(
@@ -89,7 +90,7 @@ class GraphQLUtils {
           query: mutation,
         },
         {
-          headers: Object.fromEntries(headers.entries()),
+          headers: headersObject,
         }
       );
       return response.data;

@@ -12,7 +12,7 @@ export const URL = process.env['URL'] || `http://localhost:${PORT}`;
 // This should be the main backend API that has queries like fetchAppDetailByExId
 // Common endpoints: https://backend.functorz.com/graphql, https://api.functorz.com/graphql
 export const BACKEND_GRAPHQL_URL =
-  process.env['COPILOT_GRAPHQL_URL'] ||
+  process.env['BACKEND_GRAPHQL_URL'] ||
   'https://zionbackend.functorz.work/api/graphql';
 
 export const FUNCTORZ_PHONE_NUMBER = process.env['FUNCTORZ_PHONE_NUMBER'];
@@ -35,8 +35,6 @@ export const WS_URL =
   NODE_ENV === 'development'
     ? `${process.env['WS_URL']}userToken=${process.env['userToken']}&projectExId=${process.env['projectExId']}`
     : `${process.env['WS_URL']}userToken=${process.env['userToken']}&projectExId=${process.env['projectExId']}`; // TODO: modify WS_URL for production mode
-
-export const ACCESS_TOKEN = process.env['ACCESS_TOKEN'] || null;
 // // LLM Configuration
 // export const OPENAI_API_KEY = process.env['OPENAI_API_KEY'];
 // export const ANTHROPIC_API_KEY = process.env['ANTHROPIC_API_KEY'];

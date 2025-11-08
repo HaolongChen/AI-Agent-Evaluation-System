@@ -2,12 +2,11 @@ import { URL, BACKEND_GRAPHQL_URL } from '../config/env.ts';
 import axios from 'axios';
 import * as z from 'zod';
 import { logger } from './logger.ts';
-import { ACCESS_TOKEN } from '../config/env.ts';
 
 class GraphQLUtils {
   private gqlUrl: string = URL + '/graphql';
   private backendGqlUrl: string = BACKEND_GRAPHQL_URL;
-  private accessToken: string | null = ACCESS_TOKEN;
+  private accessToken: string | null = null;
   private tokenExpiry: number | null = null;
   private readonly TOKEN_TTL_MS = 3600000; // 1 hour default TTL
 
@@ -27,16 +26,16 @@ class GraphQLUtils {
   }
 
   public isTokenValid(): boolean {
-    return true;
-    // if (!this.accessToken || !this.tokenExpiry) {
-    //   return false;
-    // }
-    // return Date.now() < this.tokenExpiry;
+    if (!this.accessToken || !this.tokenExpiry) {
+      return false;
+    }
+    return Date.now() < this.tokenExpiry;
   }
 
   private getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'X-Zed-Version': '2.0.3',
     };
 
     if (this.accessToken && this.isTokenValid()) {

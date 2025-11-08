@@ -9,7 +9,7 @@ async function seedGoldenSet() {
     // Example seed data
     const goldenSetData = [
       {
-        projectExId: 'l7YRy8qyJYN',
+        projectExId: 'X57jbwZzB76',
         schemaExId: 'example-schema-1',
         copilotType: CopilotType.dataModel, // Use enum
         description: 'Example data model for e-commerce',

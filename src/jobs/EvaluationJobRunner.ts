@@ -191,16 +191,24 @@ export class EvaluationJobRunner {
         message
       )}.`
     );
-    const { result, successful } = await this.runToolCalls(message.toolCalls);
+    const { result, successful, errorMessage } = await this.runToolCalls(message.toolCalls);
     if (successful) {
-      logger.info(
-        `Tool calls result for project ${this.projectExId}: ${JSON.stringify(
-          result
-        )}.`
-      );
+      this.send({
+        type: CopilotMessageType.TOOL_RESPONSE,
+        toolCallsId: message.toolCallsId,
+        result,
+      });
     } else {
+      // this.send({
+      //   type: CopilotMessageType.EXEC_ERROR,
+      //   error: errorMessage,
+      //   context: {
+      //     schemaExId: this.schemaExId,
+      //     lastPatch
+      //   }
+      // })
       logger.error(
-        `Tool calls execution failed for project ${this.projectExId}: ${result}`
+        `Tool calls failed for project ${this.projectExId}: ${errorMessage}.`
       );
     }
   }

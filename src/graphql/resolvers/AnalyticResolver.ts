@@ -60,5 +60,14 @@ export const analyticResolver = {
         throw new Error('Failed to execute AI copilot');
       }
     },
+    execAiCopilot: async() => {
+      try {
+        const result = await executionService.createEvaluationSessions();
+        return result ? true : false;
+      } catch (error) {
+        logger.error('Error executing AI copilot:', error);
+        throw new Error('Failed to execute AI copilot');
+      }
+    }
   },
 };

@@ -5,6 +5,7 @@ import { logger } from "../utils/logger.ts";
 import { appendFileSync } from "fs";
 import {
   CopilotMessageType,
+  type AIResponseMessage,
   type CopilotMessage,
   type HumanInputMessage,
   type InitialStateMessage,
@@ -37,8 +38,8 @@ export class EvaluationJobRunner {
   private promptTemplate: string;
   response: string = "";
   tasks: TaskMessage[] | null = null;
-  private completionPromise: Promise<string>;
-  private resolveCompletion: ((value: string) => void) | null = null;
+  private completionPromise: Promise<{response: string, tasks: TaskMessage[] | null}>;
+  private resolveCompletion: ((value: {response: string, tasks: TaskMessage[] | null}) => void) | null = null;
   private rejectCompletion: ((reason: Error) => void) | null = null;
   private isCompleted: boolean = false;
   private timeoutId: NodeJS.Timeout | null = null;
@@ -48,7 +49,7 @@ export class EvaluationJobRunner {
     this.wsUrl = wsUrl;
     this.promptTemplate = promptTemplate;
     // Create the completion promise in the constructor
-    this.completionPromise = new Promise<string>((resolve, reject) => {
+    this.completionPromise = new Promise<{response: string, tasks: TaskMessage[] | null}>((resolve, reject) => {
       this.resolveCompletion = resolve;
       this.rejectCompletion = reject;
     });
@@ -130,7 +131,7 @@ export class EvaluationJobRunner {
         await this.handleToolCallsMessage(data[0] as ToolCallsMessage);
         break;
       case CopilotMessageType.AI_RESPONSE:
-        this.handleAIResponseMessage(data[0] as CopilotMessage);
+        this.handleAIResponseMessage(data[0] as AIResponseMessage);
         break;
       case CopilotMessageType.TASK:
         this.tasks?.push(data[0] as TaskMessage);
@@ -229,17 +230,17 @@ export class EvaluationJobRunner {
     }
   }
 
-  handleAIResponseMessage(message: CopilotMessage): void {
+  handleAIResponseMessage(message: AIResponseMessage): void {
     logger.info(
       `Received AI response for project ${this.projectExId}: ${JSON.stringify(
         message
       )}.`
     );
-    this.response = JSON.stringify(message);
+    this.response = message.content;
     if (!this.isCompleted && this.resolveCompletion) {
       this.clearTimeout();
       this.isCompleted = true;
-      this.resolveCompletion(this.response);
+      this.resolveCompletion({response: this.response, tasks: this.tasks});
     }
     this.stopJob();
     // TODO:Handle AI response message as needed
@@ -329,7 +330,7 @@ export class EvaluationJobRunner {
    */
   async waitForCompletion(
     timeoutMs: number = DEFAULT_TIMEOUT_MS
-  ): Promise<string> {
+  ): Promise<{response: string, tasks: TaskMessage[] | null}> {
     // Clear any existing timeout before setting a new one (for multiple calls)
     this.clearTimeout();
 

@@ -34,7 +34,7 @@ export class ExecutionService {
         throw new Error('Golden set is undefined');
       }
       if (USE_KUBERNETES_JOBS) {
-        const response = await applyAndWatchJob(
+        const jobResult = await applyAndWatchJob(
           `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
           'default',
           './src/jobs/EvaluationJobRunner.ts',
@@ -43,8 +43,8 @@ export class ExecutionService {
           WS_URL,
           goldenSet.promptTemplate
         );
-        logger.info('Evaluation job started with response:', response);
-        return response;
+        logger.info('Evaluation job completed with status:', jobResult.status);
+        return {response: jobResult.response, tasks: jobResult.tasks};
       } else {
         const jobRunner = new EvaluationJobRunner(
           projectExId,

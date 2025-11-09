@@ -9,6 +9,7 @@ import {
   type HumanInputMessage,
   type InitialStateMessage,
   type SystemStatusMessage,
+  type TaskMessage,
   type ToolCall,
   type ToolCallsMessage,
 } from "../utils/types.ts";
@@ -35,6 +36,7 @@ export class EvaluationJobRunner {
   private wsUrl: string;
   private promptTemplate: string;
   response: string = "";
+  tasks: TaskMessage[] | null = null;
   private completionPromise: Promise<string>;
   private resolveCompletion: ((value: string) => void) | null = null;
   private rejectCompletion: ((reason: Error) => void) | null = null;
@@ -129,6 +131,14 @@ export class EvaluationJobRunner {
         break;
       case CopilotMessageType.AI_RESPONSE:
         this.handleAIResponseMessage(data[0] as CopilotMessage);
+        break;
+      case CopilotMessageType.TASK:
+        this.tasks?.push(data[0] as TaskMessage);
+        logger.info(
+          `Received task message for project ${this.projectExId}: ${JSON.stringify(
+            data[0].name
+          )}.`
+        );
         break;
       case CopilotMessageType.ERROR:
         logger.error(

@@ -377,4 +377,17 @@ if (RUN_KUBERNETES_JOBS && process.argv[2] && process.argv[3] && process.argv[4]
   );
 
   evaluationJobRunner.startJob();
+  
+  // Wait for completion and output the result as JSON for the parent process to read
+  evaluationJobRunner
+    .waitForCompletion()
+    .then((result) => {
+      // Output the result as a special marker line that can be parsed from logs
+      console.log(`JOB_RESULT_JSON: ${JSON.stringify(result)}`);
+      process.exit(0);
+    })
+    .catch((error) => {
+      logger.error("Job execution failed:", error);
+      process.exit(1);
+    });
 }

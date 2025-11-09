@@ -1,6 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import yaml from 'js-yaml';
 import { logger } from '../../utils/logger.ts';
+import type { TaskMessage } from '../../utils/types.ts';
 
 export interface JobResult {
   jobName: string;
@@ -8,6 +9,8 @@ export interface JobResult {
   status: 'succeeded' | 'failed' | 'running';
   completionTime?: Date;
   failureReason?: string;
+  response?: string;
+  tasks?: TaskMessage[] | null;
 }
 
 /**
@@ -102,7 +105,72 @@ export async function applyAndWatchJob(
   }
 
   // Watch the Job status
-  return watchJobStatus(batchV1Api, jobName, namespace, timeoutMs);
+  const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
+  return watchJobStatus(batchV1Api, coreV1Api, jobName, namespace, timeoutMs);
+}
+
+/**
+ * Extract response and tasks from pod logs by looking for the special output marker
+ */
+async function extractJobResultFromLogs(
+  coreV1Api: k8s.CoreV1Api,
+  jobName: string,
+  namespace: string
+): Promise<{ response?: string; tasks?: TaskMessage[] | null }> {
+  try {
+    // List pods for this job
+    const podsResponse = await coreV1Api.listNamespacedPod({
+      namespace,
+      labelSelector: `job-name=${jobName}`,
+    });
+
+    if (!podsResponse.items || podsResponse.items.length === 0) {
+      logger.warn(`No pods found for job ${jobName}`);
+      return {};
+    }
+
+    // Get the first pod (there should only be one for a job)
+    const pod = podsResponse.items[0];
+    const podName = pod.metadata?.name;
+
+    if (!podName) {
+      logger.warn(`Pod name not found for job ${jobName}`);
+      return {};
+    }
+
+    // Read pod logs
+    const logsResponse = await coreV1Api.readNamespacedPodLog({
+      name: podName,
+      namespace,
+    });
+
+    // Look for the special JSON output marker in logs
+    const logs = logsResponse;
+    const lines = logs.split('\n');
+    
+    // Search for the line containing the job result JSON
+    for (const line of lines) {
+      if (line.includes('JOB_RESULT_JSON:')) {
+        try {
+          const jsonStr = line.substring(line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length).trim();
+          const result = JSON.parse(jsonStr);
+          logger.info(`Extracted job result from logs: ${JSON.stringify(result)}`);
+          return {
+            response: result.response,
+            tasks: result.tasks,
+          };
+        } catch (parseErr) {
+          logger.error('Failed to parse job result JSON from logs:', parseErr);
+        }
+      }
+    }
+
+    logger.warn(`No job result found in logs for job ${jobName}`);
+    return {};
+  } catch (err) {
+    logger.error(`Failed to extract job result from logs for job ${jobName}:`, err);
+    return {};
+  }
 }
 
 /**
@@ -110,6 +178,7 @@ export async function applyAndWatchJob(
  */
 async function watchJobStatus(
   batchV1Api: k8s.BatchV1Api,
+  coreV1Api: k8s.CoreV1Api,
   jobName: string,
   namespace: string,
   timeoutMs: number
@@ -118,7 +187,6 @@ async function watchJobStatus(
   logger.info(
     `Watching Job ${jobName} in namespace ${namespace} for completion...`
   );
-  // TODO: return response and tasks returned by the Job
   return new Promise((resolve, reject) => {
     const checkInterval = setInterval(async () => {
       try {
@@ -144,6 +212,14 @@ async function watchJobStatus(
         // Check if Job has succeeded
         if (job.status?.succeeded && job.status.succeeded > 0) {
           clearInterval(checkInterval);
+          
+          // Extract response and tasks from pod logs
+          const jobResult = await extractJobResultFromLogs(
+            coreV1Api,
+            jobName,
+            namespace
+          );
+          
           resolve({
             jobName,
             namespace,
@@ -151,6 +227,8 @@ async function watchJobStatus(
             completionTime: job.status.completionTime
               ? new Date(job.status.completionTime)
               : new Date(),
+            response: jobResult.response,
+            tasks: jobResult.tasks,
           });
           return;
         }

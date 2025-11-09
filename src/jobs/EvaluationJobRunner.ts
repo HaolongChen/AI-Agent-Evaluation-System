@@ -149,6 +149,12 @@ export class EvaluationJobRunner {
         }
         this.stopJob();
         break;
+      case CopilotMessageType.EDITABLE_TEXT:
+        this.send({
+          type: CopilotMessageType.HUMAN_OPERATION,
+          operation: 'continue',
+        });
+        break;
       default:
         logger.info(
           `Received message of type ${data[0]?.type} for project ${this.projectExId}.`

@@ -20,7 +20,8 @@ export class ExecutionService {
       const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
 
       const goldenSets = await goldenSetService.getGoldenSets(
-        undefined,
+        projectExId,
+        schemaExId,
         REVERSE_COPILOT_TYPES[copilotType]
       );
       if (!goldenSets || goldenSets.length === 0) {
@@ -52,9 +53,9 @@ export class ExecutionService {
           goldenSet.promptTemplate
         );
         jobRunner.startJob();
-        const {response, tasks} = await jobRunner.waitForCompletion();
+        const { response, tasks } = await jobRunner.waitForCompletion();
         logger.info('Evaluation job completed with response:', response);
-        return {response, tasks};
+        return { response, tasks };
       }
       // TODO: access to copilot with each golden set
       // return prisma.evaluationSession.create({
@@ -73,57 +74,115 @@ export class ExecutionService {
     }
   }
 
-  async createEvaluationSessions(
-    sessions: Array<{
-      projectExId: string;
-      schemaExId: string;
-      copilotType: CopilotType;
-    }>
-  ) {
+  async createEvaluationSessions() {
     try {
-      logger.info(
-        `Creating ${sessions.length} evaluation sessions concurrently`
-      );
+      const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
 
-      const results = await Promise.allSettled(
-        sessions.map((session) =>
-          this.createEvaluationSession(
-            session.projectExId,
-            session.schemaExId,
-            session.copilotType
-          )
-        )
-      );
-
-      const successful = results.filter((r) => r.status === 'fulfilled');
-      const failed = results.filter((r) => r.status === 'rejected');
-
-      logger.info(
-        `Evaluation sessions created: ${successful.length} successful, ${failed.length} failed`
-      );
-
-      if (failed.length > 0) {
-        failed.forEach((result, index) => {
-          if (result.status === 'rejected') {
-            logger.error(`Session ${index + 1} failed:`, result.reason);
-          }
-        });
+      const goldenSets = await goldenSetService.getGoldenSets();
+      if (!goldenSets || goldenSets.length === 0) {
+        throw new Error('No golden sets found');
       }
 
-      return {
-        successful: successful.map((r) =>
-          r.status === 'fulfilled' ? r.value : null
-        ),
-        failed: failed.map((r, index) => ({
-          session: sessions[successful.length + index],
-          error: r.status === 'rejected' ? r.reason : null,
-        })),
-        summary: {
-          total: sessions.length,
-          successCount: successful.length,
-          failureCount: failed.length,
-        },
-      };
+      logger.info(
+        `Creating ${goldenSets.length} evaluation sessions concurrently`
+      );
+
+      if (USE_KUBERNETES_JOBS) {
+        // Create Kubernetes jobs concurrently for all golden sets
+        const results = await Promise.allSettled(
+          goldenSets.map((goldenSet) =>
+            applyAndWatchJob(
+              `evaluation-job-${goldenSet.projectExId}-${
+                goldenSet.schemaExId
+              }-${Date.now()}`,
+              'default',
+              './src/jobs/EvaluationJobRunner.ts',
+              300000,
+              goldenSet.projectExId,
+              WS_URL,
+              goldenSet.promptTemplate
+            )
+          )
+        );
+
+        const successful = results.filter((r) => r.status === 'fulfilled');
+        const failed = results.filter((r) => r.status === 'rejected');
+
+        logger.info(
+          `Kubernetes jobs created: ${successful.length} successful, ${failed.length} failed`
+        );
+
+        if (failed.length > 0) {
+          failed.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              logger.error(`Job ${index + 1} failed:`, result.reason);
+            }
+          });
+        }
+
+        return {
+          successful: successful.map((r) =>
+            r.status === 'fulfilled' ? r.value : null
+          ),
+          failed: failed.map((r, index) => ({
+            goldenSet: goldenSets[successful.length + index],
+            error: r.status === 'rejected' ? r.reason : null,
+          })),
+          summary: {
+            total: goldenSets.length,
+            successCount: successful.length,
+            failureCount: failed.length,
+          },
+        };
+      } else {
+        // Create local job runners concurrently for all golden sets
+        const jobRunners = goldenSets.map(
+          (goldenSet) =>
+            new EvaluationJobRunner(
+              goldenSet.projectExId,
+              WS_URL,
+              goldenSet.promptTemplate
+            )
+        );
+
+        // Start all jobs
+        jobRunners.forEach((runner) => runner.startJob());
+
+        // Wait for all completions concurrently
+        const results = await Promise.allSettled(
+          jobRunners.map((runner) => runner.waitForCompletion())
+        );
+
+        const successful = results.filter((r) => r.status === 'fulfilled');
+        const failed = results.filter((r) => r.status === 'rejected');
+
+        logger.info(
+          `Evaluation jobs completed: ${successful.length} successful, ${failed.length} failed`
+        );
+
+        if (failed.length > 0) {
+          failed.forEach((result, index) => {
+            if (result.status === 'rejected') {
+              logger.error(`Job ${index + 1} failed:`, result.reason);
+            }
+          });
+        }
+
+        return {
+          successful: successful.map((r) =>
+            r.status === 'fulfilled' ? r.value : null
+          ),
+          failed: failed.map((r, index) => ({
+            goldenSet: goldenSets[successful.length + index],
+            error: r.status === 'rejected' ? r.reason : null,
+          })),
+          summary: {
+            total: goldenSets.length,
+            successCount: successful.length,
+            failureCount: failed.length,
+          },
+        };
+      }
     } catch (error) {
       logger.error('Error creating evaluation sessions:', error);
       throw new Error('Failed to create evaluation sessions');

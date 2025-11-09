@@ -9,8 +9,8 @@ export interface JobResult {
   status: 'succeeded' | 'failed' | 'running';
   completionTime?: Date;
   failureReason?: string;
-  response?: string;
-  tasks?: TaskMessage[] | null;
+  response?: string | undefined;
+  tasks?: TaskMessage[] | null | undefined;
 }
 
 /**
@@ -131,7 +131,7 @@ async function extractJobResultFromLogs(
 
     // Get the first pod (there should only be one for a job)
     const pod = podsResponse.items[0];
-    const podName = pod.metadata?.name;
+    const podName = pod?.metadata?.name || 'undefined';
 
     if (!podName) {
       logger.warn(`Pod name not found for job ${jobName}`);

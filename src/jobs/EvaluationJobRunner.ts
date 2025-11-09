@@ -356,7 +356,8 @@ export class EvaluationJobRunner {
   }
 }
 
-if (RUN_KUBERNETES_JOBS) {
+if (RUN_KUBERNETES_JOBS && process.argv[2] && process.argv[3] && process.argv[4]) {
+  logger.debug(`${process.argv}`);
   const args = z
     .object({
       projectExId: z.string().min(1, "projectExId is required"),

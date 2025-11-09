@@ -52,9 +52,9 @@ export class ExecutionService {
           goldenSet.promptTemplate
         );
         jobRunner.startJob();
-        const response = await jobRunner.waitForCompletion();
+        const {response, tasks} = await jobRunner.waitForCompletion();
         logger.info('Evaluation job completed with response:', response);
-        return response;
+        return {response, tasks};
       }
       // TODO: access to copilot with each golden set
       // return prisma.evaluationSession.create({
@@ -70,6 +70,63 @@ export class ExecutionService {
     } catch (error) {
       logger.error('Error creating evaluation session:', error);
       throw new Error('Failed to create evaluation session');
+    }
+  }
+
+  async createEvaluationSessions(
+    sessions: Array<{
+      projectExId: string;
+      schemaExId: string;
+      copilotType: CopilotType;
+    }>
+  ) {
+    try {
+      logger.info(
+        `Creating ${sessions.length} evaluation sessions concurrently`
+      );
+
+      const results = await Promise.allSettled(
+        sessions.map((session) =>
+          this.createEvaluationSession(
+            session.projectExId,
+            session.schemaExId,
+            session.copilotType
+          )
+        )
+      );
+
+      const successful = results.filter((r) => r.status === 'fulfilled');
+      const failed = results.filter((r) => r.status === 'rejected');
+
+      logger.info(
+        `Evaluation sessions created: ${successful.length} successful, ${failed.length} failed`
+      );
+
+      if (failed.length > 0) {
+        failed.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            logger.error(`Session ${index + 1} failed:`, result.reason);
+          }
+        });
+      }
+
+      return {
+        successful: successful.map((r) =>
+          r.status === 'fulfilled' ? r.value : null
+        ),
+        failed: failed.map((r, index) => ({
+          session: sessions[successful.length + index],
+          error: r.status === 'rejected' ? r.reason : null,
+        })),
+        summary: {
+          total: sessions.length,
+          successCount: successful.length,
+          failureCount: failed.length,
+        },
+      };
+    } catch (error) {
+      logger.error('Error creating evaluation sessions:', error);
+      throw new Error('Failed to create evaluation sessions');
     }
   }
 

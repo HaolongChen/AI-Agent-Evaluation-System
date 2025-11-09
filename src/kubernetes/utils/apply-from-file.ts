@@ -1,5 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import yaml from 'js-yaml';
+import { logger } from '../../utils/logger.ts';
 
 export interface JobResult {
   jobName: string;
@@ -50,6 +51,8 @@ export async function applyAndWatchJob(
         restartPolicy: OnFailure
     backoffLimit: 3
   `;
+
+  logger.debug('Applying Job with spec:', JOB_YAML);
 
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
@@ -112,7 +115,10 @@ async function watchJobStatus(
   timeoutMs: number
 ): Promise<JobResult> {
   const startTime = Date.now();
-
+  logger.info(
+    `Watching Job ${jobName} in namespace ${namespace} for completion...`
+  );
+  // TODO: return response and tasks returned by the Job
   return new Promise((resolve, reject) => {
     const checkInterval = setInterval(async () => {
       try {

@@ -113,6 +113,7 @@ export class EvaluationJobRunner {
       logger.info(`Sending message: ${JSON.stringify(data)}`);
       this.socket.send(JSON.stringify(data));
       if(data.type === CopilotMessageType.TERMINATE) {
+        this.rejectCompletion?.(new Error('Job terminated by user'));
         this.stopJob();
       }
     } else {

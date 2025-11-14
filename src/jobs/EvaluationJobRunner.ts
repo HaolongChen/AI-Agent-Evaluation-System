@@ -177,6 +177,19 @@ export class EvaluationJobRunner {
       case CopilotMessageType.EDITABLE_TEXT:
         this.handleEditableTextMessage(data[0] as EditableTextMessage);
         break;
+      case CopilotMessageType.STATE_CHANGE:
+        if(data[0]?.currentJobIsRunning === false) {
+          logger.info(`Job for project ${this.projectExId} has stopped running.`);
+          if (!this.isCompleted && this.rejectCompletion) {
+            this.clearTimeout();
+            this.isCompleted = true;
+            this.rejectCompletion(
+              new Error('Job has stopped running unexpectedly')
+            );
+          }
+          this.stopJob();
+        }
+        break;
       default:
         logger.info(
           `Received message of type ${data[0]?.type} for project ${this.projectExId}.`
@@ -245,6 +258,7 @@ export class EvaluationJobRunner {
   }
 
   handleAIResponseMessage(message: AIResponseMessage): void {
+    // WARN: not handling properly
     logger.error(
       `Received AI response for project ${this.projectExId}: ${JSON.stringify(
         message

@@ -7,6 +7,7 @@ import {
   CopilotMessageType,
   type AIResponseMessage,
   type CopilotMessage,
+  type EditableTextMessage,
   type HumanInputMessage,
   type InitialStateMessage,
   type SystemStatusMessage,
@@ -38,15 +39,22 @@ export class EvaluationJobRunner {
   private wsUrl: string;
   private promptTemplate: string;
   response: string = '';
+  editableText: string = '';
   tasks: TaskMessage[] | null = null;
   private completionPromise: Promise<{
-    response: string;
-    tasks: TaskMessage[] | null;
+    // response: string;
+    // tasks: TaskMessage[] | null;
+    editableText: string;
   }>;
+  // private resolveCompletion:
+  //   | ((value: { response: string; tasks: TaskMessage[] | null }) => void)
+  //   | null = null;
   private resolveCompletion:
-    | ((value: { response: string; tasks: TaskMessage[] | null }) => void)
+    | ((value: { editableText: string }) => void)
     | null = null;
-  private rejectCompletion: ((reason: Error) => void) | null = null;
+  private rejectCompletion:
+    | ((reason: Error | { reason: string }) => void)
+    | null = null;
   private isCompleted: boolean = false;
   private timeoutId: NodeJS.Timeout | null = null;
 
@@ -56,8 +64,9 @@ export class EvaluationJobRunner {
     this.promptTemplate = promptTemplate;
     // Create the completion promise in the constructor
     this.completionPromise = new Promise<{
-      response: string;
-      tasks: TaskMessage[] | null;
+      // response: string;
+      // tasks: TaskMessage[] | null;
+      editableText: string;
     }>((resolve, reject) => {
       this.resolveCompletion = resolve;
       this.rejectCompletion = reject;
@@ -112,7 +121,7 @@ export class EvaluationJobRunner {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       logger.info(`Sending message: ${JSON.stringify(data)}`);
       this.socket.send(JSON.stringify(data));
-      if(data.type === CopilotMessageType.TERMINATE) {
+      if (data.type === CopilotMessageType.TERMINATE) {
         this.rejectCompletion?.(new Error('Job terminated by user'));
         this.stopJob();
       }
@@ -147,6 +156,7 @@ export class EvaluationJobRunner {
         await this.handleToolCallsMessage(data[0] as ToolCallsMessage);
         break;
       case CopilotMessageType.AI_RESPONSE:
+        logger.info(`Received AI response for project ${this.projectExId}.`);
         this.handleAIResponseMessage(data[0] as AIResponseMessage);
         break;
       case CopilotMessageType.TASK:
@@ -175,16 +185,26 @@ export class EvaluationJobRunner {
         this.stopJob();
         break;
       case CopilotMessageType.EDITABLE_TEXT:
-        this.send({
-          type: CopilotMessageType.HUMAN_OPERATION,
-          operation: 'continue',
-        });
+        this.handleEditableTextMessage(data[0] as EditableTextMessage);
         break;
       default:
         logger.info(
           `Received message of type ${data[0]?.type} for project ${this.projectExId}.`
         );
     }
+  }
+
+  handleEditableTextMessage(message: EditableTextMessage): void {
+    logger.info(
+      `Received editable text for project ${this.projectExId}: ${message.content}.`
+    );
+    this.editableText = message.content;
+    if (!this.isCompleted && this.resolveCompletion) {
+      this.clearTimeout();
+      this.isCompleted = true;
+      this.resolveCompletion({ editableText: this.editableText });
+    }
+    this.stopJob();
   }
 
   handleInitialStateMessage(message: InitialStateMessage): void {
@@ -247,19 +267,30 @@ export class EvaluationJobRunner {
   }
 
   handleAIResponseMessage(message: AIResponseMessage): void {
-    logger.info(
+    logger.error(
       `Received AI response for project ${this.projectExId}: ${JSON.stringify(
         message
       )}.`
     );
     this.response = message.content;
-    if (!this.isCompleted && this.resolveCompletion) {
+    if (!this.isCompleted && this.rejectCompletion) {
       this.clearTimeout();
       this.isCompleted = true;
-      this.resolveCompletion({ response: this.response, tasks: this.tasks });
+      this.rejectCompletion({ reason: this.response });
     }
     this.stopJob();
-    // TODO:Handle AI response message as needed
+    // logger.info(
+    //   `Received AI response for project ${this.projectExId}: ${JSON.stringify(
+    //     message
+    //   )}.`
+    // );
+    // this.response = message.content;
+    // if (!this.isCompleted && this.resolveCompletion) {
+    //   this.clearTimeout();
+    //   this.isCompleted = true;
+    //   this.resolveCompletion({ response: this.response, tasks: this.tasks });
+    // }
+    // this.stopJob();
   }
 
   runToolCalls = async (toolCalls: ToolCall[]) => {
@@ -298,7 +329,7 @@ export class EvaluationJobRunner {
       }
       const schemaDiff = get(result, 'schemaDiff');
       if (isNil(schemaDiff)) {
-        return { result: (result as unknown as ToolResult), successful: true };
+        return { result: result as unknown as ToolResult, successful: true };
       }
       if (NODE_ENV === 'development') {
         logger.debug('toolCall---schemaDiff:', schemaDiff);
@@ -311,7 +342,7 @@ export class EvaluationJobRunner {
       // }
       // throw getError(JSON.stringify(applyResult.errorContent), result);
       // probably not necessary to apply schema diff in evaluation job runner
-      return { result: (result as unknown as ToolResult), successful: true };
+      return { result: result as unknown as ToolResult, successful: true };
     } catch (error: unknown) {
       console.log('toolCall---error:', error, toolCalls);
       return {
@@ -346,7 +377,7 @@ export class EvaluationJobRunner {
    */
   async waitForCompletion(
     timeoutMs: number = DEFAULT_TIMEOUT_MS
-  ): Promise<{ response: string; tasks: TaskMessage[] | null }> {
+  ): Promise<{ editableText: string }> {
     // Clear any existing timeout before setting a new one (for multiple calls)
     this.clearTimeout();
 

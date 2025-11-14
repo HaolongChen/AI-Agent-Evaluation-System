@@ -53,9 +53,9 @@ export class ExecutionService {
           goldenSet.promptTemplate
         );
         jobRunner.startJob();
-        const { response, tasks } = await jobRunner.waitForCompletion();
-        logger.info('Evaluation job completed with response:', response);
-        return { response, tasks };
+        const { editableText } = await jobRunner.waitForCompletion();
+        logger.info('Evaluation job completed with response:', editableText);
+        return { response: editableText };
       }
       // TODO: access to copilot with each golden set
       // return prisma.evaluationSession.create({

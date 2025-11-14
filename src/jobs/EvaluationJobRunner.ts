@@ -50,10 +50,10 @@ export class EvaluationJobRunner {
   //   | ((value: { response: string; tasks: TaskMessage[] | null }) => void)
   //   | null = null;
   private resolveCompletion:
-    | ((value: { editableText: string }) => void)
+    | ((editableText: { editableText: string }) => void)
     | null = null;
   private rejectCompletion:
-    | ((reason: Error | { reason: string }) => void)
+    | ((reason: Error) => void)
     | null = null;
   private isCompleted: boolean = false;
   private timeoutId: NodeJS.Timeout | null = null;
@@ -144,6 +144,7 @@ export class EvaluationJobRunner {
       null,
       2
     )}\n`;
+    logger.info(`Received message: ${JSON.stringify(data)}`);
     appendFileSync('logs.txt', logEntry);
     switch (data[0]?.type) {
       case CopilotMessageType.INITIAL_STATE:
@@ -156,23 +157,12 @@ export class EvaluationJobRunner {
         await this.handleToolCallsMessage(data[0] as ToolCallsMessage);
         break;
       case CopilotMessageType.AI_RESPONSE:
-        logger.info(`Received AI response for project ${this.projectExId}.`);
         this.handleAIResponseMessage(data[0] as AIResponseMessage);
         break;
       case CopilotMessageType.TASK:
         this.tasks?.push(data[0] as TaskMessage);
-        logger.info(
-          `Received task message for project ${
-            this.projectExId
-          }: ${JSON.stringify(data[0].name)}.`
-        );
         break;
       case CopilotMessageType.ERROR:
-        logger.error(
-          `Received error message for project ${
-            this.projectExId
-          }: ${JSON.stringify(data[0])}.`
-        );
         if (!this.isCompleted && this.rejectCompletion) {
           this.clearTimeout();
           this.isCompleted = true;
@@ -195,9 +185,6 @@ export class EvaluationJobRunner {
   }
 
   handleEditableTextMessage(message: EditableTextMessage): void {
-    logger.info(
-      `Received editable text for project ${this.projectExId}: ${message.content}.`
-    );
     this.editableText = message.content;
     if (!this.isCompleted && this.resolveCompletion) {
       this.clearTimeout();
@@ -209,7 +196,6 @@ export class EvaluationJobRunner {
 
   handleInitialStateMessage(message: InitialStateMessage): void {
     if (message.terminated) {
-      logger.error(`Job for project ${this.projectExId} has terminated.`);
       if (!this.isCompleted && this.rejectCompletion) {
         this.clearTimeout();
         this.isCompleted = true;
@@ -221,7 +207,6 @@ export class EvaluationJobRunner {
     if (message.currentJobIsRunning === true) {
       logger.info(`Job for project ${this.projectExId} is running.`);
     }
-    logger.info(`Received initial state for project ${this.projectExId}.`);
     const response: HumanInputMessage = {
       type: CopilotMessageType.HUMAN_INPUT,
       content: this.promptTemplate,
@@ -229,19 +214,12 @@ export class EvaluationJobRunner {
     this.send(response);
   }
 
+  //eslint-disable-next-line @typescript-eslint/no-unused-vars
   handleSystemStatusMessage(message: SystemStatusMessage): void {
-    logger.info(
-      `Received system status for project ${this.projectExId}: ${message.content}.`
-    );
     // TODO: Handle system status message as needed
   }
 
   async handleToolCallsMessage(message: ToolCallsMessage): Promise<void> {
-    logger.info(
-      `Received tool calls for project ${this.projectExId}: ${JSON.stringify(
-        message
-      )}.`
-    );
     const { result, successful, errorMessage } = await this.runToolCalls(
       message.toolCalls
     );
@@ -276,7 +254,7 @@ export class EvaluationJobRunner {
     if (!this.isCompleted && this.rejectCompletion) {
       this.clearTimeout();
       this.isCompleted = true;
-      this.rejectCompletion({ reason: this.response });
+      this.rejectCompletion(new Error(this.response));
     }
     this.stopJob();
     // logger.info(

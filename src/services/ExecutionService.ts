@@ -6,16 +6,19 @@ import { goldenSetService } from './GoldenSetService.ts';
 import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
 import { WS_URL } from '../config/env.ts';
 import { applyAndWatchJob } from '../kubernetes/utils/apply-from-file.ts';
-import { EvaluationJobRunner } from '../jobs/EvaluationJobRunner.ts';
+import type { JobResult } from '../kubernetes/utils/apply-from-file.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import { RubricGenerationJobRunner } from '../jobs/RubricGenerationJobRunner.ts';
+import type { RubricGenerationJobResult } from '../jobs/RubricGenerationJobRunner.ts';
+import type { copilotType } from '../utils/types.ts';
 
 export class ExecutionService {
   async createEvaluationSession(
     projectExId: string,
     schemaExId: string,
-    copilotType: CopilotType
-    // modelName: string
-  ) {
+    copilotType: CopilotType,
+    modelName?: string
+  ): Promise<JobResult | RubricGenerationJobResult> {
     try {
       const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
 
@@ -36,38 +39,33 @@ export class ExecutionService {
       }
       if (USE_KUBERNETES_JOBS) {
         const jobResult = await applyAndWatchJob(
-          `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
+          `rubric-job-${projectExId}-${schemaExId}-${Date.now()}`,
           'default',
-          './src/jobs/EvaluationJobRunner.ts',
+          './src/jobs/RubricGenerationJobRunner.ts',
           300000,
+          String(goldenSet.id),
           projectExId,
+          schemaExId,
+          goldenSet.copilotType,
           WS_URL,
-          goldenSet.promptTemplate
+          modelName ?? 'copilot-latest'
         );
-        logger.info('Evaluation job completed with status:', jobResult.status);
-        return {response: jobResult.response, tasks: jobResult.tasks};
-      } else {
-        const jobRunner = new EvaluationJobRunner(
-          projectExId,
-          WS_URL,
-          goldenSet.promptTemplate
+        logger.info(
+          'Rubric generation job completed with status:',
+          jobResult.status
         );
-        jobRunner.startJob();
-        const { editableText } = await jobRunner.waitForCompletion();
-        logger.info('Evaluation job completed with response:', editableText);
-        return { response: editableText };
+        return jobResult;
       }
-      // TODO: access to copilot with each golden set
-      // return prisma.evaluationSession.create({
-      //   data: {
-      //     projectExId: projectExId,
-      //     schemaExId: schemaExId,
-      //     copilotType: copilotType,
-      //     modelName: modelName,
-      //     status: SESSION_STATUS.PENDING,
-      //   },
-      // });
-      // and store initial rubric for each job
+
+      const jobRunner = new RubricGenerationJobRunner({
+        goldenSetId: goldenSet.id,
+        projectExId: goldenSet.projectExId,
+        schemaExId: goldenSet.schemaExId,
+        copilotType: goldenSet.copilotType as copilotType,
+        wsUrl: WS_URL,
+        ...(modelName ? { modelName } : {}),
+      });
+      return jobRunner.run();
     } catch (error) {
       logger.error('Error creating evaluation session:', error);
       throw new Error('Failed to create evaluation session');
@@ -88,19 +86,21 @@ export class ExecutionService {
       );
 
       if (USE_KUBERNETES_JOBS) {
-        // Create Kubernetes jobs concurrently for all golden sets
         const results = await Promise.allSettled(
           goldenSets.map((goldenSet) =>
             applyAndWatchJob(
-              `evaluation-job-${goldenSet.projectExId}-${
+              `rubric-job-${goldenSet.projectExId}-${
                 goldenSet.schemaExId
               }-${Date.now()}`,
               'default',
-              './src/jobs/EvaluationJobRunner.ts',
+              './src/jobs/RubricGenerationJobRunner.ts',
               300000,
+              String(goldenSet.id),
               goldenSet.projectExId,
+              goldenSet.schemaExId,
+              goldenSet.copilotType,
               WS_URL,
-              goldenSet.promptTemplate
+              'copilot-latest'
             )
           )
         );
@@ -135,22 +135,19 @@ export class ExecutionService {
           },
         };
       } else {
-        // Create local job runners concurrently for all golden sets
         const jobRunners = goldenSets.map(
           (goldenSet) =>
-            new EvaluationJobRunner(
-              goldenSet.projectExId,
-              WS_URL,
-              goldenSet.promptTemplate
-            )
+            new RubricGenerationJobRunner({
+              goldenSetId: goldenSet.id,
+              projectExId: goldenSet.projectExId,
+              schemaExId: goldenSet.schemaExId,
+              copilotType: goldenSet.copilotType as copilotType,
+              wsUrl: WS_URL,
+            })
         );
 
-        // Start all jobs
-        jobRunners.forEach((runner) => runner.startJob());
-
-        // Wait for all completions concurrently
         const results = await Promise.allSettled(
-          jobRunners.map((runner) => runner.waitForCompletion())
+          jobRunners.map((runner) => runner.run())
         );
 
         const successful = results.filter((r) => r.status === 'fulfilled');

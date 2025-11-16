@@ -84,6 +84,12 @@ export const typeDefs = `#graphql
     rubricType: [String!]!
     category: [String!]!
     expectedAnswer: [ExpectedAnswer!]!
+    copilotInput: String
+    copilotOutput: String
+    modelProvider: String
+    modelName: String
+    generatorMetadata: JSON
+    fallbackReason: String
     reviewStatus: RubricReviewStatus!
     isActive: Boolean!
     generatedAt: DateTime!
@@ -170,7 +176,7 @@ export const typeDefs = `#graphql
       projectExId: String!
       schemaExId: String!
       copilotType: CopilotType!
-      # modelName: String!
+      modelName: String!
     ): Boolean!
 
     execAiCopilot: Boolean!

@@ -248,11 +248,13 @@ export const GoldenSetMutations = {
 
 export const SessionMutations = {
   execCopilot: (data: {
+    projectExId: string;
     schemaExId: string;
     copilotType: string;
     modelName: string;
   }) => {
     return mutation('execAiCopilotByTypeAndModel')
+      .withVariable('projectExId', data.projectExId)
       .withVariable('schemaExId', data.schemaExId)
       .withVariable('copilotType', data.copilotType)
       .withVariable('modelName', data.modelName)

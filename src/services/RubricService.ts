@@ -1,3 +1,4 @@
+import type { Prisma } from '../generated/prisma/index.js';
 import { prisma } from '../config/prisma.ts';
 import { REVIEW_STATUS } from '../config/constants.ts';
 import type { expectedAnswerType, rubricContentType } from '../utils/types.ts';
@@ -14,6 +15,12 @@ export class RubricService {
       category?: string[];
       expectedAnswer?: expectedAnswerType[];
       newGoldenSetId?: number;
+      copilotInput?: string;
+      copilotOutput?: string;
+      modelProvider?: string;
+      modelName?: string;
+      generatorMetadata?: Record<string, unknown>;
+      fallbackReason?: string;
     }>
   ) {
     try {
@@ -26,6 +33,20 @@ export class RubricService {
           ...(r.rubricType && { rubricType: r.rubricType }),
           ...(r.category && { category: r.category }),
           ...(r.expectedAnswer && { expectedAnswer: r.expectedAnswer }),
+          ...(r.copilotInput && { copilotInput: r.copilotInput }),
+          ...(r.copilotOutput && { copilotOutput: r.copilotOutput }),
+          ...(r.modelProvider !== undefined && {
+            modelProvider: r.modelProvider ?? null,
+          }),
+          ...(r.modelName !== undefined && {
+            modelName: r.modelName ?? null,
+          }),
+          ...(r.generatorMetadata && {
+            generatorMetadata: r.generatorMetadata as Prisma.InputJsonValue,
+          }),
+          ...(r.fallbackReason !== undefined && {
+            fallbackReason: r.fallbackReason ?? null,
+          }),
           reviewStatus: REVIEW_STATUS.PENDING,
           ...(r.newGoldenSetId && { newGoldenSetId: r.newGoldenSetId }),
         })),

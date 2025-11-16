@@ -24,9 +24,7 @@ export async function applyAndWatchJob(
   namespace: string,
   path: string,
   timeoutMs: number = 300000,
-  projectExId: string,
-  wsUrl: string,
-  promptTemplate: string
+  ...scriptArgs: string[]
 ): Promise<JobResult> {
   // Normalize job name to be lowercase and RFC 1123 compliant
   const normalizedName = name
@@ -35,6 +33,10 @@ export async function applyAndWatchJob(
     .substring(0, 63);
 
   // Kubernetes Job YAML configuration
+  const serializedArgs = scriptArgs
+    .map((arg) => JSON.stringify(arg))
+    .join(', ');
+
   const JOB_YAML = `
   apiVersion: batch/v1
   kind: Job
@@ -47,7 +49,9 @@ export async function applyAndWatchJob(
         containers:
         - name: evaluator
           image: evaluation
-          command: ["tsx", "${path}", "${projectExId}", "${wsUrl}", "${promptTemplate}"]
+          command: ["tsx", "${path}"${
+    serializedArgs ? `, ${serializedArgs}` : ''
+  }]
           env:
           - name: NODE_ENV
             value: "production"
@@ -147,14 +151,20 @@ async function extractJobResultFromLogs(
     // Look for the special JSON output marker in logs
     const logs = logsResponse;
     const lines = logs.split('\n');
-    
+
     // Search for the line containing the job result JSON
     for (const line of lines) {
       if (line.includes('JOB_RESULT_JSON:')) {
         try {
-          const jsonStr = line.substring(line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length).trim();
+          const jsonStr = line
+            .substring(
+              line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
+            )
+            .trim();
           const result = JSON.parse(jsonStr);
-          logger.info(`Extracted job result from logs: ${JSON.stringify(result)}`);
+          logger.info(
+            `Extracted job result from logs: ${JSON.stringify(result)}`
+          );
           return {
             response: result.response,
             tasks: result.tasks,
@@ -168,7 +178,10 @@ async function extractJobResultFromLogs(
     logger.warn(`No job result found in logs for job ${jobName}`);
     return {};
   } catch (err) {
-    logger.error(`Failed to extract job result from logs for job ${jobName}:`, err);
+    logger.error(
+      `Failed to extract job result from logs for job ${jobName}:`,
+      err
+    );
     return {};
   }
 }
@@ -212,14 +225,14 @@ async function watchJobStatus(
         // Check if Job has succeeded
         if (job.status?.succeeded && job.status.succeeded > 0) {
           clearInterval(checkInterval);
-          
+
           // Extract response and tasks from pod logs
           const jobResult = await extractJobResultFromLogs(
             coreV1Api,
             jobName,
             namespace
           );
-          
+
           resolve({
             jobName,
             namespace,

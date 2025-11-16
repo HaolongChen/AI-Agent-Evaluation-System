@@ -114,10 +114,16 @@ model adaptiveRubric {
   sessionId   Int    @unique @map("session_id")
 
   // Rubric Content
-  content        String[] // The actual question/rubric
-  rubricType     String[]         @map("rubric_type") // e.g., 'completeness', 'correctness', 'naming_convention'
-  category       String[] // e.g., 'entity_coverage', 'attribute_completeness'
-  expectedAnswer ExpectedAnswer[] @map("expected_answer")
+  content           String[] // The actual question/rubric
+  rubricType        String[]         @map("rubric_type") // e.g., 'completeness', 'correctness', 'naming_convention'
+  category          String[] // e.g., 'entity_coverage', 'attribute_completeness'
+  expectedAnswer    ExpectedAnswer[] @map("expected_answer")
+  copilotInput      String?          @map("copilot_input") @db.Text
+  copilotOutput     String?          @map("copilot_output") @db.Text
+  modelProvider     String?          @map("model_provider")
+  modelName         String?          @map("model_name")
+  generatorMetadata Json?            @map("generator_metadata")
+  fallbackReason    String?          @map("fallback_reason") @db.Text
 
   // Status
   reviewStatus RubricReviewStatus @default(pending) @map("review_status")

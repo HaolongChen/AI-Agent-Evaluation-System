@@ -238,8 +238,7 @@ const buildModel = (config: LLMConfiguration) => {
         maxTokens: config.maxOutputTokens,
         azureOpenAIApiKey: config.apiKey,
         azureOpenAIEndpoint: AZURE_OPENAI_ENDPOINT!,
-        azureOpenAIApiDeploymentName:
-          AZURE_OPENAI_DEPLOYMENT ?? config.model,
+        azureOpenAIApiDeploymentName: AZURE_OPENAI_DEPLOYMENT ?? config.model,
         azureOpenAIApiVersion: AZURE_OPENAI_API_VERSION,
       });
     }

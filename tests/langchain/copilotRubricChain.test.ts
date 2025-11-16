@@ -58,10 +58,7 @@ async function testFallbackRubricGeneration() {
     assert.equal(result.metadata.provider, 'fallback');
     assert.equal(result.metadata.fallbackUsed, true);
     assert.ok(result.questions.length > 0, 'expected fallback questions');
-    assert.equal(
-      result.summary,
-      'Fallback rubric generated without an LLM.'
-    );
+    assert.equal(result.summary, 'Fallback rubric generated without an LLM.');
     assert.ok(
       result.metadata.reason?.includes('No LLM API key configured'),
       'missing fallback reason'

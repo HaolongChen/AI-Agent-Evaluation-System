@@ -89,35 +89,39 @@ export class RubricGenerationJobRunner {
       copilotInput: goldenSet.promptTemplate,
       copilotOutput,
       idealResponse: goldenSet.idealResponse,
-      preferredProvider: this.options.preferredProvider,
+      ...(this.options.preferredProvider
+        ? { preferredProvider: this.options.preferredProvider }
+        : {}),
     });
 
-    const rubricPayload = {
-      projectExId: this.options.projectExId,
-      schemaExId: this.options.schemaExId,
-      sessionId: evaluationSession.id,
-      content: rubricResult.questions.map((q) => q.content),
-      rubricType: rubricResult.questions.map((q) => q.rubricType),
-      category: rubricResult.questions.map((q) => q.category),
-      expectedAnswer: rubricResult.questions.map(
-        (q) => q.expectedAnswer
-      ) as expectedAnswerType[],
-      copilotInput: goldenSet.promptTemplate,
-      copilotOutput,
-      modelProvider: rubricResult.metadata.provider,
-      ...(rubricResult.metadata.model || this.options.modelName
-        ? { modelName: rubricResult.metadata.model || this.options.modelName }
-        : {}),
-      generatorMetadata: {
-        summary: rubricResult.summary,
-        rawOutput: rubricResult.metadata.rawOutput,
+    const rubricPayload = [
+      {
+        projectExId: this.options.projectExId,
+        schemaExId: this.options.schemaExId,
+        sessionId: evaluationSession.id.toString(),
+        content: rubricResult.questions.map((q) => q.content),
+        rubricType: rubricResult.questions.map((q) => q.rubricType),
+        category: rubricResult.questions.map((q) => q.category),
+        expectedAnswer: rubricResult.questions.map(
+          (q) => q.expectedAnswer
+        ) as expectedAnswerType[],
+        copilotInput: goldenSet.promptTemplate,
+        copilotOutput,
+        modelProvider: rubricResult.metadata.provider,
+        ...(rubricResult.metadata.model || this.options.modelName
+          ? { modelName: rubricResult.metadata.model || this.options.modelName }
+          : {}),
+        generatorMetadata: {
+          summary: rubricResult.summary,
+          rawOutput: rubricResult.metadata.rawOutput,
+        },
+        fallbackReason: rubricResult.metadata.fallbackUsed
+          ? rubricResult.metadata.reason || 'Fallback rubric generated.'
+          : '',
       },
-      fallbackReason: rubricResult.metadata.fallbackUsed
-        ? rubricResult.metadata.reason || 'Fallback rubric generated.'
-        : undefined,
-    };
+    ];
 
-    const rubric = await rubricService.createGeneratedRubric(rubricPayload);
+    const rubric = await rubricService.createRubrics(rubricPayload);
 
     logger.info(
       `Generated rubric ${rubric.id} for session ${evaluationSession.id} (fallbackUsed=${rubricResult.metadata.fallbackUsed})`

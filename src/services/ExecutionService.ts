@@ -49,13 +49,16 @@ export class ExecutionService {
           "Evaluation job completed with status:",
           evalJobResult.status
         );
+        if (evalJobResult.status !== "succeeded") {
+          throw new Error("Evaluation job failed");
+        }
         const genJobResult = await applyAndWatchJob(
           `rubric-job-${projectExId}-${schemaExId}-${Date.now()}`,
           "default",
           "./src/jobs/RubricGenerationJobRunner.ts",
           300000,
           String(goldenSet.id),
-          evalJobResult.editableText, // handle scenario where job fails
+          evalJobResult.editableText || "", // handle scenario where job fails
           modelName ?? "copilot-latest"
         );
         logger.info(
@@ -123,6 +126,11 @@ export class ExecutionService {
               `Evaluation job for golden set ${goldenSet.id} completed with status:`,
               evalJobResult.status
             );
+            if (evalJobResult.status !== "succeeded") {
+              throw new Error(
+                `Evaluation job for golden set ${goldenSet.id} failed`
+              );
+            }
             const genJobResult = await applyAndWatchJob(
               `rubric-job-${goldenSet.projectExId}-${
                 goldenSet.schemaExId

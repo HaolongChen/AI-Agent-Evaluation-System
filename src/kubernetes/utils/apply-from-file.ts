@@ -10,7 +10,7 @@ export interface JobResult {
   // failureReason?: string;
   // response?: string | undefined;
   // tasks?: TaskMessage[] | null | undefined;
-  editableText?: string | undefined;
+  editableText?: string;
   reason?: string;
 }
 
@@ -233,15 +233,27 @@ async function watchJobStatus(
             namespace
           );
 
-          resolve({
-            jobName,
-            namespace,
-            status: "succeeded",
-            completionTime: job.status.completionTime
-              ? new Date(job.status.completionTime)
-              : new Date(),
-            editableText: jobResult.editableText,
-          });
+          if (jobResult.editableText) {
+            resolve({
+              jobName,
+              namespace,
+              status: "succeeded",
+              completionTime: job.status.completionTime
+                ? new Date(job.status.completionTime)
+                : new Date(),
+              editableText: jobResult.editableText,
+            });
+          } else {
+            resolve({
+              jobName,
+              namespace,
+              status: "failed",
+              reason: "No editable text found in job logs",
+              completionTime: job.status.completionTime
+                ? new Date(job.status.completionTime)
+                : new Date(),
+            });
+          }
           return;
         }
 

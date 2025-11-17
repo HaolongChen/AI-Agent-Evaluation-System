@@ -55,7 +55,7 @@ export class ExecutionService {
           "./src/jobs/RubricGenerationJobRunner.ts",
           300000,
           String(goldenSet.id),
-          evalJobResult.editableText || "", // handle senario where job fails
+          evalJobResult.editableText, // handle scenario where job fails
           modelName ?? "copilot-latest"
         );
         logger.info(
@@ -131,7 +131,7 @@ export class ExecutionService {
               "./src/jobs/RubricGenerationJobRunner.ts",
               300000,
               String(goldenSet.id),
-              evalJobResult.editableText || "", // handle senario where job fails
+              evalJobResult.editableText || "", // handle scenario where job fails
               "copilot-latest"
             );
             logger.info(

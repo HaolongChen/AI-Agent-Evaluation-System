@@ -1,4 +1,5 @@
 import { logger } from "../utils/logger.ts";
+import { RUN_KUBERNETES_JOBS } from "../config/env.ts";
 
 const DEFAULT_TIMEOUT_MS = 300000;
 
@@ -71,4 +72,37 @@ export class RubricGenerationJobRunner {
       this.timeoutId = null;
     }
   }
+}
+
+if(
+	RUN_KUBERNETES_JOBS &&
+	process.argv[2] &&
+	process.argv[3] &&
+	process.argv[4]
+){
+	const sessionId = process.argv[2];
+	const editableText = process.argv[3];
+	const modelName = process.argv[4];
+
+	const jobRunner = new RubricGenerationJobRunner(
+		sessionId,
+		editableText,
+		modelName
+	);
+
+	jobRunner.startJob();
+
+	jobRunner.waitForCompletion().then((result) => {
+		logger.info(
+			`Rubric generation job for session ${sessionId} completed with result: ${JSON.stringify(
+				result
+			)}`
+		);
+		process.exit(0);
+	}).catch((error) => {
+		logger.error(
+			`Rubric generation job for session ${sessionId} failed with error: ${error.message}`
+		);
+		process.exit(1);
+	});
 }

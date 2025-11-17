@@ -3,7 +3,10 @@ import { logger } from "../utils/logger.ts";
 const DEFAULT_TIMEOUT_MS = 300000;
 
 interface RubricGenerationResult {
-  editableText: string;
+	status: "succeeded" | "failed";
+	rubrics?: string[];
+	generatedAnswers?: boolean[];
+	evaluationScores?: number;
 }
 
 /**

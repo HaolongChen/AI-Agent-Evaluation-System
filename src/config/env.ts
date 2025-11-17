@@ -33,17 +33,90 @@ export const RUN_KUBERNETES_JOBS =
 
 export const WS_URL =
   NODE_ENV === 'development'
-    ? `${process.env['WS_URL']}userToken=${process.env['userToken']}&projectExId=${process.env['projectExId']}`
-    : `${process.env['WS_URL']}userToken=${process.env['userToken']}&projectExId=${process.env['projectExId']}`; // TODO: modify WS_URL for production mode
-// // LLM Configuration
-// export const OPENAI_API_KEY = process.env['OPENAI_API_KEY'];
-// export const ANTHROPIC_API_KEY = process.env['ANTHROPIC_API_KEY'];
-// export const LLM_PROVIDER = process.env['LLM_PROVIDER'] || 'openai';
-// export const LLM_MODEL = process.env['LLM_MODEL'] || 'gpt-4';
-// export const LLM_TEMPERATURE = parseFloat(
-//   process.env['LLM_TEMPERATURE'] || '0.7'
-// );
-// export const LLM_MAX_TOKENS = parseInt(process.env['LLM_MAX_TOKENS'] || '2000');
+    ? `${process.env['WS_URL']}userToken=${
+        process.env['userToken']
+      }&projectExId=${process.env['projectExId']}&clientType=${
+        process.env['clientType'] || 'WEB'
+      }`
+    : `${process.env['WS_URL']}userToken=${
+        process.env['userToken']
+      }&projectExId=${process.env['projectExId']}&clientType=${
+        process.env['clientType'] || 'WEB'
+      }`; // TODO: modify WS_URL for production mode
+export type LLMProvider = 'openai' | 'gemini';
+
+export const OPENAI_API_KEY =
+  process.env['OPENAI_API_KEY'] || process.env['AZURE_API_KEY'];
+export const GEMINI_API_KEY = process.env['GOOGLE_API_KEY'];
+
+export const AZURE_OPENAI_ENDPOINT = process.env['AZURE_OPENAI_ENDPOINT'];
+export const AZURE_OPENAI_DEPLOYMENT = process.env['AZURE_OPENAI_DEPLOYMENT'];
+export const AZURE_OPENAI_API_VERSION =
+  process.env['AZURE_OPENAI_API_VERSION'] || '2025-04-01-preview';
+export const USES_AZURE_OPENAI = Boolean(
+  AZURE_OPENAI_ENDPOINT && AZURE_OPENAI_DEPLOYMENT && OPENAI_API_KEY
+);
+
+const RAW_LLM_PROVIDER = (process.env['LLM_PROVIDER'] || 'auto').toLowerCase();
+export const LLM_PROVIDER: LLMProvider | 'auto' =
+  RAW_LLM_PROVIDER === 'openai' || RAW_LLM_PROVIDER === 'gemini'
+    ? (RAW_LLM_PROVIDER as LLMProvider)
+    : 'auto';
+
+export const OPENAI_MODEL = process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
+export const GEMINI_MODEL = process.env['GEMINI_MODEL'] || 'gemini-2.5-pro';
+export const LLM_TEMPERATURE = parseFloat(
+  process.env['LLM_TEMPERATURE'] || '0.2'
+);
+export const LLM_MAX_OUTPUT_TOKENS = parseInt(
+  process.env['LLM_MAX_OUTPUT_TOKENS'] || '1024'
+);
+
+const PROVIDER_PRIORITY: LLMProvider[] = ['openai', 'gemini'];
+
+const getProviderApiKey = (provider: LLMProvider): string | undefined =>
+  provider === 'openai' ? OPENAI_API_KEY : GEMINI_API_KEY;
+
+const getProviderModel = (provider: LLMProvider): string =>
+  provider === 'openai'
+    ? AZURE_OPENAI_DEPLOYMENT || OPENAI_MODEL
+    : GEMINI_MODEL;
+
+export interface LLMConfiguration {
+  provider: LLMProvider;
+  apiKey: string;
+  model: string;
+  temperature: number;
+  maxOutputTokens: number;
+}
+
+export const resolveLLMConfiguration = (
+  preferredProvider?: LLMProvider
+): LLMConfiguration | null => {
+  const orderedProviders = preferredProvider
+    ? [
+        preferredProvider,
+        ...PROVIDER_PRIORITY.filter((p) => p !== preferredProvider),
+      ]
+    : LLM_PROVIDER === 'auto'
+    ? PROVIDER_PRIORITY
+    : [LLM_PROVIDER, ...PROVIDER_PRIORITY.filter((p) => p !== LLM_PROVIDER)];
+
+  for (const provider of orderedProviders) {
+    const apiKey = getProviderApiKey(provider);
+    if (apiKey) {
+      return {
+        provider,
+        apiKey,
+        model: getProviderModel(provider),
+        temperature: LLM_TEMPERATURE,
+        maxOutputTokens: LLM_MAX_OUTPUT_TOKENS,
+      };
+    }
+  }
+
+  return null;
+};
 
 // // Kubernetes Configuration
 // export const KUBERNETES_NAMESPACE =

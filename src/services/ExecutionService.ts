@@ -1,20 +1,21 @@
-import { prisma } from '../config/prisma.ts';
-import { SESSION_STATUS } from '../config/constants.ts';
-import type { CopilotType } from '../generated/prisma/index.ts';
-import { logger } from '../utils/logger.ts';
-import { goldenSetService } from './GoldenSetService.ts';
-import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
-import { WS_URL } from '../config/env.ts';
-import { applyAndWatchJob } from '../kubernetes/utils/apply-from-file.ts';
-import { EvaluationJobRunner } from '../jobs/EvaluationJobRunner.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import { prisma } from "../config/prisma.ts";
+import { SESSION_STATUS } from "../config/constants.ts";
+import type { CopilotType } from "../generated/prisma/index.ts";
+import { logger } from "../utils/logger.ts";
+import { goldenSetService } from "./GoldenSetService.ts";
+import { REVERSE_COPILOT_TYPES } from "../config/constants.ts";
+import { WS_URL } from "../config/env.ts";
+import { applyAndWatchJob } from "../kubernetes/utils/apply-from-file.ts";
+import { EvaluationJobRunner } from "../jobs/EvaluationJobRunner.ts";
+import { RubricGenerationJobRunner } from "../jobs/RubricGenerationJobRunner.ts";
+import { RUN_KUBERNETES_JOBS } from "../config/env.ts";
 
 export class ExecutionService {
   async createEvaluationSession(
     projectExId: string,
     schemaExId: string,
-    copilotType: CopilotType
-    // modelName: string
+    copilotType: CopilotType,
+    modelName: string
   ) {
     try {
       const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
@@ -25,52 +26,68 @@ export class ExecutionService {
         REVERSE_COPILOT_TYPES[copilotType]
       );
       if (!goldenSets || goldenSets.length === 0) {
-        throw new Error('No golden sets found');
+        throw new Error("No golden sets found");
       }
       if (goldenSets.length > 1) {
-        throw new Error('Multiple golden sets found, expected only one');
+        throw new Error("Multiple golden sets found, expected only one");
       }
       const goldenSet = goldenSets[0];
       if (!goldenSet) {
-        throw new Error('Golden set is undefined');
+        throw new Error("Golden set is undefined");
       }
       if (USE_KUBERNETES_JOBS) {
-        const jobResult = await applyAndWatchJob(
+        const evalJobResult = await applyAndWatchJob(
           `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
-          'default',
-          './src/jobs/EvaluationJobRunner.ts',
+          "default",
+          "./src/jobs/EvaluationJobRunner.ts",
           300000,
           projectExId,
           WS_URL,
           goldenSet.promptTemplate
         );
-        logger.info('Evaluation job completed with status:', jobResult.status);
-        return {response: jobResult.response, tasks: jobResult.tasks};
+        logger.info(
+          "Evaluation job completed with status:",
+          evalJobResult.status
+        );
+        const genJobResult = await applyAndWatchJob(
+          `rubric-job-${projectExId}-${schemaExId}-${Date.now()}`,
+          "default",
+          "./src/jobs/RubricGenerationJobRunner.ts",
+          300000,
+          String(goldenSet.id),
+          evalJobResult.editableText || "", // handle senario where job fails
+          modelName ?? "copilot-latest"
+        );
+        logger.info(
+          "Rubric generation job completed with status:",
+          genJobResult.status
+        );
+        return genJobResult;
       } else {
-        const jobRunner = new EvaluationJobRunner(
+        const evalJobRunner = new EvaluationJobRunner(
           projectExId,
           WS_URL,
           goldenSet.promptTemplate
         );
-        jobRunner.startJob();
-        const { editableText } = await jobRunner.waitForCompletion();
-        logger.info('Evaluation job completed with response:', editableText);
+        evalJobRunner.startJob();
+        const { editableText } = await evalJobRunner.waitForCompletion();
+        logger.info("Evaluation job completed with response:", editableText);
+        const genJobRunner = new RubricGenerationJobRunner(
+          String(goldenSet.id),
+          editableText,
+          modelName ?? "copilot-latest"
+        );
+        genJobRunner.startJob();
+        const genResult = await genJobRunner.waitForCompletion();
+        logger.info(
+          "Rubric generation job completed with response:",
+          genResult.editableText
+        );
         return { response: editableText };
       }
-      // TODO: access to copilot with each golden set
-      // return prisma.evaluationSession.create({
-      //   data: {
-      //     projectExId: projectExId,
-      //     schemaExId: schemaExId,
-      //     copilotType: copilotType,
-      //     modelName: modelName,
-      //     status: SESSION_STATUS.PENDING,
-      //   },
-      // });
-      // and store initial rubric for each job
     } catch (error) {
-      logger.error('Error creating evaluation session:', error);
-      throw new Error('Failed to create evaluation session');
+      logger.error("Error creating evaluation session:", error);
+      throw new Error("Failed to create evaluation session");
     }
   }
 
@@ -80,7 +97,7 @@ export class ExecutionService {
 
       const goldenSets = await goldenSetService.getGoldenSets();
       if (!goldenSets || goldenSets.length === 0) {
-        throw new Error('No golden sets found');
+        throw new Error("No golden sets found");
       }
 
       logger.info(
@@ -90,23 +107,43 @@ export class ExecutionService {
       if (USE_KUBERNETES_JOBS) {
         // Create Kubernetes jobs concurrently for all golden sets
         const results = await Promise.allSettled(
-          goldenSets.map((goldenSet) =>
-            applyAndWatchJob(
+          goldenSets.map(async (goldenSet) => {
+            const evalJobResult = await applyAndWatchJob(
               `evaluation-job-${goldenSet.projectExId}-${
                 goldenSet.schemaExId
               }-${Date.now()}`,
-              'default',
-              './src/jobs/EvaluationJobRunner.ts',
+              "default",
+              "./src/jobs/EvaluationJobRunner.ts",
               300000,
               goldenSet.projectExId,
               WS_URL,
               goldenSet.promptTemplate
-            )
-          )
+            );
+            logger.info(
+              `Evaluation job for golden set ${goldenSet.id} completed with status:`,
+              evalJobResult.status
+            );
+            const genJobResult = await applyAndWatchJob(
+              `rubric-job-${goldenSet.projectExId}-${
+                goldenSet.schemaExId
+              }-${Date.now()}`,
+              "default",
+              "./src/jobs/RubricGenerationJobRunner.ts",
+              300000,
+              String(goldenSet.id),
+              evalJobResult.editableText || "", // handle senario where job fails
+              "copilot-latest"
+            );
+            logger.info(
+              `Rubric generation job for golden set ${goldenSet.id} completed with status:`,
+              genJobResult.status
+            );
+            return genJobResult;
+          })
         );
 
-        const successful = results.filter((r) => r.status === 'fulfilled');
-        const failed = results.filter((r) => r.status === 'rejected');
+        const successful = results.filter((r) => r.status === "fulfilled");
+        const failed = results.filter((r) => r.status === "rejected");
 
         logger.info(
           `Kubernetes jobs created: ${successful.length} successful, ${failed.length} failed`
@@ -114,78 +151,89 @@ export class ExecutionService {
 
         if (failed.length > 0) {
           failed.forEach((result, index) => {
-            if (result.status === 'rejected') {
+            if (result.status === "rejected") {
               logger.error(`Job ${index + 1} failed:`, result.reason);
             }
           });
         }
 
-        return {
-          successful: successful.map((r) =>
-            r.status === 'fulfilled' ? r.value : null
-          ),
-          failed: failed.map((r, index) => ({
-            goldenSet: goldenSets[successful.length + index],
-            error: r.status === 'rejected' ? r.reason : null,
-          })),
-          summary: {
-            total: goldenSets.length,
-            successCount: successful.length,
-            failureCount: failed.length,
-          },
-        };
+        // return {
+        //   successful: successful.map((r) =>
+        //     r.status === 'fulfilled' ? r.value : null
+        //   ),
+        //   failed: failed.map((r, index) => ({
+        //     goldenSet: goldenSets[successful.length + index],
+        //     error: r.status === 'rejected' ? r.reason : null,
+        //   })),
+        //   summary: {
+        //     total: goldenSets.length,
+        //     successCount: successful.length,
+        //     failureCount: failed.length,
+        //   },
+        // };
       } else {
-        // Create local job runners concurrently for all golden sets
-        const jobRunners = goldenSets.map(
-          (goldenSet) =>
-            new EvaluationJobRunner(
+        const results = await Promise.allSettled(
+          goldenSets.map(async (goldenSet) => {
+            const evalJobRunner = new EvaluationJobRunner(
               goldenSet.projectExId,
               WS_URL,
               goldenSet.promptTemplate
-            )
+            );
+            evalJobRunner.startJob();
+            const { editableText } = await evalJobRunner.waitForCompletion();
+            logger.info(
+              `Evaluation job for golden set ${goldenSet.id} completed with response:`,
+              editableText
+            );
+
+            const rubricJobRunner = new RubricGenerationJobRunner(
+              String(goldenSet.id),
+              editableText,
+              "copilot-latest"
+            );
+            rubricJobRunner.startJob();
+            const rubricResult = await rubricJobRunner.waitForCompletion();
+            logger.info(
+              `Rubric generation job for golden set ${goldenSet.id} completed with response:`,
+              rubricResult.editableText
+            );
+            return rubricResult;
+          })
         );
 
-        // Start all jobs
-        jobRunners.forEach((runner) => runner.startJob());
-
-        // Wait for all completions concurrently
-        const results = await Promise.allSettled(
-          jobRunners.map((runner) => runner.waitForCompletion())
-        );
-
-        const successful = results.filter((r) => r.status === 'fulfilled');
-        const failed = results.filter((r) => r.status === 'rejected');
+        const successful = results.filter((r) => r.status === "fulfilled");
+        const failed = results.filter((r) => r.status === "rejected");
 
         logger.info(
-          `Evaluation jobs completed: ${successful.length} successful, ${failed.length} failed`
+          `Local evaluation jobs completed: ${successful.length} successful, ${failed.length} failed`
         );
 
         if (failed.length > 0) {
           failed.forEach((result, index) => {
-            if (result.status === 'rejected') {
-              logger.error(`Job ${index + 1} failed:`, result.reason);
+            if (result.status === "rejected") {
+              logger.error(`Local job ${index + 1} failed:`, result.reason);
             }
           });
         }
 
-        return {
-          successful: successful.map((r) =>
-            r.status === 'fulfilled' ? r.value : null
-          ),
-          failed: failed.map((r, index) => ({
-            goldenSet: goldenSets[successful.length + index],
-            error: r.status === 'rejected' ? r.reason : null,
-          })),
-          summary: {
-            total: goldenSets.length,
-            successCount: successful.length,
-            failureCount: failed.length,
-          },
-        };
+        // return {
+        //   successful: successful.map((r) =>
+        //     r.status === "fulfilled" ? r.value : null
+        //   ),
+        //   failed: failed.map((r, index) => ({
+        //     goldenSet: goldenSets[successful.length + index],
+        //     error: r.status === "rejected" ? r.reason : null,
+        //   })),
+        //   summary: {
+        //     total: goldenSets.length,
+        //     successCount: successful.length,
+        //     failureCount: failed.length,
+        //   },
+        // };
       }
     } catch (error) {
-      logger.error('Error creating evaluation sessions:', error);
-      throw new Error('Failed to create evaluation sessions');
+      logger.error("Error creating evaluation sessions:", error);
+      throw new Error("Failed to create evaluation sessions");
     }
   }
 
@@ -199,8 +247,8 @@ export class ExecutionService {
         },
       });
     } catch (error) {
-      logger.error('Error fetching evaluation session:', error);
-      throw new Error('Failed to fetch evaluation session');
+      logger.error("Error fetching evaluation session:", error);
+      throw new Error("Failed to fetch evaluation session");
     }
   }
 
@@ -222,11 +270,11 @@ export class ExecutionService {
           rubrics: true,
           result: true,
         },
-        orderBy: { startedAt: 'desc' },
+        orderBy: { startedAt: "desc" },
       });
     } catch (error) {
-      logger.error('Error fetching evaluation sessions:', error);
-      throw new Error('Failed to fetch evaluation sessions');
+      logger.error("Error fetching evaluation sessions:", error);
+      throw new Error("Failed to fetch evaluation sessions");
     }
   }
 
@@ -261,8 +309,8 @@ export class ExecutionService {
         },
       });
     } catch (error) {
-      logger.error('Error updating evaluation session status:', error);
-      throw new Error('Failed to update evaluation session status');
+      logger.error("Error updating evaluation session status:", error);
+      throw new Error("Failed to update evaluation session status");
     }
   }
 }

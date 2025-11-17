@@ -51,7 +51,7 @@ export const analyticResolver = {
           args.projectExId,
           args.schemaExId,
           args.copilotType,
-          // args.modelName
+          args.modelName
         );
         // TODO: implement actual execution logic
         return result ? true : false;
@@ -60,7 +60,7 @@ export const analyticResolver = {
         throw new Error('Failed to execute AI copilot');
       }
     },
-    execAiCopilot: async() => {
+    execAiCopilot: async () => {
       try {
         const result = await executionService.createEvaluationSessions();
         return result ? true : false;

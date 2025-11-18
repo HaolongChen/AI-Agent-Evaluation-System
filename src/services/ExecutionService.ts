@@ -84,7 +84,7 @@ export class ExecutionService {
         const genResult = await genJobRunner.waitForCompletion();
         logger.info(
           "Rubric generation job completed with response:",
-          genResult.editableText
+          genResult
         );
         return { response: editableText };
       }
@@ -203,7 +203,7 @@ export class ExecutionService {
             const rubricResult = await rubricJobRunner.waitForCompletion();
             logger.info(
               `Rubric generation job for golden set ${goldenSet.id} completed with response:`,
-              rubricResult.editableText
+              rubricResult
             );
             return rubricResult;
           })

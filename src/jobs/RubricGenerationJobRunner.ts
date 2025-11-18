@@ -1,13 +1,14 @@
 import { logger } from "../utils/logger.ts";
 import { RUN_KUBERNETES_JOBS } from "../config/env.ts";
+import * as zod from "zod";
 
 const DEFAULT_TIMEOUT_MS = 300000;
 
 interface RubricGenerationResult {
-	status: "succeeded" | "failed";
-	rubrics?: string[];
-	generatedAnswers?: boolean[];
-	evaluationScores?: number;
+  status: "succeeded" | "failed";
+  rubrics?: string[];
+  generatedAnswers?: boolean[];
+  evaluationScores?: number;
 }
 
 /**
@@ -74,35 +75,38 @@ export class RubricGenerationJobRunner {
   }
 }
 
-if(
-	RUN_KUBERNETES_JOBS &&
-	process.argv[2] &&
-	process.argv[3] &&
-	process.argv[4]
-){
-	const sessionId = process.argv[2];
-	const editableText = process.argv[3];
-	const modelName = process.argv[4];
+if (
+  RUN_KUBERNETES_JOBS &&
+  process.argv[2] &&
+  process.argv[3] &&
+  process.argv[4]
+) {
+  const sessionId = zod.string().parse(process.argv[2]);
+  const editableText = zod.string().nonempty().parse(process.argv[3]);
+  const modelName = zod.string().parse(process.argv[4]);
 
-	const jobRunner = new RubricGenerationJobRunner(
-		sessionId,
-		editableText,
-		modelName
-	);
+  const jobRunner = new RubricGenerationJobRunner(
+    sessionId,
+    editableText,
+    modelName
+  );
 
-	jobRunner.startJob();
+  jobRunner.startJob();
 
-	jobRunner.waitForCompletion().then((result) => {
-		logger.info(
-			`Rubric generation job for session ${sessionId} completed with result: ${JSON.stringify(
-				result
-			)}`
-		);
-		process.exit(0);
-	}).catch((error) => {
-		logger.error(
-			`Rubric generation job for session ${sessionId} failed with error: ${error.message}`
-		);
-		process.exit(1);
-	});
+  jobRunner
+    .waitForCompletion()
+    .then((result) => {
+      logger.info(
+        `Rubric generation job for session ${sessionId} completed with result: ${JSON.stringify(
+          result
+        )}`
+      );
+      process.exit(0);
+    })
+    .catch((error) => {
+      logger.error(
+        `Rubric generation job for session ${sessionId} failed with error: ${error.message}`
+      );
+      process.exit(1);
+    });
 }

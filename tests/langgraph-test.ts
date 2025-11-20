@@ -1,15 +1,16 @@
 import { HumanMessage } from "@langchain/core/messages";
 import { graph } from "../src/langGraph";
 import { config } from "dotenv";
+import { logger } from "../src/utils/logger.ts";
 
 config();
 
 async function main() {
-  console.log("Starting LangGraph test...");
+  logger.info("Starting LangGraph test...");
 
   try {
     // Test Azure
-    console.log("Testing Azure Provider...");
+    logger.info("Testing Azure Provider...");
     const result = await graph.invoke(
       {
         messages: [
@@ -26,15 +27,14 @@ async function main() {
       }
     );
 
-    console.log("Graph execution result (Azure):");
-    console.log(JSON.stringify(result, null, 2));
+    logger.info("Graph execution result (Azure):");
+    logger.info(JSON.stringify(result, null, 2));
 
     const lastMessage = result.messages[result.messages.length - 1];
-    console.log("Last message content (Azure):", lastMessage.content);
-
+    logger.info("Last message content (Azure):", lastMessage.content);
     // Test Gemini (optional)
     if (process.env.GOOGLE_API_KEY && process.env.TEST_GEMINI === "true") {
-      console.log("\nTesting Gemini Provider...");
+      logger.info("Testing Gemini Provider...");
       const geminiResult = await graph.invoke(
         {
           messages: [
@@ -46,17 +46,17 @@ async function main() {
         {
           configurable: {
             provider: "gemini",
-            model: "gemini-2.0-flash",
+            model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
           },
         }
       );
-      console.log("Graph execution result (Gemini):");
+      logger.info("Graph execution result (Gemini):");
       const lastGeminiMessage =
         geminiResult.messages[geminiResult.messages.length - 1];
-      console.log("Last message content (Gemini):", lastGeminiMessage.content);
+      logger.info("Last message content (Gemini):", lastGeminiMessage.content);
     }
   } catch (error) {
-    console.error("Error executing graph:", error);
+    logger.error("Error executing graph:", error);
   }
 }
 

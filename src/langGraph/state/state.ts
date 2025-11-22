@@ -21,6 +21,7 @@ export const rubricAnnotation = Annotation.Root({
   }),
 
   messages: Annotation<BaseMessage[]>({
+    default: () => [],
     reducer: (x, y) => x.concat(y),
   }),
 });

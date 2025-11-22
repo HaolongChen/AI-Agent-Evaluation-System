@@ -1,9 +1,9 @@
 import { StateGraph, END } from "@langchain/langgraph";
-import { AgentState } from "./state/index.ts";
+import { rubricAnnotation } from "./state/index.ts";
 import { agentNode } from "./nodes/agent.ts";
 
 // Define the graph
-const workflow = new StateGraph(AgentState)
+const workflow = new StateGraph(rubricAnnotation)
   .addNode("agent", agentNode)
   .addEdge("__start__", "agent")
   .addEdge("agent", END);

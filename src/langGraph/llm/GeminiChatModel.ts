@@ -1,22 +1,42 @@
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AIMessage, BaseMessage } from "@langchain/core/messages";
-import { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
-import type { ChatResult, ChatGeneration } from "@langchain/core/outputs";
+import { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { AIMessage, BaseMessage } from '@langchain/core/messages';
+import { CallbackManagerForLLMRun } from '@langchain/core/callbacks/manager';
+import type { ChatResult, ChatGeneration } from '@langchain/core/outputs';
+import type { StructuredToolInterface } from '@langchain/core/tools';
+
+interface GeminiPart {
+  text?: string;
+  functionCall?: {
+    name: string;
+    args: Record<string, unknown>;
+  };
+}
 
 interface GeminiResponse {
   candidates?: {
     content?: {
-      parts?: {
-        text?: string;
-      }[];
+      parts?: GeminiPart[];
     };
   }[];
+}
+
+interface GeminiFunctionDeclaration {
+  name: string;
+  description: string;
+  parameters?:
+    | {
+        type: string;
+        properties: Record<string, unknown>;
+        required?: string[];
+      }
+    | undefined;
 }
 
 export class GeminiChatModel extends BaseChatModel {
   apiKey: string;
   model: string;
   temperature: number;
+  private tools?: StructuredToolInterface[];
 
   constructor(fields: { apiKey: string; model: string; temperature?: number }) {
     super({});
@@ -26,12 +46,87 @@ export class GeminiChatModel extends BaseChatModel {
   }
 
   _llmType(): string {
-    return "gemini_custom";
+    return 'gemini_custom';
+  }
+
+  /**
+   * Bind tools to this model instance
+   */
+  override bindTools(tools: StructuredToolInterface[]): GeminiChatModel {
+    const newInstance = new GeminiChatModel({
+      apiKey: this.apiKey,
+      model: this.model,
+      temperature: this.temperature,
+    });
+    newInstance.tools = tools;
+    return newInstance;
+  }
+
+  /**
+   * Convert LangChain tools to Gemini function declarations
+   */
+  private convertToolsToGeminiFunctions(): GeminiFunctionDeclaration[] {
+    if (!this.tools) return [];
+
+    return this.tools.map((tool) => {
+      // Use lc_namespace to get the JSON schema
+      const jsonSchema = tool.lc_namespace
+        ? (tool as unknown as { schema: { shape: Record<string, unknown> } })
+            .schema
+        : null;
+
+      const parameters = jsonSchema
+        ? {
+            type: 'object' as const,
+            properties: this.extractProperties(tool),
+            required: this.extractRequired(tool),
+          }
+        : undefined;
+
+      return {
+        name: tool.name,
+        description: tool.description,
+        parameters,
+      };
+    });
+  }
+
+  /**
+   * Extract properties from tool schema
+   */
+  private extractProperties(
+    tool: StructuredToolInterface
+  ): Record<string, unknown> {
+    try {
+      // Get the Zod schema and convert to JSON schema
+      const zodSchema = tool.schema as {
+        _def?: { shape?: () => Record<string, unknown> };
+      };
+      if (zodSchema._def && typeof zodSchema._def.shape === 'function') {
+        const shape = zodSchema._def.shape();
+        return Object.entries(shape).reduce((acc, [key]) => {
+          acc[key] = { type: 'string' }; // Simplified - Gemini is flexible with types
+          return acc;
+        }, {} as Record<string, unknown>);
+      }
+    } catch {
+      // Fallback to empty
+    }
+    return {};
+  }
+
+  /**
+   * Extract required fields from tool schema
+   */
+  private extractRequired(tool: StructuredToolInterface): string[] {
+    // For simplicity, treat all fields as required
+    const properties = this.extractProperties(tool);
+    return Object.keys(properties);
   }
 
   async _generate(
     messages: BaseMessage[],
-    _options: this["ParsedCallOptions"],
+    _options: this['ParsedCallOptions'],
     _runManager?: CallbackManagerForLLMRun
   ): Promise<ChatResult> {
     void _options;
@@ -39,13 +134,13 @@ export class GeminiChatModel extends BaseChatModel {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     const contents = messages.map((msg) => {
-      let role = "user";
-      if (msg.type === "ai") {
-        role = "model";
-      } else if (msg.type === "system") {
+      let role = 'user';
+      if (msg.type === 'ai') {
+        role = 'model';
+      } else if (msg.type === 'system') {
         // Gemini v1beta supports system_instruction, but for simplicity in contents we might need to handle it differently
         // or just treat as user for now if not using system_instruction field
-        role = "user";
+        role = 'user';
       }
 
       return {
@@ -58,17 +153,27 @@ export class GeminiChatModel extends BaseChatModel {
     // For this basic implementation, we'll just map them.
     // Note: Gemini API throws if role is not 'user' or 'model' in contents.
 
-    const body = {
+    const body: Record<string, unknown> = {
       contents,
       generationConfig: {
         temperature: this.temperature,
       },
     };
 
+    // Add tools/function declarations if available
+    if (this.tools && this.tools.length > 0) {
+      const functionDeclarations = this.convertToolsToGeminiFunctions();
+      body['tools'] = [
+        {
+          functionDeclarations,
+        },
+      ];
+    }
+
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
     });
@@ -84,10 +189,42 @@ export class GeminiChatModel extends BaseChatModel {
 
     const candidate = data.candidates?.[0];
     if (!candidate) {
-      throw new Error("No candidates returned from Gemini API");
+      throw new Error('No candidates returned from Gemini API');
     }
 
-    const content = candidate.content?.parts?.[0]?.text || "";
+    const parts = candidate.content?.parts || [];
+
+    // Check if response contains function calls
+    const functionCall = parts.find((part) => part.functionCall);
+
+    if (functionCall && functionCall.functionCall) {
+      // Create an AIMessage with tool calls in LangChain format
+      const toolCalls = [
+        {
+          name: functionCall.functionCall.name,
+          args: functionCall.functionCall.args,
+          id: `call_${Date.now()}`, // Generate a unique ID
+          type: 'tool_call' as const,
+        },
+      ];
+
+      const message = new AIMessage({
+        content: '',
+        tool_calls: toolCalls,
+      });
+
+      const generation: ChatGeneration = {
+        text: '',
+        message,
+      };
+
+      return {
+        generations: [generation],
+      };
+    }
+
+    // Regular text response
+    const content = parts[0]?.text || '';
 
     const generation: ChatGeneration = {
       text: content,

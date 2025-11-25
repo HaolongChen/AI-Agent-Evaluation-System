@@ -1,6 +1,6 @@
 import { StateGraph, END } from "@langchain/langgraph";
 import { rubricAnnotation } from "./state/index.ts";
-import { agentNode } from "./nodes/agent.ts";
+import { analysisAgentNode } from "./nodes/AnalysisAgent.ts";
 import * as z from "zod";
 
 const ContextSchema = z.object({
@@ -11,7 +11,7 @@ const ContextSchema = z.object({
 
 // Define the graph
 const workflow = new StateGraph(rubricAnnotation, ContextSchema)
-  .addNode("agent", agentNode)
+  .addNode("agent", analysisAgentNode)
   .addEdge("__start__", "agent")
   .addEdge("agent", END);
 

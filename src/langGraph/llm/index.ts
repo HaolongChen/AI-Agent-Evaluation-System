@@ -1,6 +1,6 @@
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { AzureChatOpenAI } from "@langchain/openai";
-import { GeminiChatModel } from "./GeminiChatModel.js";
+import { GeminiChatModel } from "./GeminiChatModel.ts";
 import { GEMINI_API_KEY, OPENAI_API_KEY } from "../../config/env.ts";
 
 export type LLMProvider = "azure" | "gemini";

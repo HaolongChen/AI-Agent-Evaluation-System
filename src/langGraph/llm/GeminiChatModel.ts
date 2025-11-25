@@ -1,8 +1,8 @@
-import { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { AIMessage, BaseMessage } from '@langchain/core/messages';
-import { CallbackManagerForLLMRun } from '@langchain/core/callbacks/manager';
-import type { ChatResult, ChatGeneration } from '@langchain/core/outputs';
-import type { StructuredToolInterface } from '@langchain/core/tools';
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { AIMessage, BaseMessage } from "@langchain/core/messages";
+import { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
+import type { ChatResult, ChatGeneration } from "@langchain/core/outputs";
+import type { StructuredToolInterface } from "@langchain/core/tools";
 
 interface GeminiPart {
   text?: string;
@@ -46,7 +46,7 @@ export class GeminiChatModel extends BaseChatModel {
   }
 
   _llmType(): string {
-    return 'gemini_custom';
+    return "gemini_custom";
   }
 
   /**
@@ -77,7 +77,7 @@ export class GeminiChatModel extends BaseChatModel {
 
       const parameters = jsonSchema
         ? {
-            type: 'object' as const,
+            type: "object" as const,
             properties: this.extractProperties(tool),
             required: this.extractRequired(tool),
           }
@@ -92,25 +92,67 @@ export class GeminiChatModel extends BaseChatModel {
   }
 
   /**
-   * Extract properties from tool schema
+   * Extract properties from tool schema using zodToJsonSchema
    */
   private extractProperties(
     tool: StructuredToolInterface
-  ): Record<string, unknown> {
+  ): Record<string, { type: string; description?: string }> {
     try {
-      // Get the Zod schema and convert to JSON schema
-      const zodSchema = tool.schema as {
-        _def?: { shape?: () => Record<string, unknown> };
+      // Try multiple approaches to get schema properties
+      const schema = tool.schema;
+
+      // Approach 1: Use _def.shape() for Zod schemas
+      const zodSchema = schema as {
+        _def?: {
+          shape?: () => Record<
+            string,
+            { _def?: { description?: string; typeName?: string } }
+          >;
+          typeName?: string;
+        };
       };
-      if (zodSchema._def && typeof zodSchema._def.shape === 'function') {
+
+      if (zodSchema._def && typeof zodSchema._def.shape === "function") {
         const shape = zodSchema._def.shape();
-        return Object.entries(shape).reduce((acc, [key]) => {
-          acc[key] = { type: 'string' }; // Simplified - Gemini is flexible with types
-          return acc;
-        }, {} as Record<string, unknown>);
+        const properties: Record<
+          string,
+          { type: string; description?: string }
+        > = {};
+
+        for (const [key, value] of Object.entries(shape)) {
+          const typeName = value?._def?.typeName || "ZodString";
+          const description = value?._def?.description;
+
+          // Map Zod types to JSON Schema types
+          let jsonType = "string";
+          if (typeName.includes("Number") || typeName.includes("Int")) {
+            jsonType = "number";
+          } else if (typeName.includes("Boolean")) {
+            jsonType = "boolean";
+          } else if (typeName.includes("Array")) {
+            jsonType = "array";
+          } else if (typeName.includes("Object")) {
+            jsonType = "object";
+          }
+
+          properties[key] = { type: jsonType };
+          if (description) {
+            properties[key].description = description;
+          }
+        }
+        return properties;
       }
-    } catch {
-      // Fallback to empty
+
+      // Approach 2: Check if schema has a shape property directly (for some Zod versions)
+      const directShape = (schema as { shape?: Record<string, unknown> }).shape;
+      if (directShape && typeof directShape === "object") {
+        return Object.keys(directShape).reduce((acc, key) => {
+          acc[key] = { type: "string" };
+          return acc;
+        }, {} as Record<string, { type: string }>);
+      }
+    } catch (e) {
+      console.warn("Failed to extract tool properties:", e);
     }
     return {};
   }
@@ -119,14 +161,38 @@ export class GeminiChatModel extends BaseChatModel {
    * Extract required fields from tool schema
    */
   private extractRequired(tool: StructuredToolInterface): string[] {
-    // For simplicity, treat all fields as required
+    try {
+      const schema = tool.schema as {
+        _def?: { shape?: () => Record<string, { isOptional?: () => boolean }> };
+      };
+
+      if (schema._def && typeof schema._def.shape === "function") {
+        const shape = schema._def.shape();
+        const required: string[] = [];
+
+        for (const [key, value] of Object.entries(shape)) {
+          // Check if field is optional
+          const isOptional =
+            typeof value?.isOptional === "function"
+              ? value.isOptional()
+              : false;
+          if (!isOptional) {
+            required.push(key);
+          }
+        }
+        return required;
+      }
+    } catch {
+      // Fallback
+    }
+    // Fallback: treat all fields as required
     const properties = this.extractProperties(tool);
     return Object.keys(properties);
   }
 
   async _generate(
     messages: BaseMessage[],
-    _options: this['ParsedCallOptions'],
+    _options: this["ParsedCallOptions"],
     _runManager?: CallbackManagerForLLMRun
   ): Promise<ChatResult> {
     void _options;
@@ -134,13 +200,13 @@ export class GeminiChatModel extends BaseChatModel {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
     const contents = messages.map((msg) => {
-      let role = 'user';
-      if (msg.type === 'ai') {
-        role = 'model';
-      } else if (msg.type === 'system') {
+      let role = "user";
+      if (msg.type === "ai") {
+        role = "model";
+      } else if (msg.type === "system") {
         // Gemini v1beta supports system_instruction, but for simplicity in contents we might need to handle it differently
         // or just treat as user for now if not using system_instruction field
-        role = 'user';
+        role = "user";
       }
 
       return {
@@ -163,7 +229,7 @@ export class GeminiChatModel extends BaseChatModel {
     // Add tools/function declarations if available
     if (this.tools && this.tools.length > 0) {
       const functionDeclarations = this.convertToolsToGeminiFunctions();
-      body['tools'] = [
+      body["tools"] = [
         {
           functionDeclarations,
         },
@@ -171,9 +237,9 @@ export class GeminiChatModel extends BaseChatModel {
     }
 
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });
@@ -189,7 +255,7 @@ export class GeminiChatModel extends BaseChatModel {
 
     const candidate = data.candidates?.[0];
     if (!candidate) {
-      throw new Error('No candidates returned from Gemini API');
+      throw new Error("No candidates returned from Gemini API");
     }
 
     const parts = candidate.content?.parts || [];
@@ -204,17 +270,17 @@ export class GeminiChatModel extends BaseChatModel {
           name: functionCall.functionCall.name,
           args: functionCall.functionCall.args,
           id: `call_${Date.now()}`, // Generate a unique ID
-          type: 'tool_call' as const,
+          type: "tool_call" as const,
         },
       ];
 
       const message = new AIMessage({
-        content: '',
+        content: "",
         tool_calls: toolCalls,
       });
 
       const generation: ChatGeneration = {
-        text: '',
+        text: "",
         message,
       };
 
@@ -224,7 +290,7 @@ export class GeminiChatModel extends BaseChatModel {
     }
 
     // Regular text response
-    const content = parts[0]?.text || '';
+    const content = parts[0]?.text || "";
 
     const generation: ChatGeneration = {
       text: content,

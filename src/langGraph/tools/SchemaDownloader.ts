@@ -21,3 +21,8 @@ export const schemaDownloader = tool(
         }),
     }
 )
+
+export const SchemaDownloaderForTest = async (projectExId: string) => {
+    const result = await schemaDownloader.invoke({ projectExId });
+    return result;
+}

@@ -133,7 +133,7 @@ export class TypeSystemStore {
     );
     const model = Crdt.initModelByBinary(
       modelBinary,
-      patchBase64Strings as string[]
+      patchBase64Strings as unknown as Uint8Array[]
     );
 
     // 4. Get the schema JSON

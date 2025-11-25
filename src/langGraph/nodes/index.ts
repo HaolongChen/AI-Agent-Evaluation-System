@@ -1,1 +1,1 @@
-export * from "./agent.ts";
+export * from "./AnalysisAgent.ts";

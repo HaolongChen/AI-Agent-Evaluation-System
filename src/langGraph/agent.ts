@@ -90,7 +90,14 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   })
   
   // Human Reviewer -> Rubric Interpreter or back to Drafter (conditional)
-  .addConditionalEdges("humanReviewer", shouldRedraftRubric, {
+  .addConditionalEdges("humanReviewer", (state) => {
+    // Check if rubricDraftAttempts exceeds threshold
+    const attempts = (state.rubricDraftAttempts || 0);
+    if (attempts >= 5) {
+      throw new Error('Maximum rubric drafting attempts exceeded');
+    }
+    return shouldRedraftRubric(state);
+  }, {
     rubricInterpreter: "rubricInterpreter",
     rubricDrafter: "rubricDrafter",
   })

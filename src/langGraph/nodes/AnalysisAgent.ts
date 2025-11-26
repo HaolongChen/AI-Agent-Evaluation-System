@@ -9,9 +9,16 @@
 */
 
 import { type RunnableConfig } from '@langchain/core/runnables';
+import { HumanMessage } from '@langchain/core/messages';
 import { rubricAnnotation } from '../state/index.ts';
 import { getLLM } from '../llm/index.ts';
-import { schemaDownloader } from '../tools/SchemaDownloader.ts';
+import { schemaDownloader, SchemaDownloaderForTest } from '../tools/SchemaDownloader.ts';
+import * as z from 'zod';
+
+const analysisSchema = z.object({
+  isSchemaNeeded: z.boolean().describe('Whether schema information is needed to answer the query'),
+  analysisReport: z.string().describe('Detailed analysis report of the user query and context'),
+});
 
 export async function analysisAgentNode(
   state: typeof rubricAnnotation.State,
@@ -20,10 +27,11 @@ export async function analysisAgentNode(
   // You can pass the model configuration via config.configurable
   const provider = config?.configurable?.['provider'] || 'azure';
   const modelName = config?.configurable?.['model'] || 'gpt-4o';
+  const projectExId = config?.configurable?.['projectExId'] as string | undefined;
 
   const llm = getLLM({ provider, model: modelName });
 
-  // Check if the model supports tool binding
+  // Step 1: Use tool calling to determine if schema is needed
   if (!llm.bindTools) {
     throw new Error(
       `Model ${provider}:${modelName} does not support tool binding`
@@ -32,32 +40,66 @@ export async function analysisAgentNode(
 
   const llmWithTools = llm.bindTools([schemaDownloader]);
 
-  const prompt = `
-  You are an analysis agent and schema checker that helps to analyze the request of user's query and user's context if applicable and download the schema graph if needed. And finally generate a comprehensive report.
-  Follow these steps:
-  1. Analyze the user's query and context if applicable to determine if schema information is required.
-  2. If schema information is needed, use the 'schema_downloader' tool to fetch the schema graph using the provided projectExId.
-  3. Review the downloaded schema graph for assuming user's intentions.
-  4. Provide a detailed analysis of the user's query and context if applicable, incorporating insights from the schema graph if applicable.
+  const toolCallPrompt = `
+  You are an analysis agent. Analyze the user's query and context to determine if you need to download the schema graph.
+  If schema information would help answer the query, use the 'schema_downloader' tool with the provided projectExId.
+
+  Description of schema: The schema graph contains the structure of the database, including entities, relationships, and attributes. It is useful for understanding complex data models and answering queries related to data organization.
+
+  Respond with a tool call if schema is needed, otherwise respond with no tool call.
 
   User's Query: """${state.query}"""
 
   User's Context: """${state.context || 'No additional context provided.'}"""
 
-  Use the following Project External ID to download the schema graph if needed:
-
   ${
-    config?.configurable?.['projectExId']
-      ? `Project External ID: """${config.configurable['projectExId']}"""`
-      : 'No Project External ID provided.'
+    projectExId
+      ? `Project External ID: """${projectExId}"""`
+      : 'No Project External ID provided - do not use the schema_downloader tool.'
+  }
+  `;
+
+  const toolCallResponse = await llmWithTools.invoke([new HumanMessage(toolCallPrompt)], config);
+
+  // Process tool calls if any
+  let schemaInfo = '';
+  if (toolCallResponse.tool_calls && toolCallResponse.tool_calls.length > 0) {
+    for (const toolCall of toolCallResponse.tool_calls) {
+      if (toolCall.name === 'schema_downloader') {
+        try {
+          if (projectExId) {
+            schemaInfo = await SchemaDownloaderForTest(projectExId);
+          }
+        } catch (error) {
+          console.error('Error downloading schema:', error);
+          schemaInfo = `Error downloading schema: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        }
+      }
+    }
   }
 
-  Respond with your analysis and any relevant schema information.
-  `
+  // Step 2: Use structured output for final analysis
+  const llmWithStructuredOutput = llm.withStructuredOutput(analysisSchema);
 
-  const response = await llmWithTools.invoke(prompt, config);
+  const analysisPrompt = `
+  You are an analysis agent. Based on the user's query, context, and any available schema information, provide a comprehensive analysis.
+
+  User's Query: """${state.query}"""
+
+  User's Context: """${state.context || 'No additional context provided.'}"""
+
+  ${schemaInfo ? `Schema Information: """${schemaInfo}"""` : 'No schema information available.'}
+
+  Provide your analysis including:
+  1. Understanding of the user's intent
+  2. Key entities and relationships identified
+  3. Relevant schema insights (if schema was downloaded)
+  4. Recommendations for the rubric drafter
+  `;
+
+  const response = await llmWithStructuredOutput.invoke([new HumanMessage(analysisPrompt)], config);
 
   return {
-    messages: [response],
+    analysis: response.analysisReport,
   };
 }

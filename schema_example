@@ -1,0 +1,1472 @@
+{
+  "version": "2.0.3",
+  "clients": {
+    "clientById": {
+      "WEB": {
+        "clientId": "WEB",
+        "type": "WEB",
+        "configuration": {
+          "appDidLoad": [],
+          "globalVariableTable": {},
+          "breakpointRecord": {
+            "desktop": {
+              "panelSize": {
+                "width": 1440,
+                "height": 1024
+              },
+              "scaleRange": {
+                "min": 1280,
+                "max": 1920
+              }
+            },
+            "phone": {
+              "panelSize": {
+                "width": 375,
+                "height": 1024
+              },
+              "scaleRange": {
+                "min": 0,
+                "max": 767
+              }
+            },
+            "tablet": {
+              "panelSize": {
+                "width": 820,
+                "height": 1024
+              },
+              "scaleRange": {
+                "min": 768,
+                "max": 1279
+              }
+            }
+          },
+          "pageGroupConfiguration": {
+            "groupList": []
+          },
+          "initialPageId": "vv4ptlqh4",
+          "colorThemeById": {
+            "background": {
+              "id": "background",
+              "displayName": "Background",
+              "color": "#ffffff"
+            },
+            "primary": {
+              "id": "primary",
+              "displayName": "Primary",
+              "color": "#2c2d2d"
+            },
+            "accent": {
+              "id": "accent",
+              "displayName": "Accent",
+              "color": "#FFA522"
+            }
+          },
+          "language": "ZH"
+        },
+        "rootPageIds": [
+          "vv4ptlqh4"
+        ],
+        "componentMetaById": {
+          "vv4ptlqh4": {
+            "parentMRef": "",
+            "applicablePlatforms": [
+              "WEB"
+            ],
+            "mRef": "vv4ptlqh4",
+            "type": "web-page",
+            "layoutEnabled": true,
+            "name": "Page01",
+            "isFloating": false,
+            "relatedMRefs": [],
+            "variableTable": {},
+            "overridePropertyRecord": {
+              "phone": {
+                "componentFrame": {
+                  "size": {
+                    "width": 375,
+                    "height": 1024
+                  },
+                  "position": {
+                    "x": 0,
+                    "y": 0
+                  }
+                },
+                "componentHidden": false
+              },
+              "tablet": {
+                "componentFrame": {
+                  "size": {
+                    "width": 820,
+                    "height": 1024
+                  },
+                  "position": {
+                    "x": 0,
+                    "y": 0
+                  }
+                },
+                "componentHidden": false
+              }
+            },
+            "interactionRecord": {},
+            "interactionPropertyRecord": {
+              "hover": {},
+              "click": {},
+              "scrollInto": {},
+              "scrolling": {}
+            },
+            "variantRecord": {
+              "hover": {}
+            },
+            "dataAttributes": {
+              "footerHeight": 0,
+              "shareInfo": {
+                "enabled": false,
+                "title": {
+                  "id": "db-errmhil81",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                },
+                "imageSource": {
+                  "id": "db-xr8qrbx94",
+                  "op": "concat",
+                  "valueBinding": [
+                    {
+                      "id": "vb-oizllw6fo",
+                      "kind": "literal",
+                      "value": "upload"
+                    }
+                  ],
+                  "type": "TEXT"
+                },
+                "imageObject": {
+                  "id": "db-s8h9xeypf",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                }
+              },
+              "htmlTitle": {
+                "id": "db-f3h57fwd4",
+                "op": "concat",
+                "valueBinding": [],
+                "type": "TEXT"
+              },
+              "seoTitle": null,
+              "seoDescription": null,
+              "seoKeywords": null,
+              "seoThumbnail": null,
+              "seoValueOptionsByPathData": null,
+              "socialMediaSeoConfigs": null,
+              "pageDidLoad": [],
+              "pageDealloc": [],
+              "scheduledJobs": [],
+              "backgroundColor": {
+                "id": "db-pukaio30o",
+                "valueBinding": {
+                  "id": "vb-lvf7zbjh2",
+                  "kind": "literal",
+                  "value": "#FFFFFF"
+                },
+                "type": "TEXT"
+              },
+              "backgroundImageFitType": "fill",
+              "shareTimelineInfo": {
+                "enabled": false,
+                "title": {
+                  "id": "db-m27byu3ah",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                },
+                "imageSource": {
+                  "id": "db-xgumdpbc1",
+                  "op": "concat",
+                  "valueBinding": [
+                    {
+                      "id": "vb-qk2aeryzh",
+                      "kind": "literal",
+                      "value": "upload"
+                    }
+                  ],
+                  "type": "TEXT"
+                },
+                "imageObject": {
+                  "id": "db-qog4uzths",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                }
+              },
+              "backgroundImage": {
+                "imageSource": {
+                  "id": "db-g0olvdehy",
+                  "op": "concat",
+                  "valueBinding": [
+                    {
+                      "id": "vb-fr4vrbqc9",
+                      "kind": "literal",
+                      "value": "upload"
+                    }
+                  ],
+                  "type": "TEXT"
+                },
+                "imageObject": {
+                  "id": "db-pf7psbdxd",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                },
+                "autoResize": {
+                  "id": "db-qyjfyxo7i",
+                  "valueBinding": {
+                    "id": "vb-mssnf3h97",
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "type": "BOOLEAN"
+                }
+              }
+            },
+            "componentFrame": {
+              "size": {
+                "width": 1440,
+                "height": 1024
+              },
+              "position": {
+                "x": 0,
+                "y": 0
+              }
+            },
+            "layout": {
+              "size": {
+                "width": {
+                  "unit": "px",
+                  "value": 0
+                },
+                "height": {
+                  "unit": "%",
+                  "value": 100
+                },
+                "maxWidth": {
+                  "unit": "px"
+                },
+                "minWidth": {
+                  "unit": "px"
+                },
+                "maxHeight": {
+                  "unit": "px"
+                },
+                "minHeight": {
+                  "unit": "px"
+                },
+                "padding": {
+                  "top": 0,
+                  "left": 0,
+                  "right": 0,
+                  "bottom": 0
+                }
+              },
+              "position": {
+                "type": "relative",
+                "top": 0,
+                "left": 0,
+                "right": 0,
+                "bottom": 0,
+                "verticalRef": "top",
+                "horizontalRef": "left"
+              },
+              "arrangement": {
+                "type": "flex",
+                "config": {
+                  "gap": 0,
+                  "wrap": false,
+                  "align": "center",
+                  "direction": "vertical",
+                  "distribution": "start",
+                  "overflow": "scroll"
+                }
+              }
+            },
+            "componentHidden": false,
+            "childMRefs": [],
+            "queries": [],
+            "thirdPartyQueries": [],
+            "listDataAccessMode": "remote",
+            "itemVariableTable": {},
+            "isAdaptive": true,
+            "pathVariableTable": {},
+            "pageVariableTable": {},
+            "verticalLayout": {
+              "location": "top-down",
+              "layoutMode": "fixed",
+              "minValue": 0
+            }
+          }
+        }
+      },
+      "WECHAT_MINI_PROGRAM": {
+        "clientId": "WECHAT_MINI_PROGRAM",
+        "type": "WECHAT_MINI_PROGRAM",
+        "configuration": {
+          "appDidLoad": [
+            {
+              "id": "eb-crcyirzx1",
+              "value": "wechat-silent-login",
+              "type": "user-login",
+              "successActions": [],
+              "failedActions": []
+            }
+          ],
+          "globalVariableTable": {},
+          "breakpointRecord": {
+            "phone": {
+              "panelSize": {
+                "width": 375,
+                "height": 667
+              },
+              "scaleRange": {
+                "min": 0,
+                "max": 1280
+              }
+            }
+          },
+          "pageGroupConfiguration": {
+            "groupList": []
+          },
+          "initialPageId": "r4fuek9wc",
+          "colorThemeById": {
+            "background": {
+              "id": "background",
+              "displayName": "Background",
+              "color": "#ffffff"
+            },
+            "primary": {
+              "id": "primary",
+              "displayName": "Primary",
+              "color": "#2c2d2d"
+            },
+            "accent": {
+              "id": "accent",
+              "displayName": "Accent",
+              "color": "#FFA522"
+            }
+          },
+          "pageCountInMainPackage": 6,
+          "pageCountInSubPackage": 12
+        },
+        "rootPageIds": [
+          "r4fuek9wc"
+        ],
+        "componentMetaById": {
+          "r4fuek9wc": {
+            "parentMRef": "",
+            "applicablePlatforms": [
+              "WECHAT"
+            ],
+            "mRef": "r4fuek9wc",
+            "type": "mobile-page",
+            "layoutEnabled": true,
+            "name": "Page01",
+            "isFloating": false,
+            "relatedMRefs": [],
+            "variableTable": {},
+            "overridePropertyRecord": {},
+            "interactionRecord": {},
+            "interactionPropertyRecord": {
+              "hover": {},
+              "click": {},
+              "scrollInto": {},
+              "scrolling": {}
+            },
+            "variantRecord": {
+              "hover": {}
+            },
+            "dataAttributes": {
+              "footerHeight": 0,
+              "shareInfo": {
+                "enabled": false,
+                "title": {
+                  "id": "db-jfdsdmwqv",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                },
+                "imageSource": {
+                  "id": "db-rljlozttb",
+                  "op": "concat",
+                  "valueBinding": [
+                    {
+                      "id": "vb-tpsednzhe",
+                      "kind": "literal",
+                      "value": "upload"
+                    }
+                  ],
+                  "type": "TEXT"
+                },
+                "imageObject": {
+                  "id": "db-vyzv6nwrj",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                }
+              },
+              "htmlTitle": {
+                "id": "db-xlyihkd99",
+                "op": "concat",
+                "valueBinding": [],
+                "type": "TEXT"
+              },
+              "pageDidLoad": [],
+              "pageDealloc": [],
+              "scheduledJobs": [],
+              "backgroundColor": {
+                "id": "db-wxd2h9x3c",
+                "valueBinding": {
+                  "id": "vb-f7iyv6vp4",
+                  "kind": "literal",
+                  "value": "#FFFFFF"
+                },
+                "type": "TEXT"
+              },
+              "backgroundImageFitType": "fill",
+              "shareTimelineInfo": {
+                "enabled": false,
+                "title": {
+                  "id": "db-q2bkhajcu",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                },
+                "imageSource": {
+                  "id": "db-zoum1zlel",
+                  "op": "concat",
+                  "valueBinding": [
+                    {
+                      "id": "vb-e3egwndhk",
+                      "kind": "literal",
+                      "value": "upload"
+                    }
+                  ],
+                  "type": "TEXT"
+                },
+                "imageObject": {
+                  "id": "db-oo167s3x2",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                }
+              },
+              "backgroundImage": {
+                "imageSource": {
+                  "id": "db-jftz1uuqv",
+                  "op": "concat",
+                  "valueBinding": [
+                    {
+                      "id": "vb-d4nqt1dhx",
+                      "kind": "literal",
+                      "value": "upload"
+                    }
+                  ],
+                  "type": "TEXT"
+                },
+                "imageObject": {
+                  "id": "db-kqjmfqvyw",
+                  "op": "concat",
+                  "valueBinding": [],
+                  "type": "TEXT"
+                },
+                "autoResize": {
+                  "id": "db-tczsj01ld",
+                  "valueBinding": {
+                    "id": "vb-wf8xl9ea6",
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "type": "BOOLEAN"
+                }
+              }
+            },
+            "componentFrame": {
+              "size": {
+                "width": 375,
+                "height": 667
+              },
+              "position": {
+                "x": 0,
+                "y": 0
+              }
+            },
+            "layout": {
+              "size": {
+                "width": {
+                  "unit": "px",
+                  "value": 0
+                },
+                "height": {
+                  "unit": "px",
+                  "value": 0
+                },
+                "maxWidth": {
+                  "unit": "px"
+                },
+                "minWidth": {
+                  "unit": "px"
+                },
+                "maxHeight": {
+                  "unit": "px"
+                },
+                "minHeight": {
+                  "unit": "px"
+                },
+                "padding": {
+                  "top": 0,
+                  "left": 0,
+                  "right": 0,
+                  "bottom": 0
+                }
+              },
+              "position": {
+                "type": "relative",
+                "top": 0,
+                "left": 0,
+                "right": 0,
+                "bottom": 0,
+                "verticalRef": "top",
+                "horizontalRef": "left"
+              },
+              "arrangement": {
+                "type": "flex",
+                "config": {
+                  "gap": 0,
+                  "wrap": false,
+                  "align": "center",
+                  "direction": "vertical",
+                  "distribution": "start",
+                  "overflow": "visible"
+                }
+              }
+            },
+            "componentHidden": false,
+            "childMRefs": [
+              "iux9bqg9g"
+            ],
+            "queries": [],
+            "thirdPartyQueries": [],
+            "listDataAccessMode": "remote",
+            "itemVariableTable": {},
+            "isAdaptive": true,
+            "pageVariableTable": {},
+            "verticalLayout": {
+              "location": "top-down",
+              "layoutMode": "fixed"
+            },
+            "pathVariableTable": {}
+          },
+          "iux9bqg9g": {
+            "parentMRef": "r4fuek9wc",
+            "applicablePlatforms": [
+              "WECHAT"
+            ],
+            "mRef": "iux9bqg9g",
+            "type": "wechat-navigation-bar",
+            "layoutEnabled": false,
+            "name": "Wechat Navigation Bar",
+            "isFloating": false,
+            "relatedMRefs": [],
+            "variableTable": {},
+            "overridePropertyRecord": {},
+            "interactionRecord": {},
+            "interactionPropertyRecord": {
+              "hover": {}
+            },
+            "variantRecord": {
+              "hover": {}
+            },
+            "dataAttributes": {
+              "title": {
+                "id": "db-yi77fwb5n",
+                "op": "concat",
+                "valueBinding": [
+                  {
+                    "id": "vb-zafa7dm1t",
+                    "kind": "literal",
+                    "value": "Page Title"
+                  }
+                ],
+                "type": "TEXT"
+              },
+              "backgroundColor": {
+                "id": "db-ae1b848y0",
+                "valueBinding": {
+                  "id": "vb-s5emt49s6",
+                  "kind": "literal",
+                  "value": "#F3F3F3"
+                },
+                "type": "TEXT"
+              },
+              "textColor": {
+                "id": "db-hbvcd3csu",
+                "valueBinding": {
+                  "id": "vb-c1gd6i74z",
+                  "kind": "literal",
+                  "value": "#000000"
+                },
+                "type": "TEXT"
+              }
+            },
+            "componentFrame": {
+              "size": {
+                "width": 0,
+                "height": 0
+              },
+              "position": {
+                "x": 0,
+                "y": 0
+              }
+            },
+            "componentHidden": false,
+            "verticalLayout": {
+              "location": "top-down",
+              "layoutMode": "fixed",
+              "minValue": 0
+            },
+            "componentFrameMinSize": {
+              "width": 1,
+              "height": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "server": {
+    "types": {
+      "deprecatedCustomTypeDefinitions": {}
+    },
+    "dataModel": {
+      "tableMetadata": [
+        {
+          "id": "43f89470-23c3-4f5d-a99c-f9275a453418",
+          "name": "account",
+          "displayName": "帐户",
+          "hiddenInZed": false,
+          "columnMetadata": [
+            {
+              "id": "3bd37424-7bbe-4a49-bf2d-03b32101469c",
+              "name": "id",
+              "displayName": "ID",
+              "type": "BIGSERIAL",
+              "required": false,
+              "unique": true,
+              "primaryKey": true,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "b29a315c-f0d1-4ae8-b707-83a6812b4469",
+              "name": "username",
+              "displayName": "用户名",
+              "type": "TEXT",
+              "required": false,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "290d85f0-570e-47df-a59d-5b372c054111",
+              "name": "password",
+              "displayName": "密码",
+              "type": "TEXT",
+              "required": false,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": true,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "69084c23-e6db-467a-87bb-4c6ea9e7cfdf",
+              "name": "oauth2_user_info_map",
+              "displayName": "用户验证",
+              "type": "JSONB",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": true,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "85a79c8a-a6ca-4fa4-a6c5-36df0c0927ad",
+              "name": "updated_at",
+              "displayName": "更新时间",
+              "type": "TIMESTAMPTZ",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "75ad5118-c7a0-42bb-ab59-361bcaf9aa17",
+              "name": "created_at",
+              "displayName": "创建时间",
+              "type": "TIMESTAMPTZ",
+              "required": false,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "07db9c99-3bc8-41da-8a23-1474159da638",
+              "name": "profile_image",
+              "displayName": "用户头像",
+              "type": "IMAGE",
+              "required": false,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "5bfd1717-8ba3-4ebe-96b6-249ec6b4f19d",
+              "name": "fz_deleted",
+              "displayName": "是否注销",
+              "type": "BOOLEAN",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "e3d721a2-2b87-48da-9ade-45ffcf4ac9d3",
+              "name": "fz_phone_number",
+              "displayName": "电话号码",
+              "type": "TEXT",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "42be9220-1e2d-4aaa-8d2a-bb31b28f85ae",
+              "name": "fz_email",
+              "displayName": "邮箱",
+              "type": "TEXT",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            }
+          ],
+          "constraintMetadata": [
+            {
+              "name": "account_pkey",
+              "primaryKeyColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "account_id_key",
+              "compositeUniqueColumns": [
+                "id"
+              ]
+            }
+          ],
+          "isView": false,
+          "writableForAdminOnly": false,
+          "schemaModifiable": true
+        },
+        {
+          "id": "c8c10de1-d77a-4cf4-a8ff-4a4c1ce5ccb3",
+          "name": "fz_province",
+          "displayName": "省份",
+          "hiddenInZed": false,
+          "columnMetadata": [
+            {
+              "id": "4bd37424-7bbe-4a49-bf2d-03b32101469c",
+              "name": "id",
+              "displayName": "ID",
+              "type": "BIGSERIAL",
+              "required": false,
+              "unique": true,
+              "primaryKey": true,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "529a315c-f0d1-4ae8-b707-83a6812b4469",
+              "name": "name",
+              "displayName": "名称",
+              "type": "TEXT",
+              "required": true,
+              "unique": true,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            }
+          ],
+          "constraintMetadata": [
+            {
+              "name": "fz_province_pkey",
+              "primaryKeyColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fz_province_id_key",
+              "compositeUniqueColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fz_province_name_key",
+              "compositeUniqueColumns": [
+                "name"
+              ]
+            }
+          ],
+          "isView": false,
+          "writableForAdminOnly": false,
+          "schemaModifiable": false
+        },
+        {
+          "id": "10b58ac5-ccc1-4edf-9208-28aa23f10dc6",
+          "name": "fz_city",
+          "displayName": "城市",
+          "hiddenInZed": false,
+          "columnMetadata": [
+            {
+              "id": "6bd37424-7bbe-4a49-bf2d-03b32101469c",
+              "name": "id",
+              "displayName": "ID",
+              "type": "BIGSERIAL",
+              "required": false,
+              "unique": true,
+              "primaryKey": true,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "729a315c-f0d1-4ae8-b707-83a6812b4469",
+              "name": "name",
+              "displayName": "名称",
+              "type": "TEXT",
+              "required": true,
+              "unique": true,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "a29a315c-f0d1-4ae8-b707-83a6812b4469",
+              "name": "province_id",
+              "displayName": "省份ID",
+              "type": "BIGSERIAL",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            }
+          ],
+          "constraintMetadata": [
+            {
+              "name": "fz_city_pkey",
+              "primaryKeyColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fz_city_id_key",
+              "compositeUniqueColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fz_city_name_key",
+              "compositeUniqueColumns": [
+                "name"
+              ]
+            }
+          ],
+          "isView": false,
+          "writableForAdminOnly": false,
+          "schemaModifiable": false
+        },
+        {
+          "id": "f3d2c029-6599-4648-927a-17016850c7c1",
+          "name": "fz_district",
+          "displayName": "区",
+          "hiddenInZed": false,
+          "columnMetadata": [
+            {
+              "id": "8bd37424-7bbe-4a49-bf2d-03b32101469c",
+              "name": "id",
+              "displayName": "ID",
+              "type": "BIGSERIAL",
+              "required": false,
+              "unique": true,
+              "primaryKey": true,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "929a315c-f0d1-4ae8-b707-83a6812b4469",
+              "name": "name",
+              "displayName": "名称",
+              "type": "TEXT",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "c29a315c-f0d1-4ae8-b707-83a6812b4469",
+              "name": "city_id",
+              "displayName": "城市ID",
+              "type": "BIGSERIAL",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            }
+          ],
+          "constraintMetadata": [
+            {
+              "name": "fz_district_pkey",
+              "primaryKeyColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fz_district_id_key",
+              "compositeUniqueColumns": [
+                "id"
+              ]
+            }
+          ],
+          "isView": false,
+          "writableForAdminOnly": true,
+          "schemaModifiable": false
+        },
+        {
+          "id": "b2d28f8c-ab08-476e-a7bf-977e99f09fa5",
+          "name": "fz_audit_record",
+          "displayName": "审计路径",
+          "description": "用于记录管理员行为",
+          "hiddenInZed": true,
+          "columnMetadata": [
+            {
+              "id": "39d14f80-0a47-42d9-9e4a-1d15cb92abed",
+              "name": "id",
+              "displayName": "ID",
+              "type": "BIGSERIAL",
+              "required": false,
+              "unique": true,
+              "primaryKey": true,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "9cebedd4-86da-4e5a-93f8-8b25a27cfd02",
+              "name": "account_id",
+              "displayName": "帐户ID",
+              "type": "BIGINT",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "382fcd91-b137-4404-81a8-92cab7926dc6",
+              "name": "query_string",
+              "displayName": "查询语句",
+              "type": "TEXT",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "0cdb21fb-712c-45d5-a3fe-2bfee64e3176",
+              "name": "variables",
+              "displayName": "变量",
+              "type": "JSONB",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "741aece0-a6ee-4de6-8757-e788f05d8a1c",
+              "name": "created_at",
+              "displayName": "创建时间",
+              "type": "TIMESTAMPTZ",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            }
+          ],
+          "constraintMetadata": [
+            {
+              "name": "fz_audit_record_pkey",
+              "primaryKeyColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fz_audit_record_id_key",
+              "compositeUniqueColumns": [
+                "id"
+              ]
+            }
+          ],
+          "isView": false,
+          "writableForAdminOnly": true,
+          "schemaModifiable": false
+        },
+        {
+          "id": "c70676b8-2b90-4cf3-a7c5-be7526fa8dd0",
+          "name": "fz_permission_role",
+          "displayName": "角色表",
+          "hiddenInZed": true,
+          "columnMetadata": [
+            {
+              "id": "e260a2ea-e6e0-4cab-9e5b-fa9bef5cc40b",
+              "name": "id",
+              "displayName": "ID",
+              "type": "BIGINT",
+              "required": false,
+              "unique": true,
+              "primaryKey": true,
+              "uiHidden": true,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "70c7637a-4aac-4c1d-9185-ace358db65e9",
+              "name": "uuid",
+              "displayName": "角色UUID",
+              "type": "TEXT",
+              "required": true,
+              "unique": true,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "9aef39fc-0270-4e33-8b65-1c9530f1129b",
+              "name": "name",
+              "displayName": "角色名",
+              "type": "TEXT",
+              "required": true,
+              "unique": true,
+              "primaryKey": false,
+              "uiHidden": false,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "3e022dcb-ec6f-468a-ad5d-03d2b7cafcb7",
+              "name": "updated_at",
+              "displayName": "更新时间",
+              "type": "TIMESTAMPTZ",
+              "required": false,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": true,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "749cbb7b-f5c3-494e-9e72-9c293b277815",
+              "name": "created_at",
+              "displayName": "创建时间",
+              "type": "TIMESTAMPTZ",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": true,
+              "systemDefined": true,
+              "generated": false
+            }
+          ],
+          "constraintMetadata": [
+            {
+              "name": "fz_permission_role_pkey",
+              "primaryKeyColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fz_permission_role_id_key",
+              "compositeUniqueColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fz_permission_role_uuid_key",
+              "compositeUniqueColumns": [
+                "uuid"
+              ]
+            },
+            {
+              "name": "fz_permission_role_name_key",
+              "compositeUniqueColumns": [
+                "name"
+              ]
+            }
+          ],
+          "isView": false,
+          "writableForAdminOnly": true,
+          "schemaModifiable": false
+        },
+        {
+          "id": "78f83942-9b28-4280-a5c6-b92dcaa4a4aa",
+          "name": "fz_account_has_permission_role",
+          "displayName": "账户角色表",
+          "hiddenInZed": true,
+          "columnMetadata": [
+            {
+              "id": "aab1cc4b-dd58-42c6-8b9f-bed13bf08d06",
+              "name": "id",
+              "displayName": "ID",
+              "type": "BIGINT",
+              "required": false,
+              "unique": false,
+              "primaryKey": true,
+              "uiHidden": true,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "d7a06b1f-e126-4c80-9f2d-3e79950408dc",
+              "name": "account_id",
+              "displayName": "帐户ID",
+              "type": "BIGINT",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": true,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "e2968238-55c3-4fb4-8428-26bad9db7833",
+              "name": "role_id",
+              "displayName": "角色ID",
+              "type": "BIGINT",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": true,
+              "systemDefined": true,
+              "generated": false
+            },
+            {
+              "id": "516ff37c-df6b-4917-9aaf-7c8dd577e12a",
+              "name": "created_at",
+              "displayName": "创建时间",
+              "type": "TIMESTAMPTZ",
+              "required": true,
+              "unique": false,
+              "primaryKey": false,
+              "uiHidden": true,
+              "systemDefined": true,
+              "generated": false
+            }
+          ],
+          "constraintMetadata": [
+            {
+              "name": "fz_account_has_permission_role_pkey",
+              "primaryKeyColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fk_account_id_account_id",
+              "sourceUnitedColumns": [
+                "account_id"
+              ],
+              "targetTable": "fz_account_has_permission_role",
+              "targetUnitedColumns": [
+                "id"
+              ]
+            },
+            {
+              "name": "fk_role_id_fz_permission_role_id",
+              "sourceUnitedColumns": [
+                "role_id"
+              ],
+              "targetTable": "fz_account_has_permission_role",
+              "targetUnitedColumns": [
+                "id"
+              ]
+            }
+          ],
+          "isView": false,
+          "writableForAdminOnly": true,
+          "schemaModifiable": false
+        }
+      ],
+      "relationMetadata": [
+        {
+          "id": "b2ad05c7-fd90-4189-98e1-30b8c21fb85b",
+          "type": "ONE_TO_MANY",
+          "sourceTable": "account",
+          "nameInSource": "roles",
+          "displayNameInSource": "角色列表",
+          "sourceColumn": "id",
+          "targetTable": "fz_account_has_permission_role",
+          "nameInTarget": "user",
+          "displayNameInTarget": "用户",
+          "targetColumn": "account_id"
+        },
+        {
+          "id": "b97c8967-1d8b-4af8-92e9-fffb65a8094a",
+          "type": "ONE_TO_MANY",
+          "sourceTable": "fz_permission_role",
+          "nameInSource": "users",
+          "displayNameInSource": "用户列表",
+          "sourceColumn": "id",
+          "targetTable": "fz_account_has_permission_role",
+          "nameInTarget": "role",
+          "displayNameInTarget": "角色",
+          "targetColumn": "role_id"
+        }
+      ]
+    },
+    "thirdPartyApiConfigs": [],
+    "apiWorkSpaces": [
+      {
+        "uniqueId": "oddc7slvf",
+        "displayName": "默认",
+        "constants": [],
+        "apis": [],
+        "isDefault": true
+      }
+    ],
+    "zAiConfigs": [],
+    "draftActionFlows": [],
+    "pendingActionFlows": [],
+    "callbackConfigurations": [],
+    "scheduledJobConfigurations": [],
+    "triggerConfigurations": [],
+    "roleConfigs": [
+      {
+        "uuid": "6182ebf4-5c1f-49ed-8cb4-07fac8190eb1",
+        "name": "Logged-in User",
+        "description": "",
+        "permissionConfig": {
+          "tablePermissionById": {
+            "43f89470-23c3-4f5d-a99c-f9275a453418": {
+              "tableId": "43f89470-23c3-4f5d-a99c-f9275a453418",
+              "update": {
+                "columns": [
+                  "id",
+                  "username",
+                  "password",
+                  "oauth2_user_info_map",
+                  "updated_at",
+                  "created_at",
+                  "profile_image",
+                  "fz_deleted",
+                  "fz_phone_number",
+                  "fz_email"
+                ],
+                "filter": {
+                  "type": "always",
+                  "label": "always",
+                  "updateable": true,
+                  "category": "constant-condition"
+                }
+              },
+              "select": {
+                "columns": [
+                  "id",
+                  "username",
+                  "password",
+                  "oauth2_user_info_map",
+                  "updated_at",
+                  "created_at",
+                  "profile_image",
+                  "fz_deleted",
+                  "fz_phone_number",
+                  "fz_email"
+                ],
+                "filter": {
+                  "type": "always",
+                  "label": "always",
+                  "updateable": true,
+                  "category": "constant-condition"
+                }
+              },
+              "aggregate": {
+                "columns": [],
+                "filter": {
+                  "type": "always",
+                  "label": "always",
+                  "updateable": true,
+                  "category": "constant-condition"
+                }
+              },
+              "count": {
+                "filter": {
+                  "type": "always",
+                  "label": "always",
+                  "updateable": true,
+                  "category": "constant-condition"
+                }
+              }
+            }
+          },
+          "tpaPermission": {
+            "allowAll": true
+          },
+          "actionflowPermission": {
+            "allowAll": true
+          },
+          "paymentPermission": {},
+          "zAiPermission": {
+            "allowAll": true
+          }
+        },
+        "boundToDataVisualizer": false
+      },
+      {
+        "uuid": "f65a575e-c93a-4b1e-980e-96c3bcf81a70",
+        "name": "Anonymous User",
+        "description": "",
+        "permissionConfig": {
+          "tablePermissionById": {
+            "43f89470-23c3-4f5d-a99c-f9275a453418": {
+              "tableId": "43f89470-23c3-4f5d-a99c-f9275a453418",
+              "update": {
+                "columns": [
+                  "id",
+                  "username",
+                  "password",
+                  "oauth2_user_info_map",
+                  "updated_at",
+                  "created_at",
+                  "profile_image",
+                  "fz_deleted",
+                  "fz_phone_number",
+                  "fz_email"
+                ],
+                "filter": {
+                  "type": "always",
+                  "label": "always",
+                  "updateable": true,
+                  "category": "constant-condition"
+                }
+              },
+              "select": {
+                "columns": [
+                  "id",
+                  "username",
+                  "password",
+                  "oauth2_user_info_map",
+                  "updated_at",
+                  "created_at",
+                  "profile_image",
+                  "fz_deleted",
+                  "fz_phone_number",
+                  "fz_email"
+                ],
+                "filter": {
+                  "type": "always",
+                  "label": "always",
+                  "updateable": true,
+                  "category": "constant-condition"
+                }
+              },
+              "aggregate": {
+                "columns": [],
+                "filter": {
+                  "type": "always",
+                  "label": "always",
+                  "updateable": true,
+                  "category": "constant-condition"
+                }
+              },
+              "count": {
+                "filter": {
+                  "type": "always",
+                  "label": "always",
+                  "updateable": true,
+                  "category": "constant-condition"
+                }
+              }
+            }
+          },
+          "tpaPermission": {
+            "allowAll": true
+          },
+          "actionflowPermission": {
+            "allowAll": true
+          },
+          "paymentPermission": {},
+          "zAiPermission": {
+            "allowAll": true
+          }
+        }
+      }
+    ],
+    "customAiModelConfigs": [],
+    "authenticationConfig": {
+      "usernameConfig": {
+        "enabled": true
+      },
+      "phoneNumberConfig": {
+        "enabled": true
+      },
+      "emailAuthConfig": {
+        "enabled": true
+      },
+      "wechatConfig": {
+        "enabled": true
+      },
+      "wxworkAuthConfig": {
+        "enabled": true
+      },
+      "ssoConfigs": []
+    }
+  }
+}

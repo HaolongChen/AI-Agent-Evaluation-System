@@ -1,5 +1,4 @@
 import { Annotation } from '@langchain/langgraph';
-import { BaseMessage } from '@langchain/core/messages';
 
 export const rubricAnnotation = Annotation.Root({
   query: Annotation<string>,
@@ -19,9 +18,6 @@ export const rubricAnnotation = Annotation.Root({
   softConstraintsAnswers: Annotation<string[]>({
     reducer: (x, y) => ({ ...x, ...y}),
   }),
-
-  messages: Annotation<BaseMessage[]>({
-    default: () => [],
-    reducer: (x, y) => x.concat(y),
-  }),
+  
+  analysis: Annotation<string>,
 });

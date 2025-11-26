@@ -18,8 +18,15 @@ const rubricDraftSchema = z.object({
   rationale: z.string().describe('Explanation of why these criteria were chosen'),
 });
 
+/**
+ * Generate a unique ID using crypto.randomUUID if available, otherwise fallback
+ */
 function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for environments without crypto.randomUUID
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
 /**

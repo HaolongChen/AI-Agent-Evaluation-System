@@ -1,8 +1,5 @@
 import { StateGraph, END } from "@langchain/langgraph";
 import { rubricAnnotation } from "./state/index.ts";
-import { inputCollectorNode } from "./nodes/InputCollector.ts";
-import { schemaCheckerNode } from "./nodes/SchemaChecker.ts";
-import { schemaLoaderNode } from "./nodes/SchemaLoader.ts";
 import { rubricDrafterNode } from "./nodes/RubricDrafterAgent.ts";
 import { humanReviewerNode } from "./nodes/HumanReviewer.ts";
 import { rubricInterpreterNode } from "./nodes/RubricInterpreter.ts";
@@ -37,9 +34,9 @@ function afterRubricDrafter(
   state: typeof rubricAnnotation.State,
   config?: { configurable?: Record<string, unknown> }
 ): string {
+  void state;
   const skipHumanReview = config?.configurable?.["skipHumanReview"] === true;
   if (skipHumanReview) {
-    // Auto-approve the rubric
     return "rubricInterpreterDirect";
   }
   return "humanReviewer";
@@ -60,12 +57,10 @@ function afterAgentEvaluator(
   return "humanEvaluator";
 }
 
-// Define the graph with the full evaluation workflow
+// Define the graph with the evaluation workflow
+// Starting from Rubric Drafter since Analysis Agent is comprehensive
 const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   // Add all nodes
-  .addNode("inputCollector", inputCollectorNode)
-  .addNode("schemaChecker", schemaCheckerNode)
-  .addNode("schemaLoader", schemaLoaderNode)
   .addNode("rubricDrafter", rubricDrafterNode)
   .addNode("humanReviewer", humanReviewerNode)
   .addNode("rubricInterpreter", rubricInterpreterNode)
@@ -81,17 +76,8 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   .addNode("reportGenerator", reportGeneratorNode)
 
   // Define edges following the workflow design
-  // Start -> Input Collector
-  .addEdge("__start__", "inputCollector")
-  
-  // Input Collector -> Schema Checker
-  .addEdge("inputCollector", "schemaChecker")
-  
-  // Schema Checker -> Schema Loader
-  .addEdge("schemaChecker", "schemaLoader")
-  
-  // Schema Loader -> Rubric Drafter
-  .addEdge("schemaLoader", "rubricDrafter")
+  // Start -> Rubric Drafter (Analysis Agent is comprehensive, no need for input/schema nodes)
+  .addEdge("__start__", "rubricDrafter")
   
   // Rubric Drafter -> Human Reviewer (conditional)
   .addConditionalEdges("rubricDrafter", afterRubricDrafter, {
@@ -108,7 +94,7 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   // Direct interpretation after auto-approval
   .addEdge("rubricInterpreterDirect", "agentEvaluator")
   
-  // Rubric Interpreter -> Agent Evaluator (parallel path starts)
+  // Rubric Interpreter -> Agent Evaluator
   .addEdge("rubricInterpreter", "agentEvaluator")
   
   // Agent Evaluator -> Human Evaluator or Merger (conditional)

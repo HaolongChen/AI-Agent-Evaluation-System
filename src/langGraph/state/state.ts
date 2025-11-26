@@ -75,22 +75,22 @@ export const rubricAnnotation = Annotation.Root({
 
   // Legacy fields for backward compatibility
   hardConstraints: Annotation<string[]>({
-    reducer: (x, y) => [...(x || []), ...(y || [])],
+    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
   }),
   softConstraints: Annotation<string[]>({
-    reducer: (x, y) => [...(x || []), ...(y || [])],
+    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
   }),
   hardConstraintsAnswers: Annotation<boolean[]>({
-    reducer: (x, y) => [...(x || []), ...(y || [])],
+    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
   }),
   softConstraintsAnswers: Annotation<string[]>({
-    reducer: (x, y) => [...(x || []), ...(y || [])],
+    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
   }),
   
   analysis: Annotation<string>,
 
   // Audit trace
   auditTrace: Annotation<string[]>({
-    reducer: (x, y) => [...(x || []), ...(y || [])],
+    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
   }),
 });

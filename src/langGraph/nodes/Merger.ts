@@ -122,6 +122,10 @@ Consider:
   };
 }
 
+// Verdict threshold constants
+const PASS_THRESHOLD = 70;
+const FAIL_THRESHOLD = 50;
+
 /**
  * Determine verdict based on score and criteria
  */
@@ -131,9 +135,9 @@ function determineVerdict(
 ): 'pass' | 'fail' | 'needs_review' {
   const hasHardConstraints = criteria.some((c) => c.isHardConstraint);
   
-  if (score >= 70) {
+  if (score >= PASS_THRESHOLD) {
     return 'pass';
-  } else if (score < 50) {
+  } else if (score < FAIL_THRESHOLD) {
     return 'fail';
   } else {
     return hasHardConstraints ? 'needs_review' : 'pass';

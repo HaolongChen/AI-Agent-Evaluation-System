@@ -41,7 +41,12 @@ export async function schemaLoaderNode(
   if (projectExId) {
     try {
       schemaString = await SchemaDownloaderForTest(projectExId);
-      schemaData = JSON.parse(schemaString) as object;
+      try {
+        schemaData = JSON.parse(schemaString) as object;
+      } catch (parseError) {
+        console.error('Error parsing schema JSON:', parseError);
+        // Keep schemaString as is for LLM processing, but schemaData remains null
+      }
     } catch (error) {
       console.error('Error loading schema:', error);
       schemaString = `Error loading schema: ${error instanceof Error ? error.message : 'Unknown error'}`;

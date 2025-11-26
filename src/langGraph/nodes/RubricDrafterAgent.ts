@@ -81,7 +81,13 @@ Generate 3-7 criteria with appropriate weights that sum to 100.
     isHardConstraint: c.isHardConstraint,
   }));
 
-  const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+  // Normalize weights to sum to 100 if necessary
+  let totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+  if (Math.abs(totalWeight - 100) > 0.01 && totalWeight > 0) {
+    const factor = 100 / totalWeight;
+    criteria.forEach(c => c.weight = c.weight * factor);
+    totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+  }
   const now = new Date().toISOString();
 
   const rubricDraft: Rubric = {

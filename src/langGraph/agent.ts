@@ -11,9 +11,9 @@ const ContextSchema = z.object({
 
 // Define the graph
 const workflow = new StateGraph(rubricAnnotation, ContextSchema)
-  .addNode("agent", analysisAgentNode)
-  .addEdge("__start__", "agent")
-  .addEdge("agent", END);
+  .addNode("analysisAgent", analysisAgentNode)
+  .addEdge("__start__", "analysisAgent")
+  .addEdge("analysisAgent", END);
 
 // Compile the graph
 export const graph = workflow.compile();

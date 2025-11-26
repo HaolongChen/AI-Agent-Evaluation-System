@@ -32,7 +32,30 @@ export async function analysisAgentNode(
 
   const llmWithTools = llm.bindTools([schemaDownloader]);
 
-  const response = await llmWithTools.invoke(state.messages, config);
+  const prompt = `
+  You are an analysis agent and schema checker that helps to analyze the request of user's query, and user's context if applicable and download the schema graph if needed.
+  Follow these steps:
+  1. Analyze the user's query to determine if schema information is required.
+  2. If schema information is needed, use the 'schema_downloader' tool to fetch the schema graph using the provided projectExId.
+  3. Review the downloaded schema graph for completeness and correctness.
+  4. Provide a detailed analysis of the user's query, incorporating insights from the schema graph if applicable.
+
+  User's Query: """${state.query}"""
+
+  User's Context: """${state.context || 'No additional context provided.'}"""
+
+  Use the following Project External ID to download the schema graph if needed:
+
+  ${
+    config?.configurable?.['projectExId']
+      ? `Project External ID: """${config.configurable['projectExId']}"""`
+      : 'No Project External ID provided.'
+  }
+
+  Respond with your analysis and any relevant schema information.
+  `
+
+  const response = await llmWithTools.invoke(prompt, config);
 
   return {
     messages: [response],

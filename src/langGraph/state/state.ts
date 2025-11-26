@@ -64,7 +64,7 @@ export const rubricAnnotation = Annotation.Root({
   // Input fields
   query: Annotation<string>,
   context: Annotation<string>,
-  candidateOutput: Annotation<string>,
+  candidateOutput: Annotation<string>({ default: '' }),
 
   // Schema fields
   schemaNeeded: Annotation<boolean>,

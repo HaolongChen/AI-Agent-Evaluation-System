@@ -1,5 +1,6 @@
 import { StateGraph, END } from "@langchain/langgraph";
 import { rubricAnnotation } from "./state/index.ts";
+import { analysisAgentNode } from "./nodes/AnalysisAgent.ts";
 import { rubricDrafterNode } from "./nodes/RubricDrafterAgent.ts";
 import { humanReviewerNode } from "./nodes/HumanReviewer.ts";
 import { rubricInterpreterNode } from "./nodes/RubricInterpreter.ts";
@@ -58,9 +59,10 @@ function afterAgentEvaluator(
 }
 
 // Define the graph with the evaluation workflow
-// Starting from Rubric Drafter since Analysis Agent is comprehensive
+// Starting from Analysis Agent to handle schema loading, then to Rubric Drafter
 const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   // Add all nodes
+  .addNode("analysisAgent", analysisAgentNode)
   .addNode("rubricDrafter", rubricDrafterNode)
   .addNode("humanReviewer", humanReviewerNode)
   .addNode("rubricInterpreter", rubricInterpreterNode)
@@ -75,8 +77,11 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   .addNode("reportGenerator", reportGeneratorNode)
 
   // Define edges following the workflow design
-  // Start -> Rubric Drafter (Analysis Agent is comprehensive, no need for input/schema nodes)
-  .addEdge("__start__", "rubricDrafter")
+  // Start -> Analysis Agent (handles schema loading)
+  .addEdge("__start__", "analysisAgent")
+  
+  // Analysis Agent -> Rubric Drafter
+  .addEdge("analysisAgent", "rubricDrafter")
   
   // Rubric Drafter -> Human Reviewer (conditional)
   .addConditionalEdges("rubricDrafter", afterRubricDrafter, {

@@ -33,12 +33,12 @@ export async function analysisAgentNode(
   const llmWithTools = llm.bindTools([schemaDownloader]);
 
   const prompt = `
-  You are an analysis agent and schema checker that helps to analyze the request of user's query, and user's context if applicable and download the schema graph if needed.
+  You are an analysis agent and schema checker that helps to analyze the request of user's query and user's context if applicable and download the schema graph if needed. And finally generate a comprehensive report.
   Follow these steps:
-  1. Analyze the user's query to determine if schema information is required.
+  1. Analyze the user's query and context if applicable to determine if schema information is required.
   2. If schema information is needed, use the 'schema_downloader' tool to fetch the schema graph using the provided projectExId.
-  3. Review the downloaded schema graph for completeness and correctness.
-  4. Provide a detailed analysis of the user's query, incorporating insights from the schema graph if applicable.
+  3. Review the downloaded schema graph for assuming user's intentions.
+  4. Provide a detailed analysis of the user's query and context if applicable, incorporating insights from the schema graph if applicable.
 
   User's Query: """${state.query}"""
 

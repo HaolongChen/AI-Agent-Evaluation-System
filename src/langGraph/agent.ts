@@ -66,9 +66,8 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   .addNode("rubricInterpreter", rubricInterpreterNode)
   // Node for direct rubric interpretation (skipping human review)
   .addNode("rubricInterpreterDirect", async (state, config) => {
-    // Auto-approve the rubric
-    const approved = { ...state, rubricApproved: true };
-    return rubricInterpreterNode(approved as typeof rubricAnnotation.State, config);
+    // Auto-approve the rubric by returning updated state with approval
+    return rubricInterpreterNode({ ...state, rubricApproved: true }, config);
   })
   .addNode("agentEvaluator", agentEvaluatorNode)
   .addNode("humanEvaluator", humanEvaluatorNode)

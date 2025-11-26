@@ -4,6 +4,9 @@ import { rubricAnnotation, Evaluation, EvaluationScore } from '../state/index.ts
 import { getLLM } from '../llm/index.ts';
 import * as z from 'zod';
 
+// Threshold for determining if a hard constraint passes (70% of score range)
+const HARD_CONSTRAINT_PASS_THRESHOLD = 0.7;
+
 const evaluationScoreSchema = z.object({
   criterionId: z.string().describe('ID of the criterion being scored'),
   criterionName: z.string().describe('Name of the criterion'),
@@ -107,7 +110,7 @@ Be objective and thorough in your assessment.
     .map((c) => {
       const score = scores.find((s) => s.criterionId === c.id);
       if (!score) return false;
-      const threshold = (c.scoringScale.max - c.scoringScale.min) * 0.7 + c.scoringScale.min;
+      const threshold = (c.scoringScale.max - c.scoringScale.min) * HARD_CONSTRAINT_PASS_THRESHOLD + c.scoringScale.min;
       return score.score >= threshold;
     });
 

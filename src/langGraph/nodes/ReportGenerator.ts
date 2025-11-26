@@ -32,11 +32,11 @@ export async function reportGeneratorNode(
 
   // Build context for report generation
   const agentScores = state.agentEvaluation?.scores
-    .map((s) => `- ${s.criterionId}: ${s.score} - ${s.reasoning}`)
+    ?.map((s) => `- ${s.criterionId}: ${s.score} - ${s.reasoning}`)
     .join('\n') || 'No agent evaluation';
 
   const humanScores = state.humanEvaluation?.scores
-    .map((s) => `- ${s.criterionId}: ${s.score} - ${s.reasoning}`)
+    ?.map((s) => `- ${s.criterionId}: ${s.score} - ${s.reasoning}`)
     .join('\n') || 'No human evaluation';
 
   const prompt = `

@@ -4,6 +4,10 @@ import { rubricAnnotation, FinalReport } from '../state/index.ts';
 import { getLLM } from '../llm/index.ts';
 import * as z from 'zod';
 
+// Verdict threshold constants
+const PASS_THRESHOLD = 70;
+const FAIL_THRESHOLD = 50;
+
 const reconciliationSchema = z.object({
   discrepancies: z.array(z.string()).describe('List of discrepancies between agent and human evaluations'),
   reconciledScore: z.number().describe('Final reconciled overall score'),
@@ -121,10 +125,6 @@ Consider:
     auditTrace: [auditEntry],
   };
 }
-
-// Verdict threshold constants
-const PASS_THRESHOLD = 70;
-const FAIL_THRESHOLD = 50;
 
 /**
  * Determine verdict based on score and criteria

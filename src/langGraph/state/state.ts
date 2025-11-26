@@ -50,6 +50,16 @@ export interface FinalReport {
   generatedAt: string;
 }
 
+/**
+ * Shared reducer function for array annotations
+ * Concatenates existing array with new values, handling both single items and arrays
+ */
+function arrayReducer<T>(x: T[] | undefined, y: T | T[] | undefined): T[] {
+  const existing = x || [];
+  if (y === undefined || y === null) return existing;
+  return [...existing, ...(Array.isArray(y) ? y : [y])];
+}
+
 export const rubricAnnotation = Annotation.Root({
   // Input fields
   query: Annotation<string>,
@@ -75,22 +85,22 @@ export const rubricAnnotation = Annotation.Root({
 
   // Legacy fields for backward compatibility
   hardConstraints: Annotation<string[]>({
-    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
+    reducer: arrayReducer,
   }),
   softConstraints: Annotation<string[]>({
-    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
+    reducer: arrayReducer,
   }),
   hardConstraintsAnswers: Annotation<boolean[]>({
-    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
+    reducer: arrayReducer,
   }),
   softConstraintsAnswers: Annotation<string[]>({
-    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
+    reducer: arrayReducer,
   }),
   
   analysis: Annotation<string>,
 
   // Audit trace
   auditTrace: Annotation<string[]>({
-    reducer: (x, y) => [...(x || []), ...(Array.isArray(y) ? y : [y])],
+    reducer: arrayReducer,
   }),
 });

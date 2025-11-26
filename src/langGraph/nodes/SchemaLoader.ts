@@ -37,6 +37,7 @@ export async function schemaLoaderNode(
   // Try to load schema if projectExId is provided
   let schemaData: object | null = null;
   let schemaString = '';
+  let parseWarning = '';
 
   if (projectExId) {
     try {
@@ -45,6 +46,7 @@ export async function schemaLoaderNode(
         schemaData = JSON.parse(schemaString) as object;
       } catch (parseError) {
         console.error('Error parsing schema JSON:', parseError);
+        parseWarning = ` Warning: Schema JSON parsing failed - ${parseError instanceof Error ? parseError.message : 'Unknown error'}`;
         // Keep schemaString as is for LLM processing, but schemaData remains null
       }
     } catch (error) {
@@ -75,7 +77,7 @@ Focus on elements relevant to evaluating the query.
   const response = await llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config);
 
   const timestamp = new Date().toISOString();
-  const auditEntry = `[${timestamp}] SchemaLoader: Loaded schema with ${response.keyEntities.length} entities and ${response.keyRelationships.length} relationships`;
+  const auditEntry = `[${timestamp}] SchemaLoader: Loaded schema with ${response.keyEntities.length} entities and ${response.keyRelationships.length} relationships${parseWarning}`;
 
   return {
     schema: schemaData,

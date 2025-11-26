@@ -48,8 +48,11 @@ export async function humanEvaluatorNode(
   for (const score of scores) {
     const criterion = state.rubricFinal.criteria.find((c) => c.id === score.criterionId);
     if (criterion) {
-      const normalizedScore = (score.score - criterion.scoringScale.min) / 
-        (criterion.scoringScale.max - criterion.scoringScale.min);
+      const scoreRange = criterion.scoringScale.max - criterion.scoringScale.min;
+      // Handle case where min equals max (avoid division by zero)
+      const normalizedScore = scoreRange > 0 
+        ? (score.score - criterion.scoringScale.min) / scoreRange
+        : (score.score >= criterion.scoringScale.min ? 1 : 0);
       weightedSum += normalizedScore * criterion.weight;
     }
   }

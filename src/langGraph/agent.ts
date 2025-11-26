@@ -129,4 +129,6 @@ export const graph = workflow.compile({
 });
 
 // Export a simplified graph without interrupts for automated evaluation
-export const automatedGraph = workflow.compile();
+export const automatedGraph = workflow.compile({
+  interruptBefore: [],
+});

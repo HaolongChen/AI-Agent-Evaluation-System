@@ -2,9 +2,25 @@ import { type RunnableConfig } from '@langchain/core/runnables';
 import { interrupt } from '@langchain/langgraph';
 import { rubricAnnotation, Rubric } from '../state/index.ts';
 
+/**
+ * Input expected from human reviewer when resuming from rubric review interrupt.
+ *
+ * This interface is used when execution is interrupted for human review of a rubric draft.
+ * The human reviewer should provide:
+ * - `approved`: Set to true if the rubric draft is approved as-is, or false if changes are needed.
+ * - `modifiedRubric`: If changes were made to the rubric, provide the modified rubric here.
+ *   If no changes were made, leave this undefined to use the original draft.
+ * - `feedback`: (Optional) A message explaining the approval or rejection, or providing additional context.
+ *
+ * This input is consumed when resuming from an interrupt, allowing the workflow to continue
+ * with either the approved or modified rubric and any feedback provided.
+ */
 export interface HumanReviewInput {
+  /** Whether the rubric draft is approved */
   approved: boolean;
+  /** Modified rubric if changes were made, otherwise undefined to use original draft */
   modifiedRubric?: Rubric;
+  /** Optional feedback message explaining approval/rejection */
   feedback?: string;
 }
 

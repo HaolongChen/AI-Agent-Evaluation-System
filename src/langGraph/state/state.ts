@@ -75,6 +75,7 @@ export const rubricAnnotation = Annotation.Root({
   rubricDraft: Annotation<Rubric | null>,
   rubricApproved: Annotation<boolean>,
   rubricFinal: Annotation<Rubric | null>,
+  rubricDraftAttempts: Annotation<number>({ default: () => 0 }),
 
   // Evaluation fields
   agentEvaluation: Annotation<Evaluation | null>,

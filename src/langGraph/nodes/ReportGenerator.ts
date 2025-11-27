@@ -39,6 +39,29 @@ export async function reportGeneratorNode(
     ?.map((s) => `- ${s.criterionId}: ${s.score} - ${s.reasoning}`)
     .join('\n') || 'No human evaluation';
 
+  // Build constraints context
+  const hardConstraintsInfo = state.hardConstraints && state.hardConstraints.length > 0
+    ? state.hardConstraints.map((constraint, index) => {
+        const answer = state.hardConstraintsAnswers?.[index];
+        return `- ${constraint} [${answer !== undefined ? (answer ? 'PASS' : 'FAIL') : 'NOT EVALUATED'}]`;
+      }).join('\n')
+    : 'No hard constraints defined';
+
+  const softConstraintsInfo = state.softConstraints && state.softConstraints.length > 0
+    ? state.softConstraints.map((constraint, index) => {
+        const answer = state.softConstraintsAnswers?.[index];
+        return `- ${constraint} [${answer !== undefined ? answer : 'NOT EVALUATED'}]`;
+      }).join('\n')
+    : 'No soft constraints defined';
+
+  // Build rubric criteria context
+  const rubricCriteria = state.rubricFinal?.criteria
+    ?.map((c) => `- ${c.name} (weight: ${c.weight}%, ${c.isHardConstraint ? 'HARD' : 'SOFT'}): ${c.description}`)
+    .join('\n') || 'No rubric criteria available';
+
+  // Build analysis context
+  const analysisContext = state.analysis || 'No analysis available';
+
   const prompt = `
 You are a report generation expert. Generate a comprehensive evaluation report based on the following information.
 
@@ -47,6 +70,17 @@ QUERY: """${state.query}"""
 CONTEXT: """${state.context || 'No additional context'}"""
 
 CANDIDATE OUTPUT: """${state.candidateOutput || 'No candidate output'}"""
+
+ANALYSIS: """${analysisContext}"""
+
+RUBRIC CRITERIA:
+${rubricCriteria}
+
+HARD CONSTRAINTS (must pass):
+${hardConstraintsInfo}
+
+SOFT CONSTRAINTS (quality indicators):
+${softConstraintsInfo}
 
 VERDICT: ${state.finalReport.verdict}
 OVERALL SCORE: ${state.finalReport.overallScore}%
@@ -62,10 +96,10 @@ ${state.finalReport.discrepancies.join('\n') || 'No discrepancies'}
 
 Generate:
 1. A brief executive summary (2-3 sentences)
-2. Detailed findings and analysis
-3. Recommendations for improvement
-4. Identified strengths
-5. Identified weaknesses
+2. Detailed findings and analysis (reference the constraints and their evaluation results)
+3. Recommendations for improvement (based on failed constraints or low scores)
+4. Identified strengths (based on passed constraints and high scores)
+5. Identified weaknesses (based on failed constraints and low scores)
 `;
 
   const response = await llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config);

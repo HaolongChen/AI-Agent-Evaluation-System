@@ -132,17 +132,35 @@ Consider:
 /**
  * Determine verdict based on score and criteria
  */
+/**
+ * Determine verdict based on score, criteria, and individual criterion scores
+ */
+type EvaluationScore = { criterionId: string; score: number };
+
 function determineVerdict(
   score: number,
-  criteria: Array<{ isHardConstraint: boolean }>
+  criteria: Array<{ id: string; isHardConstraint: boolean; scoringScale: { min: number; max: number } }>,
+  scores: EvaluationScore[]
 ): 'pass' | 'fail' | 'needs_review' {
-  const hasHardConstraints = criteria.some((c) => c.isHardConstraint);
-  
+  // Check for hard constraint failures
+  const hardConstraintFailures = criteria
+    .filter(c => c.isHardConstraint)
+    .filter(c => {
+      const evalScore = scores.find(s => s.criterionId === c.id);
+      if (!evalScore) return true; // Missing score is a failure
+      const threshold = (c.scoringScale.max - c.scoringScale.min) * 0.7 + c.scoringScale.min;
+      return evalScore.score < threshold;
+    });
+
+  if (hardConstraintFailures.length > 0) {
+    return 'fail';
+  }
+
   if (score >= PASS_THRESHOLD) {
     return 'pass';
   } else if (score < FAIL_THRESHOLD) {
     return 'fail';
   } else {
-    return hasHardConstraints ? 'needs_review' : 'pass';
+    return 'needs_review';
   }
 }

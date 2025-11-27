@@ -40,7 +40,10 @@ export async function mergerNode(
       throw new Error('No evaluation available');
     }
 
-    const verdict = determineVerdict(singleEval.overallScore, state.rubricFinal?.criteria || []);
+    if (!state.rubricFinal) {
+      throw new Error('No rubric available for verdict determination');
+    }
+    const verdict = determineVerdict(singleEval.overallScore, state.rubricFinal.criteria);
     
     const report: FinalReport = {
       verdict,

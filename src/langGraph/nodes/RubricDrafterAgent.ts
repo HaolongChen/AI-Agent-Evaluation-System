@@ -116,6 +116,7 @@ Generate 3-7 criteria with appropriate weights that sum to 100.
     hardConstraints,
     softConstraints,
     rubricApproved: false,
+    rubricDraftAttempts: (state.rubricDraftAttempts || 0) + 1,
     auditTrace: [auditEntry],
   };
 }

@@ -2,12 +2,32 @@ import { type RunnableConfig } from '@langchain/core/runnables';
 import { interrupt } from '@langchain/langgraph';
 import { rubricAnnotation, Evaluation, EvaluationScore } from '../state/index.ts';
 
+/**
+ * Input expected from a human evaluator when resuming from an evaluation interrupt.
+ *
+ * - `scores`: An array of scores, one for each criterion in the rubric.
+ *   - `criterionId`: The ID of the criterion, which must match the IDs defined in the rubric.
+ *   - `score`: A numeric score assigned by the evaluator, which should be within the criterion's scoring scale range (see rubric's `scoringScale`).
+ *   - `reasoning`: A brief explanation for the assigned score for this criterion.
+ * - `overallAssessment`: A summary or overall assessment of the candidate output, reflecting the evaluator's holistic judgment.
+ */
 export interface HumanEvaluationInput {
+  /**
+   * Scores for each criterion in the rubric.
+   * Each score object must include:
+   * - `criterionId`: ID from the rubric criteria.
+   * - `score`: Numeric value within the criterion's scoring scale.
+   * - `reasoning`: Explanation for the assigned score.
+   */
   scores: Array<{
     criterionId: string;
     score: number;
     reasoning: string;
   }>;
+  /**
+   * Overall assessment summary of the evaluation.
+   * Should provide a holistic summary of the candidate output.
+   */
   overallAssessment: string;
 }
 

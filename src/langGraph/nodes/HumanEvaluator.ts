@@ -55,11 +55,22 @@ export async function humanEvaluatorNode(
   });
 
   // Transform human input into Evaluation format
-  const scores: EvaluationScore[] = humanInput.scores.map((s) => ({
-    criterionId: s.criterionId,
-    score: s.score,
-    reasoning: s.reasoning,
-  }));
+  const scores: EvaluationScore[] = humanInput.scores.map((s) => {
+    const criterion = state.rubricFinal.criteria.find(c => c.id === s.criterionId);
+    if (!criterion) {
+      throw new Error(`Invalid criterion ID: ${s.criterionId}`);
+    }
+    if (s.score < criterion.scoringScale.min || s.score > criterion.scoringScale.max) {
+      throw new Error(
+        `Score ${s.score} for criterion ${criterion.name} is outside valid range [${criterion.scoringScale.min}, ${criterion.scoringScale.max}]`
+      );
+    }
+    return {
+      criterionId: s.criterionId,
+      score: s.score,
+      reasoning: s.reasoning,
+    };
+  });
 
   // Calculate weighted overall score
   const totalWeight = state.rubricFinal.criteria.reduce((sum, c) => sum + c.weight, 0);

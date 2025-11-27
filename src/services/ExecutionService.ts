@@ -77,8 +77,11 @@ export class ExecutionService {
         logger.info("Evaluation job completed with response:", editableText);
         const genJobRunner = new RubricGenerationJobRunner(
           String(goldenSet.id),
-          editableText,
-          modelName ?? "copilot-latest"
+          goldenSet.promptTemplate, // query - the original prompt
+          "", // context - can be empty or derived from golden set
+          editableText, // candidateOutput - the AI-generated response to evaluate
+          modelName ?? "copilot-latest",
+          projectExId // projectExId for schema loading
         );
         genJobRunner.startJob();
         const genResult = await genJobRunner.waitForCompletion();
@@ -196,8 +199,11 @@ export class ExecutionService {
 
             const rubricJobRunner = new RubricGenerationJobRunner(
               String(goldenSet.id),
-              editableText,
-              "copilot-latest"
+              goldenSet.promptTemplate, // query - the original prompt
+              "", // context - can be empty or derived from golden set
+              editableText, // candidateOutput - the AI-generated response to evaluate
+              "copilot-latest",
+              goldenSet.projectExId // projectExId for schema loading
             );
             rubricJobRunner.startJob();
             const rubricResult = await rubricJobRunner.waitForCompletion();

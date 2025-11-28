@@ -384,7 +384,14 @@ export class EvaluationJobRunner {
       }
     }, timeoutMs);
 
-    return this.completionPromise;
+    try {
+      return await this.completionPromise;
+    } finally {
+      if (this.timeoutId) {
+        clearTimeout(this.timeoutId);
+        this.timeoutId = null;
+      }
+    }
   }
 
   stopJob(): void {

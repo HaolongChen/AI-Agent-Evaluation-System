@@ -4,6 +4,7 @@ import { graphqlUtils } from '../graphql-utils.ts';
 import { Crdt } from '@functorz/crdt-helper';
 import { login } from '../login.ts';
 import { FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD } from '../../config/env.ts';
+import { fromUint8Array } from 'js-base64';
 
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
@@ -106,7 +107,7 @@ export class TypeSystemStore {
         return lastUploadedSchema;
       } else {
         logger.error('No lastUploadedSchema found for project:', projectExId);
-        logger.debug('All information:', )
+        logger.debug('All information:');
         return null;
       }
     } catch (error) {
@@ -128,12 +129,20 @@ export class TypeSystemStore {
     const modelBinary = new Uint8Array(arrayBuffer);
 
     // 3. Initialize CRDT model and apply patches
-    const patchBase64Strings = lastUploadedSchema.crdtPatches?.patches.map(
+    // Convert Uint8Array binary to base64 string for Crdt.initModel
+    const binaryBase64 = fromUint8Array(modelBinary);
+
+    // Get patch base64 strings
+    const patchBase64Strings = lastUploadedSchema.crdtPatches?.patches?.map(
       (patch) => patch.patchBase64
     );
-    const model = Crdt.initModelByBinary(
-      modelBinary,
-      patchBase64Strings as string[]
+
+    // Use Crdt.initModel which handles base64 conversion internally
+    const model = Crdt.initModel(
+      binaryBase64,
+      patchBase64Strings && patchBase64Strings.length > 0
+        ? patchBase64Strings
+        : undefined
     );
 
     // 4. Get the schema JSON

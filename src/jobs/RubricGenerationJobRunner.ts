@@ -1,191 +1,263 @@
-import { resolve as resolvePath } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import * as z from 'zod';
-import { prisma } from '../config/prisma.ts';
-import { SESSION_STATUS } from '../config/constants.ts';
-import { EvaluationJobRunner } from './EvaluationJobRunner.ts';
-import { generateAdaptiveRubric } from '../langchain/chains/copilotRubricChain.ts';
-import type { LLMProvider } from '../config/env.ts';
-import type { copilotType, expectedAnswerType } from '../utils/types.ts';
-import { rubricService } from '../services/RubricService.ts';
-import { logger } from '../utils/logger.ts';
+import { logger } from "../utils/logger.ts";
+import { RUN_KUBERNETES_JOBS } from "../config/env.ts";
+import * as z from "zod";
+import { automatedGraph } from "../langGraph/agent.ts";
+import type { Rubric, FinalReport } from "../langGraph/state/state.ts";
 
-interface RubricGenerationJobOptions {
-  goldenSetId: number;
-  projectExId: string;
-  schemaExId: string;
-  copilotType: copilotType;
-  wsUrl: string;
-  modelName?: string;
-  preferredProvider?: LLMProvider;
+const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
+
+export interface RubricGenerationResult {
+  status: "succeeded" | "failed";
+  rubric?: Rubric | null;
+  hardConstraints?: string[];
+  softConstraints?: string[];
+  hardConstraintsAnswers?: boolean[];
+  softConstraintsAnswers?: string[];
+  evaluationScore?: number | undefined;
+  finalReport?: FinalReport | null;
+  analysis?: string;
+  error?: string;
 }
 
-export interface RubricGenerationJobResult {
-  sessionId: number;
-  rubricId: number;
-  fallbackUsed: boolean;
-}
-
+/**
+ * Job runner for rubric generation using LangGraph workflow.
+ * Follows the same pattern as EvaluationJobRunner but uses the LangGraph
+ * automated graph to generate rubrics and perform evaluations.
+ */
 export class RubricGenerationJobRunner {
-  private evaluationRunner: EvaluationJobRunner | null = null;
+  private completionPromise: Promise<RubricGenerationResult>;
+  private resolveCompletion?: (value: RubricGenerationResult) => void;
+  private rejectCompletion?: (reason: Error) => void;
+  private timeoutId: NodeJS.Timeout | null = null;
+  private isCompleted: boolean = false;
 
-  constructor(private readonly options: RubricGenerationJobOptions) {}
-
-  async run(): Promise<RubricGenerationJobResult> {
-    const goldenSet = await prisma.goldenSet.findUnique({
-      where: { id: this.options.goldenSetId },
-    });
-
-    if (!goldenSet) {
-      throw new Error(`Golden set ${this.options.goldenSetId} was not found`);
-    }
-
-    const evaluationSession = await prisma.evaluationSession.create({
-      data: {
-        projectExId: this.options.projectExId,
-        schemaExId: this.options.schemaExId,
-        copilotType: goldenSet.copilotType,
-        modelName: this.options.modelName || 'copilot-latest',
-        status: SESSION_STATUS.RUNNING,
-      },
-    });
-
-    const runner = new EvaluationJobRunner(
-      this.options.projectExId,
-      this.options.wsUrl,
-      goldenSet.promptTemplate
+  constructor(
+    private readonly sessionId: string,
+    private readonly query: string,
+    private readonly context: string,
+    private readonly candidateOutput: string,
+    private readonly modelName: string,
+    private readonly projectExId?: string
+  ) {
+    this.completionPromise = new Promise<RubricGenerationResult>(
+      (resolve, reject) => {
+        this.resolveCompletion = resolve;
+        this.rejectCompletion = reject;
+      }
     );
-    this.evaluationRunner = runner;
-    runner.startJob();
+  }
 
-    let copilotOutput: string;
+  /**
+   * Clear the timeout if set
+   */
+  private clearTimeout(): void {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+  }
+
+  /**
+   * Start the rubric generation job using LangGraph workflow
+   */
+  async startJob(): Promise<void> {
+    logger.info(
+      `Starting rubric generation job for session ${this.sessionId} with model ${this.modelName}`
+    );
 
     try {
-      const { editableText } = await runner.waitForCompletion();
-      copilotOutput = editableText;
-      await prisma.evaluationSession.update({
-        where: { id: evaluationSession.id },
-        data: {
-          status: SESSION_STATUS.COMPLETED,
-          completedAt: new Date(),
+      // Invoke the LangGraph automated workflow
+      const result = await automatedGraph.invoke(
+        {
+          query: this.query,
+          context: this.context,
+          candidateOutput: this.candidateOutput,
         },
-      });
+        {
+          configurable: {
+            provider: "azure",
+            model: this.modelName,
+            projectExId: this.projectExId,
+            skipHumanReview: true,
+            skipHumanEvaluation: true,
+          },
+        }
+      );
+
+      logger.info(
+        `Rubric generation completed for session ${this.sessionId}`
+      );
+
+      // Extract results from the LangGraph state
+      const rubricResult: RubricGenerationResult = {
+        status: "succeeded",
+        rubric: result.rubricFinal || result.rubricDraft,
+        hardConstraints: result.hardConstraints || [],
+        softConstraints: result.softConstraints || [],
+        hardConstraintsAnswers: result.hardConstraintsAnswers || [],
+        softConstraintsAnswers: result.softConstraintsAnswers || [],
+        evaluationScore: result.agentEvaluation?.overallScore,
+        finalReport: result.finalReport,
+        analysis: result.analysis,
+      };
+
+      // Log constraints and evaluation info for visibility
+      if (rubricResult.hardConstraints && rubricResult.hardConstraints.length > 0) {
+        logger.info(`Hard Constraints (${rubricResult.hardConstraints.length}):`);
+        rubricResult.hardConstraints.forEach((constraint, index) => {
+          const answer = rubricResult.hardConstraintsAnswers?.[index];
+          logger.info(`  ${index + 1}. ${constraint} ${answer !== undefined ? `[${answer ? 'PASS' : 'FAIL'}]` : ''}`);
+        });
+      }
+
+      if (rubricResult.softConstraints && rubricResult.softConstraints.length > 0) {
+        logger.info(`Soft Constraints (${rubricResult.softConstraints.length}):`);
+        rubricResult.softConstraints.forEach((constraint, index) => {
+          const answer = rubricResult.softConstraintsAnswers?.[index];
+          logger.info(`  ${index + 1}. ${constraint} ${answer !== undefined ? `[${answer}]` : ''}`);
+        });
+      }
+
+      if (rubricResult.evaluationScore !== undefined) {
+        logger.info(`Overall Evaluation Score: ${rubricResult.evaluationScore}`);
+      }
+
+      if (rubricResult.analysis) {
+        logger.info(`Analysis: ${rubricResult.analysis.substring(0, 200)}${rubricResult.analysis.length > 200 ? '...' : ''}`);
+      }
+
+      if (rubricResult.finalReport) {
+        logger.info(`Final Report Verdict: ${rubricResult.finalReport.verdict}`);
+        logger.info(`Final Report Summary: ${rubricResult.finalReport.summary.substring(0, 200)}${rubricResult.finalReport.summary.length > 200 ? '...' : ''}`);
+      }
+
+      if (rubricResult.rubric) {
+        logger.info(`Generated Rubric: ${rubricResult.rubric.id} (v${rubricResult.rubric.version})`);
+        logger.info(`  Criteria count: ${rubricResult.rubric.criteria.length}`);
+        logger.info(`  Total weight: ${rubricResult.rubric.totalWeight}`);
+      }
+
+      if (!this.isCompleted && this.resolveCompletion) {
+        this.clearTimeout();
+        this.isCompleted = true;
+        this.resolveCompletion(rubricResult);
+      }
     } catch (error) {
-      await prisma.evaluationSession.update({
-        where: { id: evaluationSession.id },
-        data: {
-          status: SESSION_STATUS.FAILED,
-        },
-      });
-      throw error;
-    } finally {
-      runner.stopJob();
+      logger.error(
+        `Rubric generation failed for session ${this.sessionId}:`,
+        error
+      );
+
+      const errorResult: RubricGenerationResult = {
+        status: "failed",
+        error: error instanceof Error ? error.message : String(error),
+      };
+
+      if (!this.isCompleted && this.resolveCompletion) {
+        this.clearTimeout();
+        this.isCompleted = true;
+        this.resolveCompletion(errorResult);
+      }
     }
-
-    const rubricResult = await generateAdaptiveRubric({
-      projectExId: this.options.projectExId,
-      schemaExId: this.options.schemaExId,
-      copilotType: this.options.copilotType,
-      copilotInput: goldenSet.promptTemplate,
-      copilotOutput,
-      idealResponse: goldenSet.idealResponse,
-      ...(this.options.preferredProvider
-        ? { preferredProvider: this.options.preferredProvider }
-        : {}),
-    });
-
-    const rubricPayload = [
-      {
-        projectExId: this.options.projectExId,
-        schemaExId: this.options.schemaExId,
-        sessionId: evaluationSession.id.toString(),
-        content: rubricResult.questions.map((q) => q.content),
-        rubricType: rubricResult.questions.map((q) => q.rubricType),
-        category: rubricResult.questions.map((q) => q.category),
-        expectedAnswer: rubricResult.questions.map(
-          (q) => q.expectedAnswer
-        ) as expectedAnswerType[],
-        copilotInput: goldenSet.promptTemplate,
-        copilotOutput,
-        modelProvider: rubricResult.metadata.provider,
-        ...(rubricResult.metadata.model || this.options.modelName
-          ? { modelName: rubricResult.metadata.model || this.options.modelName }
-          : {}),
-        generatorMetadata: {
-          summary: rubricResult.summary,
-          rawOutput: rubricResult.metadata.rawOutput,
-        },
-        fallbackReason: rubricResult.metadata.fallbackUsed
-          ? rubricResult.metadata.reason || 'Fallback rubric generated.'
-          : '',
-      },
-    ];
-
-    const rubric = await rubricService.createRubrics(rubricPayload);
-
-    logger.info(
-      `Generated rubric ${rubric.id} for session ${evaluationSession.id} (fallbackUsed=${rubricResult.metadata.fallbackUsed})`
-    );
-
-    return {
-      sessionId: evaluationSession.id,
-      rubricId: rubric.id,
-      fallbackUsed: rubricResult.metadata.fallbackUsed,
-    };
   }
 
-  stop(): void {
-    this.evaluationRunner?.stopJob();
+  /**
+   * Wait for the job to complete with an optional timeout.
+   * @param timeoutMs Optional timeout in milliseconds (default: 5 minutes)
+   * @returns Promise that resolves with the rubric generation result
+   */
+  async waitForCompletion(
+    timeoutMs: number = DEFAULT_TIMEOUT_MS
+  ): Promise<RubricGenerationResult> {
+    // Clear any existing timeout before setting a new one
+    this.clearTimeout();
+
+    // Add timeout handling
+    this.timeoutId = setTimeout(() => {
+      if (!this.isCompleted && this.rejectCompletion) {
+        this.timeoutId = null;
+        this.isCompleted = true;
+        this.rejectCompletion(
+          new Error(`Rubric generation timed out after ${timeoutMs}ms`)
+        );
+      }
+    }, timeoutMs);
+
+    try {
+      return await this.completionPromise;
+    } finally {
+      this.clearTimeout();
+    }
+  }
+
+  /**
+   * Stop the job and clean up resources
+   */
+  stopJob(): void {
+    this.clearTimeout();
+    if (!this.isCompleted) {
+      this.isCompleted = true;
+      this.rejectCompletion?.(new Error("Job stopped by user"));
+    }
   }
 }
 
-const isCliExecution = (() => {
-  try {
-    const currentFile = resolvePath(fileURLToPath(import.meta.url));
-    const executor = process.argv[1] ? resolvePath(process.argv[1]) : undefined;
-    return executor === currentFile;
-  } catch (error) {
-    logger.warn('Failed to determine CLI execution context:', error);
-    return false;
-  }
-})();
+// CLI entry point for Kubernetes job execution
+if (
+  RUN_KUBERNETES_JOBS &&
+  process.argv[2] &&
+  process.argv[3] &&
+  process.argv[4] &&
+  process.argv[5]
+) {
+  logger.debug(`RubricGenerationJobRunner CLI args: ${process.argv}`);
 
-if (isCliExecution) {
-  const schema = z.object({
-    goldenSetId: z.coerce.number().int().positive(),
-    projectExId: z.string().min(1),
-    schemaExId: z.string().min(1),
-    copilotType: z.enum([
-      'dataModel',
-      'uiBuilder',
-      'actionflow',
-      'logAnalyzer',
-      'agentBuilder',
-    ]),
-    wsUrl: z.string().url(),
-    modelName: z.string().optional(),
-    preferredProvider: z.enum(['openai', 'gemini']).optional(),
-  });
+  const args = z
+    .object({
+      sessionId: z.string().min(1, "sessionId is required"),
+      query: z.string().min(1, "query is required"),
+      context: z.string(),
+      candidateOutput: z.string(),
+      modelName: z.string().min(1, "modelName is required"),
+      projectExId: z.string().optional(),
+    })
+    .parse({
+      sessionId: process.argv[2] || "",
+      query: process.argv[3] || "",
+      context: process.argv[4] || "",
+      candidateOutput: process.argv[5] || "",
+      modelName: process.argv[6] || "gpt-4o",
+      projectExId: process.argv[7],
+    });
 
-  const args = schema.parse({
-    goldenSetId: process.argv[2],
-    projectExId: process.argv[3],
-    schemaExId: process.argv[4],
-    copilotType: process.argv[5],
-    wsUrl: process.argv[6],
-    modelName: process.argv[7],
-    preferredProvider: process.argv[8],
-  });
+  const jobRunner = new RubricGenerationJobRunner(
+    args.sessionId,
+    args.query,
+    args.context,
+    args.candidateOutput,
+    args.modelName,
+    args.projectExId
+  );
 
-  const runner = new RubricGenerationJobRunner(args);
-  runner
-    .run()
+  // Start the job asynchronously
+  jobRunner.startJob();
+
+  // Wait for completion and output the result as JSON
+  jobRunner
+    .waitForCompletion()
     .then((result) => {
+      // Output the result as a special marker line that can be parsed from logs
       console.log(`JOB_RESULT_JSON: ${JSON.stringify(result)}`);
-      process.exit(0);
+      process.exit(result.status === "succeeded" ? 0 : 1);
     })
     .catch((error) => {
-      logger.error('Rubric generation job failed:', error);
+      logger.error("Rubric generation job execution failed:", error);
+      console.log(
+        `JOB_RESULT_JSON: ${JSON.stringify({
+          status: "failed",
+          error: error instanceof Error ? error.message : String(error),
+        })}`
+      );
       process.exit(1);
     });
 }

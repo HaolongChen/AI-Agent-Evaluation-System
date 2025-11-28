@@ -1,16 +1,17 @@
-import * as k8s from '@kubernetes/client-node';
-import yaml from 'js-yaml';
-import { logger } from '../../utils/logger.ts';
-import type { TaskMessage } from '../../utils/types.ts';
+import * as k8s from "@kubernetes/client-node";
+import yaml from "js-yaml";
+import { logger } from "../../utils/logger.ts";
 
 export interface JobResult {
   jobName: string;
   namespace: string;
-  status: 'succeeded' | 'failed' | 'running';
+  status: "succeeded" | "failed" | "running";
   completionTime?: Date;
-  failureReason?: string;
-  response?: string | undefined;
-  tasks?: TaskMessage[] | null | undefined;
+  // failureReason?: string;
+  // response?: string | undefined;
+  // tasks?: TaskMessage[] | null | undefined;
+  editableText?: string;
+  reason?: string;
 }
 
 /**
@@ -29,13 +30,13 @@ export async function applyAndWatchJob(
   // Normalize job name to be lowercase and RFC 1123 compliant
   const normalizedName = name
     .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/[^a-z0-9-]/g, "-")
     .substring(0, 63);
 
   // Kubernetes Job YAML configuration
   const serializedArgs = scriptArgs
     .map((arg) => JSON.stringify(arg))
-    .join(', ');
+    .join(", ");
 
   const JOB_YAML = `
   apiVersion: batch/v1
@@ -50,7 +51,7 @@ export async function applyAndWatchJob(
         - name: evaluator
           image: evaluation
           command: ["tsx", "${path}"${
-    serializedArgs ? `, ${serializedArgs}` : ''
+    serializedArgs ? `, ${serializedArgs}` : ""
   }]
           env:
           - name: NODE_ENV
@@ -59,7 +60,7 @@ export async function applyAndWatchJob(
     backoffLimit: 3
   `;
 
-  logger.debug('Applying Job with spec:', JOB_YAML);
+  logger.debug("Applying Job with spec:", JOB_YAML);
 
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
@@ -71,7 +72,7 @@ export async function applyAndWatchJob(
   const jobSpec = yaml.load(JOB_YAML) as k8s.KubernetesObject;
 
   if (!jobSpec || !jobSpec.metadata || !jobSpec.metadata.name) {
-    throw new Error('Invalid Job spec configuration');
+    throw new Error("Invalid Job spec configuration");
   }
 
   const jobName = normalizedName;
@@ -79,7 +80,7 @@ export async function applyAndWatchJob(
   // Apply the Job (create or patch)
   jobSpec.metadata.annotations = jobSpec.metadata.annotations || {};
   jobSpec.metadata.annotations[
-    'kubectl.kubernetes.io/last-applied-configuration'
+    "kubectl.kubernetes.io/last-applied-configuration"
   ] = JSON.stringify(jobSpec);
 
   try {
@@ -120,7 +121,7 @@ async function extractJobResultFromLogs(
   coreV1Api: k8s.CoreV1Api,
   jobName: string,
   namespace: string
-): Promise<{ response?: string; tasks?: TaskMessage[] | null }> {
+): Promise<{ editableText?: string }> {
   try {
     // List pods for this job
     const podsResponse = await coreV1Api.listNamespacedPod({
@@ -135,7 +136,7 @@ async function extractJobResultFromLogs(
 
     // Get the first pod (there should only be one for a job)
     const pod = podsResponse.items[0];
-    const podName = pod?.metadata?.name || 'undefined';
+    const podName = pod?.metadata?.name || "undefined";
 
     if (!podName) {
       logger.warn(`Pod name not found for job ${jobName}`);
@@ -150,15 +151,15 @@ async function extractJobResultFromLogs(
 
     // Look for the special JSON output marker in logs
     const logs = logsResponse;
-    const lines = logs.split('\n');
+    const lines = logs.split("\n");
 
     // Search for the line containing the job result JSON
     for (const line of lines) {
-      if (line.includes('JOB_RESULT_JSON:')) {
+      if (line.includes("JOB_RESULT_JSON:")) {
         try {
           const jsonStr = line
             .substring(
-              line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
+              line.indexOf("JOB_RESULT_JSON:") + "JOB_RESULT_JSON:".length
             )
             .trim();
           const result = JSON.parse(jsonStr);
@@ -166,11 +167,10 @@ async function extractJobResultFromLogs(
             `Extracted job result from logs: ${JSON.stringify(result)}`
           );
           return {
-            response: result.response,
-            tasks: result.tasks,
+            editableText: result.editableText,
           };
         } catch (parseErr) {
-          logger.error('Failed to parse job result JSON from logs:', parseErr);
+          logger.error("Failed to parse job result JSON from logs:", parseErr);
         }
       }
     }
@@ -209,8 +209,8 @@ async function watchJobStatus(
           resolve({
             jobName,
             namespace,
-            status: 'running',
-            failureReason: 'Timeout exceeded while waiting for Job completion',
+            status: "running",
+            reason: "Timeout exceeded while waiting for Job completion",
           });
           return;
         }
@@ -233,16 +233,27 @@ async function watchJobStatus(
             namespace
           );
 
-          resolve({
-            jobName,
-            namespace,
-            status: 'succeeded',
-            completionTime: job.status.completionTime
-              ? new Date(job.status.completionTime)
-              : new Date(),
-            response: jobResult.response,
-            tasks: jobResult.tasks,
-          });
+          if (jobResult.editableText) {
+            resolve({
+              jobName,
+              namespace,
+              status: "succeeded",
+              completionTime: job.status.completionTime
+                ? new Date(job.status.completionTime)
+                : new Date(),
+              editableText: jobResult.editableText,
+            });
+          } else {
+            resolve({
+              jobName,
+              namespace,
+              status: "failed",
+              reason: "No editable text found in job logs",
+              completionTime: job.status.completionTime
+                ? new Date(job.status.completionTime)
+                : new Date(),
+            });
+          }
           return;
         }
 
@@ -250,13 +261,13 @@ async function watchJobStatus(
         if (job.status?.failed && job.status.failed > 0) {
           clearInterval(checkInterval);
           const conditions = job.status.conditions || [];
-          const failureCondition = conditions.find((c) => c.type === 'Failed');
+          const failureCondition = conditions.find((c) => c.type === "Failed");
           resolve({
             jobName,
             namespace,
-            status: 'failed',
-            failureReason:
-              failureCondition?.message || 'Job failed without specific reason',
+            status: "failed",
+            reason:
+              failureCondition?.message || "Job failed without specific reason",
             completionTime: job.status.completionTime
               ? new Date(job.status.completionTime)
               : new Date(),

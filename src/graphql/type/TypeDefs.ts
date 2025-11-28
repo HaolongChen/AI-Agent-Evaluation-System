@@ -181,12 +181,6 @@ export const typeDefs = `#graphql
 
     execAiCopilot: Boolean!
 
-    # Rubric Generation
-    generateAdaptiveRubricsBySchemaExId(
-      schemaExId: String!
-      sessionId: Int!
-    ): Boolean!
-
     # Rubric Review
     reviewAdaptiveRubric(
       rubricId: Int!

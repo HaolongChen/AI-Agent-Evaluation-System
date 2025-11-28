@@ -13,7 +13,7 @@ export interface RubricGenerationResult {
   softConstraints?: string[];
   hardConstraintsAnswers?: boolean[];
   softConstraintsAnswers?: string[];
-  evaluationScore?: number;
+  evaluationScore?: number | undefined;
   finalReport?: FinalReport | null;
   analysis?: string;
   error?: string;

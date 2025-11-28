@@ -1,6 +1,6 @@
 import { type RunnableConfig } from '@langchain/core/runnables';
 import { interrupt } from '@langchain/langgraph';
-import { rubricAnnotation, Rubric } from '../state/index.ts';
+import { rubricAnnotation, type Rubric } from '../state/index.ts';
 
 /**
  * Input expected from human reviewer when resuming from rubric review interrupt.

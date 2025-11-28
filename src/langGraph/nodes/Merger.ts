@@ -1,6 +1,6 @@
 import { type RunnableConfig } from '@langchain/core/runnables';
 import { HumanMessage } from '@langchain/core/messages';
-import { rubricAnnotation, FinalReport } from '../state/index.ts';
+import { rubricAnnotation, type FinalReport } from '../state/index.ts';
 import { getLLM } from '../llm/index.ts';
 import * as z from 'zod';
 

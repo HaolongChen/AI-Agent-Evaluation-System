@@ -1,5 +1,5 @@
 import { type RunnableConfig } from '@langchain/core/runnables';
-import { rubricAnnotation, Rubric } from '../state/index.ts';
+import { rubricAnnotation, type Rubric } from '../state/index.ts';
 
 /**
  * Rubric Interpreter Node
@@ -42,7 +42,7 @@ export async function rubricInterpreterNode(
 function incrementVersion(version: string): string {
   const parts = version.split('.').map(Number);
   if (parts.length === 3) {
-    parts[2] += 1;
+    parts[2] = (parts[2] ?? -1) + 1;
     return parts.join('.');
   }
   return version;

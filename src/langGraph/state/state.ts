@@ -27,7 +27,7 @@ export interface EvaluationScore {
   criterionId: string;
   score: number;
   reasoning: string;
-  evidence?: string[];
+  evidence?: string[] | undefined;
 }
 
 export interface Evaluation {
@@ -64,7 +64,7 @@ export const rubricAnnotation = Annotation.Root({
   // Input fields
   query: Annotation<string>,
   context: Annotation<string>,
-  candidateOutput: Annotation<string>({ default: '' }),
+  candidateOutput: Annotation<string>({ value: (_prev, next) => next, default: () => '' }),
 
   // Schema fields
   schemaNeeded: Annotation<boolean>,
@@ -75,7 +75,7 @@ export const rubricAnnotation = Annotation.Root({
   rubricDraft: Annotation<Rubric | null>,
   rubricApproved: Annotation<boolean>,
   rubricFinal: Annotation<Rubric | null>,
-  rubricDraftAttempts: Annotation<number>({ default: () => 0 }),
+  rubricDraftAttempts: Annotation<number>({ default: () => 0, value: (prev) => (prev || 0) + 1 }),
 
   // Evaluation fields
   agentEvaluation: Annotation<Evaluation | null>,

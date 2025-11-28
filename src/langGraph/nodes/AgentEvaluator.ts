@@ -1,23 +1,30 @@
-import { type RunnableConfig } from '@langchain/core/runnables';
-import { HumanMessage } from '@langchain/core/messages';
-import { rubricAnnotation, type Evaluation, type EvaluationScore } from '../state/index.ts';
-import { getLLM } from '../llm/index.ts';
-import * as z from 'zod';
+import { type RunnableConfig } from "@langchain/core/runnables";
+import { HumanMessage } from "@langchain/core/messages";
+import {
+  rubricAnnotation,
+  type Evaluation,
+  type EvaluationScore,
+} from "../state/index.ts";
+import { getLLM } from "../llm/index.ts";
+import * as z from "zod";
 
 // Threshold for determining if a hard constraint passes (70% of score range)
 const HARD_CONSTRAINT_PASS_THRESHOLD = 0.7;
 
 const evaluationScoreSchema = z.object({
-  criterionId: z.string().describe('ID of the criterion being scored'),
-  criterionName: z.string().describe('Name of the criterion'),
-  score: z.number().describe('Score for this criterion'),
-  reasoning: z.string().describe('Detailed reasoning for the score'),
-  evidence: z.array(z.string()).optional().describe('Specific evidence from the candidate output'),
+  criterionId: z.string().describe("ID of the criterion being scored"),
+  criterionName: z.string().describe("Name of the criterion"),
+  score: z.number().describe("Score for this criterion"),
+  reasoning: z.string().describe("Detailed reasoning for the score"),
+  evidence: z
+    .array(z.string())
+    .optional()
+    .describe("Specific evidence from the candidate output"),
 });
 
 const agentEvaluationSchema = z.object({
-  scores: z.array(evaluationScoreSchema).describe('Scores for each criterion'),
-  overallAssessment: z.string().describe('Overall assessment summary'),
+  scores: z.array(evaluationScoreSchema).describe("Scores for each criterion"),
+  overallAssessment: z.string().describe("Overall assessment summary"),
 });
 
 /**
@@ -28,37 +35,45 @@ export async function agentEvaluatorNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
-  const provider = config?.configurable?.['provider'] || 'azure';
-  const modelName = config?.configurable?.['model'] || 'gpt-4o';
+  const provider = config?.configurable?.["provider"] || "azure";
+  const modelName = config?.configurable?.["model"] || "gpt-4o";
 
   if (!state.rubricFinal) {
-    throw new Error('No final rubric available for evaluation');
+    throw new Error("No final rubric available for evaluation");
   }
 
   const llm = getLLM({ provider, model: modelName });
-  const llmWithStructuredOutput = llm.withStructuredOutput(agentEvaluationSchema);
+  const llmWithStructuredOutput = llm.withStructuredOutput(
+    agentEvaluationSchema
+  );
 
   // Build criteria description for prompt
   const criteriaDescription = state.rubricFinal.criteria
-    .map((c) => `
+    .map(
+      (c) => `
 - ${c.name} (ID: ${c.id})
   Description: ${c.description}
   Weight: ${c.weight}%
   Score Range: ${c.scoringScale.min} - ${c.scoringScale.max}
-  Type: ${c.isHardConstraint ? 'Hard Constraint' : 'Soft Constraint'}
-`)
-    .join('\n');
+  Type: ${c.isHardConstraint ? "Hard Constraint" : "Soft Constraint"}
+`
+    )
+    .join("\n");
 
   const prompt = `
 You are an expert evaluator. Apply the following evaluation rubric to assess the candidate output.
 
 Query: """${state.query}"""
 
-Context: """${state.context || 'No additional context provided.'}"""
+Context: """${state.context || "No additional context provided."}"""
 
-Schema Information: """${state.schemaExpression || 'No schema information available.'}"""
+Schema Information: """${
+    state.schemaExpression || "No schema information available."
+  }"""
 
-Candidate Output to Evaluate: """${state.candidateOutput || 'No candidate output provided.'}"""
+Candidate Output to Evaluate: """${
+    state.candidateOutput || "No candidate output provided."
+  }"""
 
 EVALUATION RUBRIC:
 ${criteriaDescription}
@@ -71,7 +86,10 @@ For each criterion:
 Be objective and thorough in your assessment.
 `;
 
-  const response = await llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config);
+  const response = await llmWithStructuredOutput.invoke(
+    [new HumanMessage(prompt)],
+    config
+  );
 
   // Transform response into Evaluation format
   const scores: EvaluationScore[] = response.scores.map((s) => ({
@@ -82,17 +100,26 @@ Be objective and thorough in your assessment.
   }));
 
   // Calculate weighted overall score
-  const totalWeight = state.rubricFinal.criteria.reduce((sum, c) => sum + c.weight, 0);
+  const totalWeight = state.rubricFinal.criteria.reduce(
+    (sum, c) => sum + c.weight,
+    0
+  );
   let weightedSum = 0;
 
   for (const score of scores) {
-    const criterion = state.rubricFinal.criteria.find((c) => c.id === score.criterionId);
+    const criterion = state.rubricFinal.criteria.find(
+      (c) => c.id === score.criterionId
+    );
     if (criterion) {
-      const scoreRange = criterion.scoringScale.max - criterion.scoringScale.min;
+      const scoreRange =
+        criterion.scoringScale.max - criterion.scoringScale.min;
       // Handle case where min equals max (avoid division by zero)
-      const normalizedScore = scoreRange > 0 
-        ? (score.score - criterion.scoringScale.min) / scoreRange
-        : (score.score >= criterion.scoringScale.min ? 1 : 0);
+      const normalizedScore =
+        scoreRange > 0
+          ? (score.score - criterion.scoringScale.min) / scoreRange
+          : score.score >= criterion.scoringScale.min
+          ? 1
+          : 0;
       weightedSum += normalizedScore * criterion.weight;
     }
   }
@@ -100,7 +127,7 @@ Be objective and thorough in your assessment.
   const overallScore = totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
 
   const evaluation: Evaluation = {
-    evaluatorType: 'agent',
+    evaluatorType: "agent",
     scores,
     overallScore: Math.round(overallScore * 100) / 100,
     summary: response.overallAssessment,
@@ -113,7 +140,10 @@ Be objective and thorough in your assessment.
     .map((c) => {
       const score = scores.find((s) => s.criterionId === c.id);
       if (!score) return false;
-      const threshold = (c.scoringScale.max - c.scoringScale.min) * HARD_CONSTRAINT_PASS_THRESHOLD + c.scoringScale.min;
+      const threshold =
+        (c.scoringScale.max - c.scoringScale.min) *
+          HARD_CONSTRAINT_PASS_THRESHOLD +
+        c.scoringScale.min;
       return score.score >= threshold;
     });
 
@@ -122,7 +152,9 @@ Be objective and thorough in your assessment.
     .filter((c) => !c.isHardConstraint)
     .map((c) => {
       const score = scores.find((s) => s.criterionId === c.id);
-      return score ? `${c.name}: ${score.score}/${c.scoringScale.max} - ${score.reasoning}` : `${c.name}: Not evaluated`;
+      return score
+        ? `${c.name}: ${score.score}/${c.scoringScale.max} - ${score.reasoning}`
+        : `${c.name}: Not evaluated`;
     });
 
   const timestamp = new Date().toISOString();

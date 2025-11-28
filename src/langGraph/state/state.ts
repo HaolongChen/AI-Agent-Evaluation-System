@@ -1,4 +1,4 @@
-import { Annotation } from '@langchain/langgraph';
+import { Annotation } from "@langchain/langgraph";
 
 // Types for rubric criteria
 export interface RubricCriterion {
@@ -31,7 +31,7 @@ export interface EvaluationScore {
 }
 
 export interface Evaluation {
-  evaluatorType: 'agent' | 'human';
+  evaluatorType: "agent" | "human";
   scores: EvaluationScore[];
   overallScore: number;
   summary: string;
@@ -39,7 +39,7 @@ export interface Evaluation {
 }
 
 export interface FinalReport {
-  verdict: 'pass' | 'fail' | 'needs_review';
+  verdict: "pass" | "fail" | "needs_review";
   overallScore: number;
   summary: string;
   detailedAnalysis: string;
@@ -64,7 +64,10 @@ export const rubricAnnotation = Annotation.Root({
   // Input fields
   query: Annotation<string>,
   context: Annotation<string>,
-  candidateOutput: Annotation<string>({ value: (_prev, next) => next, default: () => '' }),
+  candidateOutput: Annotation<string>({
+    value: (_prev, next) => next,
+    default: () => "",
+  }),
 
   // Schema fields
   schemaNeeded: Annotation<boolean>,
@@ -75,7 +78,10 @@ export const rubricAnnotation = Annotation.Root({
   rubricDraft: Annotation<Rubric | null>,
   rubricApproved: Annotation<boolean>,
   rubricFinal: Annotation<Rubric | null>,
-  rubricDraftAttempts: Annotation<number>({ default: () => 0, value: (prev) => (prev || 0) + 1 }),
+  rubricDraftAttempts: Annotation<number>({
+    default: () => 0,
+    value: (prev) => (prev || 0) + 1,
+  }),
 
   // Evaluation fields
   agentEvaluation: Annotation<Evaluation | null>,
@@ -97,7 +103,7 @@ export const rubricAnnotation = Annotation.Root({
   softConstraintsAnswers: Annotation<string[]>({
     reducer: arrayReducer,
   }),
-  
+
   analysis: Annotation<string>,
 
   // Audit trace

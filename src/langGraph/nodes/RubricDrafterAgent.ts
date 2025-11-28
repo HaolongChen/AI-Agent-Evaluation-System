@@ -1,32 +1,52 @@
-import { type RunnableConfig } from '@langchain/core/runnables';
-import { HumanMessage } from '@langchain/core/messages';
-import { rubricAnnotation, type Rubric, type RubricCriterion } from '../state/index.ts';
-import { getLLM } from '../llm/index.ts';
-import * as z from 'zod';
+import { type RunnableConfig } from "@langchain/core/runnables";
+import { HumanMessage } from "@langchain/core/messages";
+import {
+  rubricAnnotation,
+  type Rubric,
+  type RubricCriterion,
+} from "../state/index.ts";
+import { getLLM } from "../llm/index.ts";
+import * as z from "zod";
 
 const rubricCriterionSchema = z.object({
-  name: z.string().describe('Name of the evaluation criterion'),
-  description: z.string().describe('Detailed description of what this criterion evaluates'),
-  weight: z.number().min(0).max(100).describe('Weight of this criterion (0-100)'),
-  minScore: z.number().describe('Minimum score for this criterion'),
-  maxScore: z.number().describe('Maximum score for this criterion'),
-  isHardConstraint: z.boolean().describe('Whether this is a hard constraint (must pass) or soft constraint'),
+  name: z.string().describe("Name of the evaluation criterion"),
+  description: z
+    .string()
+    .describe("Detailed description of what this criterion evaluates"),
+  weight: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe("Weight of this criterion (0-100)"),
+  minScore: z.number().describe("Minimum score for this criterion"),
+  maxScore: z.number().describe("Maximum score for this criterion"),
+  isHardConstraint: z
+    .boolean()
+    .describe(
+      "Whether this is a hard constraint (must pass) or soft constraint"
+    ),
 });
 
 const rubricDraftSchema = z.object({
-  criteria: z.array(rubricCriterionSchema).describe('List of evaluation criteria'),
-  rationale: z.string().describe('Explanation of why these criteria were chosen'),
+  criteria: z
+    .array(rubricCriterionSchema)
+    .describe("List of evaluation criteria"),
+  rationale: z
+    .string()
+    .describe("Explanation of why these criteria were chosen"),
 });
 
 /**
  * Generate a unique ID using crypto.randomUUID if available, otherwise fallback
  */
 function generateId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   // Fallback for environments without crypto.randomUUID
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}-${Math.random().toString(36).substring(2, 11)}`;
+  return `${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 11)}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
 /**
@@ -37,8 +57,8 @@ export async function rubricDrafterNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
-  const provider = config?.configurable?.['provider'] || 'azure';
-  const modelName = config?.configurable?.['model'] || 'gpt-4o';
+  const provider = config?.configurable?.["provider"] || "azure";
+  const modelName = config?.configurable?.["model"] || "gpt-4o";
 
   const llm = getLLM({ provider, model: modelName });
   const llmWithStructuredOutput = llm.withStructuredOutput(rubricDraftSchema);
@@ -48,11 +68,15 @@ You are an evaluation rubric expert. Based on the query, context, and schema inf
 
 Query: """${state.query}"""
 
-Context: """${state.context || 'No additional context provided.'}"""
+Context: """${state.context || "No additional context provided."}"""
 
-Candidate Output to Evaluate: """${state.candidateOutput || 'No candidate output provided.'}"""
+Candidate Output to Evaluate: """${
+    state.candidateOutput || "No candidate output provided."
+  }"""
 
-Schema Expression: """${state.schemaExpression || 'No schema information available.'}"""
+Schema Expression: """${
+    state.schemaExpression || "No schema information available."
+  }"""
 
 Create evaluation criteria that:
 1. Cover all important aspects of the expected output
@@ -66,7 +90,10 @@ Soft constraints examples: clarity, efficiency, best practices
 Generate 3-7 criteria with appropriate weights that sum to 100.
 `;
 
-  const response = await llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config);
+  const response = await llmWithStructuredOutput.invoke(
+    [new HumanMessage(prompt)],
+    config
+  );
 
   // Transform LLM response into Rubric format
   const criteria: RubricCriterion[] = response.criteria.map((c) => ({
@@ -85,14 +112,14 @@ Generate 3-7 criteria with appropriate weights that sum to 100.
   let totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
   if (Math.abs(totalWeight - 100) > 0.01 && totalWeight > 0) {
     const factor = 100 / totalWeight;
-    criteria.forEach(c => c.weight = c.weight * factor);
+    criteria.forEach((c) => (c.weight = c.weight * factor));
     totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
   }
   const now = new Date().toISOString();
 
   const rubricDraft: Rubric = {
     id: generateId(),
-    version: '1.0.0',
+    version: "1.0.0",
     criteria,
     totalWeight,
     createdAt: now,
@@ -103,7 +130,7 @@ Generate 3-7 criteria with appropriate weights that sum to 100.
   const hardConstraints = criteria
     .filter((c) => c.isHardConstraint)
     .map((c) => `${c.name}: ${c.description}`);
-  
+
   const softConstraints = criteria
     .filter((c) => !c.isHardConstraint)
     .map((c) => `${c.name}: ${c.description}`);

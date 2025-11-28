@@ -1,6 +1,6 @@
-import { prisma } from '../config/prisma.ts';
-import { COPILOT_TYPES } from '../config/constants.ts';
-import { logger } from '../utils/logger.ts';
+import { prisma } from "../config/prisma.ts";
+import { COPILOT_TYPES } from "../config/constants.ts";
+import { logger } from "../utils/logger.ts";
 
 export class GoldenSetService {
   async simplyUpdateGoldenSetProject(
@@ -36,8 +36,8 @@ export class GoldenSetService {
         },
       });
     } catch (error) {
-      logger.error('Error updating golden set project:', error);
-      throw new Error('Failed to update golden set project');
+      logger.error("Error updating golden set project:", error);
+      throw new Error("Failed to update golden set project");
     }
   }
 
@@ -49,7 +49,8 @@ export class GoldenSetService {
     promptTemplate: string,
     idealResponse: object
   ): Promise<
-    Awaited<ReturnType<typeof this.simplyUpdateGoldenSetProject>> | { message: string }
+    | Awaited<ReturnType<typeof this.simplyUpdateGoldenSetProject>>
+    | { message: string }
   > {
     try {
       const originalGoldenSets = await this.getGoldenSets(
@@ -58,14 +59,14 @@ export class GoldenSetService {
         copilotType
       );
       if (originalGoldenSets.length !== 1 || !originalGoldenSets[0]) {
-        logger.error('Golden set not found or ambiguous for update');
-        return { message: 'Golden set not found or ambiguous' };
+        logger.error("Golden set not found or ambiguous for update");
+        return { message: "Golden set not found or ambiguous" };
       }
       const originalGoldenSet = originalGoldenSets[0];
       if (originalGoldenSet?.nextGoldenSetId) {
-        logger.info('A next golden set is already pending for this golden set');
+        logger.info("A next golden set is already pending for this golden set");
         return {
-          message: 'A next golden set is already pending for this golden set',
+          message: "A next golden set is already pending for this golden set",
         };
       }
       const nextGoldenSet = await this.createNextGoldenSet(
@@ -82,8 +83,8 @@ export class GoldenSetService {
         },
       });
     } catch (error) {
-      logger.error('Error updating golden set project:', error);
-      throw new Error('Failed to update golden set project');
+      logger.error("Error updating golden set project:", error);
+      throw new Error("Failed to update golden set project");
     }
   }
 
@@ -97,13 +98,13 @@ export class GoldenSetService {
         select: {
           schemaExId: true,
         },
-        distinct: ['schemaExId'],
+        distinct: ["schemaExId"],
       });
 
       return results.map((r) => r.schemaExId);
     } catch (error) {
-      logger.error('Error fetching golden set schemas:', error);
-      throw new Error('Failed to fetch golden set schemas');
+      logger.error("Error fetching golden set schemas:", error);
+      throw new Error("Failed to fetch golden set schemas");
     }
   }
 
@@ -124,11 +125,11 @@ export class GoldenSetService {
           nextGoldenSet: true,
         },
       });
-      logger.debug('Fetched golden sets:', results);
+      logger.debug("Fetched golden sets:", results);
       return results;
     } catch (error) {
-      logger.error('Error fetching golden sets:', error);
-      throw new Error('Failed to fetch golden sets');
+      logger.error("Error fetching golden sets:", error);
+      throw new Error("Failed to fetch golden sets");
     }
   }
 
@@ -146,8 +147,8 @@ export class GoldenSetService {
         },
       });
     } catch (error) {
-      logger.error('Error creating next golden set:', error);
-      throw new Error('Failed to create next golden set');
+      logger.error("Error creating next golden set:", error);
+      throw new Error("Failed to create next golden set");
     }
   }
 }

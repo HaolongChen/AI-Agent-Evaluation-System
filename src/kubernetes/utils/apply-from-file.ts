@@ -2,7 +2,7 @@ import * as k8s from "@kubernetes/client-node";
 import yaml from "js-yaml";
 import { logger } from "../../utils/logger.ts";
 
-export interface JobResult {
+export interface EvalJobResult {
   jobName: string;
   namespace: string;
   status: "succeeded" | "failed" | "running";
@@ -12,6 +12,13 @@ export interface JobResult {
   // tasks?: TaskMessage[] | null | undefined;
   editableText?: string;
   reason?: string;
+}
+
+export interface GenJobResult {
+  jobName: string;
+  namespace: string;
+  status: "succeeded" | "failed" | "running";
+  // TODO: to be defined...
 }
 
 /**
@@ -26,7 +33,7 @@ export async function applyAndWatchJob(
   path: string,
   timeoutMs: number = 300000,
   ...scriptArgs: string[]
-): Promise<JobResult> {
+): Promise<EvalJobResult | GenJobResult> {
   // Normalize job name to be lowercase and RFC 1123 compliant
   const normalizedName = name
     .toLowerCase()
@@ -195,7 +202,7 @@ async function watchJobStatus(
   jobName: string,
   namespace: string,
   timeoutMs: number
-): Promise<JobResult> {
+): Promise<EvalJobResult | GenJobResult> {
   const startTime = Date.now();
   logger.info(
     `Watching Job ${jobName} in namespace ${namespace} for completion...`

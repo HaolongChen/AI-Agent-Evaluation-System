@@ -1,5 +1,5 @@
-import { type RunnableConfig } from '@langchain/core/runnables';
-import { rubricAnnotation } from '../state/index.ts';
+import { type RunnableConfig } from "@langchain/core/runnables";
+import { rubricAnnotation } from "../state/index.ts";
 
 /**
  * Input Collector Node
@@ -12,17 +12,21 @@ export async function inputCollectorNode(
   void config;
 
   const timestamp = new Date().toISOString();
-  const auditEntry = `[${timestamp}] InputCollector: Gathered input - query length: ${state.query?.length || 0}, context length: ${state.context?.length || 0}, candidate output length: ${state.candidateOutput?.length || 0}`;
+  const auditEntry = `[${timestamp}] InputCollector: Gathered input - query length: ${
+    state.query?.length || 0
+  }, context length: ${state.context?.length || 0}, candidate output length: ${
+    state.candidateOutput?.length || 0
+  }`;
 
   // Validate required inputs
-  if (!state.query || state.query.trim() === '') {
-    throw new Error('Query is required');
+  if (!state.query || state.query.trim() === "") {
+    throw new Error("Query is required");
   }
 
   return {
     query: state.query.trim(),
-    context: state.context?.trim() || '',
-    candidateOutput: state.candidateOutput?.trim() || '',
+    context: state.context?.trim() || "",
+    candidateOutput: state.candidateOutput?.trim() || "",
     auditTrace: [auditEntry],
   };
 }

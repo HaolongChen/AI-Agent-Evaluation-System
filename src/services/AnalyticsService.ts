@@ -1,6 +1,6 @@
-import { prisma } from '../config/prisma.ts';
-import { logger } from '../utils/logger.ts';
-import { COPILOT_TYPES } from '../config/constants.ts';
+import { prisma } from "../config/prisma.ts";
+import { logger } from "../utils/logger.ts";
+import { COPILOT_TYPES } from "../config/constants.ts";
 
 export class AnalyticsService {
   async getEvaluationResult(sessionId: string) {
@@ -12,15 +12,15 @@ export class AnalyticsService {
         },
       });
     } catch (error) {
-      logger.error('Error fetching evaluation result:', error);
-      throw new Error('Failed to fetch evaluation result');
+      logger.error("Error fetching evaluation result:", error);
+      throw new Error("Failed to fetch evaluation result");
     }
   }
 
   async createEvaluationResult(
     sessionId: string,
     schemaExId: string,
-    copilotType: typeof COPILOT_TYPES[keyof typeof COPILOT_TYPES],
+    copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
     modelName: string,
     metrics: object,
     overallScore: number
@@ -37,8 +37,8 @@ export class AnalyticsService {
         },
       });
     } catch (error) {
-      logger.error('Error creating evaluation result:', error);
-      throw new Error('Failed to create evaluation result');
+      logger.error("Error creating evaluation result:", error);
+      throw new Error("Failed to create evaluation result");
     }
   }
 
@@ -48,7 +48,7 @@ export class AnalyticsService {
         where: {
           schemaExId: schemaExId,
           modelName: { in: modelNames },
-          status: 'completed',
+          status: "completed",
         },
         include: {
           result: true,
@@ -99,13 +99,13 @@ export class AnalyticsService {
         models: modelPerformance,
       };
     } catch (error) {
-      logger.error('Error comparing models:', error);
-      throw new Error('Failed to compare models');
+      logger.error("Error comparing models:", error);
+      throw new Error("Failed to compare models");
     }
   }
 
   async getDashboardMetrics(filters: {
-    copilotType?: typeof COPILOT_TYPES[keyof typeof COPILOT_TYPES];
+    copilotType?: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES];
     modelName?: string;
     startDate?: Date;
     endDate?: Date;
@@ -113,14 +113,14 @@ export class AnalyticsService {
     try {
       const sessions = await prisma.evaluationSession.findMany({
         where: {
-          status: 'completed',
+          status: "completed",
           ...(filters.copilotType && {
             copilotType: filters.copilotType as
-              | 'dataModel'
-              | 'uiBuilder'
-              | 'actionflow'
-              | 'logAnalyzer'
-              | 'agentBuilder',
+              | "dataModel"
+              | "uiBuilder"
+              | "actionflow"
+              | "logAnalyzer"
+              | "agentBuilder",
           }),
           ...(filters.modelName && { modelName: filters.modelName }),
           ...(filters.startDate && { startedAt: { gte: filters.startDate } }),
@@ -155,8 +155,8 @@ export class AnalyticsService {
         modelPerformanceTrend: [], // TODO: Implement trend analysis
       };
     } catch (error) {
-      logger.error('Error fetching dashboard metrics:', error);
-      throw new Error('Failed to fetch dashboard metrics');
+      logger.error("Error fetching dashboard metrics:", error);
+      throw new Error("Failed to fetch dashboard metrics");
     }
   }
 }

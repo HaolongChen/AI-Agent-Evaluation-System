@@ -5,7 +5,11 @@ import { logger } from "../utils/logger.ts";
 import { goldenSetService } from "./GoldenSetService.ts";
 import { REVERSE_COPILOT_TYPES } from "../config/constants.ts";
 import { WS_URL } from "../config/env.ts";
-import { applyAndWatchJob } from "../kubernetes/utils/apply-from-file.ts";
+import {
+  applyAndWatchJob,
+  type EvalJobResult,
+  type GenJobResult,
+} from "../kubernetes/utils/apply-from-file.ts";
 import { EvaluationJobRunner } from "../jobs/EvaluationJobRunner.ts";
 import { RubricGenerationJobRunner } from "../jobs/RubricGenerationJobRunner.ts";
 import { RUN_KUBERNETES_JOBS } from "../config/env.ts";
@@ -36,7 +40,7 @@ export class ExecutionService {
         throw new Error("Golden set is undefined");
       }
       if (USE_KUBERNETES_JOBS) {
-        const evalJobResult = await applyAndWatchJob(
+        const evalJobResult = (await applyAndWatchJob(
           `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
           "default",
           "./src/jobs/EvaluationJobRunner.ts",
@@ -46,8 +50,8 @@ export class ExecutionService {
           schemaExId,
           goldenSet.copilotType,
           WS_URL,
-          modelName ?? 'copilot-latest'
-        );
+          modelName ?? "copilot-latest"
+        )) as unknown as EvalJobResult;
         logger.info(
           "Evaluation job completed with status:",
           evalJobResult.status
@@ -55,7 +59,7 @@ export class ExecutionService {
         if (evalJobResult.status !== "succeeded") {
           throw new Error("Evaluation job failed");
         }
-        const genJobResult = await applyAndWatchJob(
+        const genJobResult = (await applyAndWatchJob(
           `rubric-job-${projectExId}-${schemaExId}-${Date.now()}`,
           "default",
           "./src/jobs/RubricGenerationJobRunner.ts",
@@ -63,7 +67,7 @@ export class ExecutionService {
           String(goldenSet.id),
           evalJobResult.editableText || "", // handle scenario where job fails
           modelName ?? "copilot-latest"
-        );
+        )) as unknown as GenJobResult;
         logger.info(
           "Rubric generation job completed with status:",
           genJobResult.status
@@ -116,7 +120,7 @@ export class ExecutionService {
       if (USE_KUBERNETES_JOBS) {
         const results = await Promise.allSettled(
           goldenSets.map(async (goldenSet) => {
-            const evalJobResult = await applyAndWatchJob(
+            const evalJobResult = (await applyAndWatchJob(
               `evaluation-job-${goldenSet.projectExId}-${
                 goldenSet.schemaExId
               }-${Date.now()}`,
@@ -129,7 +133,7 @@ export class ExecutionService {
               goldenSet.copilotType,
               WS_URL,
               goldenSet.promptTemplate
-            );
+            )) as unknown as EvalJobResult;
             logger.info(
               `Evaluation job for golden set ${goldenSet.id} completed with status:`,
               evalJobResult.status
@@ -139,7 +143,7 @@ export class ExecutionService {
                 `Evaluation job for golden set ${goldenSet.id} failed`
               );
             }
-            const genJobResult = await applyAndWatchJob(
+            const genJobResult = (await applyAndWatchJob(
               `rubric-job-${goldenSet.projectExId}-${
                 goldenSet.schemaExId
               }-${Date.now()}`,
@@ -149,7 +153,7 @@ export class ExecutionService {
               String(goldenSet.id),
               evalJobResult.editableText || "", // handle scenario where job fails
               "copilot-latest"
-            );
+            )) as unknown as GenJobResult;
             logger.info(
               `Rubric generation job for golden set ${goldenSet.id} completed with status:`,
               genJobResult.status

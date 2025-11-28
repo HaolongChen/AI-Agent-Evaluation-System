@@ -84,9 +84,7 @@ export class RubricGenerationJobRunner {
         }
       );
 
-      logger.info(
-        `Rubric generation completed for session ${this.sessionId}`
-      );
+      logger.info(`Rubric generation completed for session ${this.sessionId}`);
 
       // Extract results from the LangGraph state
       const rubricResult: RubricGenerationResult = {
@@ -102,37 +100,70 @@ export class RubricGenerationJobRunner {
       };
 
       // Log constraints and evaluation info for visibility
-      if (rubricResult.hardConstraints && rubricResult.hardConstraints.length > 0) {
-        logger.info(`Hard Constraints (${rubricResult.hardConstraints.length}):`);
+      if (
+        rubricResult.hardConstraints &&
+        rubricResult.hardConstraints.length > 0
+      ) {
+        logger.info(
+          `Hard Constraints (${rubricResult.hardConstraints.length}):`
+        );
         rubricResult.hardConstraints.forEach((constraint, index) => {
           const answer = rubricResult.hardConstraintsAnswers?.[index];
-          logger.info(`  ${index + 1}. ${constraint} ${answer !== undefined ? `[${answer ? 'PASS' : 'FAIL'}]` : ''}`);
+          logger.info(
+            `  ${index + 1}. ${constraint} ${
+              answer !== undefined ? `[${answer ? "PASS" : "FAIL"}]` : ""
+            }`
+          );
         });
       }
 
-      if (rubricResult.softConstraints && rubricResult.softConstraints.length > 0) {
-        logger.info(`Soft Constraints (${rubricResult.softConstraints.length}):`);
+      if (
+        rubricResult.softConstraints &&
+        rubricResult.softConstraints.length > 0
+      ) {
+        logger.info(
+          `Soft Constraints (${rubricResult.softConstraints.length}):`
+        );
         rubricResult.softConstraints.forEach((constraint, index) => {
           const answer = rubricResult.softConstraintsAnswers?.[index];
-          logger.info(`  ${index + 1}. ${constraint} ${answer !== undefined ? `[${answer}]` : ''}`);
+          logger.info(
+            `  ${index + 1}. ${constraint} ${
+              answer !== undefined ? `[${answer}]` : ""
+            }`
+          );
         });
       }
 
       if (rubricResult.evaluationScore !== undefined) {
-        logger.info(`Overall Evaluation Score: ${rubricResult.evaluationScore}`);
+        logger.info(
+          `Overall Evaluation Score: ${rubricResult.evaluationScore}`
+        );
       }
 
       if (rubricResult.analysis) {
-        logger.info(`Analysis: ${rubricResult.analysis.substring(0, 200)}${rubricResult.analysis.length > 200 ? '...' : ''}`);
+        logger.info(
+          `Analysis: ${rubricResult.analysis.substring(0, 200)}${
+            rubricResult.analysis.length > 200 ? "..." : ""
+          }`
+        );
       }
 
       if (rubricResult.finalReport) {
-        logger.info(`Final Report Verdict: ${rubricResult.finalReport.verdict}`);
-        logger.info(`Final Report Summary: ${rubricResult.finalReport.summary.substring(0, 200)}${rubricResult.finalReport.summary.length > 200 ? '...' : ''}`);
+        logger.info(
+          `Final Report Verdict: ${rubricResult.finalReport.verdict}`
+        );
+        logger.info(
+          `Final Report Summary: ${rubricResult.finalReport.summary.substring(
+            0,
+            200
+          )}${rubricResult.finalReport.summary.length > 200 ? "..." : ""}`
+        );
       }
 
       if (rubricResult.rubric) {
-        logger.info(`Generated Rubric: ${rubricResult.rubric.id} (v${rubricResult.rubric.version})`);
+        logger.info(
+          `Generated Rubric: ${rubricResult.rubric.id} (v${rubricResult.rubric.version})`
+        );
         logger.info(`  Criteria count: ${rubricResult.rubric.criteria.length}`);
         logger.info(`  Total weight: ${rubricResult.rubric.totalWeight}`);
       }

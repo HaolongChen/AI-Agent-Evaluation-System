@@ -2,15 +2,8 @@
 graph TD
 
   %% Intake and rubric building
-  A["Input Collector  
-  Gather query, context, candidate output"]
-    --> B["Schema Checker  
-    Identify needed domain schemas"]
-
-  B --> C["Schema Loader  
-    Load or generate schema expressions"]
-
-  C --> D["Rubric Drafter  
+  A["Analysis Agent
+    download schema if needed"] --> D["Rubric Drafter  
     Produce rubric draft  
     Criteria and scoring scales"]
 

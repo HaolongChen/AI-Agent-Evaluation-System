@@ -460,9 +460,12 @@ async function createCheckpointer() {
 
     return checkpointer;
   } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : String(error);
     logger.warn(
-      'PostgresSaver not available, falling back to MemorySaver',
-      error
+      `PostgresSaver not available, falling back to MemorySaver. ` +
+        `To enable database persistence, install @langchain/langgraph-checkpoint-postgres: ` +
+        `npm install @langchain/langgraph-checkpoint-postgres. Error: ${errorMessage}`
     );
     return new MemorySaver();
   }
@@ -499,8 +502,16 @@ export async function getAgent() {
 }
 
 /**
- * Export for langgraph.json configuration
- * This creates a synchronous export that lazily initializes the agent
+ * Export for langgraph.json configuration.
+ *
+ * NOTE: This synchronous export uses MemorySaver for compatibility with
+ * langgraph.json which requires a synchronous export. For production use
+ * with database persistence, use `getAgent()` instead which will use
+ * PostgresSaver when NODE_ENV is 'production' and DATABASE_URL is configured.
+ *
+ * The langgraph CLI/server will use this export for local development and testing.
+ * Production deployments should initialize the agent via `getAgent()` to get
+ * the environment-appropriate checkpointer.
  */
 export const agent = buildEvaluationGraph().compile({
   checkpointer: new MemorySaver(),

@@ -1,6 +1,7 @@
 import * as k8s from "@kubernetes/client-node";
 import yaml from "js-yaml";
 import { logger } from "../../utils/logger.ts";
+import type { FinalReport, Rubric } from "../../langGraph/index.ts";
 
 export interface EvalJobResult {
   jobName: string;
@@ -18,8 +19,20 @@ export interface GenJobResult {
   jobName: string;
   namespace: string;
   status: "succeeded" | "failed" | "running";
-  // TODO: to be defined...
+  rubric?: Rubric | null;
+  hardConstraints?: string[];
+  softConstraints?: string[];
+  hardConstraintsAnswers?: boolean[];
+  softConstraintsAnswers?: string[];
+  evaluationScore?: number | undefined;
+  finalReport?: FinalReport | null;
+  analysis?: string;
+  error?: string;
+  completionTime?: Date;
+  reason?: string;
 }
+
+export type JobTypes = "evaluation" | "generation";
 
 /**
  * Apply a Kubernetes Job from the embedded YAML config, return the job name, and watch its status until completion.
@@ -32,6 +45,7 @@ export async function applyAndWatchJob(
   namespace: string,
   path: string,
   timeoutMs: number = 300000,
+  jobType: JobTypes,
   ...scriptArgs: string[]
 ): Promise<EvalJobResult | GenJobResult> {
   // Normalize job name to be lowercase and RFC 1123 compliant
@@ -118,7 +132,14 @@ export async function applyAndWatchJob(
 
   // Watch the Job status
   const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
-  return watchJobStatus(batchV1Api, coreV1Api, jobName, namespace, timeoutMs);
+  return watchJobStatus(
+    batchV1Api,
+    coreV1Api,
+    jobName,
+    namespace,
+    timeoutMs,
+    jobType
+  );
 }
 
 /**
@@ -127,8 +148,9 @@ export async function applyAndWatchJob(
 async function extractJobResultFromLogs(
   coreV1Api: k8s.CoreV1Api,
   jobName: string,
-  namespace: string
-): Promise<{ editableText?: string }> {
+  namespace: string,
+  jobType: JobTypes
+): Promise<Partial<EvalJobResult> | Partial<GenJobResult>> {
   try {
     // List pods for this job
     const podsResponse = await coreV1Api.listNamespacedPod({
@@ -164,18 +186,41 @@ async function extractJobResultFromLogs(
     for (const line of lines) {
       if (line.includes("JOB_RESULT_JSON:")) {
         try {
-          const jsonStr = line
-            .substring(
-              line.indexOf("JOB_RESULT_JSON:") + "JOB_RESULT_JSON:".length
-            )
-            .trim();
-          const result = JSON.parse(jsonStr);
-          logger.info(
-            `Extracted job result from logs: ${JSON.stringify(result)}`
-          );
-          return {
-            editableText: result.editableText,
-          };
+          if (jobType === "evaluation") {
+            const jsonStr = line
+              .substring(
+                line.indexOf("JOB_RESULT_JSON:") + "JOB_RESULT_JSON:".length
+              )
+              .trim();
+            const result = JSON.parse(jsonStr);
+            logger.info(
+              `Extracted job result from logs: ${JSON.stringify(result)}`
+            );
+            return {
+              editableText: result.editableText,
+            };
+          } else if (jobType === "generation") {
+            const jsonStr = line
+              .substring(
+                line.indexOf("JOB_RESULT_JSON:") + "JOB_RESULT_JSON:".length
+              )
+              .trim();
+            const result = JSON.parse(jsonStr);
+            logger.info(
+              `Extracted job result from logs: ${JSON.stringify(result)}`
+            );
+            return {
+              rubric: result.rubric,
+              hardConstraints: result.hardConstraints,
+              softConstraints: result.softConstraints,
+              hardConstraintsAnswers: result.hardConstraintsAnswers,
+              softConstraintsAnswers: result.softConstraintsAnswers,
+              evaluationScore: result.evaluationScore,
+              finalReport: result.finalReport,
+              analysis: result.analysis,
+              error: result.error,
+            };
+          }
         } catch (parseErr) {
           logger.error("Failed to parse job result JSON from logs:", parseErr);
         }
@@ -201,7 +246,8 @@ async function watchJobStatus(
   coreV1Api: k8s.CoreV1Api,
   jobName: string,
   namespace: string,
-  timeoutMs: number
+  timeoutMs: number,
+  jobType: JobTypes
 ): Promise<EvalJobResult | GenJobResult> {
   const startTime = Date.now();
   logger.info(
@@ -237,10 +283,36 @@ async function watchJobStatus(
           const jobResult = await extractJobResultFromLogs(
             coreV1Api,
             jobName,
-            namespace
+            namespace,
+            jobType
           );
 
-          if (jobResult.editableText) {
+          if (jobType === "evaluation") {
+            const evalResult = jobResult as Partial<EvalJobResult>;
+            if (evalResult.editableText) {
+              resolve({
+                jobName,
+                namespace,
+                status: "succeeded",
+                completionTime: job.status.completionTime
+                  ? new Date(job.status.completionTime)
+                  : new Date(),
+                editableText: evalResult.editableText,
+              });
+            } else {
+              resolve({
+                jobName,
+                namespace,
+                status: "failed",
+                reason: "No editable text found in job logs",
+                completionTime: job.status.completionTime
+                  ? new Date(job.status.completionTime)
+                  : new Date(),
+              });
+            }
+            return;
+          } else if (jobType === "generation") {
+            const genResult = jobResult as Partial<GenJobResult>;
             resolve({
               jobName,
               namespace,
@@ -248,20 +320,18 @@ async function watchJobStatus(
               completionTime: job.status.completionTime
                 ? new Date(job.status.completionTime)
                 : new Date(),
-              editableText: jobResult.editableText,
+              rubric: genResult.rubric,
+              hardConstraints: genResult.hardConstraints,
+              softConstraints: genResult.softConstraints,
+              hardConstraintsAnswers: genResult.hardConstraintsAnswers,
+              softConstraintsAnswers: genResult.softConstraintsAnswers,
+              evaluationScore: genResult.evaluationScore,
+              finalReport: genResult.finalReport,
+              analysis: genResult.analysis,
+              error: genResult.error,
             });
-          } else {
-            resolve({
-              jobName,
-              namespace,
-              status: "failed",
-              reason: "No editable text found in job logs",
-              completionTime: job.status.completionTime
-                ? new Date(job.status.completionTime)
-                : new Date(),
-            });
+            return;
           }
-          return;
         }
 
         // Check if Job has failed

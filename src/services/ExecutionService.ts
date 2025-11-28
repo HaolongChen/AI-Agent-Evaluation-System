@@ -45,6 +45,7 @@ export class ExecutionService {
           "default",
           "./src/jobs/EvaluationJobRunner.ts",
           300000,
+          "evaluation",
           String(goldenSet.id),
           projectExId,
           schemaExId,
@@ -64,6 +65,7 @@ export class ExecutionService {
           "default",
           "./src/jobs/RubricGenerationJobRunner.ts",
           300000,
+          "generation",
           String(goldenSet.id),
           evalJobResult.editableText || "", // handle scenario where job fails
           modelName ?? "copilot-latest"
@@ -127,6 +129,7 @@ export class ExecutionService {
               "default",
               "./src/jobs/EvaluationJobRunner.ts",
               300000,
+              "evaluation",
               String(goldenSet.id),
               goldenSet.projectExId,
               goldenSet.schemaExId,
@@ -150,6 +153,7 @@ export class ExecutionService {
               "default",
               "./src/jobs/RubricGenerationJobRunner.ts",
               300000,
+              "generation",
               String(goldenSet.id),
               evalJobResult.editableText || "", // handle scenario where job fails
               "copilot-latest"

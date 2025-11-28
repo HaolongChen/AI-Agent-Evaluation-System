@@ -1,4 +1,4 @@
-import { StateGraph, END } from "@langchain/langgraph";
+import { StateGraph, END, MemorySaver } from "@langchain/langgraph";
 import { rubricAnnotation } from "./state/index.ts";
 import { analysisAgentNode } from "./nodes/AnalysisAgent.ts";
 import { rubricDrafterNode } from "./nodes/RubricDrafterAgent.ts";
@@ -51,7 +51,8 @@ function afterAgentEvaluator(
   config?: { configurable?: Record<string, unknown> }
 ): string {
   void state;
-  const skipHumanEvaluation = config?.configurable?.["skipHumanEvaluation"] === true;
+  const skipHumanEvaluation =
+    config?.configurable?.["skipHumanEvaluation"] === true;
   if (skipHumanEvaluation) {
     return "merger";
   }
@@ -79,56 +80,64 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   // Define edges following the workflow design
   // Start -> Analysis Agent (handles schema loading)
   .addEdge("__start__", "analysisAgent")
-  
+
   // Analysis Agent -> Rubric Drafter
   .addEdge("analysisAgent", "rubricDrafter")
-  
+
   // Rubric Drafter -> Human Reviewer (conditional)
   .addConditionalEdges("rubricDrafter", afterRubricDrafter, {
     humanReviewer: "humanReviewer",
     rubricInterpreterDirect: "rubricInterpreterDirect",
   })
-  
+
   // Human Reviewer -> Rubric Interpreter or back to Drafter (conditional)
-  .addConditionalEdges("humanReviewer", (state) => {
-    // Check if rubricDraftAttempts exceeds threshold
-    const attempts = (state.rubricDraftAttempts || 0);
-    if (attempts >= 5) {
-      throw new Error('Maximum rubric drafting attempts exceeded');
+  .addConditionalEdges(
+    "humanReviewer",
+    (state) => {
+      // Check if rubricDraftAttempts exceeds threshold
+      const attempts = state.rubricDraftAttempts || 0;
+      if (attempts >= 5) {
+        throw new Error("Maximum rubric drafting attempts exceeded");
+      }
+      return shouldRedraftRubric(state);
+    },
+    {
+      rubricInterpreter: "rubricInterpreter",
+      rubricDrafter: "rubricDrafter",
     }
-    return shouldRedraftRubric(state);
-  }, {
-    rubricInterpreter: "rubricInterpreter",
-    rubricDrafter: "rubricDrafter",
-  })
-  
+  )
+
   // Direct interpretation after auto-approval
   .addEdge("rubricInterpreterDirect", "agentEvaluator")
-  
+
   // Rubric Interpreter -> Agent Evaluator
   .addEdge("rubricInterpreter", "agentEvaluator")
-  
+
   // Agent Evaluator -> Human Evaluator or Merger (conditional)
   .addConditionalEdges("agentEvaluator", afterAgentEvaluator, {
     humanEvaluator: "humanEvaluator",
     merger: "merger",
   })
-  
+
   // Human Evaluator -> Merger
   .addEdge("humanEvaluator", "merger")
-  
+
   // Merger -> Report Generator
   .addEdge("merger", "reportGenerator")
-  
+
   // Report Generator -> END
   .addEdge("reportGenerator", END);
+
+const checkpointer = new MemorySaver();
 
 // Compile the graph with interrupt configuration
 export const graph = workflow.compile({
   interruptBefore: ["humanReviewer", "humanEvaluator"],
+  checkpointer,
 });
 
 // Export a simplified graph without interrupts for automated evaluation
 export const automatedGraph = workflow.compile({
   interruptBefore: [],
+  checkpointer,
 });

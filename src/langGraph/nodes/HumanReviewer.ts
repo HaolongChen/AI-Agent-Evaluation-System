@@ -1,6 +1,6 @@
-import { type RunnableConfig } from '@langchain/core/runnables';
-import { interrupt } from '@langchain/langgraph';
-import { rubricAnnotation, type Rubric } from '../state/index.ts';
+import { type RunnableConfig } from "@langchain/core/runnables";
+import { interrupt } from "@langchain/langgraph";
+import { rubricAnnotation, type Rubric } from "../state/index.ts";
 
 /**
  * Input expected from human reviewer when resuming from rubric review interrupt.
@@ -35,15 +35,23 @@ export async function humanReviewerNode(
   void config;
 
   if (!state.rubricDraft) {
-    throw new Error('No rubric draft available for review');
+    throw new Error("No rubric draft available for review");
   }
 
   // Interrupt for human review
-  const humanInput = interrupt<HumanReviewInput>({
+  const humanInput = await interrupt<
+    {
+      rubricDraft: typeof state.rubricDraft;
+      query: string;
+      context: string | null;
+      message: string;
+    },
+    HumanReviewInput
+  >({
     rubricDraft: state.rubricDraft,
     query: state.query,
     context: state.context,
-    message: 'Please review the rubric draft and approve or modify it.',
+    message: "Please review the rubric draft and approve or modify it.",
   });
 
   const timestamp = new Date().toISOString();
@@ -52,7 +60,9 @@ export async function humanReviewerNode(
   if (humanInput.approved) {
     // Use modified rubric if provided, otherwise use the draft
     const approvedRubric = humanInput.modifiedRubric || state.rubricDraft;
-    auditEntry = `[${timestamp}] HumanReviewer: Rubric approved${humanInput.feedback ? `. Feedback: ${humanInput.feedback}` : ''}`;
+    auditEntry = `[${timestamp}] HumanReviewer: Rubric approved${
+      humanInput.feedback ? `. Feedback: ${humanInput.feedback}` : ""
+    }`;
 
     return {
       rubricDraft: approvedRubric,
@@ -61,7 +71,9 @@ export async function humanReviewerNode(
     };
   } else {
     // Human rejected or wants modifications
-    auditEntry = `[${timestamp}] HumanReviewer: Rubric not approved${humanInput.feedback ? `. Feedback: ${humanInput.feedback}` : ''}`;
+    auditEntry = `[${timestamp}] HumanReviewer: Rubric not approved${
+      humanInput.feedback ? `. Feedback: ${humanInput.feedback}` : ""
+    }`;
 
     return {
       rubricApproved: false,

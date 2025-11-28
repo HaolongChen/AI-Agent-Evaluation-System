@@ -1,6 +1,10 @@
-import { type RunnableConfig } from '@langchain/core/runnables';
-import { interrupt } from '@langchain/langgraph';
-import { rubricAnnotation, Evaluation, EvaluationScore } from '../state/index.ts';
+import { type RunnableConfig } from "@langchain/core/runnables";
+import { interrupt } from "@langchain/langgraph";
+import {
+  rubricAnnotation,
+  type Evaluation,
+  type EvaluationScore,
+} from "../state/index.ts";
 
 /**
  * Input expected from a human evaluator when resuming from an evaluation interrupt.
@@ -42,25 +46,43 @@ export async function humanEvaluatorNode(
   void config;
 
   if (!state.rubricFinal) {
-    throw new Error('No final rubric available for evaluation');
+    throw new Error("No final rubric available for evaluation");
   }
 
-  // Interrupt for human evaluation
-  const humanInput = interrupt<HumanEvaluationInput>({
-    rubricFinal: state.rubricFinal,
+  // Store rubricFinal in a local variable after the null check to help TypeScript narrow the type
+  const rubricFinal = state.rubricFinal;
+
+  // Interrupt for human evaluation - pass context as the interrupt value
+  // interrupt<I, R>(value: I): R
+  // - I is the input type (context shown to human)
+  // - R is the return type (what human provides back)
+  const humanInput = interrupt<
+    {
+      rubricFinal: typeof state.rubricFinal;
+      query: string;
+      context: string | null;
+      candidateOutput: string;
+      message: string;
+    },
+    HumanEvaluationInput
+  >({
+    rubricFinal,
     query: state.query,
     context: state.context,
     candidateOutput: state.candidateOutput,
-    message: 'Please complete the evaluation using the rubric criteria.',
+    message: "Please complete the evaluation using the rubric criteria.",
   });
 
   // Transform human input into Evaluation format
   const scores: EvaluationScore[] = humanInput.scores.map((s) => {
-    const criterion = state.rubricFinal.criteria.find(c => c.id === s.criterionId);
+    const criterion = rubricFinal.criteria.find((c) => c.id === s.criterionId);
     if (!criterion) {
       throw new Error(`Invalid criterion ID: ${s.criterionId}`);
     }
-    if (s.score < criterion.scoringScale.min || s.score > criterion.scoringScale.max) {
+    if (
+      s.score < criterion.scoringScale.min ||
+      s.score > criterion.scoringScale.max
+    ) {
       throw new Error(
         `Score ${s.score} for criterion ${criterion.name} is outside valid range [${criterion.scoringScale.min}, ${criterion.scoringScale.max}]`
       );
@@ -73,17 +95,26 @@ export async function humanEvaluatorNode(
   });
 
   // Calculate weighted overall score
-  const totalWeight = state.rubricFinal.criteria.reduce((sum, c) => sum + c.weight, 0);
+  const totalWeight = rubricFinal.criteria.reduce(
+    (sum, c) => sum + c.weight,
+    0
+  );
   let weightedSum = 0;
 
   for (const score of scores) {
-    const criterion = state.rubricFinal.criteria.find((c) => c.id === score.criterionId);
+    const criterion = rubricFinal.criteria.find(
+      (c) => c.id === score.criterionId
+    );
     if (criterion) {
-      const scoreRange = criterion.scoringScale.max - criterion.scoringScale.min;
+      const scoreRange =
+        criterion.scoringScale.max - criterion.scoringScale.min;
       // Handle case where min equals max (avoid division by zero)
-      const normalizedScore = scoreRange > 0 
-        ? (score.score - criterion.scoringScale.min) / scoreRange
-        : (score.score >= criterion.scoringScale.min ? 1 : 0);
+      const normalizedScore =
+        scoreRange > 0
+          ? (score.score - criterion.scoringScale.min) / scoreRange
+          : score.score >= criterion.scoringScale.min
+          ? 1
+          : 0;
       weightedSum += normalizedScore * criterion.weight;
     }
   }
@@ -91,7 +122,7 @@ export async function humanEvaluatorNode(
   const overallScore = totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
 
   const evaluation: Evaluation = {
-    evaluatorType: 'human',
+    evaluatorType: "human",
     scores,
     overallScore: Math.round(overallScore * 100) / 100,
     summary: humanInput.overallAssessment,

@@ -1417,16 +1417,17 @@ PORT=4000
 NODE_ENV=development
 
 # LLM API (for rubric generation via LangChain)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+AZURE_API_KEY=sk-openai...
+GOOGLE_API_KEY=AIza...
 LANGCHAIN_TRACING_V2=true  # Optional: Enable LangSmith tracing
 LANGCHAIN_API_KEY=...      # Optional: For LangSmith
 
 # LLM Configuration
-LLM_PROVIDER=openai  # or anthropic
-LLM_MODEL=gpt-4      # or claude-3-opus-20240229
-LLM_TEMPERATURE=0.7
-LLM_MAX_TOKENS=2000
+LLM_PROVIDER=auto          # auto, openai, or gemini
+OPENAI_MODEL=gpt-4o-mini
+GEMINI_MODEL=gemini-1.5-flash
+LLM_TEMPERATURE=0.2
+LLM_MAX_OUTPUT_TOKENS=1024
 
 # Copilot Integration
 COPILOT_API_URL=http://localhost:3000/api

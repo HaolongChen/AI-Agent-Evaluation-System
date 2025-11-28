@@ -176,7 +176,7 @@ export const typeDefs = `#graphql
       projectExId: String!
       schemaExId: String!
       copilotType: CopilotType!
-      # modelName: String!
+      modelName: String!
     ): Boolean!
 
     execAiCopilot: Boolean!

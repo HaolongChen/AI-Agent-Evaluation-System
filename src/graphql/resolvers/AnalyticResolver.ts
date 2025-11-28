@@ -68,6 +68,6 @@ export const analyticResolver = {
         logger.error('Error executing AI copilot:', error);
         throw new Error('Failed to execute AI copilot');
       }
-    }
+    },
   },
 };

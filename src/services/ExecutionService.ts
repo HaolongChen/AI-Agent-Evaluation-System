@@ -41,9 +41,12 @@ export class ExecutionService {
           "default",
           "./src/jobs/EvaluationJobRunner.ts",
           300000,
+          String(goldenSet.id),
           projectExId,
+          schemaExId,
+          goldenSet.copilotType,
           WS_URL,
-          goldenSet.promptTemplate
+          modelName ?? 'copilot-latest'
         );
         logger.info(
           "Evaluation job completed with status:",
@@ -111,7 +114,6 @@ export class ExecutionService {
       );
 
       if (USE_KUBERNETES_JOBS) {
-        // Create Kubernetes jobs concurrently for all golden sets
         const results = await Promise.allSettled(
           goldenSets.map(async (goldenSet) => {
             const evalJobResult = await applyAndWatchJob(
@@ -121,7 +123,10 @@ export class ExecutionService {
               "default",
               "./src/jobs/EvaluationJobRunner.ts",
               300000,
+              String(goldenSet.id),
               goldenSet.projectExId,
+              goldenSet.schemaExId,
+              goldenSet.copilotType,
               WS_URL,
               goldenSet.promptTemplate
             );

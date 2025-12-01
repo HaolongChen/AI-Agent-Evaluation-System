@@ -67,7 +67,7 @@ export const rubricAnnotation = Annotation.Root({
   candidateOutput: Annotation<string>({
     value: (_prev, next) => next,
     default: () => "",
-  }),
+  }), // copilot's output to be evaluated
 
   // Schema fields
   schemaNeeded: Annotation<boolean>,

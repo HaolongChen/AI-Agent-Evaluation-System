@@ -1,6 +1,5 @@
 import { StateGraph, END, MemorySaver } from "@langchain/langgraph";
 import { rubricAnnotation } from "./state/index.ts";
-import { analysisAgentNode } from "./nodes/AnalysisAgent.ts";
 import { rubricDrafterNode } from "./nodes/RubricDrafterAgent.ts";
 import { humanReviewerNode } from "./nodes/HumanReviewer.ts";
 import { rubricInterpreterNode } from "./nodes/RubricInterpreter.ts";
@@ -9,6 +8,9 @@ import { humanEvaluatorNode } from "./nodes/HumanEvaluator.ts";
 import { mergerNode } from "./nodes/Merger.ts";
 import { reportGeneratorNode } from "./nodes/ReportGenerator.ts";
 import * as z from "zod";
+import { inputCollectorNode } from "./nodes/InputCollector.ts";
+import { schemaCheckerNode } from "./nodes/SchemaChecker.ts";
+import { schemaLoaderNode } from "./nodes/SchemaLoader.ts";
 
 const ContextSchema = z.object({
   provider: z.string().optional(),
@@ -63,7 +65,9 @@ function afterAgentEvaluator(
 // Starting from Analysis Agent to handle schema loading, then to Rubric Drafter
 const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   // Add all nodes
-  .addNode("analysisAgent", analysisAgentNode)
+  .addNode("inputCollector", inputCollectorNode)
+  .addNode("schemaChecker", schemaCheckerNode)
+  .addNode("schemaLoader", schemaLoaderNode)
   .addNode("rubricDrafter", rubricDrafterNode)
   .addNode("humanReviewer", humanReviewerNode)
   .addNode("rubricInterpreter", rubricInterpreterNode)
@@ -79,10 +83,11 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
 
   // Define edges following the workflow design
   // Start -> Analysis Agent (handles schema loading)
-  .addEdge("__start__", "analysisAgent")
+  .addEdge("__start__", "inputCollector")
 
-  // Analysis Agent -> Rubric Drafter
-  .addEdge("analysisAgent", "rubricDrafter")
+  .addEdge("inputCollector", "schemaChecker")
+  .addEdge("schemaChecker", "schemaLoader")
+  .addEdge("schemaLoader", "rubricDrafter")
 
   // Rubric Drafter -> Human Reviewer (conditional)
   .addConditionalEdges("rubricDrafter", afterRubricDrafter, {

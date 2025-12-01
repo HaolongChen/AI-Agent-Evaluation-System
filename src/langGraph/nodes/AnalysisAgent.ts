@@ -1,5 +1,7 @@
 /*
 
+!! legacy !!
+
 1. implement tools
 2. import tools
 3. implement the model node: analysisAgentNode
@@ -19,9 +21,9 @@ import {
 import * as z from "zod";
 
 const analysisSchema = z.object({
-  isSchemaNeeded: z
-    .boolean()
-    .describe("Whether schema information is needed to answer the query"),
+  // isSchemaNeeded: z
+  //   .boolean()
+  //   .describe("Whether schema information is needed to answer the query"),
   analysisReport: z
     .string()
     .describe("Detailed analysis report of the user query and context"),
@@ -124,3 +126,8 @@ export async function analysisAgentNode(
     analysis: response.analysisReport,
   };
 }
+
+/* Reminder:
+   1. define analysisSchema
+
+*/

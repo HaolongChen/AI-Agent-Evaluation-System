@@ -69,5 +69,86 @@ export const analyticResolver = {
         throw new Error('Failed to execute AI copilot');
       }
     },
+
+    execAiCopilotWithHITL: async (
+      _: unknown,
+      args: {
+        projectExId: string;
+        schemaExId: string;
+        copilotType: copilotType;
+        modelName: string;
+        skipHumanReview?: boolean;
+        skipHumanEvaluation?: boolean;
+      }
+    ) => {
+      try {
+        const result = await executionService.createEvaluationSessionWithHITL(
+          args.projectExId,
+          args.schemaExId,
+          args.copilotType,
+          args.modelName,
+          {
+            skipHumanReview: args.skipHumanReview,
+            skipHumanEvaluation: args.skipHumanEvaluation,
+          }
+        );
+        return result;
+      } catch (error) {
+        logger.error('Error executing AI copilot with HITL:', error);
+        throw new Error('Failed to execute AI copilot with HITL');
+      }
+    },
+
+    resumeRubricReview: async (
+      _: unknown,
+      args: {
+        sessionId: number;
+        approved: boolean;
+        modifiedRubric?: unknown;
+        feedback?: string;
+      }
+    ) => {
+      try {
+        const result = await executionService.resumeRubricReview(
+          args.sessionId.toString(),
+          {
+            approved: args.approved,
+            modifiedRubric: args.modifiedRubric as any,
+            feedback: args.feedback,
+          }
+        );
+        return result;
+      } catch (error) {
+        logger.error('Error resuming rubric review:', error);
+        throw new Error('Failed to resume rubric review');
+      }
+    },
+
+    resumeHumanEvaluation: async (
+      _: unknown,
+      args: {
+        sessionId: number;
+        scores: Array<{
+          criterionId: string;
+          score: number;
+          reasoning: string;
+        }>;
+        overallAssessment: string;
+      }
+    ) => {
+      try {
+        const result = await executionService.resumeHumanEvaluation(
+          args.sessionId.toString(),
+          {
+            scores: args.scores,
+            overallAssessment: args.overallAssessment,
+          }
+        );
+        return result;
+      } catch (error) {
+        logger.error('Error resuming human evaluation:', error);
+        throw new Error('Failed to resume human evaluation');
+      }
+    },
   },
 };

@@ -86,6 +86,7 @@ model evaluationSession {
   startedAt    DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
   completedAt  DateTime?     @map("completed_at") @db.Timestamptz(6)
   status       SessionStatus @default(running)
+  threadId     String?       @map("thread_id") // LangGraph checkpoint thread ID for HITL workflows
 
   // Performance Metrics
   totalLatencyMs    Int?     @map("total_latency_ms")

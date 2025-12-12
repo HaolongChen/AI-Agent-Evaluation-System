@@ -32,6 +32,7 @@ export const typeDefs = `#graphql
     copilotType: CopilotType!
     modelName: String!
     sessionIdRef: Int
+    threadId: String
     startedAt: DateTime!
     completedAt: DateTime
     status: SessionStatus!
@@ -197,6 +198,29 @@ export const typeDefs = `#graphql
       confidenceScore: [Float!]!
       notes: String
     ): JudgeResult!
+
+    # HITL Workflow
+    execAiCopilotWithHITL(
+      projectExId: String!
+      schemaExId: String!
+      copilotType: CopilotType!
+      modelName: String!
+      skipHumanReview: Boolean
+      skipHumanEvaluation: Boolean
+    ): HITLSessionResult!
+
+    resumeRubricReview(
+      sessionId: Int!
+      approved: Boolean!
+      modifiedRubric: JSON
+      feedback: String
+    ): HITLSessionResult!
+
+    resumeHumanEvaluation(
+      sessionId: Int!
+      scores: [EvaluationScoreInput!]!
+      overallAssessment: String!
+    ): HITLSessionResult!
   }
 
   # Custom Types for Analytics
@@ -238,5 +262,20 @@ export const typeDefs = `#graphql
     date: DateTime!
     score: Float!
     sessionCount: Int!
+  }
+
+  # HITL Workflow Types
+  type HITLSessionResult {
+    sessionId: Int!
+    status: String!
+    threadId: String
+    result: JSON
+    message: String
+  }
+
+  input EvaluationScoreInput {
+    criterionId: String!
+    score: Float!
+    reasoning: String!
   }
 `;

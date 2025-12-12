@@ -1,0 +1,591 @@
+# ============================================================================
+# OpenVPN Setup Reusable Workflow for GitHub Actions
+# ============================================================================
+#
+# PURPOSE:
+# This reusable workflow sets up an OpenVPN connection on Ubuntu runners
+# to enable access to private network resources during CI/CD pipelines.
+# Specifically designed to work with private npm registries but can be
+# adapted for other private resources.
+#
+# ============================================================================
+# USAGE IN YOUR WORKFLOWS:
+# ============================================================================
+#
+# jobs:
+#   your-job:
+#     uses: HaolongChen/AI-Agent-Evaluation-System/.github/workflows/openvpn-setup.yml@main
+#     with:
+#       npm-registry-url: "https://npm.functorz.work"
+#       connection-timeout: "60"
+#       verify-connection: "true"
+#     secrets:
+#       OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+#       OPENVPN_CA_CERT: ${{ secrets.OPENVPN_CA_CERT }}
+#       OPENVPN_CLIENT_CERT: ${{ secrets.OPENVPN_CLIENT_CERT }}
+#       OPENVPN_PRIVATE_KEY: ${{ secrets.OPENVPN_PRIVATE_KEY }}
+#       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+#
+# ============================================================================
+# REQUIRED GITHUB SECRETS SETUP:
+# ============================================================================
+#
+# You must configure the following secrets in your repository:
+# Settings → Secrets and variables → Actions → New repository secret
+#
+# 1. OPENVPN_CONFIG
+#    Description: Main OpenVPN configuration file content
+#    How to get: Extract from your .ovpn file, removing the embedded certs
+#    Example content:
+#      client
+#      dev tun
+#      proto udp
+#      remote vpn.yourcompany.com 1194
+#      resolv-retry infinite
+#      nobind
+#      persist-key
+#      persist-tun
+#      remote-cert-tls server
+#      cipher AES-256-CBC
+#      auth SHA256
+#      key-direction 1
+#      verb 3
+#      # Note: Remove <ca>, <cert>, <key> blocks - they go in separate secrets
+#
+# 2. OPENVPN_CA_CERT
+#    Description: Certificate Authority (CA) certificate
+#    How to get: Extract from <ca>...</ca> section of your .ovpn file
+#    Example format:
+#      -----BEGIN CERTIFICATE-----
+#      MIIDSzCCAjOgAwIBAgIUXxU...
+#      ...
+#      -----END CERTIFICATE-----
+#
+# 3. OPENVPN_CLIENT_CERT
+#    Description: Client certificate for authentication
+#    How to get: Extract from <cert>...</cert> section of your .ovpn file
+#    Example format:
+#      -----BEGIN CERTIFICATE-----
+#      MIIDYTCCAkmgAwIBAgIRAP...
+#      ...
+#      -----END CERTIFICATE-----
+#
+# 4. OPENVPN_PRIVATE_KEY
+#    Description: Private key for the client certificate
+#    How to get: Extract from <key>...</key> section of your .ovpn file
+#    Example format:
+#      -----BEGIN PRIVATE KEY-----
+#      MIIEvgIBADANBgkqhkiG9w...
+#      ...
+#      -----END PRIVATE KEY-----
+#    ⚠️  CRITICAL: This is highly sensitive. Never commit this to your repo.
+#
+# 5. NPM_TOKEN (Required if using npm registry verification)
+#    Description: Authentication token for private npm registry
+#    How to get: Generate from your npm registry admin panel
+#    Example: npm_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890
+#
+# ============================================================================
+# EXTRACTING SECRETS FROM .OVPN FILE:
+# ============================================================================
+#
+# If you have a monolithic .ovpn file, split it as follows:
+#
+# 1. Everything except cert blocks → OPENVPN_CONFIG
+# 2. Content between <ca> tags → OPENVPN_CA_CERT
+# 3. Content between <cert> tags → OPENVPN_CLIENT_CERT  
+# 4. Content between <key> tags → OPENVPN_PRIVATE_KEY
+#
+# Example script to extract (run locally, never in CI):
+#
+#   #!/bin/bash
+#   OVPN_FILE="your-config.ovpn"
+#   
+#   # Extract config (everything up to first cert block)
+#   sed -n '1,/^<ca>/p' $OVPN_FILE | head -n -1 > config.txt
+#   
+#   # Extract CA certificate
+#   sed -n '/<ca>/,/<\/ca>/p' $OVPN_FILE | sed '1d;$d' > ca.crt
+#   
+#   # Extract client certificate
+#   sed -n '/<cert>/,/<\/cert>/p' $OVPN_FILE | sed '1d;$d' > client.crt
+#   
+#   # Extract private key
+#   sed -n '/<key>/,/<\/key>/p' $OVPN_FILE | sed '1d;$d' > client.key
+#
+# ============================================================================
+
+name: OpenVPN Setup
+
+on:
+  workflow_call:
+    inputs:
+      npm-registry-url:
+        description: 'URL of the private npm registry to verify connection'
+        required: false
+        type: string
+        default: 'https://npm.functorz.work'
+      
+      connection-timeout:
+        description: 'Timeout in seconds for establishing VPN connection'
+        required: false
+        type: string
+        default: '60'
+      
+      verify-connection:
+        description: 'Whether to verify connection by testing npm registry access'
+        required: false
+        type: boolean
+        default: true
+      
+      runner-os:
+        description: 'Runner OS (currently only ubuntu-latest supported)'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+    
+    secrets:
+      OPENVPN_CONFIG:
+        description: 'OpenVPN configuration file content (without cert blocks)'
+        required: true
+      
+      OPENVPN_CA_CERT:
+        description: 'OpenVPN CA certificate'
+        required: true
+      
+      OPENVPN_CLIENT_CERT:
+        description: 'OpenVPN client certificate'
+        required: true
+      
+      OPENVPN_PRIVATE_KEY:
+        description: 'OpenVPN client private key'
+        required: true
+      
+      NPM_TOKEN:
+        description: 'NPM authentication token for private registry (if verify-connection is true)'
+        required: false
+    
+    outputs:
+      vpn-connected:
+        description: 'Whether VPN connection was successfully established'
+        value: ${{ jobs.setup-vpn.outputs.connected }}
+      
+      vpn-ip:
+        description: 'VPN tunnel IP address assigned'
+        value: ${{ jobs.setup-vpn.outputs.vpn-ip }}
+
+jobs:
+  setup-vpn:
+    name: Setup OpenVPN Connection
+    runs-on: ${{ inputs.runner-os }}
+    
+    outputs:
+      connected: ${{ steps.verify.outputs.connected }}
+      vpn-ip: ${{ steps.connect.outputs.vpn-ip }}
+    
+    steps:
+      # ======================================================================
+      # STEP 1: Install OpenVPN Client
+      # ======================================================================
+      # Install the OpenVPN package and its dependencies on the Ubuntu runner.
+      # This provides the 'openvpn' command-line tool needed to establish
+      # VPN connections.
+      # ======================================================================
+      
+      - name: Install OpenVPN
+        id: install
+        run: |
+          echo "::group::Installing OpenVPN client"
+          sudo apt-get update -qq
+          sudo apt-get install -y openvpn
+          
+          # Verify installation
+          if ! command -v openvpn &> /dev/null; then
+            echo "::error::OpenVPN installation failed"
+            exit 1
+          fi
+          
+          echo "✅ OpenVPN version: $(openvpn --version | head -n 1)"
+          echo "::endgroup::"
+      
+      # ======================================================================
+      # STEP 2: Prepare OpenVPN Configuration Files
+      # ======================================================================
+      # Create the OpenVPN configuration directory and assemble the complete
+      # configuration from the separate GitHub secrets. This approach keeps
+      # certificates separate for better security and easier management.
+      #
+      # Security notes:
+      # - Files are created with restricted permissions (600)
+      # - Configuration directory is in /tmp which is cleared after job
+      # - All secrets are masked in GitHub Actions logs
+      # ======================================================================
+      
+      - name: Prepare OpenVPN Configuration
+        id: prepare
+        env:
+          OPENVPN_CONFIG: ${{ secrets.OPENVPN_CONFIG }}
+          OPENVPN_CA_CERT: ${{ secrets.OPENVPN_CA_CERT }}
+          OPENVPN_CLIENT_CERT: ${{ secrets.OPENVPN_CLIENT_CERT }}
+          OPENVPN_PRIVATE_KEY: ${{ secrets.OPENVPN_PRIVATE_KEY }}
+        run: |
+          echo "::group::Preparing OpenVPN configuration files"
+          
+          # Create secure temporary directory for VPN files
+          VPN_DIR="/tmp/openvpn"
+          mkdir -p "$VPN_DIR"
+          chmod 700 "$VPN_DIR"
+          
+          # Write CA certificate
+          echo "$OPENVPN_CA_CERT" > "$VPN_DIR/ca.crt"
+          chmod 600 "$VPN_DIR/ca.crt"
+          echo "✅ CA certificate written ($(wc -l < "$VPN_DIR/ca.crt") lines)"
+          
+          # Write client certificate
+          echo "$OPENVPN_CLIENT_CERT" > "$VPN_DIR/client.crt"
+          chmod 600 "$VPN_DIR/client.crt"
+          echo "✅ Client certificate written ($(wc -l < "$VPN_DIR/client.crt") lines)"
+          
+          # Write private key
+          echo "$OPENVPN_PRIVATE_KEY" > "$VPN_DIR/client.key"
+          chmod 600 "$VPN_DIR/client.key"
+          echo "✅ Private key written ($(wc -l < "$VPN_DIR/client.key") lines)"
+          
+          # Create main config file and append certificate paths
+          echo "$OPENVPN_CONFIG" > "$VPN_DIR/config.ovpn"
+          echo "" >> "$VPN_DIR/config.ovpn"
+          echo "# Certificate file paths (added by GitHub Actions)" >> "$VPN_DIR/config.ovpn"
+          echo "ca $VPN_DIR/ca.crt" >> "$VPN_DIR/config.ovpn"
+          echo "cert $VPN_DIR/client.crt" >> "$VPN_DIR/config.ovpn"
+          echo "key $VPN_DIR/client.key" >> "$VPN_DIR/config.ovpn"
+          chmod 600 "$VPN_DIR/config.ovpn"
+          
+          echo "✅ Configuration file assembled ($(wc -l < "$VPN_DIR/config.ovpn") lines)"
+          
+          # Export VPN directory for subsequent steps
+          echo "VPN_DIR=$VPN_DIR" >> $GITHUB_ENV
+          
+          echo "::endgroup::"
+      
+      # ======================================================================
+      # STEP 3: Establish OpenVPN Connection
+      # ======================================================================
+      # Start the OpenVPN client in the background and wait for connection.
+      # The connection is established with a configurable timeout to prevent
+      # hanging jobs.
+      #
+      # Connection process:
+      # 1. Start openvpn as background daemon
+      # 2. Monitor log file for "Initialization Sequence Completed"
+      # 3. Timeout if connection takes too long
+      # 4. Verify tunnel interface is created
+      # ======================================================================
+      
+      - name: Connect to OpenVPN
+        id: connect
+        timeout-minutes: 5
+        run: |
+          echo "::group::Establishing VPN connection"
+          
+          VPN_LOG="/tmp/openvpn/connection.log"
+          TIMEOUT=${{ inputs.connection-timeout }}
+          
+          # Start OpenVPN in background
+          echo "🔄 Starting OpenVPN client..."
+          sudo openvpn --config $VPN_DIR/config.ovpn \
+            --daemon \
+            --log "$VPN_LOG" \
+            --writepid /tmp/openvpn/openvpn.pid
+          
+          # Wait for connection with timeout
+          echo "⏳ Waiting for VPN connection (timeout: ${TIMEOUT}s)..."
+          SECONDS=0
+          while [ $SECONDS -lt $TIMEOUT ]; do
+            if grep -q "Initialization Sequence Completed" "$VPN_LOG" 2>/dev/null; then
+              echo "✅ VPN connection established successfully!"
+              
+              # Get VPN IP address
+              sleep 2  # Give system time to configure interface
+              VPN_IP=$(ip addr show tun0 2>/dev/null | grep -oP '(?<=inet\s)\d+\.\d+\.\d+\.\d+' | head -1)
+              if [ -n "$VPN_IP" ]; then
+                echo "📍 VPN tunnel IP: $VPN_IP"
+                echo "vpn-ip=$VPN_IP" >> $GITHUB_OUTPUT
+              fi
+              
+              # Show routing table
+              echo "📋 Routing table after VPN connection:"
+              ip route | grep tun0 || true
+              
+              echo "::endgroup::"
+              exit 0
+            fi
+            
+            # Check for connection errors
+            if grep -q "ERROR" "$VPN_LOG" 2>/dev/null; then
+              echo "::error::VPN connection error detected"
+              echo "Last 20 lines of VPN log:"
+              tail -20 "$VPN_LOG"
+              echo "::endgroup::"
+              exit 1
+            fi
+            
+            sleep 2
+          done
+          
+          # Timeout reached
+          echo "::error::VPN connection timeout after ${TIMEOUT} seconds"
+          echo "Last 30 lines of VPN log:"
+          tail -30 "$VPN_LOG"
+          echo "::endgroup::"
+          exit 1
+      
+      # ======================================================================
+      # STEP 4: Verify VPN Connection (Optional)
+      # ======================================================================
+      # Test the VPN connection by attempting to access the private npm
+      # registry. This confirms that:
+      # 1. VPN tunnel is working
+      # 2. DNS resolution works through VPN
+      # 3. Private resources are accessible
+      #
+      # This step can be skipped by setting verify-connection to false.
+      # ======================================================================
+      
+      - name: Verify VPN Connection
+        id: verify
+        if: inputs.verify-connection == true
+        env:
+          NPM_REGISTRY: ${{ inputs.npm-registry-url }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "::group::Verifying VPN connection"
+          
+          # Test 1: Ping test to VPN gateway
+          echo "🔍 Test 1: Checking VPN gateway connectivity..."
+          VPN_GATEWAY=$(ip route | grep tun0 | head -1 | awk '{print $3}')
+          if [ -n "$VPN_GATEWAY" ]; then
+            if ping -c 3 -W 5 "$VPN_GATEWAY" > /dev/null 2>&1; then
+              echo "✅ VPN gateway ($VPN_GATEWAY) is reachable"
+            else
+              echo "⚠️  VPN gateway ping failed, but continuing..."
+            fi
+          fi
+          
+          # Test 2: DNS resolution for npm registry
+          echo "🔍 Test 2: Testing DNS resolution..."
+          NPM_HOST=$(echo "$NPM_REGISTRY" | sed -E 's|https?://||' | cut -d'/' -f1)
+          if nslookup "$NPM_HOST" > /dev/null 2>&1; then
+            echo "✅ DNS resolution successful for $NPM_HOST"
+            NPM_IP=$(nslookup "$NPM_HOST" | grep -A1 "Name:" | grep "Address:" | awk '{print $2}' | head -1)
+            echo "   Resolved to: $NPM_IP"
+          else
+            echo "::error::DNS resolution failed for $NPM_HOST"
+            echo "connected=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Test 3: HTTP connectivity to npm registry
+          echo "🔍 Test 3: Testing HTTP connectivity to npm registry..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --connect-timeout 10 \
+            --max-time 30 \
+            "$NPM_REGISTRY" 2>/dev/null || echo "000")
+          
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "302" ]; then
+            echo "✅ npm registry is accessible (HTTP $HTTP_CODE)"
+          else
+            echo "::error::npm registry not accessible (HTTP $HTTP_CODE)"
+            echo "connected=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Test 4: Authenticate with npm registry (if token provided)
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "🔍 Test 4: Testing npm authentication..."
+            
+            # Configure npm to use private registry
+            npm config set registry "$NPM_REGISTRY"
+            npm config set //"$(echo $NPM_HOST)/:_authToken" "$NPM_TOKEN"
+            
+            # Test npm authentication
+            if npm ping --loglevel=error > /dev/null 2>&1; then
+              echo "✅ npm authentication successful"
+            else
+              echo "⚠️  npm authentication failed, but VPN is connected"
+              echo "   This might be due to invalid token or registry configuration"
+            fi
+          else
+            echo "ℹ️  Skipping npm authentication test (no NPM_TOKEN provided)"
+          fi
+          
+          # All tests passed
+          echo "connected=true" >> $GITHUB_OUTPUT
+          echo "✅ All VPN verification tests passed!"
+          echo "::endgroup::"
+      
+      # ======================================================================
+      # STEP 5: Display Connection Summary
+      # ======================================================================
+      # Provide a summary of the established VPN connection for debugging
+      # and verification purposes.
+      # ======================================================================
+      
+      - name: Connection Summary
+        if: always()
+        run: |
+          echo "::group::VPN Connection Summary"
+          echo "================================"
+          
+          if [ -f /tmp/openvpn/openvpn.pid ]; then
+            VPN_PID=$(cat /tmp/openvpn/openvpn.pid)
+            if ps -p $VPN_PID > /dev/null 2>&1; then
+              echo "✅ OpenVPN Status: Connected (PID: $VPN_PID)"
+            else
+              echo "❌ OpenVPN Status: Process not running"
+            fi
+          else
+            echo "❌ OpenVPN Status: Not started"
+          fi
+          
+          echo ""
+          echo "Network Interfaces:"
+          ip addr show tun0 2>/dev/null || echo "  No tun0 interface found"
+          
+          echo ""
+          echo "VPN Routes:"
+          ip route | grep tun0 || echo "  No VPN routes found"
+          
+          echo "================================"
+          echo "::endgroup::"
+      
+      # ======================================================================
+      # CLEANUP: Disconnect VPN
+      # ======================================================================
+      # This step runs even if previous steps fail (if: always()).
+      # Ensures VPN is properly disconnected and configuration files are
+      # removed to prevent:
+      # 1. Hanging connections affecting other jobs
+      # 2. Credential leakage from temporary files
+      # 3. Resource exhaustion on the runner
+      # ======================================================================
+      
+      - name: Disconnect VPN
+        if: always()
+        run: |
+          echo "::group::Cleaning up VPN connection"
+          
+          # Stop OpenVPN process
+          if [ -f /tmp/openvpn/openvpn.pid ]; then
+            VPN_PID=$(cat /tmp/openvpn/openvpn.pid)
+            if ps -p $VPN_PID > /dev/null 2>&1; then
+              echo "🔄 Stopping OpenVPN process (PID: $VPN_PID)..."
+              sudo kill $VPN_PID
+              
+              # Wait for graceful shutdown
+              TIMEOUT=10
+              ELAPSED=0
+              while ps -p $VPN_PID > /dev/null 2>&1 && [ $ELAPSED -lt $TIMEOUT ]; do
+                sleep 1
+                ELAPSED=$((ELAPSED + 1))
+              done
+              
+              # Force kill if still running
+              if ps -p $VPN_PID > /dev/null 2>&1; then
+                echo "⚠️  Forcing OpenVPN termination..."
+                sudo kill -9 $VPN_PID
+              fi
+              
+              echo "✅ OpenVPN process stopped"
+            fi
+          fi
+          
+          # Remove configuration files
+          if [ -d /tmp/openvpn ]; then
+            echo "🗑️  Removing configuration files..."
+            sudo rm -rf /tmp/openvpn
+            echo "✅ Configuration files removed"
+          fi
+          
+          # Verify cleanup
+          if ip addr show tun0 > /dev/null 2>&1; then
+            echo "⚠️  tun0 interface still exists (will be cleaned by system)"
+          else
+            echo "✅ VPN interface cleaned up"
+          fi
+          
+          echo "::endgroup::"
+          echo "🎉 VPN cleanup completed successfully"
+
+# ============================================================================
+# END OF WORKFLOW
+# ============================================================================
+#
+# TROUBLESHOOTING:
+# ============================================================================
+#
+# Problem: "OpenVPN installation failed"
+# Solution: Check if Ubuntu runner has network connectivity and package
+#          repositories are accessible.
+#
+# Problem: "VPN connection timeout"
+# Solutions:
+#   - Verify OpenVPN server is reachable from GitHub Actions runners
+#   - Check firewall rules allow connections from GitHub's IP ranges
+#   - Verify all secrets are correctly configured
+#   - Increase connection-timeout input value
+#   - Check OpenVPN server logs for authentication failures
+#
+# Problem: "DNS resolution failed"
+# Solutions:
+#   - Verify VPN server pushes DNS configuration
+#   - Add 'dhcp-option DNS <ip>' to OPENVPN_CONFIG secret
+#   - Check if VPN server allows DNS queries
+#
+# Problem: "npm registry not accessible"
+# Solutions:
+#   - Verify npm registry URL is correct
+#   - Check if npm registry requires VPN for access
+#   - Test connection manually: curl https://npm.functorz.work
+#   - Verify firewall rules on npm registry server
+#
+# Problem: "npm authentication failed"
+# Solutions:
+#   - Verify NPM_TOKEN secret is valid and not expired
+#   - Check token has appropriate permissions
+#   - Ensure npm registry is configured to accept token authentication
+#
+# ============================================================================
+#
+# SECURITY BEST PRACTICES:
+# ============================================================================
+#
+# 1. Secret Rotation:
+#    - Rotate OpenVPN certificates every 6-12 months
+#    - Rotate NPM tokens every 90 days
+#    - Use different credentials for CI/CD than development
+#
+# 2. Access Control:
+#    - Limit VPN access to only required resources
+#    - Use network segmentation to isolate CI/CD traffic
+#    - Monitor VPN connection logs for anomalies
+#
+# 3. GitHub Secrets:
+#    - Only grant repository access to necessary team members
+#    - Use environment secrets for additional protection
+#    - Regularly audit secret access logs
+#
+# 4. Network Security:
+#    - Enable MFA for VPN if possible
+#    - Use certificate-based auth (already implemented)
+#    - Consider IP whitelisting GitHub Actions IP ranges
+#
+# ============================================================================
+#
+# ADDITIONAL RESOURCES:
+# ============================================================================
+#
+# - OpenVPN Documentation: https://openvpn.net/community-resources/
+# - GitHub Actions Security: https://docs.github.com/en/actions/security-guides
+# - GitHub IP Ranges: https://api.github.com/meta (webhooks.ips)
+#
+# ============================================================================

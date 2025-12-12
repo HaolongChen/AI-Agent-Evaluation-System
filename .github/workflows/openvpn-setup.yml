@@ -73,7 +73,7 @@ jobs:
 
       - name: Setup OpenVPN configuration with robust file creation
         env:
-          OPENVPNCONFIG: ${{ secrets.OPENVPNCONFIG }}
+          OPENVPN_SECRET: ${{ secrets.OPENVPN }}
         run: |
           set -e
           echo "=== OpenVPN Configuration Setup ==="
@@ -83,17 +83,17 @@ jobs:
           chmod 700 /tmp/openvpn
           
           # Debug secret availability
-          echo "Checking OPENVPNCONFIG secret..."
-          if [ -z "$OPENVPNCONFIG" ]; then
-            echo "::error::OPENVPNCONFIG secret is empty or not set"
+          echo "Checking OPENVPN secret..."
+          if [ -z "${{ secrets.OPENVPN }}" ]; then
+            echo "::error::OPENVPN secret is empty or not set"
             exit 1
           fi
           
-          echo "✓ OPENVPNCONFIG secret is present"
+          echo "✓ OPENVPN secret is present"
           
           # Create config file with explicit error handling
           echo "Creating OpenVPN config file..."
-          echo "$OPENVPNCONFIG" > /tmp/openvpn/config.ovpn
+          echo "${{ secrets.OPENVPN }}" > /tmp/openvpn/config.ovpn
           
           # Verify file exists
           if [[ ! -f /tmp/openvpn/config.ovpn ]]; then

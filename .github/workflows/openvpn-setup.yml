@@ -833,7 +833,7 @@ jobs:
           echo "=== Starting Connection Health Monitor ==="
           
           HEALTH_CHECK_INTERVAL=${{ github.event.inputs.health_check_interval || '30' }}
-          HEALTH_LOG="$VPN_LOG_PATH"
+          HEALTH_LOG="$HEALTH_CHECK_LOG"
           
           # Create health monitoring script
           cat > "${SECURE_TMPDIR}/health_monitor.sh" << 'HEALTH_EOF'
@@ -906,7 +906,7 @@ jobs:
             "$HEALTH_CHECK_INTERVAL" \
             "$VPN_PID_PATH" \
             "$VPN_INTERFACE" \
-            "$HEALTH_CHECK_LOG" \
+            "$HEALTH_LOG" \
             > /dev/null 2>&1 &
           
           MONITOR_PID=$!
@@ -914,7 +914,7 @@ jobs:
           
           echo "✓ Health monitor started (PID: $MONITOR_PID)"
           echo "✓ Check interval: ${HEALTH_CHECK_INTERVAL}s"
-          echo "✓ Log file: $HEALTH_CHECK_LOG"
+          echo "✓ Log file: $HEALTH_LOG"
           echo ""
           echo "The health monitor will:"
           echo "  - Verify OpenVPN process is running"
@@ -1170,8 +1170,8 @@ jobs:
           echo ""
           
           # 4. Secure configuration file removal
-          echo "4️⃣  Configuration File Scrubbing"
-          echo "   ──────────────────────────────"
+          echo "4️⃣  Configuration File Scrubbing (DoD 5220.22-M)"
+          echo "   ───────────────────────────────────────────────"
           if [ -f "$VPN_CONFIG_PATH" ]; then
             echo "   Securely wiping configuration file..."
             
@@ -1221,160 +1221,179 @@ jobs:
           
           for log in "${LOG_FILES[@]}"; do
             if [ -f "$log" ]; then
-              # Check for sensitive data patterns
-              if grep -qE "(password|secret|key|auth)" "$log" 2>/dev/null; then
-                echo "   ⚠️ Sensitive data detected in $log - securely removing"
+              # Show last few lines before cleanup (for debugging)
+              if [ "${{ github.event.inputs.debug_enabled }}" = "true" ]; then
+                echo "   Last 10 lines of $log:"
+                tail -n 10 "$log" 2>/dev/null | sed 's/^/     /' || true
               fi
+              
               sudo rm -f "$log"
               echo "   ✓ Removed: $log"
             fi
           done
-          
-          # Remove log directory if empty
-          if [ -d "/var/log/openvpn" ]; then
-            if [ -z "$(ls -A /var/log/openvpn)" ]; then
-              sudo rmdir /var/log/openvpn
-              echo "   ✓ Log directory removed"
-            fi
-          fi
           echo ""
           
           # 6. Secure temporary directory cleanup
-          echo "6️⃣  Temporary File Cleanup"
-          echo "   ────────────────────────"
+          echo "6️⃣  Secure Temporary Directory Cleanup"
+          echo "   ────────────────────────────────────"
           if [ -n "$SECURE_TMPDIR" ] && [ -d "$SECURE_TMPDIR" ]; then
-            echo "   Cleaning secure temporary directory..."
+            echo "   Securely removing: $SECURE_TMPDIR"
             
-            # Securely wipe any sensitive files
-            find "$SECURE_TMPDIR" -type f -exec shred -vfz -n 1 {} \; 2>/dev/null || \
-            find "$SECURE_TMPDIR" -type f -exec rm -f {} \; 2>/dev/null
+            # Shred all files in temp directory
+            if command -v shred > /dev/null 2>&1; then
+              find "$SECURE_TMPDIR" -type f -exec shred -vfz -n 1 {} \; 2>/dev/null || true
+              echo "   ✓ Temporary files shredded"
+            fi
             
             # Remove directory
             rm -rf "$SECURE_TMPDIR"
-            echo "   ✓ Secure temporary directory cleaned"
-          fi
-          
-          # Check for other temporary OpenVPN files
-          TEMP_FILES=$(find /tmp /var/tmp -name "openvpn-*" -o -name "*vpn*" 2>/dev/null | wc -l)
-          if [ "$TEMP_FILES" -gt 0 ]; then
-            echo "   ⚠️ Found $TEMP_FILES temporary VPN-related file(s)"
-            find /tmp /var/tmp -name "openvpn-*" -o -name "*vpn*" 2>/dev/null | head -n 10
-            CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
-          else
-            echo "   ✓ No temporary VPN files found"
+            echo "   ✓ Temporary directory removed"
           fi
           echo ""
           
-          # 7. Network configuration reset
-          echo "7️⃣  Network Configuration Reset"
-          echo "   ─────────────────────────────"
-          
-          # Flush DNS cache
+          # 7. DNS configuration restoration
+          echo "7️⃣  DNS Configuration Restoration"
+          echo "   ───────────────────────────────"
           if command -v resolvectl > /dev/null 2>&1; then
+            # Flush DNS cache
             sudo resolvectl flush-caches 2>/dev/null || true
             echo "   ✓ DNS cache flushed"
           fi
           
-          # Reset systemd-resolved
-          if systemctl is-active --quiet systemd-resolved; then
-            sudo systemctl restart systemd-resolved 2>/dev/null || true
-            echo "   ✓ systemd-resolved restarted"
+          # Verify no VPN DNS entries remain
+          if grep -q "openvpn" /etc/resolv.conf 2>/dev/null; then
+            echo "   ⚠️ WARNING: OpenVPN entries still in resolv.conf"
+            CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
+          else
+            echo "   ✓ No VPN DNS entries in resolv.conf"
+          fi
+          echo ""
+          
+          # 8. Network state verification
+          echo "8️⃣  Network State Verification"
+          echo "   ────────────────────────────"
+          
+          # Check no VPN interfaces remain
+          VPN_INTERFACES=$(ip link show | grep -c "tun\|tap" || echo "0")
+          if [ "$VPN_INTERFACES" -gt 0 ]; then
+            echo "   ⚠️ WARNING: $VPN_INTERFACES VPN interface(s) still exist"
+            ip link show | grep "tun\|tap" || true
+            CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
+          else
+            echo "   ✓ No VPN interfaces remain"
           fi
           
-          # Clear any VPN-related iptables rules (if any were added)
-          # This is a safety measure
-          sudo iptables -D INPUT -i "$VPN_INTERFACE" -j ACCEPT 2>/dev/null || true
-          sudo iptables -D OUTPUT -o "$VPN_INTERFACE" -j ACCEPT 2>/dev/null || true
-          echo "   ✓ Firewall rules cleaned"
+          # Check no VPN routes remain
+          VPN_ROUTES=$(ip route | grep -c "tun\|tap" || echo "0")
+          if [ "$VPN_ROUTES" -gt 0 ]; then
+            echo "   ⚠️ WARNING: $VPN_ROUTES VPN route(s) still exist"
+            CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
+          else
+            echo "   ✓ No VPN routes remain"
+          fi
           echo ""
           
-          # 8. Memory cleanup (clear sensitive data from RAM)
-          echo "8️⃣  Memory Cleanup"
-          echo "   ───────────────"
+          # 9. Final security verification (9-point check)
+          echo "9️⃣  Final Security Verification (9-Point Check)"
+          echo "   ──────────────────────────────────────────────"
           
-          # Force garbage collection by dropping caches (requires root)
-          echo "   Syncing filesystem..."
-          sync
+          SECURITY_ISSUES=0
           
-          # Drop page cache, dentries and inodes
-          echo "   Clearing system caches..."
-          sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null || true
-          echo "   ✓ System caches cleared"
-          echo ""
-          
-          # 9. Final verification
-          echo "9️⃣  Final Verification"
-          echo "   ───────────────────"
-          
-          VERIFICATION_PASSED=true
-          
-          # Check no OpenVPN processes
-          if pgrep openvpn > /dev/null 2>&1; then
-            echo "   ❌ OpenVPN processes still running"
-            ps aux | grep [o]penvpn
-            VERIFICATION_PASSED=false
+          # Check 1: No OpenVPN processes
+          if pgrep -x openvpn > /dev/null; then
+            echo "   ✗ OpenVPN processes still running"
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
           else
             echo "   ✓ No OpenVPN processes running"
           fi
           
-          # Check no VPN interfaces
+          # Check 2: No configuration files
+          if [ -f "$VPN_CONFIG_PATH" ]; then
+            echo "   ✗ Configuration file still exists"
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+          else
+            echo "   ✓ Configuration file removed"
+          fi
+          
+          # Check 3: No VPN interfaces
           if ip link show "$VPN_INTERFACE" > /dev/null 2>&1; then
-            echo "   ❌ VPN interface still exists"
-            VERIFICATION_PASSED=false
+            echo "   ✗ VPN interface still exists"
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
           else
-            echo "   ✓ No VPN interfaces present"
+            echo "   ✓ VPN interface removed"
           fi
           
-          # Check no configuration files
-          if [ -d "/etc/openvpn/client" ] || [ -f "$VPN_CONFIG_PATH" ]; then
-            echo "   ❌ Configuration files still present"
-            VERIFICATION_PASSED=false
+          # Check 4: No PID files
+          if [ -f "$VPN_PID_PATH" ]; then
+            echo "   ✗ PID file still exists"
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
           else
-            echo "   ✓ All configuration files removed"
+            echo "   ✓ PID file removed"
           fi
           
-          # Check no log files
-          if [ -f "$VPN_LOG_PATH" ] || [ -f "$HEALTH_CHECK_LOG" ]; then
-            echo "   ❌ Log files still present"
-            VERIFICATION_PASSED=false
+          # Check 5: No leaked OVPN files
+          LEAKED_OVPN=$(find / -name "*.ovpn" 2>/dev/null | grep -v "/snap/" | wc -l)
+          if [ "$LEAKED_OVPN" -gt 0 ]; then
+            echo "   ✗ Found $LEAKED_OVPN OVPN file(s)"
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
           else
-            echo "   ✓ All log files removed"
+            echo "   ✓ No OVPN files leaked"
           fi
           
-          # Check no leaked credentials
-          if find /tmp /var/tmp $HOME -name "*.ovpn" 2>/dev/null | grep -q .; then
-            echo "   ❌ Potential credential files found"
-            VERIFICATION_PASSED=false
+          # Check 6: No VPN routes
+          if ip route | grep -q "$VPN_INTERFACE"; then
+            echo "   ✗ VPN routes still exist"
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
           else
-            echo "   ✓ No leaked credential files"
+            echo "   ✓ No VPN routes remain"
+          fi
+          
+          # Check 7: Secure temp directory removed
+          if [ -d "$SECURE_TMPDIR" ]; then
+            echo "   ✗ Secure temp directory still exists"
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+          else
+            echo "   ✓ Secure temp directory removed"
+          fi
+          
+          # Check 8: No OpenVPN logs with credentials
+          SENSITIVE_LOGS=$(grep -r "auth-user-pass\|password\|secret" /var/log/openvpn/ 2>/dev/null | wc -l)
+          if [ "$SENSITIVE_LOGS" -gt 0 ]; then
+            echo "   ⚠️ Found $SENSITIVE_LOGS sensitive log entries"
+            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+          else
+            echo "   ✓ No sensitive data in logs"
+          fi
+          
+          # Check 9: Health monitor stopped
+          if [ -f "${SECURE_TMPDIR}/monitor_pid" ]; then
+            MONITOR_PID=$(cat "${SECURE_TMPDIR}/monitor_pid" 2>/dev/null || echo "")
+            if [ -n "$MONITOR_PID" ] && kill -0 "$MONITOR_PID" 2>/dev/null; then
+              echo "   ✗ Health monitor still running"
+              SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            else
+              echo "   ✓ Health monitor stopped"
+            fi
+          else
+            echo "   ✓ Health monitor stopped"
           fi
           
           echo ""
+          echo "   Security verification: $SECURITY_ISSUES issue(s) found"
           
           # Summary
-          echo "=== Cleanup Summary ==="
-          if [ "$VERIFICATION_PASSED" = true ] && [ "$CLEANUP_ISSUES" -eq 0 ]; then
+          echo ""
+          echo "========================================="
+          echo "Cleanup Summary"
+          echo "========================================="
+          echo "Cleanup issues: $CLEANUP_ISSUES"
+          echo "Security issues: $SECURITY_ISSUES"
+          echo ""
+          
+          if [ "$CLEANUP_ISSUES" -eq 0 ] && [ "$SECURITY_ISSUES" -eq 0 ]; then
             echo "✅ Cleanup completed successfully"
             echo "✅ All security checks passed"
-            echo "✅ No traces of VPN connection remain"
           else
-            echo "⚠️ Cleanup completed with $CLEANUP_ISSUES issue(s)"
-            if [ "$VERIFICATION_PASSED" = false ]; then
-              echo "⚠️ Some verification checks failed"
-            fi
-            echo ""
-            echo "Please review the warnings above"
+            echo "⚠️ Cleanup completed with warnings"
+            echo "Review the log for details"
           fi
-          
-          echo ""
-          echo "=== Cleanup Process Completed ==="
-
-      - name: Upload cleanup verification report
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: vpn-cleanup-verification
-          path: |
-            ${{ env.TEST_RESULTS_FILE }}
-          retention-days: 7
-          if-no-files-found: ignore

@@ -8,7 +8,19 @@ export const typeDefs = `#graphql
     id: ID!
     projectExId: String!
     schemaExId: String!
+    nextGoldenSetId: Int
     copilotType: CopilotType!
+    description: String
+    promptTemplate: String!
+    idealResponse: JSON!
+    createdAt: DateTime!
+    createdBy: String
+    isActive: Boolean!
+    nextGoldenSet: NextGoldenSet
+  }
+
+  type NextGoldenSet {
+    id: ID!
     description: String
     promptTemplate: String!
     idealResponse: JSON!
@@ -104,7 +116,7 @@ export const typeDefs = `#graphql
     id: ID!
     adaptiveRubricId: Int!
     accountId: String!
-    result: Boolean!
+    result: [Boolean!]!
     confidenceScore: [Float!]!
     notes: String
     judgedAt: DateTime!

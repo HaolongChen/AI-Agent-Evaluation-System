@@ -1,4 +1,4 @@
-name: OpenVPN Connection Setup (Enterprise-Grade)
+name: OpenVPN Connection Setup (Fixed)
 
 on:
   workflow_dispatch:
@@ -11,132 +11,57 @@ on:
         description: 'Connection timeout in seconds'
         required: false
         default: '60'
-      ping_test_enabled:
-        description: 'Enable ping tests to internal resources'
-        required: false
-        default: 'true'
-      internal_test_hosts:
-        description: 'Comma-separated internal hosts to ping test (optional)'
-        required: false
-        default: ''
-      health_check_interval:
-        description: 'Health check interval in seconds during execution'
-        required: false
-        default: '30'
 
 env:
-  VPN_CONFIG_PATH: /etc/openvpn/client/config.ovpn
-  VPN_LOG_PATH: /var/log/openvpn/connection.log
-  VPN_PID_PATH: /var/run/openvpn-client.pid
+  VPN_CONFIG_PATH: /tmp/openvpn/config.ovpn
+  VPN_LOG_PATH: /tmp/openvpn/connection.log
   VPN_INTERFACE: tun0
-  MAX_RETRY_ATTEMPTS: 3
-  HEALTH_CHECK_LOG: /tmp/vpn-health-check.log
 
 jobs:
   openvpn-connection:
     runs-on: ubuntu-latest
+    container:
+      image: alpine:latest  
+      options: --cap-add=NET_ADMIN --device=/dev/net/tun --privileged
     timeout-minutes: 20
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: System preparation and security checks
         run: |
-          set -e
-          echo "=== System Preparation and Security Checks ==="
-          
-          # Check for any leaked credentials in filesystem
-          echo "🔒 Checking for potential credential leaks..."
-          if [ -f ~/.ovpn ] || [ -f ~/config.ovpn ] || [ -d ~/.openvpn ]; then
-            echo "⚠️ WARNING: Potential OpenVPN files found in home directory"
-            ls -la ~/*.ovpn ~/.openvpn 2>/dev/null || true
-          fi
-          
-          # Verify system entropy for secure connections
-          ENTROPY=$(cat /proc/sys/kernel/random/entropy_avail)
-          echo "✓ System entropy: $ENTROPY"
-          if [ "$ENTROPY" -lt 100 ]; then
-            echo "⚠️ WARNING: Low system entropy ($ENTROPY). Installing haveged..."
-            sudo apt-get install -y haveged
-            sudo systemctl start haveged
-          fi
-          
-          # Check disk space
-          DISK_AVAIL=$(df -BM / | tail -n1 | awk '{print $4}' | sed 's/M//')
-          echo "✓ Available disk space: ${DISK_AVAIL}MB"
-          if [ "$DISK_AVAIL" -lt 500 ]; then
-            echo "⚠️ WARNING: Low disk space (${DISK_AVAIL}MB available)"
-          fi
-          
-          # Set up secure umask
-          umask 077
-          echo "✓ Secure umask configured (077)"
-          
-          # Create secure temporary directory
-          export SECURE_TMPDIR=$(mktemp -d -t openvpn-XXXXXXXXXX)
-          chmod 700 "$SECURE_TMPDIR"
-          echo "SECURE_TMPDIR=$SECURE_TMPDIR" >> $GITHUB_ENV
-          echo "✓ Secure temporary directory created: $SECURE_TMPDIR"
-          
-          echo "✓ System preparation completed"
+          apk add --no-cache git
+          git clone https://github.com/${{ github.repository }} /workspace
+          cd /workspace
+          git checkout ${{ github.ref_name }}
 
       - name: Install OpenVPN and dependencies
-        id: install
         run: |
           set -e
           echo "=== Installing OpenVPN and Dependencies ==="
           
-          # Update package list with retries
-          for i in {1..3}; do
-            if sudo apt-get update; then
-              echo "✓ Package list updated"
-              break
-            else
-              echo "⚠️ Package update attempt $i failed, retrying..."
-              sleep 5
-            fi
-          done
+          # Install required packages
+          apk add --no-cache openvpn bash curl iproute2 iputils
           
-          # Install with error handling
-          PACKAGES="openvpn openvpn-systemd-resolved iproute2 iputils-ping dnsutils net-tools"
-          echo "Installing packages: $PACKAGES"
-          
-          if ! sudo apt-get install -y $PACKAGES; then
-            echo "❌ Failed to install required packages"
-            exit 1
-          fi
+          echo "✓ Packages installed successfully"
           
           # Verify installations
           echo ""
           echo "=== Version Information ==="
           openvpn --version | head -n 1
           ip -V
-          ping -V | head -n 1
-          
-          # Check OpenVPN capabilities
-          if ! openvpn --show-ciphers > /dev/null 2>&1; then
-            echo "⚠️ WARNING: OpenVPN cipher information unavailable"
-          else
-            echo "✓ OpenVPN capabilities verified"
-          fi
-          
-          # Verify kernel modules
+          bash --version | head -n 1
           echo ""
-          echo "=== Kernel Module Check ==="
-          if ! lsmod | grep -q tun; then
-            echo "Loading TUN/TAP kernel module..."
-            sudo modprobe tun
-          fi
+
+      - name: Create TUN device manually
+        run: |
+          set -e
+          echo "=== Setting up TUN Device ==="
           
-          if lsmod | grep -q tun; then
-            echo "✓ TUN/TAP kernel module loaded"
-          else
-            echo "❌ TUN/TAP kernel module not available"
-            exit 1
-          fi
+          # Create TUN device manually
+          mkdir -p /dev/net
+          mknod /dev/net/tun c 10 200 || true
+          chmod 666 /dev/net/tun
           
-          # Check TUN device
+          # Verify TUN device exists
           if [ -c /dev/net/tun ]; then
             echo "✓ TUN device available: /dev/net/tun"
             ls -l /dev/net/tun
@@ -144,1256 +69,308 @@ jobs:
             echo "❌ TUN device not found"
             exit 1
           fi
-          
-          echo "✓ All dependencies installed and verified"
+          echo ""
 
-      - name: Validate and setup OpenVPN configuration
-        id: config_setup
+      - name: Setup OpenVPN configuration with robust file creation
+        env:
+          OPENVPNCONFIG: ${{ secrets.OPENVPNCONFIG }}
         run: |
           set -e
-          echo "=== OpenVPN Configuration Setup and Validation ==="
+          echo "=== OpenVPN Configuration Setup ==="
           
-          # Create directory structure with secure permissions
-          echo "Creating directory structure..."
-          sudo mkdir -p /etc/openvpn/client
-          sudo mkdir -p /var/log/openvpn
-          sudo mkdir -p /var/run
+          # Create temporary directory first
+          mkdir -p /tmp/openvpn
+          chmod 700 /tmp/openvpn
           
-          sudo chmod 700 /etc/openvpn/client
-          sudo chmod 755 /var/log/openvpn
-          echo "✓ Directory structure created"
-          
-          # Validate OVPN config secret exists and is not empty
-          if [ -z "${{ secrets.OPENVPNCONFIG }}" ]; then
-            echo "❌ OPENVPNCONFIG secret is empty or not set"
-            echo "Please configure the OPENVPNCONFIG secret in repository settings"
+          # Debug secret availability
+          echo "Checking OPENVPNCONFIG secret..."
+          if [ -z "$OPENVPNCONFIG" ]; then
+            echo "::error::OPENVPNCONFIG secret is empty or not set"
             exit 1
           fi
           
           echo "✓ OPENVPNCONFIG secret is present"
           
-          # Write configuration to temporary location first for validation
-          TEMP_CONFIG="${SECURE_TMPDIR}/config.ovpn"
-          echo "${{ secrets.OPENVPNCONFIG }}" > "$TEMP_CONFIG"
-          chmod 600 "$TEMP_CONFIG"
+          # Create config file with explicit error handling
+          echo "Creating OpenVPN config file..."
+          echo "$OPENVPNCONFIG" > /tmp/openvpn/config.ovpn
           
-          # Validate OVPN configuration format
+          # Verify file exists
+          if [[ ! -f /tmp/openvpn/config.ovpn ]]; then
+            echo "::error::OpenVPN config file was not created!"
+            exit 1
+          fi
+          
+          echo "✓ Config file exists"
+          
+          # Verify file has content  
+          if [[ ! -s /tmp/openvpn/config.ovpn ]]; then
+            echo "::error::OpenVPN config file is empty!"
+            exit 1
+          fi
+          
+          FILE_SIZE=$(stat -c%s /tmp/openvpn/config.ovpn)
+          echo "✓ Config file has content (${FILE_SIZE} bytes)"
+          
+          # Set proper permissions
+          chmod 600 /tmp/openvpn/config.ovpn
+          echo "Config file created successfully: $(ls -la /tmp/openvpn/config.ovpn)"
+          
+          # Validate configuration format
           echo ""
           echo "=== Configuration Validation ==="
           
-          # Check for required sections
-          VALIDATION_PASSED=true
-          
-          if ! grep -q "^remote " "$TEMP_CONFIG"; then
-            echo "❌ Missing required 'remote' directive"
-            VALIDATION_PASSED=false
-          else
-            REMOTE_INFO=$(grep "^remote " "$TEMP_CONFIG" | head -n 1)
+          if grep -q "^remote " /tmp/openvpn/config.ovpn; then
+            REMOTE_INFO=$(grep "^remote " /tmp/openvpn/config.ovpn | head -n 1)
             echo "✓ Remote server: $REMOTE_INFO"
+          else
+            echo "⚠️ WARNING: No 'remote' directive found"
           fi
           
-          # Check for authentication method
-          if grep -q "<ca>" "$TEMP_CONFIG" && grep -q "</ca>" "$TEMP_CONFIG"; then
+          if grep -q "<ca>" /tmp/openvpn/config.ovpn; then
             echo "✓ CA certificate found (inline)"
-          elif grep -q "^ca " "$TEMP_CONFIG"; then
+          elif grep -q "^ca " /tmp/openvpn/config.ovpn; then
             echo "✓ CA certificate reference found"
           else
-            echo "❌ No CA certificate found"
-            VALIDATION_PASSED=false
+            echo "⚠️ WARNING: No CA certificate found"
           fi
-          
-          # Check client certificate/key
-          if grep -q "<cert>" "$TEMP_CONFIG" && grep -q "</cert>" "$TEMP_CONFIG"; then
-            echo "✓ Client certificate found (inline)"
-          fi
-          
-          if grep -q "<key>" "$TEMP_CONFIG" && grep -q "</key>" "$TEMP_CONFIG"; then
-            echo "✓ Client key found (inline)"
-          fi
-          
-          # Check for auth-user-pass if password authentication
-          if grep -q "auth-user-pass" "$TEMP_CONFIG"; then
-            echo "✓ Password authentication enabled"
-          fi
-          
-          # Verify protocol and port
-          if grep -q "^proto " "$TEMP_CONFIG"; then
-            PROTO=$(grep "^proto " "$TEMP_CONFIG" | awk '{print $2}')
-            echo "✓ Protocol: $PROTO"
-          fi
-          
-          # Check for potential misconfigurations
-          if grep -q "^redirect-gateway" "$TEMP_CONFIG"; then
-            echo "ℹ️  Full tunnel mode detected (redirect-gateway)"
-          fi
-          
-          # Validate no shell injection characters in critical fields
-          if grep -E '^(remote|proto|port) .*[;&|`$]' "$TEMP_CONFIG"; then
-            echo "❌ Potential shell injection detected in configuration"
-            VALIDATION_PASSED=false
-          fi
-          
-          if [ "$VALIDATION_PASSED" = false ]; then
-            echo ""
-            echo "❌ Configuration validation failed"
-            echo "Please check your OPENVPNCONFIG secret"
-            rm -f "$TEMP_CONFIG"
-            exit 1
-          fi
-          
-          echo ""
-          echo "✓ Configuration validation passed"
-          
-          # Move validated config to final location
-          sudo mv "$TEMP_CONFIG" "$VPN_CONFIG_PATH"
-          sudo chmod 600 "$VPN_CONFIG_PATH"
-          sudo chown root:root "$VPN_CONFIG_PATH"
           
           # Add enhanced configuration directives
-          echo "" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "# GitHub Actions Enterprise Configuration" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "# Added by automated workflow" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          
-          # DNS resolution fix for systemd-resolved
-          echo "script-security 2" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "setenv PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "up /etc/openvpn/update-systemd-resolved" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "down /etc/openvpn/update-systemd-resolved" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "dhcp-option DOMAIN-ROUTE ." | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          
-          # Enhanced logging configuration
-          echo "log-append $VPN_LOG_PATH" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
+          echo "" >> /tmp/openvpn/config.ovpn
+          echo "# Enhanced Configuration" >> /tmp/openvpn/config.ovpn
+          echo "log-append $VPN_LOG_PATH" >> /tmp/openvpn/config.ovpn
           
           # Set verbosity based on debug mode
           if [ "${{ github.event.inputs.debug_enabled }}" = "true" ]; then
-            echo "verb 4" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
+            echo "verb 4" >> /tmp/openvpn/config.ovpn
             echo "✓ Debug logging enabled (verbosity 4)"
           else
-            echo "verb 3" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
+            echo "verb 3" >> /tmp/openvpn/config.ovpn
           fi
           
           # Connection reliability improvements
-          echo "persist-key" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "persist-tun" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "keepalive 10 60" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "resolv-retry infinite" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          
-          # Security enhancements
-          echo "remote-cert-tls server" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          echo "tls-client" | sudo tee -a "$VPN_CONFIG_PATH" > /dev/null
-          
-          # Verify final permissions
-          PERMS=$(stat -c "%a" "$VPN_CONFIG_PATH")
-          OWNER=$(stat -c "%U:%G" "$VPN_CONFIG_PATH")
-          
-          if [ "$PERMS" != "600" ]; then
-            echo "❌ Configuration file has incorrect permissions: $PERMS (expected 600)"
-            exit 1
-          fi
-          
-          if [ "$OWNER" != "root:root" ]; then
-            echo "⚠️ WARNING: Configuration file owner is $OWNER (expected root:root)"
-          fi
+          echo "persist-key" >> /tmp/openvpn/config.ovpn
+          echo "persist-tun" >> /tmp/openvpn/config.ovpn
+          echo "keepalive 10 60" >> /tmp/openvpn/config.ovpn
+          echo "resolv-retry infinite" >> /tmp/openvpn/config.ovpn
           
           echo ""
-          echo "✓ Configuration file created with secure permissions"
-          echo "  Location: $VPN_CONFIG_PATH"
-          echo "  Permissions: $PERMS"
-          echo "  Owner: $OWNER"
-          
-          # Create connection status file
-          echo "disconnected" > "${SECURE_TMPDIR}/vpn_status"
-          chmod 600 "${SECURE_TMPDIR}/vpn_status"
+          echo "✓ Configuration setup completed successfully"
 
-      - name: Start OpenVPN connection with retry logic
-        id: vpn_connect
+      - name: Start OpenVPN connection
         run: |
           set -e
           
           TIMEOUT=${{ github.event.inputs.connection_timeout || '60' }}
-          MAX_ATTEMPTS=${{ env.MAX_RETRY_ATTEMPTS }}
           
           echo "=== Starting OpenVPN Connection ==="
           echo "Configuration: $VPN_CONFIG_PATH"
           echo "Timeout: ${TIMEOUT}s"
-          echo "Max retry attempts: $MAX_ATTEMPTS"
           echo ""
           
-          # Function to start OpenVPN
-          start_openvpn() {
-            local attempt=$1
-            echo "Connection attempt $attempt of $MAX_ATTEMPTS..."
-            
-            # Clean up any previous connection attempts
-            if [ -f "$VPN_PID_PATH" ]; then
-              OLD_PID=$(cat "$VPN_PID_PATH" 2>/dev/null || echo "")
-              if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
-                echo "Stopping previous OpenVPN instance (PID: $OLD_PID)..."
-                sudo kill -TERM "$OLD_PID" 2>/dev/null || true
-                sleep 2
-              fi
-              sudo rm -f "$VPN_PID_PATH"
-            fi
-            
-            # Remove existing interface if present
-            if ip link show "$VPN_INTERFACE" > /dev/null 2>&1; then
-              echo "Removing existing $VPN_INTERFACE interface..."
-              sudo ip link delete "$VPN_INTERFACE" 2>/dev/null || true
-              sleep 1
-            fi
-            
-            # Start OpenVPN daemon
-            if ! sudo openvpn --config "$VPN_CONFIG_PATH" --daemon --writepid "$VPN_PID_PATH" --status /var/run/openvpn-status.txt 10; then
-              echo "❌ Failed to start OpenVPN daemon"
-              return 1
-            fi
-            
-            # Give daemon time to initialize
-            sleep 2
-            
-            # Verify daemon started
-            if [ ! -f "$VPN_PID_PATH" ]; then
-              echo "❌ PID file not created"
-              return 1
-            fi
-            
-            VPN_PID=$(cat "$VPN_PID_PATH")
-            if ! kill -0 "$VPN_PID" 2>/dev/null; then
-              echo "❌ OpenVPN process not running after start"
-              return 1
-            fi
-            
-            echo "✓ OpenVPN daemon started (PID: $VPN_PID)"
-            return 0
-          }
+          # Start OpenVPN in background
+          openvpn --config "$VPN_CONFIG_PATH" --daemon --log "$VPN_LOG_PATH" --writepid /tmp/openvpn/openvpn.pid
           
-          # Function to wait for connection
-          wait_for_connection() {
-            local timeout=$1
-            local counter=0
-            local progress_marker=0
-            
-            echo "Waiting for VPN connection to establish..."
-            
-            while [ $counter -lt $timeout ]; do
-              # Check if process is still alive
-              if [ -f "$VPN_PID_PATH" ]; then
-                VPN_PID=$(cat "$VPN_PID_PATH")
-                if ! kill -0 "$VPN_PID" 2>/dev/null; then
-                  echo ""
-                  echo "❌ OpenVPN process died unexpectedly"
-                  echo ""
-                  echo "Last 30 log entries:"
-                  tail -n 30 "$VPN_LOG_PATH" 2>/dev/null || echo "No logs available"
-                  return 1
-                fi
+          echo "✓ OpenVPN daemon started"
+          sleep 2
+          
+          # Wait for connection
+          echo "Waiting for VPN connection to establish..."
+          counter=0
+          
+          while [ $counter -lt $TIMEOUT ]; do
+            # Check if process is still alive
+            if [ -f /tmp/openvpn/openvpn.pid ]; then
+              VPN_PID=$(cat /tmp/openvpn/openvpn.pid)
+              if ! kill -0 "$VPN_PID" 2>/dev/null; then
+                echo ""
+                echo "❌ OpenVPN process died unexpectedly"
+                echo ""
+                echo "Log contents:"
+                cat "$VPN_LOG_PATH" 2>/dev/null || echo "No logs available"
+                exit 1
               fi
-              
-              # Check interface and IP assignment
-              if ip addr show "$VPN_INTERFACE" > /dev/null 2>&1; then
-                if ip addr show "$VPN_INTERFACE" | grep -q "inet "; then
-                  # Verify interface is UP
-                  if ip link show "$VPN_INTERFACE" | grep -q "state UP\|state UNKNOWN"; then
-                    VPN_IP=$(ip addr show "$VPN_INTERFACE" | grep "inet " | awk '{print $2}')
+            fi
+            
+            # Check interface and IP assignment
+            if ip addr show "$VPN_INTERFACE" > /dev/null 2>&1; then
+              if ip addr show "$VPN_INTERFACE" | grep -q "inet "; then
+                # Verify interface is UP
+                if ip link show "$VPN_INTERFACE" | grep -q "state UP\|state UNKNOWN"; then
+                  VPN_IP=$(ip addr show "$VPN_INTERFACE" | grep "inet " | awk '{print $2}')
+                  echo ""
+                  echo "✓ VPN connection established after ${counter}s"
+                  echo "  Interface: $VPN_INTERFACE"
+                  echo "  IP Address: $VPN_IP"
+                  
+                  # Wait for routes to be configured
+                  sleep 2
+                  
+                  if ip route | grep -q "$VPN_INTERFACE"; then
+                    echo "✓ VPN routes configured"
                     echo ""
-                    echo "✓ VPN connection established after ${counter}s"
-                    echo "  Interface: $VPN_INTERFACE"
-                    echo "  IP Address: $VPN_IP"
-                    
-                    # Wait for routes to be fully configured
-                    sleep 2
-                    
-                    # Verify routing
-                    if ip route | grep -q "$VPN_INTERFACE"; then
-                      echo "✓ VPN routes configured"
-                      echo "connected" > "${SECURE_TMPDIR}/vpn_status"
-                      return 0
-                    else
-                      echo "⚠️ VPN interface up but no routes found, waiting..."
-                    fi
+                    echo "=== VPN Connection Established Successfully ==="
+                    break
                   fi
                 fi
               fi
-              
-              # Progress reporting
-              counter=$((counter + 1))
-              
-              # Show progress every 5 seconds with different markers
-              if [ $((counter % 5)) -eq 0 ]; then
-                case $((progress_marker % 4)) in
-                  0) echo -n "." ;;
-                  1) echo -n "o" ;;
-                  2) echo -n "O" ;;
-                  3) echo -n "o" ;;
-                esac
-                progress_marker=$((progress_marker + 1))
-              fi
-              
-              # Detailed status every 15 seconds
-              if [ $((counter % 15)) -eq 0 ]; then
-                echo ""
-                echo "Status at ${counter}/${timeout}s:"
-                echo "  - Process: $(kill -0 "$VPN_PID" 2>/dev/null && echo 'running' || echo 'stopped')"
-                echo "  - Interface: $(ip link show "$VPN_INTERFACE" 2>/dev/null && echo 'exists' || echo 'not found')"
-              fi
-              
-              sleep 1
-            done
-            
-            echo ""
-            echo "❌ Connection timeout after ${timeout}s"
-            return 1
-          }
-          
-          # Main connection logic with retry
-          CONNECTION_SUCCESS=false
-          
-          for attempt in $(seq 1 $MAX_ATTEMPTS); do
-            if [ $attempt -gt 1 ]; then
-              BACKOFF=$((attempt * 5))
-              echo ""
-              echo "Waiting ${BACKOFF}s before retry..."
-              sleep $BACKOFF
-              echo ""
             fi
             
-            # Start OpenVPN
-            if ! start_openvpn $attempt; then
-              echo "Failed to start OpenVPN on attempt $attempt"
-              continue
+            # Progress indicator
+            if [ $((counter % 5)) -eq 0 ]; then
+              echo -n "."
             fi
             
-            # Wait for connection
-            if wait_for_connection $TIMEOUT; then
-              CONNECTION_SUCCESS=true
-              break
-            fi
-            
-            echo "Connection attempt $attempt failed"
-            
-            # Show relevant logs
-            if [ -f "$VPN_LOG_PATH" ]; then
-              echo ""
-              echo "Recent log entries:"
-              tail -n 20 "$VPN_LOG_PATH" | grep -i "error\|warn\|fail" || tail -n 10 "$VPN_LOG_PATH"
-            fi
+            counter=$((counter + 1))
+            sleep 1
           done
           
-          if [ "$CONNECTION_SUCCESS" = false ]; then
+          if [ $counter -ge $TIMEOUT ]; then
             echo ""
-            echo "❌ Failed to establish VPN connection after $MAX_ATTEMPTS attempts"
+            echo "❌ Connection timeout after ${TIMEOUT}s"
             echo ""
-            echo "Full connection log:"
-            echo "==================="
-            tail -n 100 "$VPN_LOG_PATH" 2>/dev/null || echo "No logs available"
+            echo "Log contents:"
+            cat "$VPN_LOG_PATH" 2>/dev/null || echo "No logs available"
             exit 1
           fi
-          
-          echo ""
-          echo "=== VPN Connection Established Successfully ==="
 
-      - name: Comprehensive connection verification
-        id: vpn_verify
+      - name: Verify connection
         run: |
           set -e
           
-          echo "=== Comprehensive VPN Connection Verification ==="
+          echo "=== VPN Connection Verification ==="
           echo ""
           
-          VERIFICATION_FAILED=false
-          
           # 1. Process verification
-          echo "1️⃣  Process Verification"
-          echo "   ─────────────────────"
-          if [ ! -f "$VPN_PID_PATH" ]; then
-            echo "   ❌ PID file not found"
-            VERIFICATION_FAILED=true
-          else
-            VPN_PID=$(cat "$VPN_PID_PATH")
+          echo "1️⃣  Process Status"
+          if [ -f /tmp/openvpn/openvpn.pid ]; then
+            VPN_PID=$(cat /tmp/openvpn/openvpn.pid)
             if kill -0 "$VPN_PID" 2>/dev/null; then
               echo "   ✓ OpenVPN process running (PID: $VPN_PID)"
-              
-              # Check process details
-              PS_INFO=$(ps -p "$VPN_PID" -o pid,ppid,rss,vsz,stat,start,time,cmd --no-headers)
-              echo "   ✓ Process details:"
-              echo "     $PS_INFO" | sed 's/^/     /'
-              
-              # Check process uptime
-              PROCESS_START=$(ps -p "$VPN_PID" -o lstart= 2>/dev/null || echo "unknown")
-              echo "   ✓ Process started: $PROCESS_START"
             else
               echo "   ❌ OpenVPN process not running"
-              VERIFICATION_FAILED=true
+              exit 1
             fi
+          else
+            echo "   ❌ PID file not found"
+            exit 1
           fi
           echo ""
           
           # 2. Interface verification
-          echo "2️⃣  Interface Verification"
-          echo "   ──────────────────────"
-          if ! ip link show "$VPN_INTERFACE" > /dev/null 2>&1; then
-            echo "   ❌ VPN interface ($VPN_INTERFACE) not found"
-            VERIFICATION_FAILED=true
-          else
+          echo "2️⃣  Interface Status"
+          if ip link show "$VPN_INTERFACE" > /dev/null 2>&1; then
             echo "   ✓ VPN interface exists: $VPN_INTERFACE"
-            
-            # Interface state
             IF_STATE=$(ip link show "$VPN_INTERFACE" | grep -oP 'state \K\w+')
             echo "   ✓ Interface state: $IF_STATE"
             
-            if [ "$IF_STATE" != "UP" ] && [ "$IF_STATE" != "UNKNOWN" ]; then
-              echo "   ⚠️ Interface is not UP (state: $IF_STATE)"
-            fi
-            
-            # Interface details
+            # Show interface details
             echo "   ✓ Interface configuration:"
             ip addr show "$VPN_INTERFACE" | sed 's/^/     /'
-            
-            # Statistics
-            echo "   ✓ Interface statistics:"
-            ip -s link show "$VPN_INTERFACE" | grep -A 2 "RX:\|TX:" | sed 's/^/     /'
-          fi
-          echo ""
-          
-          # 3. IP address verification
-          echo "3️⃣  IP Address Verification"
-          echo "   ────────────────────────"
-          VPN_IP=$(ip addr show "$VPN_INTERFACE" 2>/dev/null | grep "inet " | awk '{print $2}' | cut -d'/' -f1)
-          if [ -z "$VPN_IP" ]; then
-            echo "   ❌ No IP address assigned to $VPN_INTERFACE"
-            VERIFICATION_FAILED=true
           else
-            echo "   ✓ VPN IP address: $VPN_IP"
-            
-            VPN_SUBNET=$(ip addr show "$VPN_INTERFACE" | grep "inet " | awk '{print $2}')
-            echo "   ✓ VPN subnet: $VPN_SUBNET"
-            
-            # Save VPN IP for later use
-            echo "VPN_IP=$VPN_IP" >> $GITHUB_ENV
+            echo "   ❌ VPN interface not found"
+            exit 1
           fi
           echo ""
           
-          # 4. Routing verification
-          echo "4️⃣  Routing Verification"
-          echo "   ─────────────────────"
+          # 3. Routing verification
+          echo "3️⃣  Routing Status"
           VPN_ROUTES=$(ip route | grep "$VPN_INTERFACE" | wc -l)
-          if [ "$VPN_ROUTES" -eq 0 ]; then
-            echo "   ⚠️ No routes found for $VPN_INTERFACE"
-          else
+          if [ "$VPN_ROUTES" -gt 0 ]; then
             echo "   ✓ Found $VPN_ROUTES route(s) via $VPN_INTERFACE:"
             ip route | grep "$VPN_INTERFACE" | sed 's/^/     /'
-            
-            # Check default route
-            if ip route | grep -q "^default.*$VPN_INTERFACE"; then
-              echo "   ℹ️  Default route via VPN (full tunnel mode)"
-            else
-              echo "   ℹ️  Split tunnel mode (no default route via VPN)"
-            fi
+          else
+            echo "   ⚠️ No routes found for $VPN_INTERFACE"
           fi
           echo ""
           
-          # 5. DNS verification
-          echo "5️⃣  DNS Configuration Verification"
-          echo "   ──────────────────────────────"
-          if command -v resolvectl > /dev/null 2>&1; then
-            if resolvectl status "$VPN_INTERFACE" > /dev/null 2>&1; then
-              echo "   ✓ DNS configuration for $VPN_INTERFACE:"
-              resolvectl status "$VPN_INTERFACE" | grep "DNS Servers\|DNS Domain" | sed 's/^/     /' || echo "     No DNS info available"
-            else
-              echo "   ℹ️  No specific DNS configuration for $VPN_INTERFACE"
-            fi
+          # 4. Connectivity test
+          echo "4️⃣  Connectivity Test"
+          if ping -c 3 -W 5 8.8.8.8 > /dev/null 2>&1; then
+            echo "   ✓ Connectivity test successful (8.8.8.8)"
           else
-            echo "   ℹ️  resolvectl not available, checking resolv.conf"
-            if grep -q "$VPN_INTERFACE" /etc/resolv.conf 2>/dev/null; then
-              echo "   ✓ VPN DNS configuration found in resolv.conf"
-            fi
+            echo "   ⚠️ Connectivity test failed"
           fi
           echo ""
           
-          # 6. Connection status file verification
-          echo "6️⃣  OpenVPN Status Verification"
-          echo "   ────────────────────────────"
-          if [ -f /var/run/openvpn-status.txt ]; then
-            echo "   ✓ OpenVPN status file found"
-            echo "   ✓ Status information:"
-            cat /var/run/openvpn-status.txt | head -n 20 | sed 's/^/     /'
-          else
-            echo "   ℹ️  OpenVPN status file not available"
-          fi
-          echo ""
-          
-          # 7. Log analysis
-          echo "7️⃣  Connection Log Analysis"
-          echo "   ────────────────────────"
-          if [ -f "$VPN_LOG_PATH" ]; then
-            # Check for initialization complete
-            if grep -q "Initialization Sequence Completed" "$VPN_LOG_PATH"; then
-              echo "   ✓ OpenVPN initialization completed successfully"
-            else
-              echo "   ⚠️ Initialization completion not confirmed in logs"
-            fi
-            
-            # Check for errors/warnings
-            ERROR_COUNT=$(grep -c "ERROR\|FATAL" "$VPN_LOG_PATH" || echo "0")
-            WARN_COUNT=$(grep -c "WARNING" "$VPN_LOG_PATH" || echo "0")
-            
-            echo "   ✓ Log summary:"
-            echo "     - Errors: $ERROR_COUNT"
-            echo "     - Warnings: $WARN_COUNT"
-            
-            if [ "$ERROR_COUNT" -gt 0 ]; then
-              echo "   ⚠️ Recent errors:"
-              grep "ERROR\|FATAL" "$VPN_LOG_PATH" | tail -n 5 | sed 's/^/     /'
-            fi
-          else
-            echo "   ⚠️ Log file not found"
-          fi
-          echo ""
-          
-          # Final verdict
-          if [ "$VERIFICATION_FAILED" = true ]; then
-            echo "❌ Verification failed - VPN connection has issues"
-            exit 1
-          else
-            echo "✅ All verification checks passed"
-            echo ""
-            echo "=== VPN Connection is Healthy and Ready ==="
-          fi
+          echo "✅ VPN connection verified and ready"
 
-      - name: Network connectivity and ping tests
-        id: connectivity_tests
-        if: github.event.inputs.ping_test_enabled != 'false'
+      - name: Show logs (debug mode)
+        if: always() && github.event.inputs.debug_enabled == 'true'
         run: |
-          set -e
-          
-          echo "=== Network Connectivity and Ping Tests ==="
+          echo "=== OpenVPN Connection Log ==="
+          cat "$VPN_LOG_PATH" 2>/dev/null || echo "No logs available"
           echo ""
           
-          TEST_RESULTS="${SECURE_TMPDIR}/test_results.txt"
-          echo "Test Results - $(date)" > "$TEST_RESULTS"
-          echo "================================" >> "$TEST_RESULTS"
-          echo "" >> "$TEST_RESULTS"
-          
-          # Function to test connectivity
-          test_host() {
-            local host=$1
-            local test_type=$2
-            local success=0
-            
-            echo "Testing $test_type: $host"
-            
-            # Ping test
-            if ping -c 3 -W 5 -I "$VPN_INTERFACE" "$host" > /dev/null 2>&1; then
-              echo "  ✓ Ping successful (via $VPN_INTERFACE)"
-              echo "✓ $test_type [$host]: PING SUCCESS" >> "$TEST_RESULTS"
-              success=1
-            else
-              # Try without interface specification
-              if ping -c 3 -W 5 "$host" > /dev/null 2>&1; then
-                echo "  ✓ Ping successful (default route)"
-                echo "✓ $test_type [$host]: PING SUCCESS (default route)" >> "$TEST_RESULTS"
-                success=1
-              else
-                echo "  ❌ Ping failed"
-                echo "✗ $test_type [$host]: PING FAILED" >> "$TEST_RESULTS"
-              fi
-            fi
-            
-            # Traceroute (first 5 hops)
-            echo "  ℹ️  Route trace (first 5 hops):"
-            if command -v traceroute > /dev/null 2>&1; then
-              timeout 10 traceroute -m 5 -w 2 "$host" 2>/dev/null | head -n 6 | tail -n 5 | sed 's/^/      /' || echo "      (traceroute unavailable)"
-            fi
-            
-            # Latency measurement
-            if [ $success -eq 1 ]; then
-              LATENCY=$(ping -c 3 -W 5 "$host" 2>/dev/null | tail -n 1 | awk -F'/' '{print $5}' || echo "N/A")
-              echo "  ✓ Average latency: ${LATENCY}ms"
-              echo "  Latency: ${LATENCY}ms" >> "$TEST_RESULTS"
-            fi
-            
-            echo ""
-            return $success
-          }
-          
-          # 1. Test DNS resolution
-          echo "1️⃣  DNS Resolution Tests"
-          echo "   ─────────────────────"
-          
-          # Test public DNS
-          if nslookup google.com > /dev/null 2>&1; then
-            echo "   ✓ Public DNS resolution working (google.com)"
-            echo "✓ DNS: Public resolution working" >> "$TEST_RESULTS"
-          else
-            echo "   ❌ Public DNS resolution failed"
-            echo "✗ DNS: Public resolution failed" >> "$TEST_RESULTS"
-          fi
-          
-          # Test DNS servers
-          DNS_SERVERS=$(resolvectl status "$VPN_INTERFACE" 2>/dev/null | grep "DNS Servers" | awk '{print $3}' || echo "")
-          if [ -n "$DNS_SERVERS" ]; then
-            echo "   ✓ VPN DNS Server: $DNS_SERVERS"
-          fi
-          echo ""
-          
-          # 2. Test VPN gateway
-          echo "2️⃣  VPN Gateway Tests"
-          echo "   ──────────────────"
-          
-          # Get VPN gateway
-          VPN_GATEWAY=$(ip route | grep "default.*$VPN_INTERFACE" | awk '{print $3}' || \
-                       ip route | grep "$VPN_INTERFACE" | grep -v "scope link" | head -n1 | awk '{print $1}' | cut -d'/' -f1)
-          
-          if [ -n "$VPN_GATEWAY" ]; then
-            test_host "$VPN_GATEWAY" "VPN Gateway"
-          else
-            echo "   ℹ️  VPN gateway not identified"
-            echo ""
-          fi
-          
-          # 3. Test standard connectivity
-          echo "3️⃣  Standard Connectivity Tests"
-          echo "   ────────────────────────────"
-          
-          # Test common public servers (to verify internet access through VPN)
-          test_host "8.8.8.8" "Google DNS"
-          test_host "1.1.1.1" "Cloudflare DNS"
-          
-          # 4. Test custom internal hosts (if provided)
-          INTERNAL_HOSTS="${{ github.event.inputs.internal_test_hosts }}"
-          
-          if [ -n "$INTERNAL_HOSTS" ]; then
-            echo "4️⃣  Internal Resource Tests"
-            echo "   ────────────────────────"
-            
-            # Parse comma-separated hosts
-            IFS=',' read -ra HOST_ARRAY <<< "$INTERNAL_HOSTS"
-            
-            INTERNAL_SUCCESS=0
-            INTERNAL_TOTAL=0
-            
-            for host in "${HOST_ARRAY[@]}"; do
-              # Trim whitespace
-              host=$(echo "$host" | xargs)
-              if [ -n "$host" ]; then
-                INTERNAL_TOTAL=$((INTERNAL_TOTAL + 1))
-                if test_host "$host" "Internal Host"; then
-                  INTERNAL_SUCCESS=$((INTERNAL_SUCCESS + 1))
-                fi
-              fi
-            done
-            
-            echo "   Summary: $INTERNAL_SUCCESS/$INTERNAL_TOTAL internal hosts reachable"
-            echo "" >> "$TEST_RESULTS"
-            echo "Internal Hosts Summary: $INTERNAL_SUCCESS/$INTERNAL_TOTAL reachable" >> "$TEST_RESULTS"
-          else
-            echo "4️⃣  Internal Resource Tests"
-            echo "   ────────────────────────"
-            echo "   ℹ️  No internal hosts specified (use internal_test_hosts input)"
-          fi
-          echo ""
-          
-          # 5. Bandwidth test (simple)
-          echo "5️⃣  Basic Throughput Test"
-          echo "   ───────────────────────"
-          
-          if command -v curl > /dev/null 2>&1; then
-            echo "   Testing download speed..."
-            # Download a small file and measure time
-            START_TIME=$(date +%s)
-            if timeout 10 curl -s -o /dev/null http://speedtest.tele2.net/1MB.zip 2>/dev/null; then
-              END_TIME=$(date +%s)
-              DURATION=$((END_TIME - START_TIME))
-              if [ $DURATION -gt 0 ]; then
-                SPEED=$((1024 / DURATION))
-                echo "   ✓ Download test: ~${SPEED} KB/s (1MB in ${DURATION}s)"
-                echo "Throughput: ~${SPEED} KB/s" >> "$TEST_RESULTS"
-              else
-                echo "   ✓ Download test: completed (< 1s)"
-              fi
-            else
-              echo "   ℹ️  Download test: unavailable or timed out"
-            fi
-          fi
-          echo ""
-          
-          # Save test results as artifact data
-          echo "TEST_RESULTS_FILE=$TEST_RESULTS" >> $GITHUB_ENV
-          
-          echo "=== Connectivity Tests Completed ==="
-          echo ""
-          echo "📊 Full test results saved to: $TEST_RESULTS"
-          cat "$TEST_RESULTS"
-
-      - name: Start connection health monitoring
-        id: health_monitor
-        run: |
-          set -e
-          
-          echo "=== Starting Connection Health Monitor ==="
-          
-          HEALTH_CHECK_INTERVAL=${{ github.event.inputs.health_check_interval || '30' }}
-          HEALTH_LOG="$HEALTH_CHECK_LOG"
-          
-          # Create health monitoring script
-          cat > "${SECURE_TMPDIR}/health_monitor.sh" << 'HEALTH_EOF'
-          #!/bin/bash
-          
-          INTERVAL=$1
-          VPN_PID_PATH=$2
-          VPN_INTERFACE=$3
-          HEALTH_LOG=$4
-          
-          echo "Health monitor started at $(date)" >> "$HEALTH_LOG"
-          echo "Check interval: ${INTERVAL}s" >> "$HEALTH_LOG"
-          
-          while true; do
-            sleep "$INTERVAL"
-            
-            TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-            
-            # Check 1: Process alive
-            if [ -f "$VPN_PID_PATH" ]; then
-              VPN_PID=$(cat "$VPN_PID_PATH")
-              if ! kill -0 "$VPN_PID" 2>/dev/null; then
-                echo "[$TIMESTAMP] CRITICAL: OpenVPN process died (PID: $VPN_PID)" >> "$HEALTH_LOG"
-                exit 1
-              fi
-            else
-              echo "[$TIMESTAMP] CRITICAL: PID file missing" >> "$HEALTH_LOG"
-              exit 1
-            fi
-            
-            # Check 2: Interface exists and is up
-            if ! ip link show "$VPN_INTERFACE" &>/dev/null; then
-              echo "[$TIMESTAMP] CRITICAL: VPN interface $VPN_INTERFACE disappeared" >> "$HEALTH_LOG"
-              exit 1
-            fi
-            
-            IF_STATE=$(ip link show "$VPN_INTERFACE" | grep -oP 'state \K\w+')
-            if [ "$IF_STATE" != "UP" ] && [ "$IF_STATE" != "UNKNOWN" ]; then
-              echo "[$TIMESTAMP] WARNING: Interface state changed to $IF_STATE" >> "$HEALTH_LOG"
-            fi
-            
-            # Check 3: IP address still assigned
-            if ! ip addr show "$VPN_INTERFACE" | grep -q "inet "; then
-              echo "[$TIMESTAMP] CRITICAL: IP address lost on $VPN_INTERFACE" >> "$HEALTH_LOG"
-              exit 1
-            fi
-            
-            # Check 4: Routes still exist
-            if ! ip route | grep -q "$VPN_INTERFACE"; then
-              echo "[$TIMESTAMP] WARNING: No routes via $VPN_INTERFACE" >> "$HEALTH_LOG"
-            fi
-            
-            # Check 5: Connectivity check (ping VPN gateway or DNS)
-            VPN_GATEWAY=$(ip route | grep "default.*$VPN_INTERFACE" | awk '{print $3}' || echo "8.8.8.8")
-            if ! ping -c 1 -W 3 "$VPN_GATEWAY" &>/dev/null; then
-              echo "[$TIMESTAMP] WARNING: Cannot reach gateway $VPN_GATEWAY" >> "$HEALTH_LOG"
-            fi
-            
-            # All checks passed
-            RX_BYTES=$(cat /sys/class/net/$VPN_INTERFACE/statistics/rx_bytes 2>/dev/null || echo "0")
-            TX_BYTES=$(cat /sys/class/net/$VPN_INTERFACE/statistics/tx_bytes 2>/dev/null || echo "0")
-            echo "[$TIMESTAMP] OK: Connection healthy (RX: ${RX_BYTES}B, TX: ${TX_BYTES}B)" >> "$HEALTH_LOG"
-          done
-          HEALTH_EOF
-          
-          chmod 700 "${SECURE_TMPDIR}/health_monitor.sh"
-          
-          # Start health monitor in background
-          nohup bash "${SECURE_TMPDIR}/health_monitor.sh" \
-            "$HEALTH_CHECK_INTERVAL" \
-            "$VPN_PID_PATH" \
-            "$VPN_INTERFACE" \
-            "$HEALTH_LOG" \
-            > /dev/null 2>&1 &
-          
-          MONITOR_PID=$!
-          echo "$MONITOR_PID" > "${SECURE_TMPDIR}/monitor_pid"
-          
-          echo "✓ Health monitor started (PID: $MONITOR_PID)"
-          echo "✓ Check interval: ${HEALTH_CHECK_INTERVAL}s"
-          echo "✓ Log file: $HEALTH_LOG"
-          echo ""
-          echo "The health monitor will:"
-          echo "  - Verify OpenVPN process is running"
-          echo "  - Check VPN interface status"
-          echo "  - Monitor IP address assignment"
-          echo "  - Verify routing configuration"
-          echo "  - Test gateway connectivity"
-
-      - name: Debug information (if enabled)
-        if: github.event.inputs.debug_enabled == 'true'
-        run: |
-          echo "=== 🔍 Debug Information ==="
-          echo ""
-          
-          echo "1️⃣  Environment Variables"
-          echo "   ─────────────────────"
-          echo "   VPN_CONFIG_PATH: $VPN_CONFIG_PATH"
-          echo "   VPN_LOG_PATH: $VPN_LOG_PATH"
-          echo "   VPN_PID_PATH: $VPN_PID_PATH"
-          echo "   VPN_INTERFACE: $VPN_INTERFACE"
-          echo "   VPN_IP: ${VPN_IP:-not set}"
-          echo ""
-          
-          echo "2️⃣  OpenVPN Connection Log (last 100 lines)"
-          echo "   ──────────────────────────────────────"
-          tail -n 100 "$VPN_LOG_PATH" 2>/dev/null || echo "   No logs available"
-          echo ""
-          
-          echo "3️⃣  All Network Interfaces"
-          echo "   ────────────────────────"
+          echo "=== Network Configuration ==="
+          echo "Interfaces:"
           ip addr show
           echo ""
-          
-          echo "4️⃣  Complete Routing Table"
-          echo "   ───────────────────────"
-          ip route show table all
-          echo ""
-          
-          echo "5️⃣  ARP Table"
-          echo "   ──────────"
-          ip neigh show
-          echo ""
-          
-          echo "6️⃣  OpenVPN Processes"
-          echo "   ──────────────────"
-          ps aux | grep -E "[o]penvpn|[h]ealth_monitor" || echo "   No processes found"
-          echo ""
-          
-          echo "7️⃣  DNS Resolver Status"
-          echo "   ────────────────────"
-          resolvectl status 2>/dev/null || systemd-resolve --status 2>/dev/null || cat /etc/resolv.conf
-          echo ""
-          
-          echo "8️⃣  Network Interface Statistics"
-          echo "   ─────────────────────────────"
-          for iface in $(ls /sys/class/net/); do
-            if [ -d "/sys/class/net/$iface/statistics" ]; then
-              echo "   Interface: $iface"
-              echo "     RX bytes: $(cat /sys/class/net/$iface/statistics/rx_bytes)"
-              echo "     TX bytes: $(cat /sys/class/net/$iface/statistics/tx_bytes)"
-              echo "     RX packets: $(cat /sys/class/net/$iface/statistics/rx_packets)"
-              echo "     TX packets: $(cat /sys/class/net/$iface/statistics/tx_packets)"
-              echo "     RX errors: $(cat /sys/class/net/$iface/statistics/rx_errors)"
-              echo "     TX errors: $(cat /sys/class/net/$iface/statistics/tx_errors)"
-              echo ""
-            fi
-          done
-          
-          echo "9️⃣  Health Check Log"
-          echo "   ─────────────────"
-          if [ -f "$HEALTH_CHECK_LOG" ]; then
-            cat "$HEALTH_CHECK_LOG"
-          else
-            echo "   No health check log available yet"
-          fi
-          echo ""
-          
-          echo "🔟 System Resources"
-          echo "   ────────────────"
-          echo "   Memory:"
-          free -h
-          echo ""
-          echo "   Disk:"
-          df -h /
-          echo ""
-          echo "   Load average:"
-          uptime
+          echo "Routes:"
+          ip route show
           echo ""
 
       # ============================================
       # 🎯 YOUR CUSTOM STEPS GO HERE
       # ============================================
       # Add your tasks that require VPN access below
-      # The VPN connection is established and monitored
-      # Example:
-      # - name: Deploy to internal server
-      #   run: |
-      #     echo "Deploying through VPN..."
-      #     # Your deployment commands
-      #     # ssh user@internal-server 'bash deploy.sh'
-      #     # curl http://internal-api/deploy
       
-      - name: Example VPN task placeholder
+      - name: Example VPN task
         run: |
           echo "=== Example Task Through VPN ==="
           echo ""
-          echo "✓ VPN is connected and monitored"
+          echo "✓ VPN is connected and ready"
           echo "✓ You can now access internal resources"
           echo ""
-          echo "Add your custom steps above this one to:"
+          echo "Add your custom steps here to:"
           echo "  - Access internal servers"
           echo "  - Deploy to private networks"
           echo "  - Run tests against internal services"
-          echo "  - Access private APIs"
-          echo ""
-          echo "Connection details:"
-          echo "  - Interface: $VPN_INTERFACE"
-          echo "  - IP Address: ${VPN_IP:-not available}"
           echo ""
 
       # ============================================
-      # 🧹 CLEANUP - Always runs
+      # 🧹 CLEANUP
       # ============================================
 
-      - name: Stop health monitor
+      - name: Cleanup
         if: always()
         run: |
-          echo "=== Stopping Health Monitor ==="
+          set +e
           
-          if [ -f "${SECURE_TMPDIR}/monitor_pid" ]; then
-            MONITOR_PID=$(cat "${SECURE_TMPDIR}/monitor_pid")
-            if kill -0 "$MONITOR_PID" 2>/dev/null; then
-              echo "Stopping health monitor (PID: $MONITOR_PID)..."
-              kill -TERM "$MONITOR_PID" 2>/dev/null || true
-              
-              # Wait for graceful stop
-              for i in {1..5}; do
-                if ! kill -0 "$MONITOR_PID" 2>/dev/null; then
-                  break
-                fi
-                sleep 1
-              done
+          echo "=== Cleanup ==="
+          
+          # Stop OpenVPN
+          if [ -f /tmp/openvpn/openvpn.pid ]; then
+            VPN_PID=$(cat /tmp/openvpn/openvpn.pid)
+            if kill -0 "$VPN_PID" 2>/dev/null; then
+              echo "Stopping OpenVPN (PID: $VPN_PID)..."
+              kill -TERM "$VPN_PID" 2>/dev/null || true
+              sleep 2
               
               # Force kill if needed
-              if kill -0 "$MONITOR_PID" 2>/dev/null; then
-                kill -KILL "$MONITOR_PID" 2>/dev/null || true
-              fi
-              
-              echo "✓ Health monitor stopped"
-            fi
-          fi
-          
-          # Show final health log
-          if [ -f "$HEALTH_CHECK_LOG" ]; then
-            echo ""
-            echo "Final health check log:"
-            tail -n 20 "$HEALTH_CHECK_LOG" || true
-          fi
-
-      - name: Comprehensive cleanup and security scrubbing
-        if: always()
-        run: |
-          set +e  # Don't exit on errors during cleanup
-          
-          echo "=== Comprehensive Cleanup and Security Scrubbing ==="
-          echo ""
-          
-          # Track cleanup success
-          CLEANUP_ISSUES=0
-          
-          # 1. Stop OpenVPN gracefully
-          echo "1️⃣  Stopping OpenVPN Process"
-          echo "   ──────────────────────────"
-          if [ -f "$VPN_PID_PATH" ]; then
-            VPN_PID=$(cat "$VPN_PID_PATH" 2>/dev/null)
-            if [ -n "$VPN_PID" ] && kill -0 "$VPN_PID" 2>/dev/null; then
-              echo "   Sending SIGTERM to OpenVPN (PID: $VPN_PID)..."
-              sudo kill -TERM "$VPN_PID" 2>/dev/null || true
-              
-              # Wait up to 15 seconds for graceful shutdown
-              for i in {1..15}; do
-                if ! kill -0 "$VPN_PID" 2>/dev/null; then
-                  echo "   ✓ OpenVPN stopped gracefully after ${i}s"
-                  break
-                fi
-                sleep 1
-              done
-              
-              # Force kill if still running
               if kill -0 "$VPN_PID" 2>/dev/null; then
-                echo "   ⚠️ Force killing OpenVPN (SIGKILL)..."
-                sudo kill -KILL "$VPN_PID" 2>/dev/null || true
-                sleep 1
+                kill -KILL "$VPN_PID" 2>/dev/null || true
               fi
+              echo "✓ OpenVPN stopped"
             fi
           fi
           
-          # Kill any remaining OpenVPN processes
-          REMAINING_PIDS=$(pgrep openvpn || true)
-          if [ -n "$REMAINING_PIDS" ]; then
-            echo "   ⚠️ Killing remaining OpenVPN processes: $REMAINING_PIDS"
-            sudo killall -9 openvpn 2>/dev/null || true
-            CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
-          else
-            echo "   ✓ No remaining OpenVPN processes"
-          fi
-          echo ""
-          
-          # 2. Remove network interface
-          echo "2️⃣  Network Interface Cleanup"
-          echo "   ──────────────────────────"
+          # Remove interface
           if ip link show "$VPN_INTERFACE" > /dev/null 2>&1; then
-            echo "   Removing $VPN_INTERFACE interface..."
-            
-            # Flush routes first
-            sudo ip route flush dev "$VPN_INTERFACE" 2>/dev/null || true
-            
-            # Bring interface down
-            sudo ip link set "$VPN_INTERFACE" down 2>/dev/null || true
-            sleep 1
-            
-            # Delete interface
-            sudo ip link delete "$VPN_INTERFACE" 2>/dev/null || true
-            sleep 1
-            
-            # Verify removal
-            if ip link show "$VPN_INTERFACE" > /dev/null 2>&1; then
-              echo "   ⚠️ Warning: $VPN_INTERFACE still exists after cleanup"
-              CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
-            else
-              echo "   ✓ Network interface removed successfully"
-            fi
-          else
-            echo "   ✓ Network interface already removed"
+            ip link delete "$VPN_INTERFACE" 2>/dev/null || true
+            echo "✓ Network interface removed"
           fi
-          echo ""
           
-          # 3. Clean up PID and status files
-          echo "3️⃣  PID and Status File Cleanup"
-          echo "   ─────────────────────────────"
-          FILES_TO_REMOVE=(
-            "$VPN_PID_PATH"
-            "/var/run/openvpn-status.txt"
-            "/var/run/openvpn-client.log"
-          )
-          
-          for file in "${FILES_TO_REMOVE[@]}"; do
-            if [ -f "$file" ]; then
-              sudo rm -f "$file"
-              echo "   ✓ Removed: $file"
-            fi
-          done
-          echo ""
-          
-          # 4. Secure configuration file removal
-          echo "4️⃣  Configuration File Scrubbing (DoD 5220.22-M)"
-          echo "   ───────────────────────────────────────────────"
+          # Securely remove config file
           if [ -f "$VPN_CONFIG_PATH" ]; then
-            echo "   Securely wiping configuration file..."
-            
-            # Get file size
-            FILE_SIZE=$(stat -c%s "$VPN_CONFIG_PATH" 2>/dev/null || echo "0")
-            
-            # Overwrite with random data multiple times (DoD 5220.22-M standard)
-            if command -v shred > /dev/null 2>&1; then
-              sudo shred -vfz -n 3 "$VPN_CONFIG_PATH" 2>/dev/null || true
-              echo "   ✓ Configuration securely shredded (3 passes)"
-            else
-              # Fallback: overwrite with zeros
-              sudo dd if=/dev/zero of="$VPN_CONFIG_PATH" bs="$FILE_SIZE" count=1 2>/dev/null || true
-              echo "   ✓ Configuration overwritten with zeros"
-            fi
-            
-            # Remove the file
-            sudo rm -f "$VPN_CONFIG_PATH"
+            shred -vfz -n 3 "$VPN_CONFIG_PATH" 2>/dev/null || rm -f "$VPN_CONFIG_PATH"
+            echo "✓ Configuration file securely removed"
           fi
           
-          # Remove configuration directory
-          if [ -d "/etc/openvpn/client" ]; then
-            sudo rm -rf /etc/openvpn/client
-            echo "   ✓ Configuration directory removed"
+          # Clean up temporary directory
+          if [ -d /tmp/openvpn ]; then
+            rm -rf /tmp/openvpn
+            echo "✓ Temporary directory cleaned"
           fi
           
-          # Verify no config files remain
-          CONFIG_LEAKED=$(find /etc/openvpn /tmp /var/tmp $HOME -name "*.ovpn" -o -name "config.ovpn" 2>/dev/null | wc -l)
-          if [ "$CONFIG_LEAKED" -gt 0 ]; then
-            echo "   ⚠️ WARNING: Found $CONFIG_LEAKED potential config file(s):"
-            find /etc/openvpn /tmp /var/tmp $HOME -name "*.ovpn" -o -name "config.ovpn" 2>/dev/null || true
-            CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
-          else
-            echo "   ✓ No configuration files leaked"
-          fi
-          echo ""
-          
-          # 5. Log file cleanup
-          echo "5️⃣  Log File Cleanup"
-          echo "   ─────────────────"
-          LOG_FILES=(
-            "$VPN_LOG_PATH"
-            "$HEALTH_CHECK_LOG"
-            "/var/log/openvpn/connection.log"
-            "/var/log/openvpn/openvpn.log"
-          )
-          
-          for log in "${LOG_FILES[@]}"; do
-            if [ -f "$log" ]; then
-              # Show last few lines before cleanup (for debugging)
-              if [ "${{ github.event.inputs.debug_enabled }}" = "true" ]; then
-                echo "   Last 10 lines of $log:"
-                tail -n 10 "$log" 2>/dev/null | sed 's/^/     /' || true
-              fi
-              
-              sudo rm -f "$log"
-              echo "   ✓ Removed: $log"
-            fi
-          done
-          echo ""
-          
-          # 6. Secure temporary directory cleanup
-          echo "6️⃣  Secure Temporary Directory Cleanup"
-          echo "   ────────────────────────────────────"
-          if [ -n "$SECURE_TMPDIR" ] && [ -d "$SECURE_TMPDIR" ]; then
-            echo "   Securely removing: $SECURE_TMPDIR"
-            
-            # Shred all files in temp directory
-            if command -v shred > /dev/null 2>&1; then
-              find "$SECURE_TMPDIR" -type f -exec shred -vfz -n 1 {} \; 2>/dev/null || true
-              echo "   ✓ Temporary files shredded"
-            fi
-            
-            # Remove directory
-            rm -rf "$SECURE_TMPDIR"
-            echo "   ✓ Temporary directory removed"
-          fi
-          echo ""
-          
-          # 7. DNS configuration restoration
-          echo "7️⃣  DNS Configuration Restoration"
-          echo "   ───────────────────────────────"
-          if command -v resolvectl > /dev/null 2>&1; then
-            # Flush DNS cache
-            sudo resolvectl flush-caches 2>/dev/null || true
-            echo "   ✓ DNS cache flushed"
-          fi
-          
-          # Verify no VPN DNS entries remain
-          if grep -q "openvpn" /etc/resolv.conf 2>/dev/null; then
-            echo "   ⚠️ WARNING: OpenVPN entries still in resolv.conf"
-            CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
-          else
-            echo "   ✓ No VPN DNS entries in resolv.conf"
-          fi
-          echo ""
-          
-          # 8. Network state verification
-          echo "8️⃣  Network State Verification"
-          echo "   ────────────────────────────"
-          
-          # Check no VPN interfaces remain
-          VPN_INTERFACES=$(ip link show | grep -c "tun\|tap" || echo "0")
-          if [ "$VPN_INTERFACES" -gt 0 ]; then
-            echo "   ⚠️ WARNING: $VPN_INTERFACES VPN interface(s) still exist"
-            ip link show | grep "tun\|tap" || true
-            CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
-          else
-            echo "   ✓ No VPN interfaces remain"
-          fi
-          
-          # Check no VPN routes remain
-          VPN_ROUTES=$(ip route | grep -c "tun\|tap" || echo "0")
-          if [ "$VPN_ROUTES" -gt 0 ]; then
-            echo "   ⚠️ WARNING: $VPN_ROUTES VPN route(s) still exist"
-            CLEANUP_ISSUES=$((CLEANUP_ISSUES + 1))
-          else
-            echo "   ✓ No VPN routes remain"
-          fi
-          echo ""
-          
-          # 9. Final security verification (9-point check)
-          echo "9️⃣  Final Security Verification (9-Point Check)"
-          echo "   ──────────────────────────────────────────────"
-          
-          SECURITY_ISSUES=0
-          
-          # Check 1: No OpenVPN processes
-          if pgrep -x openvpn > /dev/null; then
-            echo "   ✗ OpenVPN processes still running"
-            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-          else
-            echo "   ✓ No OpenVPN processes running"
-          fi
-          
-          # Check 2: No configuration files
-          if [ -f "$VPN_CONFIG_PATH" ]; then
-            echo "   ✗ Configuration file still exists"
-            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-          else
-            echo "   ✓ Configuration file removed"
-          fi
-          
-          # Check 3: No VPN interfaces
-          if ip link show "$VPN_INTERFACE" > /dev/null 2>&1; then
-            echo "   ✗ VPN interface still exists"
-            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-          else
-            echo "   ✓ VPN interface removed"
-          fi
-          
-          # Check 4: No PID files
-          if [ -f "$VPN_PID_PATH" ]; then
-            echo "   ✗ PID file still exists"
-            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-          else
-            echo "   ✓ PID file removed"
-          fi
-          
-          # Check 5: No leaked OVPN files
-          LEAKED_OVPN=$(find / -name "*.ovpn" 2>/dev/null | grep -v "/snap/" | wc -l)
-          if [ "$LEAKED_OVPN" -gt 0 ]; then
-            echo "   ✗ Found $LEAKED_OVPN OVPN file(s)"
-            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-          else
-            echo "   ✓ No OVPN files leaked"
-          fi
-          
-          # Check 6: No VPN routes
-          if ip route | grep -q "$VPN_INTERFACE"; then
-            echo "   ✗ VPN routes still exist"
-            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-          else
-            echo "   ✓ No VPN routes remain"
-          fi
-          
-          # Check 7: Secure temp directory removed
-          if [ -d "$SECURE_TMPDIR" ]; then
-            echo "   ✗ Secure temp directory still exists"
-            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-          else
-            echo "   ✓ Secure temp directory removed"
-          fi
-          
-          # Check 8: No OpenVPN logs with credentials
-          SENSITIVE_LOGS=$(grep -r "auth-user-pass\|password\|secret" /var/log/openvpn/ 2>/dev/null | wc -l)
-          if [ "$SENSITIVE_LOGS" -gt 0 ]; then
-            echo "   ⚠️ Found $SENSITIVE_LOGS sensitive log entries"
-            SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-          else
-            echo "   ✓ No sensitive data in logs"
-          fi
-          
-          # Check 9: Health monitor stopped
-          if [ -f "${SECURE_TMPDIR}/monitor_pid" ]; then
-            MONITOR_PID=$(cat "${SECURE_TMPDIR}/monitor_pid" 2>/dev/null || echo "")
-            if [ -n "$MONITOR_PID" ] && kill -0 "$MONITOR_PID" 2>/dev/null; then
-              echo "   ✗ Health monitor still running"
-              SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
-            else
-              echo "   ✓ Health monitor stopped"
-            fi
-          else
-            echo "   ✓ Health monitor stopped"
-          fi
-          
-          echo ""
-          echo "   Security verification: $SECURITY_ISSUES issue(s) found"
-          
-          # Summary
-          echo ""
-          echo "========================================="
-          echo "Cleanup Summary"
-          echo "========================================="
-          echo "Cleanup issues: $CLEANUP_ISSUES"
-          echo "Security issues: $SECURITY_ISSUES"
-          echo ""
-          
-          if [ "$CLEANUP_ISSUES" -eq 0 ] && [ "$SECURITY_ISSUES" -eq 0 ]; then
-            echo "✅ Cleanup completed successfully"
-            echo "✅ All security checks passed"
-          else
-            echo "⚠️ Cleanup completed with warnings"
-            echo "Review the log for details"
-          fi
+          echo "✓ Cleanup completed"

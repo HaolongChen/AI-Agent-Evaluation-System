@@ -83,17 +83,17 @@ jobs:
           chmod 700 /tmp/openvpn
           
           # Debug secret availability
-          echo "Checking OPENVPN secret..."
-          if [ -z "${{ secrets.OPENVPN }}" ]; then
-            echo "::error::OPENVPN secret is empty or not set"
+          echo "Checking OPENVPN_SECRET environment variable..."
+          if [ -z "$OPENVPN_SECRET" ]; then
+            echo "::error::OPENVPN_SECRET environment variable is empty or not set"
             exit 1
           fi
           
-          echo "✓ OPENVPN secret is present"
+          echo "✓ OPENVPN_SECRET environment variable is present"
           
           # Create config file with explicit error handling
           echo "Creating OpenVPN config file..."
-          echo "${{ secrets.OPENVPN }}" > /tmp/openvpn/config.ovpn
+          echo "$OPENVPN_SECRET" > /tmp/openvpn/config.ovpn
           
           # Verify file exists
           if [[ ! -f /tmp/openvpn/config.ovpn ]]; then

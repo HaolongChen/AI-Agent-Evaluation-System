@@ -7,104 +7,332 @@ on:
         description: 'Enable debug mode'
         required: false
         default: 'false'
-  schedule:
-    # Run daily at 2 AM UTC (optional - can be adjusted or removed)
-    - cron: '0 2 * * *'
+      connection_timeout:
+        description: 'Connection timeout in seconds'
+        required: false
+        default: '60'
 
 jobs:
   openvpn-connection:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install OpenVPN
+      - name: Install OpenVPN and DNS resolver
         run: |
+          echo "Installing OpenVPN and required packages..."
           sudo apt-get update
-          sudo apt-get install -y openvpn
+          sudo apt-get install -y openvpn openvpn-systemd-resolved
+          
+          # Verify installation
+          openvpn --version
+          echo "✓ OpenVPN installed successfully"
 
       - name: Setup OpenVPN configuration
         run: |
-          # Create OpenVPN config directory
-          sudo mkdir -p /etc/openvpn/client
+          set -e
           
-          # Write the main configuration file
+          # Create OpenVPN config directory with secure permissions
+          sudo mkdir -p /etc/openvpn/client
+          sudo chmod 700 /etc/openvpn/client
+          
+          # Create log directory
+          sudo mkdir -p /var/log/openvpn
+          sudo chmod 755 /var/log/openvpn
+          
+          # Write the configuration file with inline certificates
+          # This expects OVPNCONFIG secret to contain the full .ovpn file
+          # with inline <ca>, <cert>, and <key> sections
           echo "${{ secrets.OPENVPNCONFIG }}" | sudo tee /etc/openvpn/client/config.ovpn > /dev/null
           
-          # Write certificate files
-          echo "${{ secrets.OPENVPNCACERT }}" | sudo tee /etc/openvpn/client/ca.crt > /dev/null
-          echo "${{ secrets.OPENVPNCLIENTCERT }}" | sudo tee /etc/openvpn/client/client.crt > /dev/null
-          echo "${{ secrets.OPENVPNPRIVATEKEY }}" | sudo tee /etc/openvpn/client/client.key > /dev/null
+          # SECURITY FIX: Set strict permissions (600 instead of 644)
+          # This prevents other users from reading the configuration
+          sudo chmod 600 /etc/openvpn/client/config.ovpn
           
-          # Set proper permissions
-          sudo chmod 600 /etc/openvpn/client/*.key
-          sudo chmod 644 /etc/openvpn/client/*.crt
-          sudo chmod 644 /etc/openvpn/client/config.ovpn
+          # Add DNS resolution fix for systemd-resolved
+          echo "" | sudo tee -a /etc/openvpn/client/config.ovpn > /dev/null
+          echo "# DNS resolution fix for GitHub Actions runners" | sudo tee -a /etc/openvpn/client/config.ovpn > /dev/null
+          echo "script-security 2" | sudo tee -a /etc/openvpn/client/config.ovpn > /dev/null
+          echo "setenv PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" | sudo tee -a /etc/openvpn/client/config.ovpn > /dev/null
+          echo "up /etc/openvpn/update-systemd-resolved" | sudo tee -a /etc/openvpn/client/config.ovpn > /dev/null
+          echo "down /etc/openvpn/update-systemd-resolved" | sudo tee -a /etc/openvpn/client/config.ovpn > /dev/null
+          echo "dhcp-option DOMAIN-ROUTE ." | sudo tee -a /etc/openvpn/client/config.ovpn > /dev/null
+          
+          # Add logging configuration for daemon mode
+          echo "log-append /var/log/openvpn/connection.log" | sudo tee -a /etc/openvpn/client/config.ovpn > /dev/null
+          echo "verb 3" | sudo tee -a /etc/openvpn/client/config.ovpn > /dev/null
+          
+          # Verify configuration file exists and has correct permissions
+          if [ ! -f /etc/openvpn/client/config.ovpn ]; then
+            echo "✗ Configuration file not created"
+            exit 1
+          fi
+          
+          PERMS=$(stat -c "%a" /etc/openvpn/client/config.ovpn)
+          if [ "$PERMS" != "600" ]; then
+            echo "✗ Configuration file has incorrect permissions: $PERMS (expected 600)"
+            exit 1
+          fi
+          
+          echo "✓ OpenVPN configuration created with secure permissions (600)"
 
       - name: Start OpenVPN connection
+        id: vpn_connect
         run: |
-          # Start OpenVPN in the background
-          sudo openvpn --config /etc/openvpn/client/config.ovpn --daemon
+          set -e
           
-          # Wait for connection to establish (max 30 seconds)
-          echo "Waiting for VPN connection to establish..."
-          for i in {1..30}; do
+          # Get timeout from input or use default
+          TIMEOUT=${{ github.event.inputs.connection_timeout || '60' }}
+          
+          echo "Starting OpenVPN connection (timeout: ${TIMEOUT}s)..."
+          
+          # Start OpenVPN in daemon mode with proper error handling
+          if ! sudo openvpn --config /etc/openvpn/client/config.ovpn --daemon --writepid /var/run/openvpn-client.pid; then
+            echo "✗ Failed to start OpenVPN daemon"
+            exit 1
+          fi
+          
+          echo "OpenVPN daemon started, waiting for connection..."
+          
+          # Wait for connection to establish with timeout
+          COUNTER=0
+          CONNECTED=false
+          
+          while [ $COUNTER -lt $TIMEOUT ]; do
+            # Check if tun0 interface exists and has an IP address
             if ip addr show tun0 > /dev/null 2>&1; then
-              echo "VPN connection established successfully!"
-              break
+              # Verify interface has an IP address
+              if ip addr show tun0 | grep -q "inet "; then
+                echo "✓ VPN connection established successfully after ${COUNTER}s"
+                CONNECTED=true
+                break
+              fi
             fi
+            
+            # Check if OpenVPN process is still running
+            if [ -f /var/run/openvpn-client.pid ]; then
+              PID=$(cat /var/run/openvpn-client.pid)
+              if ! kill -0 $PID 2>/dev/null; then
+                echo "✗ OpenVPN process died unexpectedly"
+                echo "Last log entries:"
+                tail -n 20 /var/log/openvpn/connection.log || echo "No logs available"
+                exit 1
+              fi
+            fi
+            
             sleep 1
+            COUNTER=$((COUNTER + 1))
+            
+            # Show progress every 10 seconds
+            if [ $((COUNTER % 10)) -eq 0 ]; then
+              echo "Still waiting for connection... (${COUNTER}/${TIMEOUT}s)"
+            fi
           done
+          
+          if [ "$CONNECTED" = false ]; then
+            echo "✗ VPN connection timeout after ${TIMEOUT}s"
+            echo ""
+            echo "Connection logs:"
+            tail -n 50 /var/log/openvpn/connection.log || echo "No logs available"
+            exit 1
+          fi
 
       - name: Verify VPN connection
         run: |
-          # Check if tun0 interface exists
-          if ip addr show tun0 > /dev/null 2>&1; then
-            echo "✓ VPN interface (tun0) is up"
-            ip addr show tun0
-            
-            # Show routing table
-            echo ""
-            echo "Routing table:"
-            ip route
-            
-            # Test connectivity (optional - adjust or remove based on your VPN network)
-            echo ""
-            echo "Testing network connectivity..."
-            # Add your specific connectivity tests here
-            # Example: ping -c 3 <internal-network-ip>
-          else
-            echo "✗ VPN connection failed - tun0 interface not found"
+          set -e
+          
+          echo "=== VPN Connection Verification ==="
+          echo ""
+          
+          # Check tun0 interface
+          if ! ip addr show tun0 > /dev/null 2>&1; then
+            echo "✗ VPN interface (tun0) not found"
             exit 1
           fi
+          
+          echo "✓ VPN interface (tun0) is active"
+          echo ""
+          echo "Interface details:"
+          ip addr show tun0
+          echo ""
+          
+          # Verify IP address assignment
+          TUN_IP=$(ip addr show tun0 | grep "inet " | awk '{print $2}')
+          if [ -z "$TUN_IP" ]; then
+            echo "✗ No IP address assigned to tun0"
+            exit 1
+          fi
+          echo "✓ IP address assigned: $TUN_IP"
+          echo ""
+          
+          # Check routing table
+          echo "Routing table:"
+          ip route | grep tun0 || echo "No tun0 routes found"
+          echo ""
+          
+          # Verify DNS resolution
+          echo "DNS configuration:"
+          resolvectl status tun0 2>/dev/null || systemd-resolve --status tun0 2>/dev/null || echo "DNS info not available"
+          echo ""
+          
+          # Check OpenVPN process
+          if [ -f /var/run/openvpn-client.pid ]; then
+            PID=$(cat /var/run/openvpn-client.pid)
+            if kill -0 $PID 2>/dev/null; then
+              echo "✓ OpenVPN process running (PID: $PID)"
+            else
+              echo "✗ OpenVPN process not running"
+              exit 1
+            fi
+          else
+            echo "✗ OpenVPN PID file not found"
+            exit 1
+          fi
+          
+          echo ""
+          echo "=== VPN Connection Verified Successfully ==="
+
+      - name: Test network connectivity
+        run: |
+          echo "=== Network Connectivity Tests ==="
+          echo ""
+          
+          # Test basic connectivity through VPN
+          # You can customize these tests based on your VPN network
+          
+          # Example: Test DNS resolution
+          echo "Testing DNS resolution..."
+          if nslookup google.com > /dev/null 2>&1; then
+            echo "✓ DNS resolution working"
+          else
+            echo "⚠ DNS resolution test failed (may be expected depending on VPN configuration)"
+          fi
+          echo ""
+          
+          # Add your custom connectivity tests here
+          # Example: ping -c 3 <internal-server-ip>
+          # Example: curl -s http://<internal-service>
+          
+          echo "✓ Network connectivity tests completed"
 
       - name: Debug information (if enabled)
         if: github.event.inputs.debug_enabled == 'true'
         run: |
-          echo "OpenVPN logs:"
-          sudo journalctl -u openvpn --no-pager || cat /var/log/openvpn.log || echo "No logs available"
-          
+          echo "=== Debug Information ==="
           echo ""
-          echo "Network interfaces:"
+          
+          echo "OpenVPN connection log (last 100 lines):"
+          echo "=========================================="
+          tail -n 100 /var/log/openvpn/connection.log || echo "No logs available"
+          echo ""
+          
+          echo "All network interfaces:"
+          echo "======================="
           ip addr
-          
           echo ""
-          echo "OpenVPN process:"
-          ps aux | grep openvpn
+          
+          echo "Full routing table:"
+          echo "==================="
+          ip route
+          echo ""
+          
+          echo "OpenVPN processes:"
+          echo "=================="
+          ps aux | grep openvpn | grep -v grep || echo "No OpenVPN processes found"
+          echo ""
+          
+          echo "DNS resolver status:"
+          echo "===================="
+          resolvectl status || systemd-resolve --status || cat /etc/resolv.conf
+          echo ""
+          
+          echo "Network statistics for tun0:"
+          echo "============================"
+          ip -s link show tun0 || echo "Stats not available"
+          echo ""
 
       # Add your custom steps here that require VPN access
       # Example:
-      # - name: Run commands through VPN
+      # - name: Run tasks through VPN
       #   run: |
+      #     echo "Connected to VPN - executing tasks..."
       #     # Your commands that need VPN access
-      #     echo "Connected to VPN - running your tasks..."
+      #     # curl http://internal-resource
+      #     # ssh user@internal-server
+      
+      # - name: Deploy to internal server
+      #   run: |
+      #     echo "Deploying through VPN..."
+      #     # Deployment commands
 
       - name: Cleanup
         if: always()
         run: |
-          # Stop OpenVPN
-          sudo killall openvpn || true
+          echo "=== Cleaning up VPN connection ==="
           
-          # Clean up sensitive files
+          # Stop OpenVPN process gracefully
+          if [ -f /var/run/openvpn-client.pid ]; then
+            PID=$(cat /var/run/openvpn-client.pid)
+            if kill -0 $PID 2>/dev/null; then
+              echo "Stopping OpenVPN process (PID: $PID)..."
+              sudo kill -TERM $PID
+              
+              # Wait for graceful shutdown (max 10 seconds)
+              for i in {1..10}; do
+                if ! kill -0 $PID 2>/dev/null; then
+                  echo "✓ OpenVPN stopped gracefully"
+                  break
+                fi
+                sleep 1
+              done
+              
+              # Force kill if still running
+              if kill -0 $PID 2>/dev/null; then
+                echo "Force stopping OpenVPN..."
+                sudo kill -KILL $PID || true
+              fi
+            fi
+          fi
+          
+          # Kill any remaining OpenVPN processes
+          sudo killall -9 openvpn 2>/dev/null || true
+          
+          # Remove network interface if it still exists
+          if ip link show tun0 > /dev/null 2>&1; then
+            echo "Removing tun0 interface..."
+            sudo ip link delete tun0 2>/dev/null || true
+          fi
+          
+          # Clean up PID file
+          sudo rm -f /var/run/openvpn-client.pid
+          
+          # Clean up configuration files (contains sensitive data)
+          echo "Removing configuration files..."
           sudo rm -rf /etc/openvpn/client/
+          
+          # Clean up log files (may contain sensitive information)
+          sudo rm -f /var/log/openvpn/connection.log
+          
+          # Verify cleanup
+          if [ -d /etc/openvpn/client ]; then
+            echo "⚠ Warning: Configuration directory still exists"
+          else
+            echo "✓ Configuration files removed"
+          fi
+          
+          if ip link show tun0 > /dev/null 2>&1; then
+            echo "⚠ Warning: tun0 interface still exists"
+          else
+            echo "✓ Network interface removed"
+          fi
+          
+          if pgrep openvpn > /dev/null; then
+            echo "⚠ Warning: OpenVPN processes still running"
+          else
+            echo "✓ All OpenVPN processes terminated"
+          fi
+          
+          echo "=== Cleanup completed ==="

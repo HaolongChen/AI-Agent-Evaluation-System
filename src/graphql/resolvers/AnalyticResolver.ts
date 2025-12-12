@@ -1,6 +1,7 @@
 import { executionService } from '../../services/ExecutionService.ts';
 import { logger } from '../../utils/logger.ts';
 import type { copilotType } from '../../utils/types.ts';
+import { COPILOT_TYPES } from '../../config/constants.ts';
 
 export const analyticResolver = {
   Query: {
@@ -42,15 +43,17 @@ export const analyticResolver = {
       args: {
         projectExId: string;
         schemaExId: string;
-        copilotType: copilotType;
+        copilotType: keyof typeof COPILOT_TYPES;
         modelName: string;
       }
     ) => {
       try {
+        // Convert GraphQL enum to database enum
+        const dbCopilotType = COPILOT_TYPES[args.copilotType] as copilotType;
         const result = await executionService.createEvaluationSession(
           args.projectExId,
           args.schemaExId,
-          args.copilotType,
+          dbCopilotType,
           args.modelName
         );
         // TODO: implement actual execution logic

@@ -1,4 +1,4 @@
-import type { Prisma } from '../generated/prisma/client.ts';
+import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { prisma } from '../config/prisma.ts';
 import { REVIEW_STATUS } from '../config/constants.ts';
 import type { expectedAnswerType, rubricContentType } from '../utils/types.ts';

@@ -3,8 +3,8 @@ import { graph, automatedGraph, type GraphConfigurable } from '../langGraph/agen
 import { Command } from '@langchain/langgraph';
 import { prisma } from '../config/prisma.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
-import type { CopilotType } from '../generated/prisma/enums.ts';
-import type { Prisma } from '../generated/prisma/client.ts';
+import type { CopilotType } from '../../build/generated/prisma/enums.ts';
+import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { logger } from '../utils/logger.ts';
 import { goldenSetService } from './GoldenSetService.ts';
 import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
@@ -169,11 +169,16 @@ export class GraphExecutionService {
       const graphToUse =
         skipHumanReview && skipHumanEvaluation ? automatedGraph : graph;
 
+      // Determine provider from model name (gemini models start with 'gemini', otherwise azure)
+      const provider = modelName.toLowerCase().startsWith('gemini')
+        ? 'gemini'
+        : 'azure';
+
       // Start the graph execution - it will pause at first interrupt
       const configurable: GraphConfigurable = {
         thread_id: threadId,
-        provider: undefined,
-        model: undefined,
+        provider,
+        model: modelName,
         projectExId,
         skipHumanReview,
         skipHumanEvaluation,
@@ -311,10 +316,15 @@ export class GraphExecutionService {
       };
 
       // Resume the graph with human review input
+      // Determine provider from session's model name
+      const provider = session.modelName.toLowerCase().startsWith('gemini')
+        ? 'gemini'
+        : 'azure';
+
       const resumeConfigurable: GraphConfigurable = {
         thread_id: threadId,
-        provider: undefined,
-        model: undefined,
+        provider,
+        model: session.modelName,
         projectExId: session.projectExId,
         skipHumanReview: metadata.skipHumanReview ?? false,
         skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
@@ -401,10 +411,15 @@ export class GraphExecutionService {
       };
 
       // Resume the graph with human evaluation input
+      // Determine provider from session's model name
+      const provider = session.modelName.toLowerCase().startsWith('gemini')
+        ? 'gemini'
+        : 'azure';
+
       const evalConfigurable: GraphConfigurable = {
         thread_id: threadId,
-        provider: undefined,
-        model: undefined,
+        provider,
+        model: session.modelName,
         projectExId: session.projectExId,
         skipHumanReview: metadata.skipHumanReview ?? false,
         skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,

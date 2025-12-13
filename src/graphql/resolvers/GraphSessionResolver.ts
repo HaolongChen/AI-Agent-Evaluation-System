@@ -1,7 +1,18 @@
 import { graphExecutionService } from '../../services/GraphExecutionService.ts';
 import { logger } from '../../utils/logger.ts';
-import type { CopilotType } from '../../generated/prisma/enums.ts';
+import { CopilotType } from '../../../build/generated/prisma/enums.ts';
 import type { Rubric, RubricCriterion } from '../../langGraph/state/state.ts';
+
+/**
+ * Map GraphQL CopilotType enum to Prisma CopilotType enum
+ */
+const graphqlToPrismaCopilotType: Record<string, (typeof CopilotType)[keyof typeof CopilotType]> = {
+  DATA_MODEL_BUILDER: CopilotType.dataModel,
+  UI_BUILDER: CopilotType.uiBuilder,
+  ACTIONFLOW_BUILDER: CopilotType.actionflow,
+  LOG_ANALYZER: CopilotType.logAnalyzer,
+  AGENT_BUILDER: CopilotType.agentBuilder,
+};
 
 /**
  * Input types matching GraphQL schema
@@ -117,24 +128,30 @@ export const graphSessionResolver = {
       args: {
         projectExId: string;
         schemaExId: string;
-        copilotType: CopilotType;
+        copilotType: string; // GraphQL enum comes as string
         modelName: string;
         skipHumanReview?: boolean;
         skipHumanEvaluation?: boolean;
       }
     ) => {
       try {
+        // Map GraphQL CopilotType to Prisma CopilotType
+        const prismaCopilotType = graphqlToPrismaCopilotType[args.copilotType];
+        if (!prismaCopilotType) {
+          throw new Error(`Invalid copilotType: ${args.copilotType}`);
+        }
+
         logger.info('Starting graph session', {
           projectExId: args.projectExId,
           schemaExId: args.schemaExId,
-          copilotType: args.copilotType,
+          copilotType: prismaCopilotType,
           modelName: args.modelName,
         });
 
         const result = await graphExecutionService.startSession(
           args.projectExId,
           args.schemaExId,
-          args.copilotType,
+          prismaCopilotType,
           args.modelName,
           args.skipHumanReview ?? false,
           args.skipHumanEvaluation ?? false
@@ -258,20 +275,27 @@ export const graphSessionResolver = {
       args: {
         projectExId: string;
         schemaExId: string;
-        copilotType: CopilotType;
+        copilotType: string; // GraphQL enum comes as string
         modelName: string;
       }
     ) => {
       try {
+        // Map GraphQL CopilotType to Prisma CopilotType
+        const prismaCopilotType = graphqlToPrismaCopilotType[args.copilotType];
+        if (!prismaCopilotType) {
+          throw new Error(`Invalid copilotType: ${args.copilotType}`);
+        }
+
         logger.info('Running automated evaluation', {
           projectExId: args.projectExId,
           schemaExId: args.schemaExId,
+          copilotType: prismaCopilotType,
         });
 
         const result = await graphExecutionService.runAutomatedEvaluation(
           args.projectExId,
           args.schemaExId,
-          args.copilotType,
+          prismaCopilotType,
           args.modelName
         );
 

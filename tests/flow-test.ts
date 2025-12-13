@@ -1,6 +1,6 @@
 /**
  * HITL Multi-Mutation Flow Test
- * 
+ *
  * This test exercises the full HITL flow:
  * 1. startGraphSession - starts evaluation, pauses at humanReviewer
  * 2. submitRubricReview - approves rubric, resumes, pauses at humanEvaluator
@@ -66,7 +66,10 @@ interface HumanEvaluationResult {
   message: string;
 }
 
-async function graphqlRequest<T>(query: string, variables?: Record<string, unknown>): Promise<GraphQLResponse<T>> {
+async function graphqlRequest<T>(
+  query: string,
+  variables?: Record<string, unknown>
+): Promise<GraphQLResponse<T>> {
   const response = await fetch(GRAPHQL_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -112,7 +115,9 @@ async function testHITLFlow(): Promise<boolean> {
       }
     `;
 
-    const startResult = await graphqlRequest<{ startGraphSession: StartSessionResult }>(startQuery, {
+    const startResult = await graphqlRequest<{
+      startGraphSession: StartSessionResult;
+    }>(startQuery, {
       projectExId: TEST_PROJECT_EX_ID,
       schemaExId: TEST_SCHEMA_EX_ID,
       copilotType: 'DATA_MODEL_BUILDER',
@@ -136,9 +141,13 @@ async function testHITLFlow(): Promise<boolean> {
     console.log(`  Message: ${startData.message}`);
 
     if (startData.status !== 'AWAITING_RUBRIC_REVIEW') {
-      console.log(`\n⚠️  Expected status 'AWAITING_RUBRIC_REVIEW', got '${startData.status}'`);
+      console.log(
+        `\n⚠️  Expected status 'AWAITING_RUBRIC_REVIEW', got '${startData.status}'`
+      );
       if (startData.status === 'COMPLETED') {
-        console.log('Graph completed without interrupts. Check if interrupt() is being called.');
+        console.log(
+          'Graph completed without interrupts. Check if interrupt() is being called.'
+        );
         return false;
       }
     } else {
@@ -151,7 +160,9 @@ async function testHITLFlow(): Promise<boolean> {
     }
 
     console.log(`  Rubric Draft ID: ${startData.rubricDraft.id}`);
-    console.log(`  Rubric Criteria Count: ${startData.rubricDraft.criteria.length}`);
+    console.log(
+      `  Rubric Criteria Count: ${startData.rubricDraft.criteria.length}`
+    );
 
     // Step 2: Submit Rubric Review
     console.log('\nStep 2: Submitting rubric review...');
@@ -182,7 +193,9 @@ async function testHITLFlow(): Promise<boolean> {
       }
     `;
 
-    const reviewResult = await graphqlRequest<{ submitRubricReview: RubricReviewResult }>(reviewQuery, {
+    const reviewResult = await graphqlRequest<{
+      submitRubricReview: RubricReviewResult;
+    }>(reviewQuery, {
       sessionId: startData.sessionId,
       threadId: startData.threadId,
       approved: true,
@@ -205,7 +218,9 @@ async function testHITLFlow(): Promise<boolean> {
     console.log(`  Message: ${reviewData.message}`);
 
     if (reviewData.status !== 'AWAITING_HUMAN_EVALUATION') {
-      console.log(`\n⚠️  Expected status 'AWAITING_HUMAN_EVALUATION', got '${reviewData.status}'`);
+      console.log(
+        `\n⚠️  Expected status 'AWAITING_HUMAN_EVALUATION', got '${reviewData.status}'`
+      );
     } else {
       console.log('✅ Step 2 passed: Graph paused at humanEvaluator\n');
     }
@@ -251,11 +266,14 @@ async function testHITLFlow(): Promise<boolean> {
       }
     `;
 
-    const evalResult = await graphqlRequest<{ submitHumanEvaluation: HumanEvaluationResult }>(evalQuery, {
+    const evalResult = await graphqlRequest<{
+      submitHumanEvaluation: HumanEvaluationResult;
+    }>(evalQuery, {
       sessionId: reviewData.sessionId,
       threadId: reviewData.threadId,
       scores,
-      overallAssessment: 'Overall, the AI copilot output is satisfactory and meets the evaluation criteria.',
+      overallAssessment:
+        'Overall, the AI copilot output is satisfactory and meets the evaluation criteria.',
       evaluatorAccountId: TEST_EVALUATOR_ID,
     });
 
@@ -275,7 +293,9 @@ async function testHITLFlow(): Promise<boolean> {
     console.log(`  Message: ${evalData.message}`);
 
     if (evalData.status !== 'COMPLETED') {
-      console.log(`\n⚠️  Expected status 'COMPLETED', got '${evalData.status}'`);
+      console.log(
+        `\n⚠️  Expected status 'COMPLETED', got '${evalData.status}'`
+      );
     } else {
       console.log('✅ Step 3 passed: Graph completed successfully\n');
     }
@@ -284,12 +304,13 @@ async function testHITLFlow(): Promise<boolean> {
       console.log('Final Report:');
       console.log(`  Verdict: ${evalData.finalReport.verdict}`);
       console.log(`  Overall Score: ${evalData.finalReport.overallScore}`);
-      console.log(`  Summary: ${evalData.finalReport.summary.substring(0, 100)}...`);
+      console.log(
+        `  Summary: ${evalData.finalReport.summary.substring(0, 100)}...`
+      );
     }
 
     console.log('\n=== HITL Flow Test Complete ===');
     return true;
-
   } catch (error) {
     console.error('\n❌ Error during HITL flow test:', error);
     return false;
@@ -321,7 +342,9 @@ async function testAutomatedFlow(): Promise<boolean> {
       }
     `;
 
-    const result = await graphqlRequest<{ runAutomatedEvaluation: HumanEvaluationResult }>(query, {
+    const result = await graphqlRequest<{
+      runAutomatedEvaluation: HumanEvaluationResult;
+    }>(query, {
       projectExId: TEST_PROJECT_EX_ID,
       schemaExId: TEST_SCHEMA_EX_ID,
       copilotType: 'DATA_MODEL_BUILDER',
@@ -351,7 +374,6 @@ async function testAutomatedFlow(): Promise<boolean> {
 
     console.log('\n✅ Automated Flow Test Complete\n');
     return true;
-
   } catch (error) {
     console.error('\n❌ Error during automated flow test:', error);
     return false;

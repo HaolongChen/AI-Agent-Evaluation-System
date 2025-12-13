@@ -6,7 +6,10 @@ import type { Rubric, RubricCriterion } from '../../langGraph/state/state.ts';
 /**
  * Map GraphQL CopilotType enum to Prisma CopilotType enum
  */
-const graphqlToPrismaCopilotType: Record<string, (typeof CopilotType)[keyof typeof CopilotType]> = {
+const graphqlToPrismaCopilotType: Record<
+  string,
+  (typeof CopilotType)[keyof typeof CopilotType]
+> = {
   DATA_MODEL_BUILDER: CopilotType.dataModel,
   UI_BUILDER: CopilotType.uiBuilder,
   ACTIONFLOW_BUILDER: CopilotType.actionflow,

@@ -1,5 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import { graph, automatedGraph, type GraphConfigurable } from '../langGraph/agent.ts';
+import {
+  graph,
+  automatedGraph,
+  type GraphConfigurable,
+} from '../langGraph/agent.ts';
 import { Command } from '@langchain/langgraph';
 import { prisma } from '../config/prisma.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
@@ -8,7 +12,11 @@ import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { logger } from '../utils/logger.ts';
 import { goldenSetService } from './GoldenSetService.ts';
 import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
-import type { Rubric, Evaluation, FinalReport } from '../langGraph/state/state.ts';
+import type {
+  Rubric,
+  Evaluation,
+  FinalReport,
+} from '../langGraph/state/state.ts';
 
 /**
  * Session state indicating where the graph is paused
@@ -251,7 +259,9 @@ export class GraphExecutionService {
     } catch (error) {
       logger.error('Error starting graph session:', error);
       throw new Error(
-        `Failed to start evaluation session: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to start evaluation session: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
     }
   }
@@ -329,9 +339,12 @@ export class GraphExecutionService {
         skipHumanReview: metadata.skipHumanReview ?? false,
         skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
       };
-      const result = (await graph.invoke(new Command({ resume: humanReviewInput }), {
-        configurable: resumeConfigurable,
-      })) as GraphResult;
+      const result = (await graph.invoke(
+        new Command({ resume: humanReviewInput }),
+        {
+          configurable: resumeConfigurable,
+        }
+      )) as GraphResult;
 
       // Determine the new status based on interrupt state
       let status: GraphSessionStatus = 'completed';
@@ -372,7 +385,9 @@ export class GraphExecutionService {
     } catch (error) {
       logger.error('Error submitting rubric review:', error);
       throw new Error(
-        `Failed to submit rubric review: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to submit rubric review: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
     }
   }
@@ -467,7 +482,9 @@ export class GraphExecutionService {
     } catch (error) {
       logger.error('Error submitting human evaluation:', error);
       throw new Error(
-        `Failed to submit human evaluation: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to submit human evaluation: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
     }
   }

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { graph, automatedGraph } from '../langGraph/agent.ts';
+import { graph, automatedGraph, type GraphConfigurable } from '../langGraph/agent.ts';
+import { Command } from '@langchain/langgraph';
 import { prisma } from '../config/prisma.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../generated/prisma/enums.ts';
@@ -30,13 +31,45 @@ interface SessionMetadata {
 }
 
 /**
+ * Interrupt payload structure from LangGraph
+ */
+interface InterruptInfo {
+  value: {
+    message?: string;
+    rubricDraft?: Rubric;
+    rubricFinal?: Rubric;
+    query?: string;
+    context?: string | null;
+    candidateOutput?: string;
+  };
+  resumable: boolean;
+  ns: string[];
+}
+
+/**
+ * Result from graph.invoke() with potential interrupt info
+ */
+interface GraphResult {
+  query: string;
+  context: string;
+  candidateOutput: string;
+  rubricDraft?: Rubric | null;
+  rubricApproved?: boolean;
+  rubricFinal?: Rubric | null;
+  agentEvaluation?: Evaluation | null;
+  humanEvaluation?: Evaluation | null;
+  finalReport?: FinalReport | null;
+  __interrupt__?: InterruptInfo[];
+}
+
+/**
  * Result returned when starting a graph session
  */
 export interface StartSessionResult {
   sessionId: number;
   threadId: string;
   status: GraphSessionStatus;
-  rubricDraft?: Rubric | null;
+  rubricDraft?: Rubric | null | undefined;
   message: string;
 }
 
@@ -47,7 +80,7 @@ export interface RubricReviewResult {
   sessionId: number;
   threadId: string;
   status: GraphSessionStatus;
-  rubricFinal?: Rubric | null;
+  rubricFinal?: Rubric | null | undefined;
   message: string;
 }
 
@@ -58,7 +91,7 @@ export interface HumanEvaluationResult {
   sessionId: number;
   threadId: string;
   status: GraphSessionStatus;
-  finalReport?: FinalReport | null;
+  finalReport?: FinalReport | null | undefined;
   message: string;
 }
 
@@ -137,32 +170,40 @@ export class GraphExecutionService {
         skipHumanReview && skipHumanEvaluation ? automatedGraph : graph;
 
       // Start the graph execution - it will pause at first interrupt
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await graphToUse.invoke(initialState, {
-        configurable: {
-          thread_id: threadId,
-          projectExId,
-          skipHumanReview,
-          skipHumanEvaluation,
-        },
-      });
+      const configurable: GraphConfigurable = {
+        thread_id: threadId,
+        provider: undefined,
+        model: undefined,
+        projectExId,
+        skipHumanReview,
+        skipHumanEvaluation,
+      };
+      const result = (await graphToUse.invoke(initialState, {
+        configurable,
+      })) as GraphResult;
 
-      // Determine the current status based on where the graph paused
+      // Determine the current status based on whether graph is interrupted
       let status: GraphSessionStatus = 'completed';
       let message = 'Evaluation completed successfully';
+      let rubricDraftForResponse = result.rubricDraft;
 
-      if (!skipHumanReview && result.rubricDraft && !result.rubricApproved) {
-        status = 'awaiting_rubric_review';
-        message =
-          'Graph paused for rubric review. Call submitRubricReview to continue.';
-      } else if (
-        !skipHumanEvaluation &&
-        result.rubricFinal &&
-        !result.humanEvaluation
-      ) {
-        status = 'awaiting_human_evaluation';
-        message =
-          'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
+      // Check if graph is interrupted (paused waiting for human input)
+      if (result.__interrupt__ && result.__interrupt__.length > 0) {
+        const interruptValue = result.__interrupt__[0]?.value;
+
+        // Determine which interrupt point based on interrupt payload
+        if (interruptValue?.rubricDraft && !interruptValue?.rubricFinal) {
+          status = 'awaiting_rubric_review';
+          message =
+            'Graph paused for rubric review. Call submitRubricReview to continue.';
+          // Use rubric from interrupt value as it's what the human needs to review
+          rubricDraftForResponse =
+            interruptValue.rubricDraft || result.rubricDraft;
+        } else if (interruptValue?.rubricFinal) {
+          status = 'awaiting_human_evaluation';
+          message =
+            'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
+        }
       }
 
       // Update session with current status
@@ -178,23 +219,28 @@ export class GraphExecutionService {
       });
 
       // If rubric draft was created, save it to database
-      if (result.rubricDraft) {
+      if (rubricDraftForResponse) {
         await this.saveRubricToDatabase(
           session.id,
           projectExId,
           schemaExId,
-          result.rubricDraft,
+          rubricDraftForResponse,
           goldenSet.promptTemplate,
           result.candidateOutput || '',
           modelName
         );
       }
 
+      // If graph completed (no interrupts), save the final report
+      if (status === 'completed' && result.finalReport) {
+        await this.saveFinalReport(session.id, session, result.finalReport);
+      }
+
       return {
         sessionId: session.id,
         threadId,
         status,
-        rubricDraft: result.rubricDraft,
+        rubricDraft: rubricDraftForResponse,
         message,
       };
     } catch (error) {
@@ -257,6 +303,7 @@ export class GraphExecutionService {
       }
 
       // Prepare human review input for graph resumption
+      // This matches the HumanReviewInput interface expected by humanReviewerNode
       const humanReviewInput = {
         approved,
         ...(modifiedRubric && { modifiedRubric }),
@@ -264,27 +311,33 @@ export class GraphExecutionService {
       };
 
       // Resume the graph with human review input
-      const { Command } = await import('@langchain/langgraph');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await graph.invoke(new Command({ resume: humanReviewInput }), {
-        configurable: {
-          thread_id: threadId,
-          skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
-        },
-      });
+      const resumeConfigurable: GraphConfigurable = {
+        thread_id: threadId,
+        provider: undefined,
+        model: undefined,
+        projectExId: session.projectExId,
+        skipHumanReview: metadata.skipHumanReview ?? false,
+        skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
+      };
+      const result = (await graph.invoke(new Command({ resume: humanReviewInput }), {
+        configurable: resumeConfigurable,
+      })) as GraphResult;
 
-      // Determine the new status
+      // Determine the new status based on interrupt state
       let status: GraphSessionStatus = 'completed';
       let message = 'Evaluation completed successfully';
+      let rubricFinalForResponse = result.rubricFinal;
 
-      if (
-        !metadata.skipHumanEvaluation &&
-        result.rubricFinal &&
-        !result.humanEvaluation
-      ) {
-        status = 'awaiting_human_evaluation';
-        message =
-          'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
+      // Check if graph is interrupted again (waiting for human evaluation)
+      if (result.__interrupt__ && result.__interrupt__.length > 0) {
+        const interruptValue = result.__interrupt__[0]?.value;
+        if (interruptValue?.rubricFinal) {
+          status = 'awaiting_human_evaluation';
+          message =
+            'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
+          rubricFinalForResponse =
+            interruptValue.rubricFinal || result.rubricFinal;
+        }
       }
 
       // Update session status
@@ -303,7 +356,7 @@ export class GraphExecutionService {
         sessionId,
         threadId,
         status,
-        rubricFinal: result.rubricFinal,
+        rubricFinal: rubricFinalForResponse,
         message,
       };
     } catch (error) {
@@ -341,19 +394,25 @@ export class GraphExecutionService {
       }
 
       // Prepare human evaluation input
+      // This matches the HumanEvaluationInput interface expected by humanEvaluatorNode
       const humanEvaluationInput = {
         scores,
         overallAssessment,
       };
 
       // Resume the graph with human evaluation input
-      const { Command } = await import('@langchain/langgraph');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await graph.invoke(new Command({ resume: humanEvaluationInput }), {
-        configurable: {
-          thread_id: threadId,
-        },
-      });
+      const evalConfigurable: GraphConfigurable = {
+        thread_id: threadId,
+        provider: undefined,
+        model: undefined,
+        projectExId: session.projectExId,
+        skipHumanReview: metadata.skipHumanReview ?? false,
+        skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
+      };
+      const result = (await graph.invoke(
+        new Command({ resume: humanEvaluationInput }),
+        { configurable: evalConfigurable }
+      )) as GraphResult;
 
       // Store the human evaluation in database
       if (session.rubric && result.humanEvaluation) {

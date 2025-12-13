@@ -1,6 +1,5 @@
 import { prisma } from '../src/config/prisma.ts';
 import { logger } from '../src/utils/logger.ts';
-import { CopilotType } from '../src/generated/prisma/index.js'; // Import the enum
 
 async function seedGoldenSet() {
   try {
@@ -11,15 +10,16 @@ async function seedGoldenSet() {
       {
         projectExId: 'X57jbwZzB76',
         schemaExId: 'example-schema-1',
-        copilotType: CopilotType.dataModel, // Use enum
+        copilotType: 'dataModel' as const,
         description: 'Example data model for e-commerce',
-        promptTemplate: 'create a table called like_table which contains post_id and user_id, etc. create anything else when needed', // TODO: implement meaningful prompt templates
+        promptTemplate:
+          'create a table called like_table which contains post_id and user_id, etc. create anything else when needed', // TODO: implement meaningful prompt templates
         idealResponse: { entities: ['User', 'Product', 'Order'] },
       },
       // {
       //   projectExId: 'example-project-2',
       //   schemaExId: 'example-schema-2',
-      //   copilotType: CopilotType.uiBuilder, // Use enum
+      //   copilotType: 'uiBuilder' as const,
       //   description: 'Example UI for dashboard',
       //   promptTemplate: 'Create a dashboard UI with charts and tables',
       //   idealResponse: { components: ['Chart', 'Table', 'Card'] },
@@ -36,7 +36,14 @@ async function seedGoldenSet() {
           },
         },
         update: {},
-        create: data,
+        create: {
+          projectExId: data.projectExId,
+          schemaExId: data.schemaExId,
+          copilotType: data.copilotType,
+          description: data.description,
+          promptTemplate: data.promptTemplate,
+          idealResponse: data.idealResponse,
+        },
       });
     }
 

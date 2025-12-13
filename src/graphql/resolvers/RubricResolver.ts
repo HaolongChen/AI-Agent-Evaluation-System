@@ -64,9 +64,9 @@ export const rubricResolver = {
         adaptiveRubricId: string;
         evaluatorType: string;
         accountId: string | null;
-        result: boolean[];
-        confidenceScore: number[];
-        notes?: string;
+        scores: object;
+        overallScore: number;
+        summary?: string;
       }
     ) => {
       try {
@@ -74,9 +74,9 @@ export const rubricResolver = {
           args.adaptiveRubricId,
           args.evaluatorType,
           args.accountId,
-          args.result,
-          args.confidenceScore,
-          args.notes
+          args.scores,
+          args.overallScore,
+          args.summary
         );
         return result;
       } catch (error) {

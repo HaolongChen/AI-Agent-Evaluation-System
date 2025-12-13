@@ -1,6 +1,6 @@
 import { prisma } from '../config/prisma.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
-import type { CopilotType } from '../generated/prisma/index.ts';
+import type { CopilotType } from '../generated/prisma/enums.ts';
 import { logger } from '../utils/logger.ts';
 import { goldenSetService } from './GoldenSetService.ts';
 import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';

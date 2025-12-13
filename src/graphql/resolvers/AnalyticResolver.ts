@@ -54,7 +54,7 @@ export const analyticResolver = {
           args.modelName
         );
         // TODO: implement actual execution logic
-        return result ? true : false;
+        return !!result;
       } catch (error) {
         logger.error('Error executing AI copilot:', error);
         throw new Error('Failed to execute AI copilot');
@@ -62,8 +62,8 @@ export const analyticResolver = {
     },
     execAiCopilot: async () => {
       try {
-        const result = await executionService.createEvaluationSessions();
-        return result ? true : false;
+        await executionService.createEvaluationSessions();
+        return true;
       } catch (error) {
         logger.error('Error executing AI copilot:', error);
         throw new Error('Failed to execute AI copilot');

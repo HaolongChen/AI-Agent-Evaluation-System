@@ -1,7 +1,6 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
-  engineType = "client"
 }
 
 datasource db {
@@ -113,26 +112,25 @@ model adaptiveRubric {
   schemaExId  String @map("schema_ex_id")
   sessionId   Int    @unique @map("session_id")
 
-  // Rubric Content
-  content           String[] // The actual question/rubric
-  rubricType        String[]         @map("rubric_type") // e.g., 'completeness', 'correctness', 'naming_convention'
-  category          String[] // e.g., 'entity_coverage', 'attribute_completeness'
-  expectedAnswer    ExpectedAnswer[] @map("expected_answer")
-  copilotInput      String?          @map("copilot_input") @db.Text
-  copilotOutput     String?          @map("copilot_output") @db.Text
-  modelProvider     String?          @map("model_provider")
-  modelName         String?          @map("model_name")
-  generatorMetadata Json?            @map("generator_metadata")
-  fallbackReason    String?          @map("fallback_reason") @db.Text
+  // Rubric Content (structured to match LangGraph Rubric interface)
+  rubricId      String  @map("rubric_id") // Rubric.id from LangGraph
+  version       String  @default("1.0")
+  criteria      Json    @map("criteria") // Array of RubricCriterion objects
+  totalWeight   Decimal @map("total_weight") @db.Decimal(10, 2)
+  copilotInput  String? @map("copilot_input") @db.Text
+  copilotOutput String? @map("copilot_output") @db.Text
+  modelProvider String? @map("model_provider")
+  modelName     String? @map("model_name")
 
   // Status
   reviewStatus RubricReviewStatus @default(pending) @map("review_status")
   isActive     Boolean            @default(true) @map("is_active")
 
-  // Timestamps
-  generatedAt DateTime  @default(now()) @map("generated_at") @db.Timestamptz(6)
-  reviewedAt  DateTime? @map("reviewed_at") @db.Timestamptz(6)
-  reviewedBy  String?   @map("reviewed_by") // account ID of the reviewer
+  // Timestamps (matching LangGraph Rubric interface)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy String?   @map("reviewed_by") // account ID of the reviewer
 
   // Relations
   session      evaluationSession           @relation(fields: [sessionId], references: [id])
@@ -141,16 +139,16 @@ model adaptiveRubric {
   @@index([sessionId], map: "idx_adaptive_rubric_session")
 }
 
-// Rubric Judgments (human reviews)
+// Rubric Judgments (human and agent evaluations)
 model adaptiveRubricJudgeRecord {
-  id               Int       @id @default(autoincrement())
-  adaptiveRubricId Int       @map("adaptive_rubric_id")
-  evaluatorType    String    @map("evaluator_type") // 'agent' or 'human' to distinguish evaluators
-  accountId        String?   @map("account_id") // ID of the human judge (null for agent evaluations)
-  result           Boolean[] // true = pass, false = fail
-  confidenceScore  Decimal[] @map("confidence_score") @db.Decimal(5, 2) // 0.00 - 1.00 scale
-  notes            String?
-  judgedAt         DateTime  @default(now()) @map("judged_at") @db.Timestamptz(6)
+  id               Int      @id @default(autoincrement())
+  adaptiveRubricId Int      @map("adaptive_rubric_id")
+  evaluatorType    String   @map("evaluator_type") // 'agent' or 'human' to match LangGraph Evaluation.evaluatorType
+  accountId        String?  @map("account_id") // ID of the human judge (null for agent evaluations)
+  scores           Json     @map("scores") // Array of EvaluationScore objects (criterionId, score, reasoning, evidence)
+  overallScore     Decimal  @map("overall_score") @db.Decimal(5, 2)
+  summary          String   @db.Text
+  timestamp        DateTime @default(now()) @map("timestamp") @db.Timestamptz(6)
 
   // Relations
   rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
@@ -158,7 +156,7 @@ model adaptiveRubricJudgeRecord {
   @@index([adaptiveRubricId], map: "idx_rubric_judge_rubric")
 }
 
-// Evaluation Results Summary (aggregated metrics)
+// Evaluation Results Summary (matching LangGraph FinalReport interface)
 model evaluationResult {
   id          Int         @id @default(autoincrement())
   sessionId   Int         @unique @map("session_id")
@@ -168,31 +166,14 @@ model evaluationResult {
 
   evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
 
-  // Quality Metrics (specific to copilot type)
-  metrics Json // Flexible storage for different metric types
-  // Examples:
-  // Data Model Builder: {
-  //   "entity_coverage": 0.95,
-  //   "attribute_completeness": 0.87,
-  //   "naming_convention_adherence": 0.92,
-  //   "relational_integrity": 0.88,
-  //   "normalization_level": 0.85
-  // }
-  // UI Builder: {
-  //   "component_choice_relevance": 0.91,
-  //   "layout_coherence": 0.89,
-  //   "style_adherence": 0.94,
-  //   "responsiveness_check": 0.86
-  // }
-  // Actionflow Builder: {
-  //   "task_adherence": 0.93,
-  //   "logical_correctness": 0.90,
-  //   "efficiency": 0.85
-  // }
-  // combination of copilot types, categories, and their respective scores can be stored here
-
-  // Overall Score
-  overallScore Decimal @map("overall_score") @db.Decimal(5, 2)
+  // FinalReport fields (matching LangGraph FinalReport interface)
+  verdict          String   @default("needs_review") // 'pass', 'fail', 'needs_review'
+  overallScore     Decimal  @map("overall_score") @db.Decimal(5, 2)
+  summary          String   @db.Text
+  detailedAnalysis String   @map("detailed_analysis") @db.Text
+  discrepancies    String[] @default([]) // Array of discrepancy descriptions
+  auditTrace       String[] @default([]) @map("audit_trace") // Array of audit log entries
+  generatedAt      DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

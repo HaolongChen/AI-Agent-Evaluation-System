@@ -11,9 +11,9 @@ export class JudgeService {
     adaptiveRubricId: string,
     evaluatorType: string,
     accountId: string | null,
-    result: boolean[],
-    confidenceScore: number[],
-    notes?: string
+    scores: object,
+    overallScore: number,
+    summary?: string
   ) {
     try {
       const createRecord = async () => {
@@ -22,9 +22,9 @@ export class JudgeService {
             adaptiveRubricId: parseInt(adaptiveRubricId),
             evaluatorType,
             accountId: accountId ?? null,
-            result,
-            confidenceScore: confidenceScore ?? [],
-            notes: notes ?? null,
+            scores,
+            overallScore,
+            summary: summary ?? '',
           },
         });
         return finalRecord;
@@ -80,11 +80,9 @@ export class JudgeService {
           session.copilotType,
           session.modelName,
           {
-            judgeResult: result,
-            confidenceScore: confidenceScore,
-            // TODO: implement metrics
+            summary: summary ?? '',
           },
-          result.filter((r) => r).length / result.length
+          overallScore
         );
         return finalResult;
       };
@@ -103,7 +101,7 @@ export class JudgeService {
         where: {
           adaptiveRubricId: parseInt(rubricId),
         },
-        orderBy: { judgedAt: 'desc' },
+        orderBy: { timestamp: 'desc' },
       });
     } catch (error) {
       logger.error('Error fetching judge records by rubric:', error);

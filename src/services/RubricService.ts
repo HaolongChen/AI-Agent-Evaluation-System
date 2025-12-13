@@ -1,8 +1,8 @@
-import type { Prisma } from "../generated/prisma/index.js";
-import { prisma } from "../config/prisma.ts";
-import { REVIEW_STATUS } from "../config/constants.ts";
-import type { expectedAnswerType, rubricContentType } from "../utils/types.ts";
-import { logger } from "../utils/logger.ts";
+import type { Prisma } from '../generated/prisma/client.ts';
+import { prisma } from '../config/prisma.ts';
+import { REVIEW_STATUS } from '../config/constants.ts';
+import type { expectedAnswerType, rubricContentType } from '../utils/types.ts';
+import { logger } from '../utils/logger.ts';
 
 export class RubricService {
   async createRubrics(
@@ -25,36 +25,76 @@ export class RubricService {
   ) {
     try {
       return prisma.adaptiveRubric.createMany({
-        data: rubrics.map((r) => ({
-          projectExId: r.projectExId,
-          schemaExId: r.schemaExId,
-          sessionId: parseInt(r.sessionId),
-          ...(r.content && { content: r.content }),
-          ...(r.rubricType && { rubricType: r.rubricType }),
-          ...(r.category && { category: r.category }),
-          ...(r.expectedAnswer && { expectedAnswer: r.expectedAnswer }),
-          ...(r.copilotInput && { copilotInput: r.copilotInput }),
-          ...(r.copilotOutput && { copilotOutput: r.copilotOutput }),
-          ...(r.modelProvider !== undefined && {
-            modelProvider: r.modelProvider ?? null,
-          }),
-          ...(r.modelName !== undefined && {
-            modelName: r.modelName ?? null,
-          }),
-          ...(r.generatorMetadata && {
-            generatorMetadata: r.generatorMetadata as Prisma.InputJsonValue,
-          }),
-          ...(r.fallbackReason !== undefined && {
-            fallbackReason: r.fallbackReason ?? null,
-          }),
-          reviewStatus: REVIEW_STATUS.PENDING,
-          ...(r.newGoldenSetId && { newGoldenSetId: r.newGoldenSetId }),
-        })),
+        data: rubrics.map((r) => {
+          // Transform flat array structure to LangGraph-compatible structured format
+          const criteria = this.transformToCriteria(
+            r.content || [],
+            r.rubricType || [],
+            r.category || [],
+            r.expectedAnswer || []
+          );
+          const totalWeight = criteria.reduce(
+            (sum: number, c: { weight?: number }) => sum + (c.weight || 1),
+            0
+          );
+
+          return {
+            projectExId: r.projectExId,
+            schemaExId: r.schemaExId,
+            sessionId: parseInt(r.sessionId),
+            rubricId: `rubric-${r.schemaExId}-${Date.now()}`,
+            version: '1.0',
+            criteria: criteria as Prisma.InputJsonValue,
+            totalWeight: totalWeight,
+            ...(r.copilotInput && { copilotInput: r.copilotInput }),
+            ...(r.copilotOutput && { copilotOutput: r.copilotOutput }),
+            ...(r.modelProvider !== undefined && {
+              modelProvider: r.modelProvider ?? null,
+            }),
+            ...(r.modelName !== undefined && {
+              modelName: r.modelName ?? null,
+            }),
+            ...(r.generatorMetadata && {
+              generatorMetadata: r.generatorMetadata as Prisma.InputJsonValue,
+            }),
+            ...(r.fallbackReason !== undefined && {
+              fallbackReason: r.fallbackReason ?? null,
+            }),
+            reviewStatus: REVIEW_STATUS.PENDING,
+            ...(r.newGoldenSetId && { newGoldenSetId: r.newGoldenSetId }),
+          };
+        }),
       });
     } catch (error) {
-      logger.error("Error creating rubrics:", error);
-      throw new Error("Failed to create rubrics");
+      logger.error('Error creating rubrics:', error);
+      throw new Error('Failed to create rubrics');
     }
+  }
+
+  private transformToCriteria(
+    content: string[],
+    rubricType: string[],
+    category: string[],
+    expectedAnswer: expectedAnswerType[]
+  ) {
+    // Transform old flat arrays to LangGraph RubricCriterion[] structure
+    const criteria = [];
+    for (let i = 0; i < content.length; i++) {
+      criteria.push({
+        id: `criterion-${i + 1}`,
+        description: content[i] || '',
+        type: rubricType[i] || 'text',
+        category: category[i] || 'general',
+        weight: 1,
+        scale: {
+          minValue: 0,
+          maxValue: 10,
+          labels: ['Poor', 'Fair', 'Good', 'Excellent'],
+        },
+        expectedAnswer: expectedAnswer[i] || '',
+      });
+    }
+    return criteria;
   }
 
   async getRubricsBySchemaExId(schemaExId: string) {
@@ -69,8 +109,8 @@ export class RubricService {
         },
       });
     } catch (error) {
-      logger.error("Error fetching rubrics by schemaExId:", error);
-      throw new Error("Failed to fetch rubrics by schemaExId");
+      logger.error('Error fetching rubrics by schemaExId:', error);
+      throw new Error('Failed to fetch rubrics by schemaExId');
     }
   }
 
@@ -82,8 +122,8 @@ export class RubricService {
         },
       });
     } catch (error) {
-      logger.error("Error fetching rubric by id:", error);
-      throw new Error("Failed to fetch rubric by id");
+      logger.error('Error fetching rubric by id:', error);
+      throw new Error('Failed to fetch rubric by id');
     }
   }
 
@@ -99,8 +139,8 @@ export class RubricService {
         },
       });
     } catch (error) {
-      logger.error("Error fetching rubrics by sessionId:", error);
-      throw new Error("Failed to fetch rubrics by sessionId");
+      logger.error('Error fetching rubrics by sessionId:', error);
+      throw new Error('Failed to fetch rubrics by sessionId');
     }
   }
 
@@ -123,11 +163,11 @@ export class RubricService {
           judgeRecords: true,
           session: true,
         },
-        orderBy: { generatedAt: "desc" },
+        orderBy: { createdAt: 'desc' },
       });
     } catch (error) {
-      logger.error("Error fetching rubrics for review:", error);
-      throw new Error("Failed to fetch rubrics for review");
+      logger.error('Error fetching rubrics for review:', error);
+      throw new Error('Failed to fetch rubrics for review');
     }
   }
 
@@ -159,8 +199,8 @@ export class RubricService {
         },
       });
     } catch (error) {
-      logger.error("Error reviewing rubric:", error);
-      throw new Error("Failed to review rubric");
+      logger.error('Error reviewing rubric:', error);
+      throw new Error('Failed to review rubric');
     }
   }
 }

@@ -94,24 +94,43 @@ export const typeDefs = `#graphql
     projectExId: String!
     schemaExId: String!
     sessionId: Int!
-    content: [String!]!
-    rubricType: [String!]!
-    category: [String!]!
-    expectedAnswer: [ExpectedAnswer!]!
+    
+    # Structured Rubric (matching LangGraph Rubric interface)
+    rubricId: String!
+    version: String!
+    criteria: [RubricCriterion!]!
+    totalWeight: Float!
+    
     copilotInput: String
     copilotOutput: String
     modelProvider: String
     modelName: String
-    generatorMetadata: JSON
-    fallbackReason: String
     reviewStatus: RubricReviewStatus!
     isActive: Boolean!
-    generatedAt: DateTime!
+    
+    # Timestamps (matching LangGraph Rubric interface)
+    createdAt: DateTime!
+    updatedAt: DateTime!
     reviewedAt: DateTime
     reviewedBy: String
 
     # Relations
     judgeRecords: [JudgeRecord!]!
+  }
+  
+  type RubricCriterion {
+    id: String!
+    name: String!
+    description: String!
+    weight: Float!
+    scoringScale: ScoringScale!
+    isHardConstraint: Boolean!
+  }
+  
+  type ScoringScale {
+    min: Int!
+    max: Int!
+    labels: JSON
   }
 
   type JudgeRecord {
@@ -119,10 +138,19 @@ export const typeDefs = `#graphql
     adaptiveRubricId: Int!
     evaluatorType: String!
     accountId: String
-    result: [Boolean!]!
-    confidenceScore: [Float!]!
-    notes: String
-    judgedAt: DateTime!
+    
+    # Structured Evaluation (matching LangGraph Evaluation interface)
+    scores: [EvaluationScore!]!
+    overallScore: Float!
+    summary: String!
+    timestamp: DateTime!
+  }
+  
+  type EvaluationScore {
+    criterionId: String!
+    score: Float!
+    reasoning: String!
+    evidence: [String!]
   }
 
   type EvaluationResult {
@@ -132,8 +160,16 @@ export const typeDefs = `#graphql
     copilotType: CopilotType!
     modelName: String!
     evaluationStatus: EvaluationStatus!
-    metrics: JSON!
+    
+    # FinalReport fields (matching LangGraph FinalReport interface)
+    verdict: String!
     overallScore: Float!
+    summary: String!
+    detailedAnalysis: String!
+    discrepancies: [String!]!
+    auditTrace: [String!]!
+    generatedAt: DateTime!
+    
     createdAt: DateTime!
   }
 
@@ -205,15 +241,23 @@ export const typeDefs = `#graphql
       modifiedRubricContent: JSON!
     ): AdaptiveRubric!
 
-    # Judge
+    # Judge - submit evaluation matching LangGraph Evaluation interface
     judge(
       adaptiveRubricId: Int!
       evaluatorType: String!
       accountId: String
-      result: [Boolean!]!
-      confidenceScore: [Float!]!
-      notes: String
+      scores: [EvaluationScoreInput!]!
+      overallScore: Float!
+      summary: String!
     ): JudgeResult!
+  }
+  
+  # Input type for EvaluationScore
+  input EvaluationScoreInput {
+    criterionId: String!
+    score: Float!
+    reasoning: String!
+    evidence: [String!]
   }
 
   # Custom Types for Analytics

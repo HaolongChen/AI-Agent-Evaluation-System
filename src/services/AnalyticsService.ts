@@ -1,6 +1,6 @@
-import { prisma } from "../config/prisma.ts";
-import { logger } from "../utils/logger.ts";
-import { COPILOT_TYPES } from "../config/constants.ts";
+import { prisma } from '../config/prisma.ts';
+import { logger } from '../utils/logger.ts';
+import { COPILOT_TYPES } from '../config/constants.ts';
 
 export class AnalyticsService {
   async getEvaluationResult(sessionId: string) {
@@ -12,8 +12,8 @@ export class AnalyticsService {
         },
       });
     } catch (error) {
-      logger.error("Error fetching evaluation result:", error);
-      throw new Error("Failed to fetch evaluation result");
+      logger.error('Error fetching evaluation result:', error);
+      throw new Error('Failed to fetch evaluation result');
     }
   }
 
@@ -22,7 +22,13 @@ export class AnalyticsService {
     schemaExId: string,
     copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
     modelName: string,
-    metrics: object,
+    reportData: {
+      verdict?: string;
+      summary?: string;
+      detailedAnalysis?: string;
+      discrepancies?: string[];
+      auditTrace?: string[];
+    },
     overallScore: number
   ) {
     try {
@@ -32,13 +38,17 @@ export class AnalyticsService {
           schemaExId: schemaExId,
           copilotType: copilotType,
           modelName: modelName,
-          metrics,
+          verdict: reportData.verdict ?? 'needs_review',
           overallScore: overallScore,
+          summary: reportData.summary ?? '',
+          detailedAnalysis: reportData.detailedAnalysis ?? '',
+          discrepancies: reportData.discrepancies ?? [],
+          auditTrace: reportData.auditTrace ?? [],
         },
       });
     } catch (error) {
-      logger.error("Error creating evaluation result:", error);
-      throw new Error("Failed to create evaluation result");
+      logger.error('Error creating evaluation result:', error);
+      throw new Error('Failed to create evaluation result');
     }
   }
 
@@ -48,7 +58,7 @@ export class AnalyticsService {
         where: {
           schemaExId: schemaExId,
           modelName: { in: modelNames },
-          status: "completed",
+          status: 'completed',
         },
         include: {
           result: true,
@@ -86,7 +96,8 @@ export class AnalyticsService {
 
         return {
           modelName,
-          metrics: modelSessions[0]?.result?.metrics || {},
+          summary: modelSessions[0]?.result?.summary || '',
+          detailedAnalysis: modelSessions[0]?.result?.detailedAnalysis || '',
           overallScore: avgScore,
           avgLatencyMs: Math.round(avgLatency),
           avgTokens: Math.round(avgTokens),
@@ -99,8 +110,8 @@ export class AnalyticsService {
         models: modelPerformance,
       };
     } catch (error) {
-      logger.error("Error comparing models:", error);
-      throw new Error("Failed to compare models");
+      logger.error('Error comparing models:', error);
+      throw new Error('Failed to compare models');
     }
   }
 
@@ -113,14 +124,14 @@ export class AnalyticsService {
     try {
       const sessions = await prisma.evaluationSession.findMany({
         where: {
-          status: "completed",
+          status: 'completed',
           ...(filters.copilotType && {
             copilotType: filters.copilotType as
-              | "dataModel"
-              | "uiBuilder"
-              | "actionflow"
-              | "logAnalyzer"
-              | "agentBuilder",
+              | 'dataModel'
+              | 'uiBuilder'
+              | 'actionflow'
+              | 'logAnalyzer'
+              | 'agentBuilder',
           }),
           ...(filters.modelName && { modelName: filters.modelName }),
           ...(filters.startDate && { startedAt: { gte: filters.startDate } }),
@@ -155,8 +166,8 @@ export class AnalyticsService {
         modelPerformanceTrend: [], // TODO: Implement trend analysis
       };
     } catch (error) {
-      logger.error("Error fetching dashboard metrics:", error);
-      throw new Error("Failed to fetch dashboard metrics");
+      logger.error('Error fetching dashboard metrics:', error);
+      throw new Error('Failed to fetch dashboard metrics');
     }
   }
 }

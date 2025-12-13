@@ -1,18 +1,18 @@
-import { prisma } from "../config/prisma.ts";
-import { SESSION_STATUS } from "../config/constants.ts";
-import type { CopilotType } from "../generated/prisma/index.ts";
-import { logger } from "../utils/logger.ts";
-import { goldenSetService } from "./GoldenSetService.ts";
-import { REVERSE_COPILOT_TYPES } from "../config/constants.ts";
-import { WS_URL } from "../config/env.ts";
+import { prisma } from '../config/prisma.ts';
+import { SESSION_STATUS } from '../config/constants.ts';
+import type { CopilotType } from '../generated/prisma/index.ts';
+import { logger } from '../utils/logger.ts';
+import { goldenSetService } from './GoldenSetService.ts';
+import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
+import { WS_URL } from '../config/env.ts';
 import {
   applyAndWatchJob,
   type EvalJobResult,
   type GenJobResult,
-} from "../kubernetes/utils/apply-from-file.ts";
-import { EvaluationJobRunner } from "../jobs/EvaluationJobRunner.ts";
-import { RubricGenerationJobRunner } from "../jobs/RubricGenerationJobRunner.ts";
-import { RUN_KUBERNETES_JOBS } from "../config/env.ts";
+} from '../kubernetes/utils/apply-from-file.ts';
+import { EvaluationJobRunner } from '../jobs/EvaluationJobRunner.ts';
+import { RubricGenerationJobRunner } from '../jobs/RubricGenerationJobRunner.ts';
+import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 
 export class ExecutionService {
   async createEvaluationSession(
@@ -30,48 +30,48 @@ export class ExecutionService {
         REVERSE_COPILOT_TYPES[copilotType]
       );
       if (!goldenSets || goldenSets.length === 0) {
-        throw new Error("No golden sets found");
+        throw new Error('No golden sets found');
       }
       if (goldenSets.length > 1) {
-        throw new Error("Multiple golden sets found, expected only one");
+        throw new Error('Multiple golden sets found, expected only one');
       }
       const goldenSet = goldenSets[0];
       if (!goldenSet) {
-        throw new Error("Golden set is undefined");
+        throw new Error('Golden set is undefined');
       }
       if (USE_KUBERNETES_JOBS) {
         const evalJobResult = (await applyAndWatchJob(
           `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
-          "default",
-          "./src/jobs/EvaluationJobRunner.ts",
+          'default',
+          './src/jobs/EvaluationJobRunner.ts',
           300000,
-          "evaluation",
+          'evaluation',
           String(goldenSet.id),
           projectExId,
           schemaExId,
           goldenSet.copilotType,
           WS_URL,
-          modelName ?? "copilot-latest"
+          modelName ?? 'copilot-latest'
         )) as unknown as EvalJobResult;
         logger.info(
-          "Evaluation job completed with status:",
+          'Evaluation job completed with status:',
           evalJobResult.status
         );
-        if (evalJobResult.status !== "succeeded") {
-          throw new Error("Evaluation job failed");
+        if (evalJobResult.status !== 'succeeded') {
+          throw new Error('Evaluation job failed');
         }
         const genJobResult = (await applyAndWatchJob(
           `rubric-job-${projectExId}-${schemaExId}-${Date.now()}`,
-          "default",
-          "./src/jobs/RubricGenerationJobRunner.ts",
+          'default',
+          './src/jobs/RubricGenerationJobRunner.ts',
           300000,
-          "generation",
+          'generation',
           String(goldenSet.id),
-          evalJobResult.editableText || "", // handle scenario where job fails
-          modelName ?? "copilot-latest"
+          evalJobResult.editableText || '', // handle scenario where job fails
+          modelName ?? 'copilot-latest'
         )) as unknown as GenJobResult;
         logger.info(
-          "Rubric generation job completed with status:",
+          'Rubric generation job completed with status:',
           genJobResult.status
         );
         return genJobResult;
@@ -83,26 +83,26 @@ export class ExecutionService {
         );
         evalJobRunner.startJob();
         const { editableText } = await evalJobRunner.waitForCompletion();
-        logger.info("Evaluation job completed with response:", editableText);
+        logger.info('Evaluation job completed with response:', editableText);
         const genJobRunner = new RubricGenerationJobRunner(
           String(goldenSet.id),
           goldenSet.promptTemplate, // query - the original prompt
-          "", // context - can be empty or derived from golden set
+          '', // context - can be empty or derived from golden set
           editableText, // candidateOutput - the AI-generated response to evaluate
-          modelName ?? "copilot-latest",
+          modelName ?? 'copilot-latest',
           projectExId // projectExId for schema loading
         );
         genJobRunner.startJob();
         const genResult = await genJobRunner.waitForCompletion();
         logger.info(
-          "Rubric generation job completed with response:",
+          'Rubric generation job completed with response:',
           genResult
         );
         return { response: editableText };
       }
     } catch (error) {
-      logger.error("Error creating evaluation session:", error);
-      throw new Error("Failed to create evaluation session");
+      logger.error('Error creating evaluation session:', error);
+      throw new Error('Failed to create evaluation session');
     }
   }
 
@@ -112,7 +112,7 @@ export class ExecutionService {
 
       const goldenSets = await goldenSetService.getGoldenSets();
       if (!goldenSets || goldenSets.length === 0) {
-        throw new Error("No golden sets found");
+        throw new Error('No golden sets found');
       }
 
       logger.info(
@@ -126,10 +126,10 @@ export class ExecutionService {
               `evaluation-job-${goldenSet.projectExId}-${
                 goldenSet.schemaExId
               }-${Date.now()}`,
-              "default",
-              "./src/jobs/EvaluationJobRunner.ts",
+              'default',
+              './src/jobs/EvaluationJobRunner.ts',
               300000,
-              "evaluation",
+              'evaluation',
               String(goldenSet.id),
               goldenSet.projectExId,
               goldenSet.schemaExId,
@@ -141,7 +141,7 @@ export class ExecutionService {
               `Evaluation job for golden set ${goldenSet.id} completed with status:`,
               evalJobResult.status
             );
-            if (evalJobResult.status !== "succeeded") {
+            if (evalJobResult.status !== 'succeeded') {
               throw new Error(
                 `Evaluation job for golden set ${goldenSet.id} failed`
               );
@@ -150,13 +150,13 @@ export class ExecutionService {
               `rubric-job-${goldenSet.projectExId}-${
                 goldenSet.schemaExId
               }-${Date.now()}`,
-              "default",
-              "./src/jobs/RubricGenerationJobRunner.ts",
+              'default',
+              './src/jobs/RubricGenerationJobRunner.ts',
               300000,
-              "generation",
+              'generation',
               String(goldenSet.id),
-              evalJobResult.editableText || "", // handle scenario where job fails
-              "copilot-latest"
+              evalJobResult.editableText || '', // handle scenario where job fails
+              'copilot-latest'
             )) as unknown as GenJobResult;
             logger.info(
               `Rubric generation job for golden set ${goldenSet.id} completed with status:`,
@@ -166,8 +166,8 @@ export class ExecutionService {
           })
         );
 
-        const successful = results.filter((r) => r.status === "fulfilled");
-        const failed = results.filter((r) => r.status === "rejected");
+        const successful = results.filter((r) => r.status === 'fulfilled');
+        const failed = results.filter((r) => r.status === 'rejected');
 
         logger.info(
           `Kubernetes jobs created: ${successful.length} successful, ${failed.length} failed`
@@ -175,7 +175,7 @@ export class ExecutionService {
 
         if (failed.length > 0) {
           failed.forEach((result, index) => {
-            if (result.status === "rejected") {
+            if (result.status === 'rejected') {
               logger.error(`Job ${index + 1} failed:`, result.reason);
             }
           });
@@ -213,9 +213,9 @@ export class ExecutionService {
             const rubricJobRunner = new RubricGenerationJobRunner(
               String(goldenSet.id),
               goldenSet.promptTemplate, // query - the original prompt
-              "", // context - can be empty or derived from golden set
+              '', // context - can be empty or derived from golden set
               editableText, // candidateOutput - the AI-generated response to evaluate
-              "copilot-latest",
+              'copilot-latest',
               goldenSet.projectExId // projectExId for schema loading
             );
             rubricJobRunner.startJob();
@@ -228,8 +228,8 @@ export class ExecutionService {
           })
         );
 
-        const successful = results.filter((r) => r.status === "fulfilled");
-        const failed = results.filter((r) => r.status === "rejected");
+        const successful = results.filter((r) => r.status === 'fulfilled');
+        const failed = results.filter((r) => r.status === 'rejected');
 
         logger.info(
           `Local evaluation jobs completed: ${successful.length} successful, ${failed.length} failed`
@@ -237,7 +237,7 @@ export class ExecutionService {
 
         if (failed.length > 0) {
           failed.forEach((result, index) => {
-            if (result.status === "rejected") {
+            if (result.status === 'rejected') {
               logger.error(`Local job ${index + 1} failed:`, result.reason);
             }
           });
@@ -259,8 +259,8 @@ export class ExecutionService {
         // };
       }
     } catch (error) {
-      logger.error("Error creating evaluation sessions:", error);
-      throw new Error("Failed to create evaluation sessions");
+      logger.error('Error creating evaluation sessions:', error);
+      throw new Error('Failed to create evaluation sessions');
     }
   }
 
@@ -269,13 +269,13 @@ export class ExecutionService {
       return prisma.evaluationSession.findUnique({
         where: { id: parseInt(id) },
         include: {
-          rubrics: true,
+          rubric: true,
           result: true,
         },
       });
     } catch (error) {
-      logger.error("Error fetching evaluation session:", error);
-      throw new Error("Failed to fetch evaluation session");
+      logger.error('Error fetching evaluation session:', error);
+      throw new Error('Failed to fetch evaluation session');
     }
   }
 
@@ -294,14 +294,14 @@ export class ExecutionService {
           ...(filters.status && { status: filters.status }),
         },
         include: {
-          rubrics: true,
+          rubric: true,
           result: true,
         },
-        orderBy: { startedAt: "desc" },
+        orderBy: { startedAt: 'desc' },
       });
     } catch (error) {
-      logger.error("Error fetching evaluation sessions:", error);
-      throw new Error("Failed to fetch evaluation sessions");
+      logger.error('Error fetching evaluation sessions:', error);
+      throw new Error('Failed to fetch evaluation sessions');
     }
   }
 
@@ -336,8 +336,8 @@ export class ExecutionService {
         },
       });
     } catch (error) {
-      logger.error("Error updating evaluation session status:", error);
-      throw new Error("Failed to update evaluation session status");
+      logger.error('Error updating evaluation session status:', error);
+      throw new Error('Failed to update evaluation session status');
     }
   }
 }

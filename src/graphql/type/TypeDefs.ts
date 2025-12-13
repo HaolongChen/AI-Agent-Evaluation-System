@@ -8,7 +8,21 @@ export const typeDefs = `#graphql
     id: ID!
     projectExId: String!
     schemaExId: String!
+    nextGoldenSetId: Int
     copilotType: CopilotType!
+    description: String
+    promptTemplate: String!
+    idealResponse: JSON!
+    createdAt: DateTime!
+    createdBy: String
+    isActive: Boolean!
+    
+    # Relations
+    nextGoldenSet: NextGoldenSet
+  }
+  
+  type NextGoldenSet {
+    id: ID!
     description: String
     promptTemplate: String!
     idealResponse: JSON!
@@ -45,7 +59,7 @@ export const typeDefs = `#graphql
     contextPercentage: Float
 
     # Relations
-    rubrics: [AdaptiveRubric!]!
+    rubric: AdaptiveRubric
     result: EvaluationResult
   }
 
@@ -103,8 +117,9 @@ export const typeDefs = `#graphql
   type JudgeRecord {
     id: ID!
     adaptiveRubricId: Int!
-    accountId: String!
-    result: Boolean!
+    evaluatorType: String!
+    accountId: String
+    result: [Boolean!]!
     confidenceScore: [Float!]!
     notes: String
     judgedAt: DateTime!
@@ -127,6 +142,7 @@ export const typeDefs = `#graphql
     # Golden Set
     getGoldenSetSchemas(copilotType: CopilotType): [String!]!
     getGoldenSets(projectExId: String, copilotType: CopilotType): [GoldenSet!]!
+    getNextGoldenSet(id: ID!): NextGoldenSet
 
     # Evaluation Sessions
     getSession(id: ID!): EvaluationSession
@@ -192,7 +208,8 @@ export const typeDefs = `#graphql
     # Judge
     judge(
       adaptiveRubricId: Int!
-      accountId: String!
+      evaluatorType: String!
+      accountId: String
       result: [Boolean!]!
       confidenceScore: [Float!]!
       notes: String

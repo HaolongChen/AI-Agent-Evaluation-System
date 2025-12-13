@@ -1,7 +1,7 @@
-import { rubricService } from "../../services/RubricService.ts";
-import { judgeService } from "../../services/JudgeService.ts";
-import type { REVIEW_STATUS } from "../../config/constants.ts";
-import { logger } from "../../utils/logger.ts";
+import { rubricService } from '../../services/RubricService.ts';
+import { judgeService } from '../../services/JudgeService.ts';
+import type { REVIEW_STATUS } from '../../config/constants.ts';
+import { logger } from '../../utils/logger.ts';
 
 export const rubricResolver = {
   Query: {
@@ -15,8 +15,8 @@ export const rubricResolver = {
         );
         return rubrics;
       } catch (error) {
-        logger.error("Error fetching adaptive rubrics by schemaExId:", error);
-        throw new Error("Failed to fetch adaptive rubrics by schemaExId");
+        logger.error('Error fetching adaptive rubrics by schemaExId:', error);
+        throw new Error('Failed to fetch adaptive rubrics by schemaExId');
       }
     },
 
@@ -28,8 +28,8 @@ export const rubricResolver = {
         const rubrics = await rubricService.getRubricsBySession(args.sessionId);
         return rubrics;
       } catch (error) {
-        logger.error("Error fetching adaptive rubrics by sessionId:", error);
-        throw new Error("Failed to fetch adaptive rubrics by sessionId");
+        logger.error('Error fetching adaptive rubrics by sessionId:', error);
+        throw new Error('Failed to fetch adaptive rubrics by sessionId');
       }
     },
 
@@ -47,12 +47,12 @@ export const rubricResolver = {
           args.sessionId,
           args.projectExId,
           args.schemaExId,
-          args.reviewStatus ?? "pending"
+          args.reviewStatus ?? 'pending'
         );
         return rubrics;
       } catch (error) {
-        logger.error("Error fetching rubrics for review:", error);
-        throw new Error("Failed to fetch rubrics for review");
+        logger.error('Error fetching rubrics for review:', error);
+        throw new Error('Failed to fetch rubrics for review');
       }
     },
   },
@@ -62,7 +62,8 @@ export const rubricResolver = {
       _: unknown,
       args: {
         adaptiveRubricId: string;
-        accountId: string;
+        evaluatorType: string;
+        accountId: string | null;
         result: boolean[];
         confidenceScore: number[];
         notes?: string;
@@ -71,6 +72,7 @@ export const rubricResolver = {
       try {
         const result = await judgeService.createJudgeRecord(
           args.adaptiveRubricId,
+          args.evaluatorType,
           args.accountId,
           args.result,
           args.confidenceScore,
@@ -78,8 +80,8 @@ export const rubricResolver = {
         );
         return result;
       } catch (error) {
-        logger.error("Error creating judge record:", error);
-        throw new Error("Failed to create judge record");
+        logger.error('Error creating judge record:', error);
+        throw new Error('Failed to create judge record');
       }
     },
   },

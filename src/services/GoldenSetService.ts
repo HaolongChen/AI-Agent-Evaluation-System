@@ -41,6 +41,44 @@ export class GoldenSetService {
     }
   }
 
+  async updateGoldenSetFromNextGoldenSet(
+    projectExId: string,
+    schemaExId: string,
+    copilotType: keyof typeof COPILOT_TYPES
+  ) {
+    try {
+      const originalGoldenSets = await this.getGoldenSets(
+        projectExId,
+        schemaExId,
+        copilotType
+      );
+      if (originalGoldenSets.length !== 1 || !originalGoldenSets[0]) {
+        logger.error("Golden set not found or ambiguous for update");
+        throw new Error("Golden set not found or ambiguous");
+      }
+      const originalGoldenSet = originalGoldenSets[0];
+      if (!originalGoldenSet.nextGoldenSet) {
+        logger.error("No next golden set to update from");
+        throw new Error("No next golden set to update from");
+      }
+      const nextGoldenSet = originalGoldenSet.nextGoldenSet;
+      return prisma.goldenSet.update({
+        where: {
+          id: originalGoldenSet.id,
+        },
+        data: {
+          description: nextGoldenSet.description,
+          promptTemplate: nextGoldenSet.promptTemplate,
+          idealResponse: nextGoldenSet.idealResponse as object,
+          nextGoldenSetId: null,
+        },
+      });
+    } catch (error) {
+      logger.error("Error updating golden set from next golden set:", error);
+      throw new Error("Failed to update golden set from next golden set");
+    }
+  }
+
   async updateGoldenSetProject(
     projectExId: string,
     schemaExId: string,

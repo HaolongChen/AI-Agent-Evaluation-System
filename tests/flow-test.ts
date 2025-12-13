@@ -100,7 +100,9 @@ async function testGetGoldenSets(): Promise<boolean> {
       console.log(`     Schema: ${gs.schemaExId}`);
       console.log(`     Copilot Type: ${gs.copilotType}`);
       console.log(
-        `     Prompt: ${gs.promptTemplate.substring(0, 100)}${gs.promptTemplate.length > 100 ? '...' : ''}`
+        `     Prompt: ${gs.promptTemplate.substring(0, 100)}${
+          gs.promptTemplate.length > 100 ? '...' : ''
+        }`
       );
     });
 
@@ -263,7 +265,9 @@ async function testGetSessions(): Promise<boolean> {
     const sessions = result.data?.getSessions;
     if (!sessions || sessions.length === 0) {
       console.log('⚠️  No evaluation sessions found');
-      console.log('   This may be expected if no evaluations have been run yet');
+      console.log(
+        '   This may be expected if no evaluations have been run yet'
+      );
       return true; // Not a failure, just informational
     }
 
@@ -281,10 +285,14 @@ async function testGetSessions(): Promise<boolean> {
         console.log(`    Latency: ${session.totalLatencyMs}ms`);
       }
       if (session.rubric) {
-        console.log(`    Rubric: ${session.rubric.rubricId} (${session.rubric.reviewStatus})`);
+        console.log(
+          `    Rubric: ${session.rubric.rubricId} (${session.rubric.reviewStatus})`
+        );
       }
       if (session.result) {
-        console.log(`    Result: ${session.result.verdict} (Score: ${session.result.overallScore})`);
+        console.log(
+          `    Result: ${session.result.verdict} (Score: ${session.result.overallScore})`
+        );
       }
       console.log('');
     });
@@ -455,14 +463,22 @@ async function testGetRubrics(): Promise<boolean> {
 
 // Main test runner
 async function main() {
-  console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║       End-to-End Evaluation Pipeline Flow Test               ║');
-  console.log('╠══════════════════════════════════════════════════════════════╣');
+  console.log(
+    '╔══════════════════════════════════════════════════════════════╗'
+  );
+  console.log(
+    '║       End-to-End Evaluation Pipeline Flow Test               ║'
+  );
+  console.log(
+    '╠══════════════════════════════════════════════════════════════╣'
+  );
   console.log('║  GraphQL Endpoint: ' + GRAPHQL_URL.padEnd(42) + '║');
   console.log('║  Project: ' + TEST_PROJECT_EX_ID.padEnd(51) + '║');
   console.log('║  Schema: ' + TEST_SCHEMA_EX_ID.padEnd(52) + '║');
   console.log('║  Model: ' + TEST_MODEL_NAME.padEnd(53) + '║');
-  console.log('╚══════════════════════════════════════════════════════════════╝\n');
+  console.log(
+    '╚══════════════════════════════════════════════════════════════╝\n'
+  );
 
   const results: Record<string, boolean> = {};
 
@@ -502,9 +518,15 @@ async function main() {
   results['5. Get Rubrics'] = await testGetRubrics();
 
   // Print summary
-  console.log('╔══════════════════════════════════════════════════════════════╗');
-  console.log('║                       Test Summary                           ║');
-  console.log('╠══════════════════════════════════════════════════════════════╣');
+  console.log(
+    '╔══════════════════════════════════════════════════════════════╗'
+  );
+  console.log(
+    '║                       Test Summary                           ║'
+  );
+  console.log(
+    '╠══════════════════════════════════════════════════════════════╣'
+  );
 
   let allPassed = true;
   for (const [name, passed] of Object.entries(results)) {
@@ -513,15 +535,27 @@ async function main() {
     if (!passed) allPassed = false;
   }
 
-  console.log('╠══════════════════════════════════════════════════════════════╣');
-  const overallStatus = allPassed ? '✅ ALL TESTS PASSED' : '❌ SOME TESTS FAILED';
+  console.log(
+    '╠══════════════════════════════════════════════════════════════╣'
+  );
+  const overallStatus = allPassed
+    ? '✅ ALL TESTS PASSED'
+    : '❌ SOME TESTS FAILED';
   console.log(`║  ${overallStatus.padEnd(58)} ║`);
-  console.log('╚══════════════════════════════════════════════════════════════╝');
+  console.log(
+    '╚══════════════════════════════════════════════════════════════╝'
+  );
 
   console.log('\nUsage:');
-  console.log('  npx tsx tests/flow-test.ts          # Quick tests (golden sets, sessions, rubrics)');
-  console.log('  npx tsx tests/flow-test.ts --full   # Run single evaluation (EvaluationJobRunner + RubricGenerationJobRunner)');
-  console.log('  npx tsx tests/flow-test.ts --all    # Run all golden sets (slow)');
+  console.log(
+    '  npx tsx tests/flow-test.ts          # Quick tests (golden sets, sessions, rubrics)'
+  );
+  console.log(
+    '  npx tsx tests/flow-test.ts --full   # Run single evaluation (EvaluationJobRunner + RubricGenerationJobRunner)'
+  );
+  console.log(
+    '  npx tsx tests/flow-test.ts --all    # Run all golden sets (slow)'
+  );
 
   process.exit(allPassed ? 0 : 1);
 }

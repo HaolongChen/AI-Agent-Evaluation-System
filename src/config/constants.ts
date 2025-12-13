@@ -6,7 +6,9 @@ export const COPILOT_TYPES = {
   AGENT_BUILDER: 'agentBuilder',
 } as const;
 
-export const REVERSE_COPILOT_TYPES: { [key: string]: keyof typeof COPILOT_TYPES } = {
+export const REVERSE_COPILOT_TYPES: {
+  [key: string]: keyof typeof COPILOT_TYPES;
+} = {
   dataModel: 'DATA_MODEL_BUILDER',
   uiBuilder: 'UI_BUILDER',
   actionflow: 'ACTIONFLOW_BUILDER',
@@ -143,6 +145,5 @@ export const CALL_GRAPHQL = {
       }
     }
     `,
-    
   },
 };

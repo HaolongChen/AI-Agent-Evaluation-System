@@ -288,17 +288,24 @@ export const RubricMutations = {
   judge: (data: {
     adaptiveRubricId: number;
     accountId: string;
-    result: boolean;
-    confidenceScore: number[];
-    notes?: string;
+    scores: object;
+    overallScore: number;
+    summary?: string;
   }) => {
     return mutation('judge')
       .withVariable('adaptiveRubricId', data.adaptiveRubricId)
       .withVariable('accountId', data.accountId)
-      .withVariable('result', data.result)
-      .withVariable('confidenceScore', data.confidenceScore)
-      .withVariable('notes', data.notes)
-      .select('id', 'adaptiveRubricId', 'result', 'confidenceScore', 'judgedAt')
+      .withVariable('scores', data.scores)
+      .withVariable('overallScore', data.overallScore)
+      .withVariable('summary', data.summary)
+      .select(
+        'id',
+        'adaptiveRubricId',
+        'scores',
+        'overallScore',
+        'summary',
+        'timestamp'
+      )
       .build();
   },
 };

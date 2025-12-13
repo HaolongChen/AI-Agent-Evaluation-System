@@ -76,7 +76,19 @@ export class RubricService {
     rubricType: string[],
     category: string[],
     expectedAnswer: expectedAnswerType[]
-  ) {
+  ): Array<{
+    id: string;
+    description: string;
+    type: string;
+    category: string;
+    weight: number;
+    scale: {
+      minValue: number;
+      maxValue: number;
+      labels: string[];
+    };
+    expectedAnswer: string;
+  }> {
     // Transform old flat arrays to LangGraph RubricCriterion[] structure
     const criteria = [];
     for (let i = 0; i < content.length; i++) {
@@ -184,17 +196,14 @@ export class RubricService {
           reviewStatus: reviewStatus,
           reviewedAt: new Date(),
           reviewedBy: reviewerAccountId,
-          ...(modifiedRubricContent?.content && {
-            content: modifiedRubricContent.content,
-          }),
-          ...(modifiedRubricContent?.rubricType && {
-            rubricType: modifiedRubricContent.rubricType,
-          }),
-          ...(modifiedRubricContent?.category && {
-            category: modifiedRubricContent.category,
-          }),
-          ...(modifiedRubricContent?.expectedAnswer && {
-            expectedAnswer: modifiedRubricContent.expectedAnswer,
+          ...(modifiedRubricContent && {
+            criteria: this.transformToCriteria(
+              modifiedRubricContent.content || [],
+              modifiedRubricContent.rubricType || [],
+              modifiedRubricContent.category || [],
+              modifiedRubricContent.expectedAnswer || []
+            ) as Prisma.InputJsonValue,
+            totalWeight: (modifiedRubricContent.content || []).length,
           }),
         },
       });

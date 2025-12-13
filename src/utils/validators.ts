@@ -18,8 +18,9 @@ export const evaluationSessionInputValidator = z.object({
 
 export const judgeInputValidator = z.object({
   adaptiveRubricId: z.string(),
-  accountId: z.string(),
-  result: z.boolean(),
-  confidenceScore: z.number().min(1).max(5).optional(),
-  notes: z.string().optional(),
+  evaluatorType: z.string(),
+  accountId: z.string().nullable(),
+  scores: z.record(z.string(), z.unknown()),
+  overallScore: z.number().min(0).max(100),
+  summary: z.string().optional(),
 });

@@ -35,7 +35,7 @@ class GraphQLUtils {
   private getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'X-Zed-Version': '2.0.3',
+      'X-Zed-Version': '2.1.0',
     };
 
     if (this.accessToken && this.isTokenValid()) {
@@ -63,7 +63,11 @@ class GraphQLUtils {
           headers: this.getAuthHeaders(),
         }
       );
-      logger.debug('request: ', { endpoint, query, headers: this.getAuthHeaders() });
+      logger.debug('request: ', {
+        endpoint,
+        query,
+        headers: this.getAuthHeaders(),
+      });
       return response.data;
     } catch (error) {
       logger.error('Error accessing GraphQL endpoint:', error);

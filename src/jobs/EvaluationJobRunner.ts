@@ -258,31 +258,22 @@ export class EvaluationJobRunner {
   }
 
   handleAIResponseMessage(message: AIResponseMessage): void {
-    // WARN: not handling properly
-    logger.error(
-      `Received AI response for project ${this.projectExId}: ${JSON.stringify(
-        message
-      )}.`
+    // Handle ai_response message type - this is a valid completion response
+    logger.info(
+      `Received AI response for project ${
+        this.projectExId
+      }: ${message.content.substring(0, 200)}${
+        message.content.length > 200 ? '...' : ''
+      }`
     );
-    this.response = message.content;
-    if (!this.isCompleted && this.rejectCompletion) {
-      this.clearTimeout();
-      this.isCompleted = true;
-      this.rejectCompletion(new Error(this.response));
-    }
-    this.stopJob();
-    // logger.info(
-    //   `Received AI response for project ${this.projectExId}: ${JSON.stringify(
-    //     message
-    //   )}.`
-    // );
+    // reminder: temporarily not applicable for evaluation job runner
     // this.response = message.content;
     // if (!this.isCompleted && this.resolveCompletion) {
     //   this.clearTimeout();
     //   this.isCompleted = true;
     //   this.resolveCompletion({ response: this.response, tasks: this.tasks });
     // }
-    // this.stopJob();
+    this.stopJob();
   }
 
   runToolCalls = async (toolCalls: ToolCall[]) => {

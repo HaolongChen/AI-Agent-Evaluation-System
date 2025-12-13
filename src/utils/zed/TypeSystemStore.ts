@@ -39,6 +39,7 @@ export class TypeSystemStore {
       patches: Array<{ patchBase64: string }>;
     };
   } | null> {
+    // Use latestSchema instead of lastUploadedSchema (API change)
     const query = `
       query FetchAppDetailByExId {
         fetchAppDetailByExId(
@@ -47,7 +48,7 @@ export class TypeSystemStore {
           appVersionExId: null
         ) {
           ... on WechatMiniProgramApp {
-            lastUploadedSchema {
+            latestSchema {
               crdtModelUrl
               crdtPatches {
                 lastPatchExId
@@ -58,7 +59,7 @@ export class TypeSystemStore {
             }
           }
           ... on Project {
-            lastUploadedSchema {
+            latestSchema {
               crdtModelUrl
               crdtPatches {
                 lastPatchExId
@@ -69,7 +70,7 @@ export class TypeSystemStore {
             }
           }
           ... on WebApp {
-            lastUploadedSchema {
+            latestSchema {
               crdtModelUrl
               crdtPatches {
                 lastPatchExId
@@ -89,7 +90,7 @@ export class TypeSystemStore {
       const data = response as {
         data?: {
           fetchAppDetailByExId?: {
-            lastUploadedSchema?: {
+            latestSchema?: {
               crdtModelUrl: string;
               crdtPatches?: {
                 lastPatchExId: string;
@@ -99,14 +100,13 @@ export class TypeSystemStore {
           };
         };
       };
-      const lastUploadedSchema =
-        data.data?.fetchAppDetailByExId?.lastUploadedSchema;
+      const latestSchema = data.data?.fetchAppDetailByExId?.latestSchema;
       logger.info('GraphQL response for fetchAppDetailByExId:', data);
-      if (lastUploadedSchema) {
-        logger.info('Fetched lastUploadedSchema:', lastUploadedSchema);
-        return lastUploadedSchema;
+      if (latestSchema) {
+        logger.info('Fetched latestSchema:', latestSchema);
+        return latestSchema;
       } else {
-        logger.error('No lastUploadedSchema found for project:', projectExId);
+        logger.error('No latestSchema found for project:', projectExId);
         logger.debug('All information:');
         return null;
       }

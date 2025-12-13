@@ -1,13 +1,13 @@
-import { logger } from "../utils/logger.ts";
-import { RUN_KUBERNETES_JOBS } from "../config/env.ts";
-import * as z from "zod";
-import { automatedGraph } from "../langGraph/agent.ts";
-import type { Rubric, FinalReport } from "../langGraph/state/state.ts";
+import { logger } from '../utils/logger.ts';
+import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import * as z from 'zod';
+import { automatedGraph } from '../langGraph/agent.ts';
+import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
 export interface RubricGenerationResult {
-  status: "succeeded" | "failed";
+  status: 'succeeded' | 'failed';
   rubric?: Rubric | null;
   hardConstraints?: string[];
   softConstraints?: string[];
@@ -67,6 +67,7 @@ export class RubricGenerationJobRunner {
 
     try {
       // Invoke the LangGraph automated workflow
+      // thread_id is required by LangGraph's MemorySaver checkpoint
       const result = await automatedGraph.invoke(
         {
           query: this.query,
@@ -75,7 +76,8 @@ export class RubricGenerationJobRunner {
         },
         {
           configurable: {
-            provider: "azure",
+            thread_id: `session-${this.sessionId}`,
+            provider: 'azure',
             model: this.modelName,
             projectExId: this.projectExId,
             skipHumanReview: true,
@@ -88,7 +90,7 @@ export class RubricGenerationJobRunner {
 
       // Extract results from the LangGraph state
       const rubricResult: RubricGenerationResult = {
-        status: "succeeded",
+        status: 'succeeded',
         rubric: result.rubricFinal || result.rubricDraft,
         hardConstraints: result.hardConstraints || [],
         softConstraints: result.softConstraints || [],
@@ -111,7 +113,7 @@ export class RubricGenerationJobRunner {
           const answer = rubricResult.hardConstraintsAnswers?.[index];
           logger.info(
             `  ${index + 1}. ${constraint} ${
-              answer !== undefined ? `[${answer ? "PASS" : "FAIL"}]` : ""
+              answer !== undefined ? `[${answer ? 'PASS' : 'FAIL'}]` : ''
             }`
           );
         });
@@ -128,7 +130,7 @@ export class RubricGenerationJobRunner {
           const answer = rubricResult.softConstraintsAnswers?.[index];
           logger.info(
             `  ${index + 1}. ${constraint} ${
-              answer !== undefined ? `[${answer}]` : ""
+              answer !== undefined ? `[${answer}]` : ''
             }`
           );
         });
@@ -143,7 +145,7 @@ export class RubricGenerationJobRunner {
       if (rubricResult.analysis) {
         logger.info(
           `Analysis: ${rubricResult.analysis.substring(0, 200)}${
-            rubricResult.analysis.length > 200 ? "..." : ""
+            rubricResult.analysis.length > 200 ? '...' : ''
           }`
         );
       }
@@ -156,7 +158,7 @@ export class RubricGenerationJobRunner {
           `Final Report Summary: ${rubricResult.finalReport.summary.substring(
             0,
             200
-          )}${rubricResult.finalReport.summary.length > 200 ? "..." : ""}`
+          )}${rubricResult.finalReport.summary.length > 200 ? '...' : ''}`
         );
       }
 
@@ -180,7 +182,7 @@ export class RubricGenerationJobRunner {
       );
 
       const errorResult: RubricGenerationResult = {
-        status: "failed",
+        status: 'failed',
         error: error instanceof Error ? error.message : String(error),
       };
 
@@ -228,7 +230,7 @@ export class RubricGenerationJobRunner {
     this.clearTimeout();
     if (!this.isCompleted) {
       this.isCompleted = true;
-      this.rejectCompletion?.(new Error("Job stopped by user"));
+      this.rejectCompletion?.(new Error('Job stopped by user'));
     }
   }
 }
@@ -245,19 +247,19 @@ if (
 
   const args = z
     .object({
-      sessionId: z.string().min(1, "sessionId is required"),
-      query: z.string().min(1, "query is required"),
+      sessionId: z.string().min(1, 'sessionId is required'),
+      query: z.string().min(1, 'query is required'),
       context: z.string(),
       candidateOutput: z.string(),
-      modelName: z.string().min(1, "modelName is required"),
+      modelName: z.string().min(1, 'modelName is required'),
       projectExId: z.string().optional(),
     })
     .parse({
-      sessionId: process.argv[2] || "",
-      query: process.argv[3] || "",
-      context: process.argv[4] || "",
-      candidateOutput: process.argv[5] || "",
-      modelName: process.argv[6] || "gpt-4o",
+      sessionId: process.argv[2] || '',
+      query: process.argv[3] || '',
+      context: process.argv[4] || '',
+      candidateOutput: process.argv[5] || '',
+      modelName: process.argv[6] || 'gpt-4o',
       projectExId: process.argv[7],
     });
 
@@ -279,13 +281,13 @@ if (
     .then((result) => {
       // Output the result as a special marker line that can be parsed from logs
       console.log(`JOB_RESULT_JSON: ${JSON.stringify(result)}`);
-      process.exit(result.status === "succeeded" ? 0 : 1);
+      process.exit(result.status === 'succeeded' ? 0 : 1);
     })
     .catch((error) => {
-      logger.error("Rubric generation job execution failed:", error);
+      logger.error('Rubric generation job execution failed:', error);
       console.log(
         `JOB_RESULT_JSON: ${JSON.stringify({
-          status: "failed",
+          status: 'failed',
           error: error instanceof Error ? error.message : String(error),
         })}`
       );

@@ -21,6 +21,13 @@ export const SESSION_STATUS = {
   FAILED: 'failed',
 } as const;
 
+export const REVERSE_SESSION_STATUS: { [key: string]: string } = {
+  pending: 'PENDING',
+  running: 'RUNNING',
+  completed: 'COMPLETED',
+  failed: 'FAILED',
+};
+
 export const EVALUATION_STATUS = {
   PENDING: 'pending',
   IN_PROGRESS: 'in_progress',
@@ -28,12 +35,26 @@ export const EVALUATION_STATUS = {
   FAILED: 'failed',
 } as const;
 
+export const REVERSE_EVALUATION_STATUS: { [key: string]: string } = {
+  pending: 'PENDING',
+  in_progress: 'IN_PROGRESS',
+  completed: 'COMPLETED',
+  failed: 'FAILED',
+};
+
 export const REVIEW_STATUS = {
   PENDING: 'pending',
   APPROVED: 'approved',
   REJECTED: 'rejected',
   MODIFIED: 'modified',
 } as const;
+
+export const REVERSE_REVIEW_STATUS: { [key: string]: string } = {
+  pending: 'PENDING',
+  approved: 'APPROVED',
+  rejected: 'REJECTED',
+  modified: 'MODIFIED',
+};
 
 export const METRIC_CATEGORIES = {
   DATA_MODEL: [

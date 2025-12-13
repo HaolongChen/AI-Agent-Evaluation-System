@@ -187,6 +187,9 @@ export const typeDefs = `#graphql
       copilotType: CopilotType
       modelName: String
     ): [EvaluationSession!]!
+    
+    # HITL Session State
+    getGraphSessionState(sessionId: Int!): SessionStateResult!
 
     # Adaptive Rubrics
     getAdaptiveRubricsBySchemaExId(schemaExId: String!): [AdaptiveRubric!]!
@@ -223,7 +226,7 @@ export const typeDefs = `#graphql
       idealResponse: JSON!
     ): GoldenSet!
 
-    # Execution
+    # Execution (Legacy - uses JobRunners)
     execAiCopilotByTypeAndModel(
       projectExId: String!
       schemaExId: String!
@@ -232,8 +235,45 @@ export const typeDefs = `#graphql
     ): Boolean!
 
     execAiCopilot: Boolean!
+    
+    # HITL Graph Execution - Start Session
+    startGraphSession(
+      projectExId: String!
+      schemaExId: String!
+      copilotType: CopilotType!
+      modelName: String!
+      skipHumanReview: Boolean
+      skipHumanEvaluation: Boolean
+    ): StartSessionResult!
+    
+    # HITL Graph Execution - Submit Rubric Review (resumes graph)
+    submitRubricReview(
+      sessionId: Int!
+      threadId: String!
+      approved: Boolean!
+      modifiedRubric: RubricInput
+      feedback: String
+      reviewerAccountId: String!
+    ): RubricReviewResult!
+    
+    # HITL Graph Execution - Submit Human Evaluation (resumes graph to completion)
+    submitHumanEvaluation(
+      sessionId: Int!
+      threadId: String!
+      scores: [EvaluationScoreInput!]!
+      overallAssessment: String!
+      evaluatorAccountId: String!
+    ): HumanEvaluationResult!
+    
+    # Run fully automated evaluation (no HITL)
+    runAutomatedEvaluation(
+      projectExId: String!
+      schemaExId: String!
+      copilotType: CopilotType!
+      modelName: String!
+    ): HumanEvaluationResult!
 
-    # Rubric Review
+    # Rubric Review (Legacy)
     reviewAdaptiveRubric(
       rubricId: Int!
       reviewStatus: RubricReviewStatus!
@@ -258,6 +298,103 @@ export const typeDefs = `#graphql
     score: Float!
     reasoning: String!
     evidence: [String!]
+  }
+  
+  # Input type for RubricCriterion (for modifying rubrics)
+  input RubricCriterionInput {
+    id: String!
+    name: String!
+    description: String!
+    weight: Float!
+    scoringScale: ScoringScaleInput!
+    isHardConstraint: Boolean!
+  }
+  
+  input ScoringScaleInput {
+    min: Int!
+    max: Int!
+    labels: JSON
+  }
+  
+  # Input type for modified rubric
+  input RubricInput {
+    id: String!
+    version: String!
+    criteria: [RubricCriterionInput!]!
+    totalWeight: Float!
+  }
+
+  # HITL Session Types
+  enum GraphSessionStatus {
+    PENDING
+    AWAITING_RUBRIC_REVIEW
+    AWAITING_HUMAN_EVALUATION
+    COMPLETED
+    FAILED
+  }
+
+  type StartSessionResult {
+    sessionId: Int!
+    threadId: String!
+    status: GraphSessionStatus!
+    rubricDraft: RubricOutput
+    message: String!
+  }
+  
+  type RubricOutput {
+    id: String!
+    version: String!
+    criteria: [RubricCriterion!]!
+    totalWeight: Float!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type RubricReviewResult {
+    sessionId: Int!
+    threadId: String!
+    status: GraphSessionStatus!
+    rubricFinal: RubricOutput
+    message: String!
+  }
+
+  type HumanEvaluationResult {
+    sessionId: Int!
+    threadId: String!
+    status: GraphSessionStatus!
+    finalReport: FinalReportOutput
+    message: String!
+  }
+  
+  type EvaluationOutput {
+    evaluatorType: String!
+    scores: [EvaluationScore!]!
+    overallScore: Float!
+    summary: String!
+    timestamp: String!
+  }
+  
+  type FinalReportOutput {
+    verdict: String!
+    overallScore: Float!
+    summary: String!
+    detailedAnalysis: String!
+    agentEvaluation: EvaluationOutput
+    humanEvaluation: EvaluationOutput
+    discrepancies: [String!]!
+    auditTrace: [String!]!
+    generatedAt: String!
+  }
+  
+  type SessionStateResult {
+    sessionId: Int!
+    status: GraphSessionStatus!
+    threadId: String
+    rubricDraft: RubricOutput
+    rubricFinal: RubricOutput
+    agentEvaluation: EvaluationOutput
+    humanEvaluation: EvaluationOutput
+    finalReport: FinalReportOutput
   }
 
   # Custom Types for Analytics

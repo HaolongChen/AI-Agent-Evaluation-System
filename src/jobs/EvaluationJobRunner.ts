@@ -1,8 +1,8 @@
-import { WebSocket } from "ws";
-import * as z from "zod";
-import { RUN_KUBERNETES_JOBS } from "../config/env.ts";
-import { logger } from "../utils/logger.ts";
-import { appendFileSync } from "fs";
+import { WebSocket } from 'ws';
+import * as z from 'zod';
+import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import { logger } from '../utils/logger.ts';
+import { appendFileSync } from 'fs';
 import {
   CopilotMessageType,
   type AIResponseMessage,
@@ -14,21 +14,21 @@ import {
   type TaskMessage,
   type ToolCall,
   type ToolCallsMessage,
-} from "../utils/types.ts";
+} from '../utils/types.ts';
 import {
   ClientType,
   Copilot,
   Locale,
   Product,
   type CopilotApiResult,
-} from "../utils/zed/TypeSystem.ts";
+} from '../utils/zed/TypeSystem.ts';
 
-import { NODE_ENV } from "../config/env.ts";
+import { NODE_ENV } from '../config/env.ts';
 
-import { isNil, get } from "lodash-es";
-import { TypeSystemStore } from "../utils/zed/TypeSystemStore.ts";
-import { assertNotNull, getError } from "../utils/zed/helpers.ts";
-import type { ToolResult } from "../utils/graph-states.ts";
+import { isNil, get } from 'lodash-es';
+import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
+import { assertNotNull, getError } from '../utils/zed/helpers.ts';
+import type { ToolResult } from '../utils/graph-states.ts';
 
 const DISCONNECT = false;
 const TERMINATE = false;
@@ -38,8 +38,8 @@ export class EvaluationJobRunner {
   private projectExId: string;
   private wsUrl: string;
   private promptTemplate: string;
-  response: string = "";
-  editableText: string = "";
+  response: string = '';
+  editableText: string = '';
   tasks: TaskMessage[] | null = null;
   private completionPromise: Promise<{
     // response: string;
@@ -84,27 +84,27 @@ export class EvaluationJobRunner {
       this.terminate();
     }
 
-    this.socket.on("open", () => {
-      logger.info("WebSocket connection established.");
+    this.socket.on('open', () => {
+      logger.info('WebSocket connection established.');
     });
 
-    this.socket.on("message", (data) => {
+    this.socket.on('message', (data) => {
       this.handleMessage(data);
     });
 
-    this.socket.on("close", () => {
-      logger.info("WebSocket connection closed.");
+    this.socket.on('close', () => {
+      logger.info('WebSocket connection closed.');
       if (!this.isCompleted && this.rejectCompletion) {
         this.clearTimeout();
         this.isCompleted = true;
         this.rejectCompletion(
-          new Error("WebSocket connection closed before job completion")
+          new Error('WebSocket connection closed before job completion')
         );
       }
     });
 
-    this.socket.on("error", (error) => {
-      logger.error("WebSocket error:", error);
+    this.socket.on('error', (error) => {
+      logger.error('WebSocket error:', error);
       if (!this.isCompleted && this.rejectCompletion) {
         this.clearTimeout();
         this.isCompleted = true;
@@ -120,11 +120,11 @@ export class EvaluationJobRunner {
       logger.info(`Sending message: ${JSON.stringify(data)}`);
       this.socket.send(JSON.stringify(data));
       if (data.type === CopilotMessageType.TERMINATE) {
-        this.rejectCompletion?.(new Error("Job terminated by user"));
+        this.rejectCompletion?.(new Error('Job terminated by user'));
         this.stopJob();
       }
     } else {
-      logger.error("WebSocket is not open. Cannot send message:", data);
+      logger.error('WebSocket is not open. Cannot send message:', data);
       setTimeout(() => {
         this.send(data);
       }, 1000); // Retry after 1 second
@@ -143,7 +143,7 @@ export class EvaluationJobRunner {
       2
     )}\n`;
     logger.info(`Received message: ${JSON.stringify(data)}`);
-    appendFileSync("logs.txt", logEntry);
+    appendFileSync('logs.txt', logEntry);
     switch (data[0]?.type) {
       case CopilotMessageType.INITIAL_STATE:
         this.handleInitialStateMessage(data[0] as InitialStateMessage);
@@ -184,7 +184,7 @@ export class EvaluationJobRunner {
             this.clearTimeout();
             this.isCompleted = true;
             this.rejectCompletion(
-              new Error("Job has stopped running unexpectedly")
+              new Error('Job has stopped running unexpectedly')
             );
           }
           this.stopJob();
@@ -212,7 +212,7 @@ export class EvaluationJobRunner {
       if (!this.isCompleted && this.rejectCompletion) {
         this.clearTimeout();
         this.isCompleted = true;
-        this.rejectCompletion(new Error("Job has terminated"));
+        this.rejectCompletion(new Error('Job has terminated'));
       }
       this.stopJob();
       return;
@@ -228,7 +228,7 @@ export class EvaluationJobRunner {
   }
 
   //eslint-disable-next-line @typescript-eslint/no-unused-vars
-  handleSystemStatusMessage(message: SystemStatusMessage): void {
+  handleSystemStatusMessage(_message: SystemStatusMessage): void {
     // TODO: Handle system status message as needed
   }
 
@@ -312,19 +312,19 @@ export class EvaluationJobRunner {
         locale,
         toolCalls
       );
-      if (NODE_ENV === "development") {
-        logger.debug("toolCall---result:", result, toolCalls);
+      if (NODE_ENV === 'development') {
+        logger.debug('toolCall---result:', result, toolCalls);
       }
-      const errorMessage = get(result, "error");
+      const errorMessage = get(result, 'error');
       if (errorMessage) {
         throw getError(errorMessage, result);
       }
-      const schemaDiff = get(result, "schemaDiff");
+      const schemaDiff = get(result, 'schemaDiff');
       if (isNil(schemaDiff)) {
         return { result: result as unknown as ToolResult, successful: true };
       }
-      if (NODE_ENV === "development") {
-        logger.debug("toolCall---schemaDiff:", schemaDiff);
+      if (NODE_ENV === 'development') {
+        logger.debug('toolCall---schemaDiff:', schemaDiff);
       }
       // const applyResult = applyLocalCrdtDiff(schemaDiff, {
       //   isPendingApplication: true,
@@ -336,7 +336,7 @@ export class EvaluationJobRunner {
       // probably not necessary to apply schema diff in evaluation job runner
       return { result: result as unknown as ToolResult, successful: true };
     } catch (error: unknown) {
-      console.log("toolCall---error:", error, toolCalls);
+      console.log('toolCall---error:', error, toolCalls);
       return {
         successful: false,
         errorMessage: (error as unknown as { message: string }).message,
@@ -411,14 +411,14 @@ if (
   logger.debug(`${process.argv}`);
   const args = z
     .object({
-      projectExId: z.string().min(1, "projectExId is required"),
-      wsUrl: z.url("wsUrl must be a valid URL"),
-      promptTemplate: z.string().min(1, "promptTemplate is required"),
+      projectExId: z.string().min(1, 'projectExId is required'),
+      wsUrl: z.url('wsUrl must be a valid URL'),
+      promptTemplate: z.string().min(1, 'promptTemplate is required'),
     })
     .parse({
-      projectExId: process.argv[2] || "",
-      wsUrl: process.argv[3] || "",
-      promptTemplate: process.argv[4] || "",
+      projectExId: process.argv[2] || '',
+      wsUrl: process.argv[3] || '',
+      promptTemplate: process.argv[4] || '',
     });
 
   const evaluationJobRunner = new EvaluationJobRunner(
@@ -438,7 +438,7 @@ if (
       process.exit(0);
     })
     .catch((error) => {
-      logger.error("Job execution failed:", error);
+      logger.error('Job execution failed:', error);
       process.exit(1);
     });
 }

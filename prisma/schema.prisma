@@ -95,8 +95,8 @@ model evaluationSession {
   totalTokens       Int?     @map("total_tokens") // input_tokens + output_tokens + reasoning tokens
   contextPercentage Decimal? @map("context_percentage") @db.Decimal(5, 2) // % of max context window used
 
-  // Metadata
-  // metadata Json? TODO: figure out what metadata to store
+  // Metadata for HITL graph execution (stores threadId, skipHumanReview, etc.)
+  metadata Json?
 
   // Relations
   rubric adaptiveRubric?

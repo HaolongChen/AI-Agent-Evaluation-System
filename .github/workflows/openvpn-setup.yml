@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       debug_enabled:
-        description: 'Enable debug mode with verbose logging'
+        description: "Enable debug mode with verbose logging"
         required: false
-        default: 'false'
+        default: "false"
       connection_timeout:
-        description: 'Connection timeout in seconds'
+        description: "Connection timeout in seconds"
         required: false
-        default: '60'
+        default: "60"
 
 env:
   VPN_CONFIG_PATH: /tmp/openvpn/config.ovpn
@@ -21,10 +21,10 @@ jobs:
   openvpn-connection:
     runs-on: ubuntu-latest
     container:
-      image: alpine:latest  
+      image: alpine:latest
       options: --cap-add=NET_ADMIN --device=/dev/net/tun --privileged
     timeout-minutes: 20
-    
+
     steps:
       - name: Checkout repository
         run: |
@@ -37,12 +37,12 @@ jobs:
         run: |
           set -e
           echo "=== Installing OpenVPN and Dependencies ==="
-          
+
           # Install required packages
           apk add --no-cache openvpn bash curl iproute2 iputils
-          
+
           echo "✓ Packages installed successfully"
-          
+
           # Verify installations
           echo ""
           echo "=== Version Information ==="
@@ -55,12 +55,12 @@ jobs:
         run: |
           set -e
           echo "=== Setting up TUN Device ==="
-          
+
           # Create TUN device manually
           mkdir -p /dev/net
           mknod /dev/net/tun c 10 200 || true
           chmod 666 /dev/net/tun
-          
+
           # Verify TUN device exists
           if [ -c /dev/net/tun ]; then
             echo "✓ TUN device available: /dev/net/tun"
@@ -77,56 +77,56 @@ jobs:
         run: |
           set -e
           echo "=== OpenVPN Configuration Setup ==="
-          
+
           # Create temporary directory first
           mkdir -p /tmp/openvpn
           chmod 700 /tmp/openvpn
-          
+
           # Debug secret availability
           echo "Checking OPENVPN secret..."
           if [ -z "${{ secrets.OPENVPN }}" ]; then
             echo "::error::OPENVPN secret is empty or not set"
             exit 1
           fi
-          
+
           echo "✓ OPENVPN secret is present"
-          
+
           # Create config file with explicit error handling
           echo "Creating OpenVPN config file..."
           echo "${{ secrets.OPENVPN }}" > /tmp/openvpn/config.ovpn
-          
+
           # Verify file exists
           if [[ ! -f /tmp/openvpn/config.ovpn ]]; then
             echo "::error::OpenVPN config file was not created!"
             exit 1
           fi
-          
+
           echo "✓ Config file exists"
-          
+
           # Verify file has content  
           if [[ ! -s /tmp/openvpn/config.ovpn ]]; then
             echo "::error::OpenVPN config file is empty!"
             exit 1
           fi
-          
+
           FILE_SIZE=$(stat -c%s /tmp/openvpn/config.ovpn)
           echo "✓ Config file has content (${FILE_SIZE} bytes)"
-          
+
           # Set proper permissions
           chmod 600 /tmp/openvpn/config.ovpn
           echo "Config file created successfully: $(ls -la /tmp/openvpn/config.ovpn)"
-          
+
           # Validate configuration format
           echo ""
           echo "=== Configuration Validation ==="
-          
+
           if grep -q "^remote " /tmp/openvpn/config.ovpn; then
             REMOTE_INFO=$(grep "^remote " /tmp/openvpn/config.ovpn | head -n 1)
             echo "✓ Remote server: $REMOTE_INFO"
           else
             echo "⚠️ WARNING: No 'remote' directive found"
           fi
-          
+
           if grep -q "<ca>" /tmp/openvpn/config.ovpn; then
             echo "✓ CA certificate found (inline)"
           elif grep -q "^ca " /tmp/openvpn/config.ovpn; then
@@ -134,12 +134,12 @@ jobs:
           else
             echo "⚠️ WARNING: No CA certificate found"
           fi
-          
+
           # Add enhanced configuration directives
           echo "" >> /tmp/openvpn/config.ovpn
           echo "# Enhanced Configuration" >> /tmp/openvpn/config.ovpn
           echo "log-append $VPN_LOG_PATH" >> /tmp/openvpn/config.ovpn
-          
+
           # Set verbosity based on debug mode
           if [ "${{ github.event.inputs.debug_enabled }}" = "true" ]; then
             echo "verb 4" >> /tmp/openvpn/config.ovpn
@@ -147,37 +147,37 @@ jobs:
           else
             echo "verb 3" >> /tmp/openvpn/config.ovpn
           fi
-          
+
           # Connection reliability improvements
           echo "persist-key" >> /tmp/openvpn/config.ovpn
           echo "persist-tun" >> /tmp/openvpn/config.ovpn
           echo "keepalive 10 60" >> /tmp/openvpn/config.ovpn
           echo "resolv-retry infinite" >> /tmp/openvpn/config.ovpn
-          
+
           echo ""
           echo "✓ Configuration setup completed successfully"
 
       - name: Start OpenVPN connection
         run: |
           set -e
-          
+
           TIMEOUT=${{ github.event.inputs.connection_timeout || '60' }}
-          
+
           echo "=== Starting OpenVPN Connection ==="
           echo "Configuration: $VPN_CONFIG_PATH"
           echo "Timeout: ${TIMEOUT}s"
           echo ""
-          
+
           # Start OpenVPN in background
           openvpn --config "$VPN_CONFIG_PATH" --daemon --log "$VPN_LOG_PATH" --writepid /tmp/openvpn/openvpn.pid
-          
+
           echo "✓ OpenVPN daemon started"
           sleep 2
-          
+
           # Wait for connection
           echo "Waiting for VPN connection to establish..."
           counter=0
-          
+
           while [ $counter -lt $TIMEOUT ]; do
             # Check if process is still alive
             if [ -f /tmp/openvpn/openvpn.pid ]; then
@@ -224,7 +224,7 @@ jobs:
             counter=$((counter + 1))
             sleep 1
           done
-          
+
           if [ $counter -ge $TIMEOUT ]; then
             echo ""
             echo "❌ Connection timeout after ${TIMEOUT}s"
@@ -237,10 +237,10 @@ jobs:
       - name: Verify connection
         run: |
           set -e
-          
+
           echo "=== VPN Connection Verification ==="
           echo ""
-          
+
           # 1. Process verification
           echo "1️⃣  Process Status"
           if [ -f /tmp/openvpn/openvpn.pid ]; then
@@ -256,12 +256,12 @@ jobs:
             exit 1
           fi
           echo ""
-          
+
           # 2. Interface verification
           echo "2️⃣  Interface Status"
           if ip link show "$VPN_INTERFACE" > /dev/null 2>&1; then
             echo "   ✓ VPN interface exists: $VPN_INTERFACE"
-            IF_STATE=$(ip link show "$VPN_INTERFACE" | grep -oP 'state \K\w+')
+            IF_STATE=$(ip link show "$VPN_INTERFACE" | grep -oE 'state [A-Z]+' | awk '{print $2}')
             echo "   ✓ Interface state: $IF_STATE"
             
             # Show interface details
@@ -272,7 +272,7 @@ jobs:
             exit 1
           fi
           echo ""
-          
+
           # 3. Routing verification
           echo "3️⃣  Routing Status"
           VPN_ROUTES=$(ip route | grep "$VPN_INTERFACE" | wc -l)
@@ -283,7 +283,7 @@ jobs:
             echo "   ⚠️ No routes found for $VPN_INTERFACE"
           fi
           echo ""
-          
+
           # 4. Connectivity test
           echo "4️⃣  Connectivity Test"
           if ping -c 3 -W 5 8.8.8.8 > /dev/null 2>&1; then
@@ -292,7 +292,7 @@ jobs:
             echo "   ⚠️ Connectivity test failed"
           fi
           echo ""
-          
+
           echo "✅ VPN connection verified and ready"
 
       - name: Show logs (debug mode)
@@ -301,7 +301,7 @@ jobs:
           echo "=== OpenVPN Connection Log ==="
           cat "$VPN_LOG_PATH" 2>/dev/null || echo "No logs available"
           echo ""
-          
+
           echo "=== Network Configuration ==="
           echo "Interfaces:"
           ip addr show
@@ -314,7 +314,7 @@ jobs:
       # 🎯 YOUR CUSTOM STEPS GO HERE
       # ============================================
       # Add your tasks that require VPN access below
-      
+
       - name: Example VPN task
         run: |
           echo "=== Example Task Through VPN ==="
@@ -336,9 +336,9 @@ jobs:
         if: always()
         run: |
           set +e
-          
+
           echo "=== Cleanup ==="
-          
+
           # Stop OpenVPN
           if [ -f /tmp/openvpn/openvpn.pid ]; then
             VPN_PID=$(cat /tmp/openvpn/openvpn.pid)
@@ -354,23 +354,23 @@ jobs:
               echo "✓ OpenVPN stopped"
             fi
           fi
-          
+
           # Remove interface
           if ip link show "$VPN_INTERFACE" > /dev/null 2>&1; then
             ip link delete "$VPN_INTERFACE" 2>/dev/null || true
             echo "✓ Network interface removed"
           fi
-          
+
           # Securely remove config file
           if [ -f "$VPN_CONFIG_PATH" ]; then
             shred -vfz -n 3 "$VPN_CONFIG_PATH" 2>/dev/null || rm -f "$VPN_CONFIG_PATH"
             echo "✓ Configuration file securely removed"
           fi
-          
+
           # Clean up temporary directory
           if [ -d /tmp/openvpn ]; then
             rm -rf /tmp/openvpn
             echo "✓ Temporary directory cleaned"
           fi
-          
+
           echo "✓ Cleanup completed"

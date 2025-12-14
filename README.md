@@ -2,7 +2,135 @@
 
 ## Project Overview
 
-An evaluation framework for AI Copilot that allows rapid testing and quality assessment when new models are released. The system enables creation of golden datasets, adaptive rubric generation, and comprehensive evaluation metrics for different AI Copilot capabilities (Data Model Builder, UI Builder, Actionflow Builder, Log Analyzer, Agent Builder).
+An evaluation framework for AI Copilot that allows rapid testing and quality assessment when new models are released. The system features a **Human-in-the-Loop (HITL)** workflow powered by LangGraph, enabling interactive evaluation with human review checkpoints. Supports multiple AI Copilot types: Data Model Builder, UI Builder, Actionflow Builder, Log Analyzer, and Agent Builder.
+
+## Key Features
+
+- 🔄 **HITL Workflow**: Interactive evaluation with human review at rubric generation and evaluation stages
+- 🤖 **Automated Mode**: Fully automated AI-based evaluation for batch processing
+- 📊 **Structured Rubrics**: AI-generated evaluation criteria with customizable weights and scoring scales
+- 🔍 **Dual Evaluation**: Compare agent vs human evaluation scores with discrepancy detection
+- 📈 **Analytics Dashboard**: Query metrics, compare models, track performance trends
+- 🎯 **GraphQL API**: Comprehensive API for all evaluation operations
+- 💾 **Persistent State**: LangGraph checkpointing for resumable workflows
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+ and pnpm
+- PostgreSQL database
+- OpenAI or Google Gemini API key
+- Functorz Copilot WebSocket access
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd AI-Agent-Evaluation-System
+
+# Install dependencies
+pnpm install
+
+# Setup environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# Initialize database
+pnpm db:push
+pnpm db:generate
+
+# Start development server
+pnpm dev
+```
+
+### Running Your First Evaluation
+
+**Option 1: Human-in-the-Loop (Recommended)**
+
+```graphql
+# 1. Start a HITL session
+mutation {
+  startGraphSession(
+    projectExId: "your-project"
+    schemaExId: "your-schema"
+    copilotType: DATA_MODEL_BUILDER
+    modelName: "gpt-4"
+  ) {
+    sessionId
+    threadId
+    status # Returns AWAITING_RUBRIC_REVIEW
+    rubricDraft {
+      criteria {
+        name
+        description
+      }
+    }
+  }
+}
+
+# 2. Review and approve the rubric
+mutation {
+  submitRubricReview(
+    sessionId: 123
+    threadId: "thread-abc"
+    approved: true
+    reviewerAccountId: "your-id"
+  ) {
+    status # Returns AWAITING_HUMAN_EVALUATION
+  }
+}
+
+# 3. Provide human evaluation
+mutation {
+  submitHumanEvaluation(
+    sessionId: 123
+    threadId: "thread-abc"
+    scores: [
+      { criterionId: "entity-coverage", score: 8.5, reasoning: "Good coverage" }
+    ]
+    overallAssessment: "Solid data model"
+    evaluatorAccountId: "your-id"
+  ) {
+    status # Returns COMPLETED
+    finalReport {
+      verdict
+      overallScore
+    }
+  }
+}
+```
+
+**Option 2: Automated (No Human Input)**
+
+```graphql
+mutation {
+  runAutomatedEvaluation(
+    projectExId: "your-project"
+    schemaExId: "your-schema"
+    copilotType: DATA_MODEL_BUILDER
+    modelName: "gpt-4"
+  ) {
+    sessionId
+    finalReport {
+      verdict
+      overallScore
+      summary
+    }
+  }
+}
+```
+
+### GraphQL Playground
+
+Access the interactive GraphQL playground at:
+
+```bash
+http://localhost:4000/graphql
+```
+
+---
 
 ## Goals
 
@@ -55,6 +183,31 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
 
 ---
 
+## GraphQL API Reference
+
+The evaluation system exposes a comprehensive GraphQL API for managing evaluations, rubrics, and analytics. The API endpoint is available at:
+
+```bash
+http://localhost:4000/graphql
+```
+
+### Core Features
+
+1. **Human-in-the-Loop (HITL) Evaluation** - Interactive workflow with human review and evaluation
+2. **Automated Evaluation** - Fully automated AI-based evaluation without human intervention
+3. **Golden Set Management** - Manage test datasets and schemas
+4. **Analytics & Reporting** - Query metrics, compare models, and view dashboard data
+
+### API Categories
+
+- **[Golden Set Management](#golden-set-api)** - Manage test schemas and datasets
+- **[HITL Evaluation Flow](#hitl-evaluation-api)** - Human-in-the-loop evaluation workflow
+- **[Automated Evaluation](#automated-evaluation-api)** - Fully automated evaluation
+- **[Rubric Management](#rubric-management-api)** - Query and review generated rubrics
+- **[Results & Analytics](#analytics-api)** - Query evaluation results and metrics
+
+---
+
 ## System Architecture
 
 ### Technology Stack
@@ -71,12 +224,9 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
 
 **Database**: PostgreSQL (Single Database)
 
-- Shares the same database with AI Copilot
-- Reads from existing Copilot tables (sessions, iterations, etc.)
-- Creates new tables/schema for evaluation framework data
-- Recommended: Use PostgreSQL schemas for logical separation:
-  - `copilot` schema: Existing Copilot tables (read-only)
-  - `evaluation` schema: New evaluation framework tables (read-write)
+- Manages evaluation framework data
+- Stores rubrics, judgments, and evaluation results
+- PostgreSQL with Prisma ORM for type-safe database access
 
 **Development Tools**:
 
@@ -92,7 +242,8 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
 - **LangGraph.js** - Graph-based LLM workflow orchestration
   - State management for complex evaluation workflows
   - Conditional routing and feedback loops
-  - Human-in-the-loop support for rubric review
+  - Human-in-the-loop (HITL) support with interrupt points for rubric review and human evaluation
+  - Checkpointing for resumable workflows
 - **Playwright** - Browser automation for copilot execution
   - Headless browser automation for web-based Zed editor
   - Multi-browser support (Chromium, Firefox, WebKit)
@@ -112,106 +263,1280 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
 - **ts-node** - TypeScript execution for development
 - **ESLint + Prettier** - Code quality and formatting
 
-### High-Level Architecture
+---
+
+## GraphQL API Documentation
+
+The system provides a comprehensive GraphQL API for all evaluation operations. The API is organized into several functional areas:
+
+### Endpoint Information
+
+- **Development URL**: `http://localhost:4000/graphql`
+- **GraphQL Playground**: Available at the same endpoint (browser access)
+- **Health Check**: `GET http://localhost:4000/health`
+
+### Authentication
+
+Currently, the API is open for development. For production deployments, implement JWT-based authentication:
+
+```graphql
+# Add Authorization header to requests
+Authorization: Bearer <your-jwt-token>
+```
+
+---
+
+## Golden Set API
+
+Manage test schemas and datasets used for evaluation.
+
+### Query: Get Golden Set Schemas
+
+List all schema IDs available in the golden set:
+
+```graphql
+query GetGoldenSetSchemas($copilotType: CopilotType) {
+  getGoldenSetSchemas(copilotType: $copilotType)
+}
+```
+
+**Example:**
+
+```graphql
+query {
+  getGoldenSetSchemas(copilotType: DATA_MODEL_BUILDER)
+}
+
+# Response:
+# ["schema-123", "schema-456", "schema-789"]
+```
+
+### Query: Get Golden Sets
+
+Retrieve golden set entries with full details:
+
+```graphql
+query GetGoldenSets($projectExId: String, $copilotType: CopilotType) {
+  getGoldenSets(projectExId: $projectExId, copilotType: $copilotType) {
+    id
+    projectExId
+    schemaExId
+    copilotType
+    description
+    promptTemplate
+    idealResponse
+    createdAt
+    isActive
+    nextGoldenSet {
+      id
+      description
+      promptTemplate
+      idealResponse
+    }
+  }
+}
+```
+
+**Example:**
+
+```graphql
+query {
+  getGoldenSets(copilotType: DATA_MODEL_BUILDER) {
+    id
+    schemaExId
+    description
+    copilotType
+  }
+}
+```
+
+### Mutation: Update Golden Set Project
+
+Add or update a golden set entry:
+
+```graphql
+mutation UpdateGoldenSetProject(
+  $projectExId: String!
+  $schemaExId: String!
+  $copilotType: CopilotType!
+  $description: String
+  $promptTemplate: String!
+  $idealResponse: JSON!
+) {
+  updateGoldenSetProject(
+    projectExId: $projectExId
+    schemaExId: $schemaExId
+    copilotType: $copilotType
+    description: $description
+    promptTemplate: $promptTemplate
+    idealResponse: $idealResponse
+  ) {
+    id
+    schemaExId
+    copilotType
+    createdAt
+  }
+}
+```
+
+**Example:**
+
+```graphql
+mutation {
+  updateGoldenSetProject(
+    projectExId: "proj-123"
+    schemaExId: "schema-456"
+    copilotType: DATA_MODEL_BUILDER
+    description: "E-commerce schema with products and orders"
+    promptTemplate: "Create a data model for an e-commerce system"
+    idealResponse: { entities: ["Product", "Order", "Customer"] }
+  ) {
+    id
+    schemaExId
+  }
+}
+```
+
+---
+
+## HITL Evaluation API
+
+Human-in-the-Loop evaluation workflow with review checkpoints.
+
+### The HITL Flow
+
+1. **Start Session** → Generates rubric draft, pauses for review
+2. **Submit Rubric Review** → Approves/modifies rubric, generates agent evaluation, pauses for human evaluation
+3. **Submit Human Evaluation** → Provides human scores, completes evaluation with final report
+
+### 1. Start Graph Session
+
+Initialize a new HITL evaluation session:
+
+```graphql
+mutation StartGraphSession(
+  $projectExId: String!
+  $schemaExId: String!
+  $copilotType: CopilotType!
+  $modelName: String!
+  $skipHumanReview: Boolean
+  $skipHumanEvaluation: Boolean
+) {
+  startGraphSession(
+    projectExId: $projectExId
+    schemaExId: $schemaExId
+    copilotType: $copilotType
+    modelName: $modelName
+    skipHumanReview: $skipHumanReview
+    skipHumanEvaluation: $skipHumanEvaluation
+  ) {
+    sessionId
+    threadId
+    status
+    rubricDraft {
+      id
+      version
+      criteria {
+        id
+        name
+        description
+        weight
+        scoringScale {
+          min
+          max
+          labels
+        }
+        isHardConstraint
+      }
+      totalWeight
+    }
+    message
+  }
+}
+```
+
+**Example:**
+
+```graphql
+mutation {
+  startGraphSession(
+    projectExId: "proj-123"
+    schemaExId: "schema-456"
+    copilotType: DATA_MODEL_BUILDER
+    modelName: "gpt-4"
+    skipHumanReview: false
+    skipHumanEvaluation: false
+  ) {
+    sessionId
+    threadId
+    status # Returns "AWAITING_RUBRIC_REVIEW"
+    rubricDraft {
+      id
+      criteria {
+        name
+        description
+        weight
+      }
+    }
+    message
+  }
+}
+```
+
+### 2. Submit Rubric Review
+
+Review and approve/modify the generated rubric:
+
+```graphql
+mutation SubmitRubricReview(
+  $sessionId: Int!
+  $threadId: String!
+  $approved: Boolean!
+  $modifiedRubric: RubricInput
+  $feedback: String
+  $reviewerAccountId: String!
+) {
+  submitRubricReview(
+    sessionId: $sessionId
+    threadId: $threadId
+    approved: $approved
+    modifiedRubric: $modifiedRubric
+    feedback: $feedback
+    reviewerAccountId: $reviewerAccountId
+  ) {
+    sessionId
+    threadId
+    status # Returns "AWAITING_HUMAN_EVALUATION" after agent eval
+    rubricFinal {
+      id
+      version
+      criteria {
+        id
+        name
+        description
+        weight
+      }
+    }
+    message
+  }
+}
+
+input RubricInput {
+  id: String!
+  version: String!
+  criteria: [RubricCriterionInput!]!
+  totalWeight: Float!
+}
+
+input RubricCriterionInput {
+  id: String!
+  name: String!
+  description: String!
+  weight: Float!
+  scoringScale: ScoringScaleInput!
+  isHardConstraint: Boolean!
+}
+
+input ScoringScaleInput {
+  min: Int!
+  max: Int!
+  labels: JSON
+}
+```
+
+**Example - Approve without changes:**
+
+```graphql
+mutation {
+  submitRubricReview(
+    sessionId: 123
+    threadId: "thread-abc-123"
+    approved: true
+    reviewerAccountId: "user-789"
+  ) {
+    status
+    message
+  }
+}
+```
+
+**Example - Modify rubric:**
+
+```graphql
+mutation {
+  submitRubricReview(
+    sessionId: 123
+    threadId: "thread-abc-123"
+    approved: true
+    modifiedRubric: {
+      id: "rubric-xyz"
+      version: "1.1"
+      criteria: [
+        {
+          id: "entity-coverage"
+          name: "Entity Coverage"
+          description: "All required entities identified"
+          weight: 0.3
+          scoringScale: { min: 0, max: 10 }
+          isHardConstraint: true
+        }
+      ]
+      totalWeight: 1.0
+    }
+    feedback: "Adjusted weight for entity coverage"
+    reviewerAccountId: "user-789"
+  ) {
+    status
+    rubricFinal {
+      version
+    }
+  }
+}
+```
+
+### 3. Submit Human Evaluation
+
+Provide human evaluation scores to complete the assessment:
+
+```graphql
+mutation SubmitHumanEvaluation(
+  $sessionId: Int!
+  $threadId: String!
+  $scores: [EvaluationScoreInput!]!
+  $overallAssessment: String!
+  $evaluatorAccountId: String!
+) {
+  submitHumanEvaluation(
+    sessionId: $sessionId
+    threadId: $threadId
+    scores: $scores
+    overallAssessment: $overallAssessment
+    evaluatorAccountId: $evaluatorAccountId
+  ) {
+    sessionId
+    threadId
+    status # Returns "COMPLETED"
+    finalReport {
+      verdict
+      overallScore
+      summary
+      detailedAnalysis
+      agentEvaluation {
+        scores {
+          criterionId
+          score
+          reasoning
+        }
+        overallScore
+        summary
+      }
+      humanEvaluation {
+        scores {
+          criterionId
+          score
+          reasoning
+        }
+        overallScore
+        summary
+      }
+      discrepancies
+      auditTrace
+    }
+    message
+  }
+}
+
+input EvaluationScoreInput {
+  criterionId: String!
+  score: Float!
+  reasoning: String!
+  evidence: [String!]
+}
+```
+
+**Example:**
+
+```graphql
+mutation {
+  submitHumanEvaluation(
+    sessionId: 123
+    threadId: "thread-abc-123"
+    scores: [
+      {
+        criterionId: "entity-coverage"
+        score: 8.5
+        reasoning: "Most entities identified, missing Payment entity"
+        evidence: ["Found Product, Order, Customer", "Missing Payment"]
+      }
+      {
+        criterionId: "relationship-correctness"
+        score: 9.0
+        reasoning: "All relationships correctly defined"
+        evidence: ["Order -> Customer foreign key correct"]
+      }
+    ]
+    overallAssessment: "Good data model with minor gaps"
+    evaluatorAccountId: "user-789"
+  ) {
+    status
+    finalReport {
+      verdict
+      overallScore
+      summary
+      discrepancies
+    }
+  }
+}
+```
+
+### 4. Get Session State
+
+Query the current state of a graph session:
+
+```graphql
+query GetGraphSessionState($sessionId: Int!) {
+  getGraphSessionState(sessionId: $sessionId) {
+    sessionId
+    status
+    threadId
+    rubricDraft {
+      id
+      criteria {
+        name
+        weight
+      }
+    }
+    rubricFinal {
+      id
+      criteria {
+        name
+        weight
+      }
+    }
+    agentEvaluation {
+      scores {
+        criterionId
+        score
+        reasoning
+      }
+      overallScore
+      summary
+    }
+    humanEvaluation {
+      scores {
+        criterionId
+        score
+        reasoning
+      }
+      overallScore
+      summary
+    }
+    finalReport {
+      verdict
+      overallScore
+      summary
+      detailedAnalysis
+      discrepancies
+    }
+  }
+}
+```
+
+**Example:**
+
+```graphql
+query {
+  getGraphSessionState(sessionId: 123) {
+    status
+    rubricFinal {
+      criteria {
+        name
+      }
+    }
+    finalReport {
+      verdict
+      overallScore
+    }
+  }
+}
+```
+
+---
+
+## Automated Evaluation API
+
+Run fully automated evaluations without human intervention.
+
+### Run Automated Evaluation
+
+Execute a complete evaluation using AI only:
+
+```graphql
+mutation RunAutomatedEvaluation(
+  $projectExId: String!
+  $schemaExId: String!
+  $copilotType: CopilotType!
+  $modelName: String!
+) {
+  runAutomatedEvaluation(
+    projectExId: $projectExId
+    schemaExId: $schemaExId
+    copilotType: $copilotType
+    modelName: $modelName
+  ) {
+    sessionId
+    threadId
+    status # Returns "COMPLETED"
+    finalReport {
+      verdict
+      overallScore
+      summary
+      detailedAnalysis
+      agentEvaluation {
+        scores {
+          criterionId
+          score
+          reasoning
+        }
+        overallScore
+        summary
+      }
+      discrepancies
+      auditTrace
+      generatedAt
+    }
+    message
+  }
+}
+```
+
+**Example:**
+
+```graphql
+mutation {
+  runAutomatedEvaluation(
+    projectExId: "proj-123"
+    schemaExId: "schema-456"
+    copilotType: DATA_MODEL_BUILDER
+    modelName: "gpt-4"
+  ) {
+    sessionId
+    status
+    finalReport {
+      verdict
+      overallScore
+      summary
+    }
+  }
+}
+```
+
+---
+
+## Rubric Management API
+
+Query and manage evaluation rubrics.
+
+### Query: Get Rubrics by Schema
+
+Get all rubrics for a specific schema:
+
+```graphql
+query GetAdaptiveRubricsBySchemaExId($schemaExId: String!) {
+  getAdaptiveRubricsBySchemaExId(schemaExId: $schemaExId) {
+    id
+    rubricId
+    version
+    criteria {
+      id
+      name
+      description
+      weight
+      scoringScale {
+        min
+        max
+        labels
+      }
+      isHardConstraint
+    }
+    totalWeight
+    reviewStatus
+    createdAt
+    reviewedAt
+    reviewedBy
+  }
+}
+```
+
+### Query: Get Rubrics by Session
+
+Get the rubric for a specific evaluation session:
+
+```graphql
+query GetAdaptiveRubricsBySession($sessionId: Int!) {
+  getAdaptiveRubricsBySession(sessionId: $sessionId) {
+    id
+    rubricId
+    version
+    criteria {
+      name
+      weight
+    }
+    copilotInput
+    copilotOutput
+    modelProvider
+    modelName
+    reviewStatus
+    judgeRecords {
+      id
+      evaluatorType
+      overallScore
+      summary
+      timestamp
+    }
+  }
+}
+```
+
+### Query: Get Rubrics for Review
+
+Get rubrics pending review:
+
+```graphql
+query GetRubricsForReview($sessionId: Int, $reviewStatus: RubricReviewStatus) {
+  getRubricsForReview(sessionId: $sessionId, reviewStatus: $reviewStatus) {
+    id
+    rubricId
+    sessionId
+    criteria {
+      name
+      description
+    }
+    reviewStatus
+    createdAt
+  }
+}
+```
+
+**Example:**
+
+```graphql
+query {
+  getRubricsForReview(reviewStatus: PENDING) {
+    id
+    sessionId
+    reviewStatus
+    createdAt
+  }
+}
+```
+
+---
+
+## Session Management API
+
+Query evaluation sessions and their results.
+
+### Query: Get Session
+
+Get details of a specific evaluation session:
+
+```graphql
+query GetSession($id: ID!) {
+  getSession(id: $id) {
+    id
+    projectExId
+    schemaExId
+    copilotType
+    modelName
+    status
+    startedAt
+    completedAt
+    totalLatencyMs
+    roundtripCount
+    inputTokens
+    outputTokens
+    totalTokens
+    contextPercentage
+    rubric {
+      id
+      rubricId
+      criteria {
+        name
+        weight
+      }
+    }
+    result {
+      verdict
+      overallScore
+      summary
+      evaluationStatus
+    }
+  }
+}
+```
+
+### Query: Get Sessions
+
+List multiple sessions with filters:
+
+```graphql
+query GetSessions(
+  $schemaExId: String
+  $copilotType: CopilotType
+  $modelName: String
+) {
+  getSessions(
+    schemaExId: $schemaExId
+    copilotType: $copilotType
+    modelName: $modelName
+  ) {
+    id
+    schemaExId
+    copilotType
+    modelName
+    status
+    startedAt
+    completedAt
+    result {
+      overallScore
+      verdict
+    }
+  }
+}
+```
+
+**Example:**
+
+```graphql
+query {
+  getSessions(schemaExId: "schema-456", copilotType: DATA_MODEL_BUILDER) {
+    id
+    modelName
+    status
+    result {
+      overallScore
+    }
+  }
+}
+```
+
+---
+
+## Analytics API
+
+Query evaluation results and metrics.
+
+### Query: Get Evaluation Result
+
+Get the final evaluation result for a session:
+
+```graphql
+query GetEvaluationResult($sessionId: Int!) {
+  getEvaluationResult(sessionId: $sessionId) {
+    id
+    sessionId
+    schemaExId
+    copilotType
+    modelName
+    evaluationStatus
+    verdict
+    overallScore
+    summary
+    detailedAnalysis
+    discrepancies
+    auditTrace
+    generatedAt
+    createdAt
+  }
+}
+```
+
+### Query: Compare Models
+
+Compare performance across different models:
+
+```graphql
+query CompareModels($schemaExId: String!, $modelNames: [String!]!) {
+  compareModels(schemaExId: $schemaExId, modelNames: $modelNames) {
+    schemaExId
+    models {
+      modelName
+      metrics
+      overallScore
+      avgLatencyMs
+      avgTokens
+      passRate
+    }
+  }
+}
+```
+
+**Example:**
+
+```graphql
+query {
+  compareModels(
+    schemaExId: "schema-456"
+    modelNames: ["gpt-4", "gpt-4o-mini", "gemini-2.5-pro"]
+  ) {
+    schemaExId
+    models {
+      modelName
+      overallScore
+      avgLatencyMs
+      passRate
+    }
+  }
+}
+```
+
+### Query: Dashboard Metrics
+
+Get aggregated metrics for the dashboard:
+
+```graphql
+query GetDashboardMetrics(
+  $copilotType: CopilotType
+  $modelName: String
+  $startDate: DateTime
+  $endDate: DateTime
+) {
+  getDashboardMetrics(
+    copilotType: $copilotType
+    modelName: $modelName
+    startDate: $startDate
+    endDate: $endDate
+  ) {
+    totalSessions
+    avgOverallScore
+    avgLatencyMs
+    avgTokenUsage
+    passRateByCategory {
+      category
+      passRate
+      totalRubrics
+    }
+    modelPerformanceTrend {
+      date
+      score
+      sessionCount
+    }
+  }
+}
+```
+
+**Example:**
+
+```graphql
+query {
+  getDashboardMetrics(
+    copilotType: DATA_MODEL_BUILDER
+    startDate: "2025-01-01T00:00:00Z"
+    endDate: "2025-12-31T23:59:59Z"
+  ) {
+    totalSessions
+    avgOverallScore
+    passRateByCategory {
+      category
+      passRate
+    }
+  }
+}
+```
+
+---
+
+## GraphQL Types Reference
+
+### Enums
+
+```graphql
+enum CopilotType {
+  DATA_MODEL_BUILDER
+  UI_BUILDER
+  ACTIONFLOW_BUILDER
+  LOG_ANALYZER
+  AGENT_BUILDER
+}
+
+enum SessionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum GraphSessionStatus {
+  PENDING
+  AWAITING_RUBRIC_REVIEW
+  AWAITING_HUMAN_EVALUATION
+  COMPLETED
+  FAILED
+}
+
+enum RubricReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MODIFIED
+}
+
+enum EvaluationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+```
+
+### Scalar Types
+
+```graphql
+scalar DateTime # ISO 8601 date-time string
+scalar JSON # Arbitrary JSON data
+```
+
+---
+
+## Legacy API (Job-based Execution)
+
+The following mutations use the older Kubernetes Job-based execution model and are maintained for backward compatibility:
+
+### Mutation: Execute AI Copilot
+
+```graphql
+mutation ExecAiCopilotByTypeAndModel(
+  $projectExId: String!
+  $schemaExId: String!
+  $copilotType: CopilotType!
+  $modelName: String!
+) {
+  execAiCopilotByTypeAndModel(
+    projectExId: $projectExId
+    schemaExId: $schemaExId
+    copilotType: $copilotType
+    modelName: $modelName
+  )
+}
+```
+
+**Note:** This creates a Kubernetes Job for evaluation. For new integrations, use the HITL or Automated Evaluation APIs instead.
+
+---
+
+## Error Handling
+
+All GraphQL operations follow standard error conventions:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Session not found",
+      "path": ["getSession"],
+      "extensions": {
+        "code": "NOT_FOUND"
+      }
+    }
+  ],
+  "data": {
+    "getSession": null
+  }
+}
+```
+
+Common error codes:
+
+- `NOT_FOUND` - Resource doesn't exist
+- `BAD_USER_INPUT` - Invalid input parameters
+- `INTERNAL_SERVER_ERROR` - Server-side error
+
+---
+
+## Rate Limiting & Best Practices
+
+1. **Batch Queries**: Use GraphQL's ability to query multiple resources in one request
+2. **Field Selection**: Only request fields you need to reduce payload size
+3. **Pagination**: For large result sets, implement cursor-based pagination (future enhancement)
+4. **Caching**: Results are cacheable based on session ID and timestamp
+
+---
+
+## High-Level Architecture
 
 ```architecture
 ┌─────────────────────────────────────────────────────────────────┐
 │                          Client Layer                           │
 │                    (GraphQL API Consumers)                      │
+│            Web UI, CLI Tools, CI/CD Pipelines                   │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Express + Apollo Server                      │
 │                      (GraphQL API Layer)                        │
-│  • Queries: Get evaluations, rubrics, metrics                   │
-│  • Mutations: Create jobs, review rubrics, judge results        │
+│  • Queries: Sessions, rubrics, results, analytics               │
+│  • Mutations: HITL workflow, automated evaluation               │
+│  • Real-time: Session state tracking                            │
 └─────────────────────────────────────────────────────────────────┘
                               │
                     ┌─────────┴─────────┐
                     ▼                   ▼
-        ┌───────────────────┐   ┌──────────────────┐
-        │  Service Layer    │   │ Kubernetes API   │
-        │  (Business Logic) │   │     Client       │
-        └───────────────────┘   └──────────────────┘
+        ┌───────────────────┐   ┌──────────────────────┐
+        │  Service Layer    │   │   LangGraph Engine   │
+        │  (Business Logic) │   │   (HITL Workflows)   │
+        │                   │   │                      │
+        │  • Golden Sets    │   │  • State Management  │
+        │  • Analytics      │   │  • Checkpointing     │
+        │  • Sessions       │   │  • Human Interrupts  │
+        └───────────────────┘   └──────────────────────┘
+                    │                   │
                     │                   │
                     ▼                   ▼
-        ┌───────────────────┐   ┌──────────────────────────┐
-        │  Prisma Client    │   │  Job Creation/Monitoring │
-        │  (Database ORM)   │   │  • JobCreator            │
-        └───────────────────┘   │  • JobMonitor            │
-                    │           │  • manifestBuilder       │
-                    ▼           └──────────────────────────┘
-        ┌───────────────────┐               │
-        │   PostgreSQL DB   │               ▼
-        │                   │   ┌──────────────────────────┐
-        │ • copilot schema  │   │   Kubernetes Cluster     │
-        │   (read-only)     │   │                          │
-        │ • evaluation      │   │  ┌────────────────────┐  │
-        │   schema          │   │  │  Evaluation Job    │  │
-        │   (read-write)    │   │  │  Pod               │  │
-        └───────────────────┘   │  │                    │  │
-                    ▲           │  │ • Playwright       │  │
-                    │           │  │ • Copilot Control  │  │
-                    │           │  │ • Metrics          │  │
-                    └───────────┼──│   Collection       │  │
-                                │  │ • Direct DB Write  │  │
-                                │  └────────────────────┘  │
-                                │                          │
-                                │  ┌────────────────────┐  │
-                                │  │ Rubric Generation  │  │
-                                │  │ Job Pod            │  │
-                                │  │                    │  │
-                                │  │ • LangChain/Graph  │  │
-                                │  │ • LLM API Calls    │  │
-                                │  │ • Direct DB Write  │  │
-                                │  └────────────────────┘  │
-                                └──────────────────────────┘
+        ┌───────────────────────────────────────────────┐
+        │          PostgreSQL Database                   │
+        │                                                │
+        │  Tables:                                       │
+        │  • goldenSet - Test schemas & prompts          │
+        │  • evaluationSession - Session metadata        │
+        │  • adaptiveRubric - Generated rubrics          │
+        │  • adaptiveRubricJudgeRecord - Evaluations     │
+        │  • evaluationResult - Final reports            │
+        │                                                │
+        │  LangGraph Checkpoints:                        │
+        │  • Thread state persistence                    │
+        │  • HITL interrupt points                       │
+        └───────────────────────────────────────────────┘
+                              │
+                              ▼
+        ┌───────────────────────────────────────────────┐
+        │         LangGraph Evaluation Workflow         │
+        │                                                │
+        │  1. executeCopilot                             │
+        │     └─> Run copilot, capture output            │
+        │                                                │
+        │  2. generateRubric                             │
+        │     └─> AI generates evaluation criteria       │
+        │                                                │
+        │  3. humanReviewer (⏸ INTERRUPT)                │
+        │     └─> Wait for rubric approval/modification  │
+        │                                                │
+        │  4. agentEvaluator                             │
+        │     └─> AI evaluates copilot output            │
+        │                                                │
+        │  5. humanEvaluator (⏸ INTERRUPT)               │
+        │     └─> Wait for human evaluation scores       │
+        │                                                │
+        │  6. generateFinalReport                        │
+        │     └─> Compare agent vs human, create report  │
+        │                                                │
+        │  Nodes can be skipped via flags:               │
+        │  • skipHumanReview: true                       │
+        │  • skipHumanEvaluation: true                   │
+        └───────────────────────────────────────────────┘
+                              │
+                              ▼
+        ┌───────────────────────────────────────────────┐
+        │              External Services                 │
+        │                                                │
+        │  • OpenAI API (GPT-4, GPT-4o-mini)             │
+        │  • Google Gemini API (gemini-2.5-pro)          │
+        │  • Functorz Copilot WebSocket                  │
+        │  • Functorz Backend GraphQL API                │
+        └───────────────────────────────────────────────┘
 ```
 
-### Key Architectural Decisions
+### Key Architectural Features
 
-1. **Kubernetes Jobs for Async Processing**
+1. **LangGraph-Based HITL Workflow**
 
-   - Backend submits jobs to K8s cluster via `@kubernetes/client-node`
-   - Jobs run as isolated pods with resource limits
-   - No message broker needed - database serves as shared state
-   - Jobs write results directly to PostgreSQL
+   - State machine with conditional routing
+   - Interrupt points for human input (`humanReviewer`, `humanEvaluator`)
+   - Checkpointing for resumable workflows
+   - Skip flags for automated mode
 
-2. **Database as Communication Layer**
+2. **GraphQL API Gateway**
 
-   - Backend creates `evaluation_session` with status = `PENDING`
-   - Job updates status: `RUNNING` → `COMPLETED`/`FAILED`
-   - Client polls GraphQL API to check database status
-   - Simple, reliable, no distributed messaging complexity
+   - Single endpoint for all operations
+   - Type-safe schema with strong typing
+   - Real-time session state queries
+   - Comprehensive error handling
 
-3. **Separate Job Runners**
+3. **Dual Evaluation Mode**
 
-   - `EvaluationJobRunner.ts` - Runs Playwright automation
-   - `RubricGenerationJobRunner.ts` - Runs LangChain workflows
-   - Each compiled into separate Docker images
-   - Submitted as K8s Jobs with different resource profiles
+   - **HITL Mode**: Human review at rubric and evaluation stages
+   - **Automated Mode**: AI-only evaluation for batch processing
 
-4. **Monitoring Strategy**
-   - Optional: Backend monitors K8s API for job lifecycle
-   - Primary: Jobs update database directly
-   - Clients poll GraphQL for real-time status
-   - K8s handles retries, timeouts, and cleanup automatically
+4. **Database as State Store**
+   - PostgreSQL for persistent data
+   - LangGraph checkpoints for workflow state
+   - Transactional consistency across operations
+
+---
+
+### HITL Workflow State Machine
+
+```bash
+START
+  │
+  ├─> executeCopilot
+  │     │
+  │     ├─> generateRubric
+  │     │     │
+  │     │     ├─> [skipHumanReview=false]
+  │     │     │     │
+  │     │     │     └─> humanReviewer ⏸ AWAITING_RUBRIC_REVIEW
+  │     │     │           │ (GraphQL: submitRubricReview)
+  │     │     │           │
+  │     │     └─> [skipHumanReview=true]
+  │     │           │
+  │     │           └─> agentEvaluator
+  │     │                 │
+  │     │                 ├─> [skipHumanEvaluation=false]
+  │     │                 │     │
+  │     │                 │     └─> humanEvaluator ⏸ AWAITING_HUMAN_EVALUATION
+  │     │                 │           │ (GraphQL: submitHumanEvaluation)
+  │     │                 │           │
+  │     │                 └─> [skipHumanEvaluation=true]
+  │     │                       │
+  │     └─> generateFinalReport
+  │           │
+  └─> END ✓ COMPLETED
+```
+
+### LangGraph State Schema
+
+```typescript
+interface EvaluationState {
+  // Session metadata
+  sessionId: number;
+  projectExId: string;
+  schemaExId: string;
+  copilotType: CopilotType;
+  modelName: string;
+
+  // Workflow flags
+  skipHumanReview: boolean;
+  skipHumanEvaluation: boolean;
+
+  // Copilot execution
+  copilotInput?: string;
+  copilotOutput?: string;
+  copilotMetrics?: {
+    latencyMs: number;
+    roundtrips: number;
+    inputTokens: number;
+    outputTokens: number;
+  };
+
+  // Rubric generation
+  rubricDraft?: Rubric;
+  rubricFinal?: Rubric;
+  rubricFeedback?: string;
+
+  // Evaluations
+  agentEvaluation?: Evaluation;
+  humanEvaluation?: Evaluation;
+
+  // Final report
+  finalReport?: FinalReport;
+
+  // Error handling
+  error?: string;
+}
+
+interface Rubric {
+  id: string;
+  version: string;
+  criteria: RubricCriterion[];
+  totalWeight: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Evaluation {
+  evaluatorType: 'agent' | 'human';
+  scores: EvaluationScore[];
+  overallScore: number;
+  summary: string;
+  timestamp: string;
+}
+
+interface FinalReport {
+  verdict: 'pass' | 'fail' | 'needs_review';
+  overallScore: number;
+  summary: string;
+  detailedAnalysis: string;
+  agentEvaluation: Evaluation;
+  humanEvaluation?: Evaluation;
+  discrepancies: string[];
+  auditTrace: string[];
+  generatedAt: string;
+}
+```
 
 ---
 
 ## Data Model Design
 
-### Prisma Schema
+### Current Database Schema
 
-**Schema Organization:**
+The system uses PostgreSQL with Prisma ORM. The schema is designed to support the LangGraph-based HITL evaluation workflow.
 
-Prisma supports multi-schema with PostgreSQL. You'll have two schemas:
+#### Core Tables
 
-- `copilot` schema: Existing Copilot tables (read-only)
-- `evaluation` schema: New evaluation framework tables (read-write)
+**`goldenSet`** - Test schemas and reference data
 
-**Complete Prisma Schema (`prisma/schema.prisma`):**
+- Stores project schemas used for evaluation
+- Links to next iteration of golden sets (`nextGoldenSet`)
+- Includes prompt templates and ideal responses
+
+**`evaluationSession`** - Evaluation session tracking
+
+- One record per evaluation run
+- Tracks session status (PENDING → RUNNING → COMPLETED/FAILED)
+- Stores performance metrics (tokens, latency, roundtrips)
+- Contains metadata for LangGraph thread ID and workflow flags
+
+**`adaptiveRubric`** - Generated evaluation criteria
+
+- Structured rubric matching LangGraph `Rubric` interface
+- Contains array of `RubricCriterion` objects (stored as JSON)
+- Tracks review status and timestamps
+- One-to-one relationship with `evaluationSession`
+
+**`adaptiveRubricJudgeRecord`** - Evaluation scores
+
+- Stores both agent and human evaluations
+- `evaluatorType`: 'agent' or 'human'
+- Contains structured `EvaluationScore` array (stored as JSON)
+- Multiple records per rubric (agent + human)
+
+**`evaluationResult`** - Final evaluation reports
+
+- Matches LangGraph `FinalReport` interface
+- Contains verdict ('pass', 'fail', 'needs_review')
+- Stores detailed analysis and discrepancies
+- Includes audit trace for transparency
+
+### Prisma Schema Reference
+
+See [`prisma/schema.prisma`](./prisma/schema.prisma) for the complete schema definition.
+
+Key features:
+
+- Enums for type safety (`CopilotType`, `SessionStatus`, `RubricReviewStatus`, etc.)
+- JSON fields for flexible structured data (rubric criteria, evaluation scores)
+- Proper indexing on frequently queried fields
+- Relations enforced at the database level
+- Timestamps with timezone support
+
+---
+
+## API Design (Deprecated - See GraphQL API Documentation Above)
+
+### GraphQL Schema
 
 ```prisma
 generator client {
@@ -1183,43 +2508,122 @@ spec:
 
 ## System Workflow
 
-### Complete Evaluation Flow
+### Complete HITL Evaluation Flow
 
-```plan
+The system supports two evaluation modes:
+
+#### 1. Human-in-the-Loop (HITL) Mode
+
+```bash
 1. SETUP GOLDEN SET
-   ├─> Add projects/schemas to golden set
-   └─> Version control golden set
+   ├─> GraphQL: updateGoldenSetProject
+   ├─> Add project schemas with prompt templates
+   └─> Store ideal responses for comparison
 
-2. RUN EVALUATION
-   ├─> Select schema from golden set
-   ├─> Choose model to test
-   ├─> Execute copilot (automated UI interaction)
-   ├─> Capture metrics (latency, tokens, iterations)
-   └─> Store session data
+2. START HITL SESSION
+   ├─> GraphQL: startGraphSession
+   ├─> System executes copilot via WebSocket
+   ├─> Captures copilot output and metrics
+   ├─> AI generates rubric draft
+   └─> ⏸ PAUSE: AWAITING_RUBRIC_REVIEW
 
-3. GENERATE RUBRICS
-   ├─> Read copilot output from session
-   ├─> Initialize LangGraph workflow
-   ├─> Use LangChain prompt template for copilot type
-   ├─> Call LLM and parse response with custom parser
-   ├─> Create adaptive rubrics (status: pending)
-   └─> Store rubrics linked to session
+3. REVIEW RUBRIC (Human Input #1)
+   ├─> GraphQL: submitRubricReview
+   ├─> Human reviews AI-generated rubric criteria
+   ├─> Option to approve, reject, or modify
+   ├─> System generates agent evaluation
+   └─> ⏸ PAUSE: AWAITING_HUMAN_EVALUATION
 
-4. REVIEW RUBRICS
-   ├─> QA reviews generated rubrics
-   ├─> Approve/reject/modify questions
-   └─> Update rubric status
+4. PROVIDE EVALUATION (Human Input #2)
+   ├─> GraphQL: submitHumanEvaluation
+   ├─> Human scores copilot output per criterion
+   ├─> Provides reasoning and evidence
+   ├─> System compares agent vs human scores
+   ├─> Identifies discrepancies
+   └─> ✓ COMPLETE: Generates final report
 
-5. JUDGE RESULTS
-   ├─> Human judges answer rubric questions
-   ├─> Record judgments (yes/no + confidence)
-   └─> Calculate quality metrics
+5. ANALYZE RESULTS
+   ├─> GraphQL: getEvaluationResult
+   ├─> View verdict (pass/fail/needs_review)
+   ├─> Compare agent vs human evaluations
+   ├─> Review discrepancies and audit trail
+   └─> Export metrics for decision-making
+```
 
-6. ANALYZE & REPORT
-   ├─> Aggregate metrics by model/category
-   ├─> Generate comparison reports
-   ├─> Display on dashboard
-   └─> Export results for decision-making
+#### 2. Automated Mode (AI-Only)
+
+```bash
+1. SETUP GOLDEN SET
+   └─> Same as HITL mode
+
+2. RUN AUTOMATED EVALUATION
+   ├─> GraphQL: runAutomatedEvaluation
+   ├─> System executes copilot
+   ├─> AI generates rubric (auto-approved)
+   ├─> AI evaluates copilot output
+   ├─> Generates final report
+   └─> ✓ COMPLETE: Returns results immediately
+
+3. ANALYZE RESULTS
+   └─> Same as HITL mode, but only agent evaluation
+```
+
+### LangGraph Workflow Execution
+
+The evaluation is powered by a LangGraph state machine:
+
+```bash
+┌─────────────────┐
+│ executeCopilot  │ - Run copilot, capture output/metrics
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ generateRubric  │ - AI generates evaluation criteria
+└────────┬────────┘
+         │
+         ▼
+    [Skip Human Review?]
+         │
+    ┌────┴────┐
+  NO│         │YES
+    │         ▼
+    │    ┌─────────────────┐
+    │    │ agentEvaluator  │
+    │    └────────┬────────┘
+    │             │
+    ▼             │
+┌─────────────────┐│
+│ humanReviewer   ││ - ⏸ Interrupt for rubric approval
+└────────┬────────┘│
+         │         │
+         ▼         │
+┌─────────────────┐│
+│ agentEvaluator  ││ - AI evaluates copilot output
+└────────┬────────┘
+         │◄────────┘
+         ▼
+    [Skip Human Evaluation?]
+         │
+    ┌────┴────┐
+  NO│         │YES
+    │         ▼
+    │    ┌──────────────────────┐
+    │    │ generateFinalReport  │
+    │    └──────────┬───────────┘
+    │               │
+    ▼               │
+┌──────────────────┐│
+│ humanEvaluator   ││ - ⏸ Interrupt for human scores
+└────────┬─────────┘│
+         │          │
+         ▼          │
+┌──────────────────────┐
+│ generateFinalReport  │ - Compare evals, create report
+└──────────┬───────────┘
+           │◄──────────┘
+           ▼
+       ✓ COMPLETED
 ```
 
 ### Key LLM-as-a-Judge Metrics
@@ -1266,92 +2670,125 @@ Different copilot types have different evaluation criteria:
 ai-agent-evaluation-system/
 ├── prisma/
 │   ├── schema.prisma               # Prisma schema definition
-│   ├── migrations/                 # Prisma migrations
-│   └── seed.ts                     # Seed data
+│   └── migrations/                 # Database migrations
 │
 ├── src/
-│   ├── index.ts                    # App entry point
-│   ├── server.ts                   # Express + Apollo Server setup
+│   ├── index.ts                    # App entry point (Express + Apollo setup)
 │   │
 │   ├── config/
 │   │   ├── prisma.ts               # Prisma client initialization
-│   │   ├── env.ts                  # Environment variables
+│   │   ├── env.ts                  # Environment variables & LLM config
 │   │   └── constants.ts            # App constants
 │   │
 │   ├── graphql/
-│   │   ├── schema.ts               # TypeGraphQL schema
+│   │   ├── schema.ts               # GraphQL schema assembly
 │   │   ├── resolvers/              # GraphQL resolvers
 │   │   │   ├── GoldenSetResolver.ts
 │   │   │   ├── SessionResolver.ts
 │   │   │   ├── RubricResolver.ts
-│   │   │   └── AnalyticsResolver.ts
-│   │   └── types/                  # GraphQL type definitions
+│   │   │   ├── AnalyticResolver.ts
+│   │   │   └── GraphSessionResolver.ts  # HITL workflow mutations
+│   │   └── type/
+│   │       └── TypeDefs.ts         # GraphQL type definitions
 │   │
-│   ├── services/                   # Business logic
+│   ├── services/                   # Business logic layer
 │   │   ├── GoldenSetService.ts
-│   │   ├── ExecutionService.ts     # Copilot execution
-│   │   ├── RubricGenerationService.ts
+│   │   ├── ExecutionService.ts     # Copilot execution (legacy)
+│   │   ├── GraphExecutionService.ts # LangGraph HITL orchestration
+│   │   ├── RubricService.ts
 │   │   ├── JudgeService.ts
 │   │   └── AnalyticsService.ts
 │   │
-│   ├── integrations/               # External integrations
-│   │   ├── CopilotAPIClient.ts     # Interface with copilot API (if exists)
-│   │   ├── CopilotDataReader.ts    # Read copilot schema tables via Prisma
-│   │   └── LangChainClient.ts      # LangChain/LangGraph for LLM operations
+│   ├── langGraph/                  # LangGraph workflow implementation
+│   │   ├── agent.ts                # Main evaluation graph definition
+│   │   ├── index.ts                # Graph initialization & checkpointer
+│   │   ├── state/
+│   │   │   └── state.ts            # EvaluationState interface
+│   │   ├── nodes/                  # Graph node implementations
+│   │   │   ├── executeCopilot.ts   # Run copilot via WebSocket
+│   │   │   ├── generateRubric.ts   # AI generates rubric
+│   │   │   ├── humanReviewer.ts    # Interrupt for rubric review
+│   │   │   ├── agentEvaluator.ts   # AI evaluates output
+│   │   │   ├── humanEvaluator.ts   # Interrupt for human eval
+│   │   │   └── generateFinalReport.ts # Compare & create report
+│   │   ├── llm/
+│   │   │   └── llm.ts              # LLM provider initialization
+│   │   └── tools/                  # LangGraph tools
+│   │       └── copilotInteraction.ts # WebSocket copilot control
 │   │
-│   ├── automation/                 # Playwright automation
-│   │   ├── PlaywrightRunner.ts     # Main automation runner
-│   │   ├── CopilotController.ts    # Control copilot in Zed editor
-│   │   ├── MetricsCollector.ts     # Collect metrics from copilot
-│   │   └── SchemaLoader.ts         # Load schemas from golden set
-│   │
-│   ├── jobs/                       # Kubernetes Job runners
-│   │   ├── EvaluationJobRunner.ts  # Standalone evaluation job
-│   │   └── RubricGenerationJobRunner.ts  # Standalone rubric generation job
-│   │
-│   ├── kubernetes/                 # Kubernetes client and job management
-│   │   ├── k8sClient.ts            # Kubernetes API client initialization
-│   │   ├── JobCreator.ts           # Create and submit jobs to K8s API
-│   │   ├── JobMonitor.ts           # Monitor job status and lifecycle
-│   │   ├── templates/              # Job manifest templates
-│   │   │   ├── evaluation-job.yaml # Evaluation job template
-│   │   │   └── rubric-job.yaml     # Rubric generation job template
-│   │   └── utils/                  # K8s utility functions
-│   │       ├── manifestBuilder.ts  # Build job manifests from templates
-│   │       └── jobStatusParser.ts  # Parse K8s job status
-│   │
-│   ├── langchain/                  # LangChain configurations
-│   │   ├── chains/                 # LangChain chains
-│   │   │   └── RubricGenerationChain.ts
-│   │   ├── graphs/                 # LangGraph workflows
-│   │   │   └── RubricReviewGraph.ts
-│   │   ├── prompts/                # Prompt templates
-│   │   │   ├── dataModelRubric.ts
-│   │   │   ├── uiBuilderRubric.ts
-│   │   │   └── actionflowRubric.ts
-│   │   └── parsers/                # Output parsers
-│   │       └── RubricParser.ts
+│   ├── jobs/                       # Standalone job runners (legacy)
+│   │   ├── EvaluationJobRunner.ts  # Kubernetes job for evaluation
+│   │   └── RubricGenerationJobRunner.ts
 │   │
 │   └── utils/
-│       ├── logger.ts
-│       ├── validators.ts
-│       └── formatters.ts
-│
-├── tests/
-│   ├── integration/
-│   └── e2e/
+│       ├── logger.ts               # Winston logger
+│       ├── validators.ts           # Input validation
+│       ├── formatters.ts           # Data formatting
+│       ├── graphql-utils.ts        # GraphQL helpers
+│       └── websocket.ts            # WebSocket client utilities
 │
 ├── scripts/
 │   ├── setup-db.ts                 # Database initialization
-│   └── seed-golden-set.ts          # Load initial data
+│   ├── seed-golden-set.ts          # Load test data
+│   └── delete-golden-sets.ts       # Cleanup utility
 │
-├── .env.example
-├── .eslintrc.js
-├── .prettierrc
-├── tsconfig.json
+├── tests/
+│   ├── integration/                # Integration tests
+│   ├── e2e/                        # End-to-end tests
+│   ├── graphql.ts                  # GraphQL API tests
+│   ├── langgraph-test.ts           # LangGraph workflow tests
+│   └── tools-test.ts               # Tool integration tests
+│
+├── build/                          # Compiled JavaScript output
+├── .env                            # Environment variables (git-ignored)
 ├── package.json
+├── tsconfig.json
 └── README.md
 ```
+
+### Key Directories
+
+**`src/graphql/`** - GraphQL API layer
+
+- Schema definitions and resolvers
+- Maps HTTP requests to service layer
+
+**`src/services/`** - Business logic
+
+- `GraphExecutionService` orchestrates LangGraph workflows
+- Other services handle database operations and analytics
+
+**`src/langGraph/`** - LangGraph workflow engine
+
+- Complete HITL evaluation implementation
+- Node-based state machine
+- Checkpointing for resumable workflows
+
+**`src/utils/`** - Shared utilities
+
+- WebSocket client for copilot interaction
+- Logger, validators, formatters
+  │ └── utils/
+  │ ├── logger.ts
+  │ ├── validators.ts
+  │ └── formatters.ts
+  │
+  ├── tests/
+  │ ├── integration/
+  │ └── e2e/
+  │
+  ├── scripts/
+  │ ├── setup-db.ts # Database initialization
+  │ └── seed-golden-set.ts # Load initial data
+  │
+  ├── .env.example
+  ├── .eslintrc.js
+  ├── .prettierrc
+  ├── tsconfig.json
+  ├── package.json
+  └── README.md
+
+
 
 ---
 
@@ -1407,101 +2844,148 @@ ai-agent-evaluation-system/
 ## Environment Variables
 
 ```bash
-# Database (Single database, shared with Copilot)
-DATABASE_URL=postgresql://user:password@localhost:5432/copilot_db?schema=evaluation
-# Or without schema in URL, set in Prisma schema file
-# DATABASE_URL=postgresql://user:password@localhost:5432/copilot_db
-
-# Server
+# Server Configuration
 PORT=4000
 NODE_ENV=development
+URL=http://localhost:4000
 
-# LLM API (for rubric generation via LangChain)
-AZURE_API_KEY=sk-openai...
-GOOGLE_API_KEY=AIza...
-LANGCHAIN_TRACING_V2=true  # Optional: Enable LangSmith tracing
-LANGCHAIN_API_KEY=...      # Optional: For LangSmith
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/evaluation_db
 
-# LLM Configuration
-LLM_PROVIDER=auto          # auto, openai, or gemini
+# Functorz Backend Integration
+BACKEND_GRAPHQL_URL=https://zionbackend.functorz.work/api/graphql
+FUNCTORZ_PHONE_NUMBER=your-phone
+FUNCTORZ_PASSWORD=your-password
+
+# Functorz Copilot WebSocket
+WS_URL=wss://your-copilot-websocket-url/
+userToken=your-user-token
+projectExId=your-project-id
+clientType=WEB
+
+# LLM Provider Configuration
+LLM_PROVIDER=auto  # auto, openai, or gemini
+
+# OpenAI Configuration
+OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o-mini
-GEMINI_MODEL=gemini-1.5-flash
+
+# Azure OpenAI (Optional - for Azure endpoints)
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
+AZURE_OPENAI_API_VERSION=2025-04-01-preview
+
+# Google Gemini Configuration
+GOOGLE_API_KEY=AIza...
+GEMINI_MODEL=gemini-2.5-pro
+
+# LLM Generation Parameters
 LLM_TEMPERATURE=0.2
 LLM_MAX_OUTPUT_TOKENS=1024
 
-# Copilot Integration
-COPILOT_API_URL=http://localhost:3000/api
-COPILOT_API_KEY=...
+# LangSmith Tracing (Optional)
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=...
 
-# Kubernetes (for job orchestration)
+# Kubernetes Jobs (Legacy - Optional)
+RUN_KUBERNETES_JOBS=false
 KUBERNETES_NAMESPACE=ai-evaluation
 KUBERNETES_JOB_IMAGE=your-registry/evaluation-worker:latest
-KUBERNETES_JOB_CPU_REQUEST=500m
-KUBERNETES_JOB_MEMORY_REQUEST=1Gi
-KUBERNETES_JOB_CPU_LIMIT=2000m
-KUBERNETES_JOB_MEMORY_LIMIT=4Gi
-KUBERNETES_JOB_BACKOFF_LIMIT=3  # Retry count
-KUBERNETES_JOB_ACTIVE_DEADLINE_SECONDS=3600  # 1 hour timeout
-
-# Authentication (if needed)
-JWT_SECRET=...
 
 # Logging
 LOG_LEVEL=info
-```
+````
 
----
+### Configuration Notes
 
-## Security Considerations
+**LLM Provider Resolution:**
 
-1. **API Authentication**: Use JWT or API keys for GraphQL/REST endpoints
-2. **Database Access**: Read-only access to copilot schema, read-write to evaluation schema
-3. **LLM API Keys**: Store securely, rotate regularly
-4. **Input Validation**: Sanitize all user inputs
-5. **Rate Limiting**: Prevent abuse of expensive LLM operations
-6. **Audit Logging**: Track who made what judgments
+- `LLM_PROVIDER=auto` automatically selects the first available provider (OpenAI → Gemini)
+- Set to `openai` or `gemini` to force a specific provider
+- System prioritizes Azure OpenAI if configured (requires `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, and `OPENAI_API_KEY`)
+
+**WebSocket Configuration:**
+
+- The `WS_URL` is constructed automatically with query parameters
+- Required for copilot execution via WebSocket connection
+
+**Kubernetes Jobs:**
+
+- Set `RUN_KUBERNETES_JOBS=false` to use LangGraph-based execution (recommended)
+- Legacy job-based execution requires K8s cluster access
 
 ---
 
 ## Performance Considerations
 
-1. **Database Indexes**: Index on frequently queried fields (schema_ex_id, session_id)
-2. **Caching**: Cache golden set schemas, rubrics in Redis (optional)
-3. **Async Processing**: Use Kubernetes Jobs for long-running copilot evaluations
-   - Parallel job execution with horizontal scaling
-   - Configurable resource requests and limits per job
-   - Built-in retry logic with backoffLimit
-   - Active deadline for job timeout (prevents hung jobs)
-   - Job completion tracking and cleanup
-   - Isolated execution environment per evaluation
-4. **Pagination**: Paginate large result sets in GraphQL
-5. **Connection Pooling**: Efficient DB connection management
-6. **Metrics Storage**: Use JSONB efficiently, consider time-series DB for trends
+1. **Database Indexes**: Proper indexing on frequently queried fields
+
+   - `evaluationSession.schemaExId`
+   - `adaptiveRubric.sessionId`
+   - `adaptiveRubricJudgeRecord.adaptiveRubricId`
+
+2. **LangGraph Checkpointing**:
+
+   - Enables workflow resumption after interrupts
+   - Stored in PostgreSQL for durability
+   - Minimal performance impact with proper indexing
+
+3. **GraphQL Optimization**:
+
+   - Field-level data loading (avoid N+1 queries)
+   - Request only needed fields
+   - Consider DataLoader for batch loading (future enhancement)
+
+4. **WebSocket Connection Pooling**:
+
+   - Reuse connections when possible
+   - Implement connection timeout and retry logic
+
+5. **LLM API Rate Limiting**:
+
+   - Respect provider rate limits
+   - Implement exponential backoff
+   - Consider request queuing for high-volume scenarios
+
+6. **Metrics Storage**:
+   - JSON fields for flexibility
+   - Consider extracting key metrics to dedicated columns for faster queries
 
 ---
 
 ## Testing Strategy
 
-### Integration Tests
+### Unit Tests
 
 - GraphQL resolvers
-- Database operations
-- LangChain/LangGraph workflows
-  - Rubric generation chain
-  - Review graph with human-in-the-loop
-  - Prompt template variations
-- Kubernetes Job orchestration
-  - Job creation and submission
-  - Job status monitoring and completion tracking
-  - Job retry behavior and failure handling
-  - Resource limit enforcement
 - Service layer functions
+- LangGraph node implementations
+- Utility functions
+
+### Integration Tests
+
+- Database operations via Prisma
+- LangGraph workflow execution
+  - State transitions
+  - Interrupt and resume behavior
+  - Skip flags functionality
+- LLM provider integration
+- WebSocket communication
 
 ### End-to-End Tests
 
-- Complete evaluation flow (with Playwright)
-- Copilot automation scenarios
-- Kubernetes Job execution and monitoring
+- Complete HITL evaluation flow
+- Automated evaluation flow
+- Error handling and recovery
+- Performance under load
+
+### Test Files
+
+- `tests/graphql.ts` - GraphQL API tests
+- `tests/langgraph-test.ts` - LangGraph workflow tests
+- `tests/tools-test.ts` - Tool integration tests
+- `tests/integration/` - Integration test suite
+- `tests/e2e/` - End-to-end scenarios
 
 ---
 

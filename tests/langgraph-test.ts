@@ -1,4 +1,4 @@
-import { graph } from '../src/langGraph';
+import { automatedGraph } from '../src/langGraph/agent.ts';
 import { config } from 'dotenv';
 import { logger } from '../src/utils/logger.ts';
 
@@ -10,17 +10,19 @@ async function main() {
   try {
     // Test Azure
     logger.info('Testing Azure Provider...');
-    const result = await graph.invoke(
+    const result = await automatedGraph.invoke(
       {
         query: "Hello, world! Please reply with 'Hello from LangGraph!'",
+        candidateOutput: "",
       },
       {
         configurable: {
+          "thread_id": "session111",
           provider: 'azure',
           model: process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o',
           projectExId: undefined,
-          skipHumanReview: undefined,
-          skipHumanEvaluation: undefined,
+          skipHumanReview: true,
+          skipHumanEvaluation: true,
         },
       }
     );
@@ -33,17 +35,19 @@ async function main() {
     // Test Gemini (optional)
     if (process.env.GOOGLE_API_KEY && process.env.TEST_GEMINI === 'true') {
       logger.info('Testing Gemini Provider...');
-      const geminiResult = await graph.invoke(
+      const geminiResult = await automatedGraph.invoke(
         {
           query: "Hello, world! Please reply with 'Hello from LangGraph!'",
+          candidateOutput: "",
         },
         {
           configurable: {
+            thread_id: 'session222',
             provider: 'gemini',
             model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
             projectExId: undefined,
-            skipHumanReview: undefined,
-            skipHumanEvaluation: undefined,
+            skipHumanReview: true,
+            skipHumanEvaluation: true,
           },
         }
       );

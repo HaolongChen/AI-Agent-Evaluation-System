@@ -63,7 +63,11 @@ async function discoverSchema() {
 
     // Extract query fields
     const schema = response as IntrospectionResponse;
-    const queries = schema.data?.__schema?.queryType?.fields ?? [];
+    const queryType = schema.data?.__schema?.queryType;
+    const queries: IntrospectionField[] =
+      queryType && 'fields' in queryType
+        ? (queryType.fields as IntrospectionField[])
+        : [];
 
     logger.info('\n=== Available Queries ===');
     queries.forEach((field: IntrospectionField) => {
@@ -82,17 +86,33 @@ async function discoverSchema() {
   }
 }
 
-function describeType(typeRef: IntrospectionTypeRef | null | undefined): string {
+function describeType(
+  typeRef: IntrospectionTypeRef | null | undefined
+): string {
   if (!typeRef) {
     return 'Unknown';
   }
 
+  // Handle different type variants
   if ('ofType' in typeRef && typeRef.ofType) {
-    const current = typeRef.name ?? typeRef.kind;
+    const current =
+      'name' in typeRef && typeRef.name
+        ? typeRef.name
+        : typeRef.kind || 'Unknown';
     return `${current}<${describeType(typeRef.ofType)}>`;
   }
 
-  return typeRef.name ?? typeRef.kind;
+  // For named types
+  if ('name' in typeRef && typeRef.name) {
+    return typeRef.name;
+  }
+
+  // Fallback to kind if available
+  if ('kind' in typeRef && typeRef.kind) {
+    return typeRef.kind;
+  }
+
+  return 'Unknown';
 }
 
 discoverSchema();

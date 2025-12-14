@@ -2788,8 +2788,6 @@ ai-agent-evaluation-system/
   ├── package.json
   └── README.md
 
-
-
 ---
 
 ## Development Phases
@@ -2894,7 +2892,7 @@ KUBERNETES_JOB_IMAGE=your-registry/evaluation-worker:latest
 
 # Logging
 LOG_LEVEL=info
-````
+```
 
 ### Configuration Notes
 

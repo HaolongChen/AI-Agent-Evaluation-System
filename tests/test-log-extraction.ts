@@ -13,16 +13,25 @@ interface TaskMessage {
   timestamp: number;
 }
 
-function extractResultFromMockLogs(logs: string): { response?: string; tasks?: TaskMessage[] | null } {
+function extractResultFromMockLogs(logs: string): {
+  response?: string;
+  tasks?: TaskMessage[] | null;
+} {
   const lines = logs.split('\n');
-  
+
   // Search for the line containing the job result JSON
   for (const line of lines) {
     if (line.includes('JOB_RESULT_JSON:')) {
       try {
-        const jsonStr = line.substring(line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length).trim();
+        const jsonStr = line
+          .substring(
+            line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
+          )
+          .trim();
         const result = JSON.parse(jsonStr);
-        console.log(`✓ Extracted job result from logs: ${JSON.stringify(result, null, 2)}`);
+        console.log(
+          `✓ Extracted job result from logs: ${JSON.stringify(result, null, 2)}`
+        );
         return {
           response: result.response,
           tasks: result.tasks,
@@ -32,7 +41,7 @@ function extractResultFromMockLogs(logs: string): { response?: string; tasks?: T
       }
     }
   }
-  
+
   console.warn('✗ No job result found in logs');
   return {};
 }

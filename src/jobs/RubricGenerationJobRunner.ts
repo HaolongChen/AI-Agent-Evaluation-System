@@ -1,5 +1,12 @@
 import { logger } from '../utils/logger.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import {
+  AZURE_OPENAI_DEPLOYMENT,
+  AZURE_OPENAI_ENDPOINT,
+  GEMINI_API_KEY,
+  GEMINI_MODEL,
+  OPENAI_API_KEY,
+  RUN_KUBERNETES_JOBS,
+} from '../config/env.ts';
 import * as z from 'zod';
 import { automatedGraph } from '../langGraph/agent.ts';
 import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
@@ -66,6 +73,24 @@ export class RubricGenerationJobRunner {
     );
 
     try {
+      const azureReady = Boolean(AZURE_OPENAI_ENDPOINT && OPENAI_API_KEY);
+      const provider: 'azure' | 'gemini' = azureReady
+        ? 'azure'
+        : GEMINI_API_KEY
+        ? 'gemini'
+        : 'azure';
+
+      const effectiveModel =
+        provider === 'azure'
+          ? AZURE_OPENAI_DEPLOYMENT || this.modelName
+          : GEMINI_MODEL || this.modelName;
+
+      if (!azureReady && provider === 'gemini') {
+        logger.warn(
+          `Azure OpenAI is not fully configured (need AZURE_OPENAI_ENDPOINT + OPENAI_API_KEY). Falling back to Gemini (${effectiveModel}).`
+        );
+      }
+
       // Invoke the LangGraph automated workflow
       // thread_id is required by LangGraph's MemorySaver checkpoint
       const result = await automatedGraph.invoke(
@@ -77,8 +102,8 @@ export class RubricGenerationJobRunner {
         {
           configurable: {
             thread_id: `session-${this.sessionId}`,
-            provider: 'azure',
-            model: this.modelName,
+            provider,
+            model: effectiveModel,
             projectExId: this.projectExId,
             skipHumanReview: true,
             skipHumanEvaluation: true,

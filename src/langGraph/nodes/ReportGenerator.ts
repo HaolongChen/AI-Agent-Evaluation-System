@@ -1,19 +1,19 @@
-import { type RunnableConfig } from "@langchain/core/runnables";
-import { HumanMessage } from "@langchain/core/messages";
-import { rubricAnnotation, type FinalReport } from "../state/index.ts";
-import { getLLM } from "../llm/index.ts";
-import * as z from "zod";
+import { type RunnableConfig } from '@langchain/core/runnables';
+import { HumanMessage } from '@langchain/core/messages';
+import { rubricAnnotation, type FinalReport } from '../state/index.ts';
+import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import * as z from 'zod';
 
 const reportSchema = z.object({
   executiveSummary: z
     .string()
-    .describe("Brief executive summary of the evaluation"),
-  detailedFindings: z.string().describe("Detailed findings and analysis"),
+    .describe('Brief executive summary of the evaluation'),
+  detailedFindings: z.string().describe('Detailed findings and analysis'),
   recommendations: z
     .array(z.string())
-    .describe("Recommendations for improvement"),
-  strengths: z.array(z.string()).describe("Identified strengths"),
-  weaknesses: z.array(z.string()).describe("Identified weaknesses"),
+    .describe('Recommendations for improvement'),
+  strengths: z.array(z.string()).describe('Identified strengths'),
+  weaknesses: z.array(z.string()).describe('Identified weaknesses'),
 });
 
 /**
@@ -24,11 +24,14 @@ export async function reportGeneratorNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
-  const provider = config?.configurable?.["provider"] || "azure";
-  const modelName = config?.configurable?.["model"] || "gpt-4o";
+  const provider =
+    (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
+    'azure';
+  const modelName =
+    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
 
   if (!state.finalReport) {
-    throw new Error("No final report available for generation");
+    throw new Error('No final report available for generation');
   }
 
   const llm = getLLM({ provider, model: modelName });
@@ -38,12 +41,12 @@ export async function reportGeneratorNode(
   const agentScores =
     state.agentEvaluation?.scores
       ?.map((s) => `- ${s.criterionId}: ${s.score} - ${s.reasoning}`)
-      .join("\n") || "No agent evaluation";
+      .join('\n') || 'No agent evaluation';
 
   const humanScores =
     state.humanEvaluation?.scores
       ?.map((s) => `- ${s.criterionId}: ${s.score} - ${s.reasoning}`)
-      .join("\n") || "No human evaluation";
+      .join('\n') || 'No human evaluation';
 
   // Build constraints context
   const hardConstraintsInfo =
@@ -54,13 +57,13 @@ export async function reportGeneratorNode(
             return `- ${constraint} [${
               answer !== undefined
                 ? answer
-                  ? "PASS"
-                  : "FAIL"
-                : "NOT EVALUATED"
+                  ? 'PASS'
+                  : 'FAIL'
+                : 'NOT EVALUATED'
             }]`;
           })
-          .join("\n")
-      : "No hard constraints defined";
+          .join('\n')
+      : 'No hard constraints defined';
 
   const softConstraintsInfo =
     state.softConstraints && state.softConstraints.length > 0
@@ -68,11 +71,11 @@ export async function reportGeneratorNode(
           .map((constraint, index) => {
             const answer = state.softConstraintsAnswers?.[index];
             return `- ${constraint} [${
-              answer !== undefined ? answer : "NOT EVALUATED"
+              answer !== undefined ? answer : 'NOT EVALUATED'
             }]`;
           })
-          .join("\n")
-      : "No soft constraints defined";
+          .join('\n')
+      : 'No soft constraints defined';
 
   // Build rubric criteria context
   const rubricCriteria =
@@ -80,22 +83,22 @@ export async function reportGeneratorNode(
       ?.map(
         (c) =>
           `- ${c.name} (weight: ${c.weight}%, ${
-            c.isHardConstraint ? "HARD" : "SOFT"
+            c.isHardConstraint ? 'HARD' : 'SOFT'
           }): ${c.description}`
       )
-      .join("\n") || "No rubric criteria available";
+      .join('\n') || 'No rubric criteria available';
 
   // Build analysis context
-  const analysisContext = state.analysis || "No analysis available";
+  const analysisContext = state.analysis || 'No analysis available';
 
   const prompt = `
 You are a report generation expert. Generate a comprehensive evaluation report based on the following information.
 
 QUERY: """${state.query}"""
 
-CONTEXT: """${state.context || "No additional context"}"""
+CONTEXT: """${state.context || 'No additional context'}"""
 
-CANDIDATE OUTPUT: """${state.candidateOutput || "No candidate output"}"""
+CANDIDATE OUTPUT: """${state.candidateOutput || 'No candidate output'}"""
 
 ANALYSIS: """${analysisContext}"""
 
@@ -118,7 +121,7 @@ HUMAN EVALUATION SCORES:
 ${humanScores}
 
 DISCREPANCIES:
-${state.finalReport.discrepancies.join("\n") || "No discrepancies"}
+${state.finalReport.discrepancies.join('\n') || 'No discrepancies'}
 
 Generate:
 1. A brief executive summary (2-3 sentences)
@@ -128,9 +131,10 @@ Generate:
 5. Identified weaknesses (based on failed constraints and low scores)
 `;
 
-  const response = await llmWithStructuredOutput.invoke(
-    [new HumanMessage(prompt)],
-    config
+  const response = await invokeWithRetry(
+    () => llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config),
+    provider,
+    { operationName: 'ReportGenerator.invoke' }
   );
 
   // Compile the audit trace
@@ -147,11 +151,11 @@ Generate:
       response.detailedFindings
     }\n\nStrengths:\n${response.strengths
       .map((s) => `- ${s}`)
-      .join("\n")}\n\nWeaknesses:\n${response.weaknesses
+      .join('\n')}\n\nWeaknesses:\n${response.weaknesses
       .map((w) => `- ${w}`)
-      .join("\n")}\n\nRecommendations:\n${response.recommendations
+      .join('\n')}\n\nRecommendations:\n${response.recommendations
       .map((r) => `- ${r}`)
-      .join("\n")}`,
+      .join('\n')}`,
     auditTrace,
     generatedAt: new Date().toISOString(),
   };
@@ -170,16 +174,16 @@ ${response.executiveSummary}
 ${response.detailedFindings}
 
 ## Strengths
-${response.strengths.map((s) => `- ${s}`).join("\n")}
+${response.strengths.map((s) => `- ${s}`).join('\n')}
 
 ## Weaknesses
-${response.weaknesses.map((w) => `- ${w}`).join("\n")}
+${response.weaknesses.map((w) => `- ${w}`).join('\n')}
 
 ## Recommendations
-${response.recommendations.map((r) => `- ${r}`).join("\n")}
+${response.recommendations.map((r) => `- ${r}`).join('\n')}
 
 ## Audit Trace
-${auditTrace.map((entry) => `- ${entry}`).join("\n")}
+${auditTrace.map((entry) => `- ${entry}`).join('\n')}
 `;
 
   return {

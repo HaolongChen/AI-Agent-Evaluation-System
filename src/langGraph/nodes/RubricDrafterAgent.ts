@@ -1,46 +1,46 @@
-import { type RunnableConfig } from "@langchain/core/runnables";
-import { HumanMessage } from "@langchain/core/messages";
+import { type RunnableConfig } from '@langchain/core/runnables';
+import { HumanMessage } from '@langchain/core/messages';
 import {
   rubricAnnotation,
   type Rubric,
   type RubricCriterion,
-} from "../state/index.ts";
-import { getLLM } from "../llm/index.ts";
-import * as z from "zod";
+} from '../state/index.ts';
+import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import * as z from 'zod';
 
 const rubricCriterionSchema = z.object({
-  name: z.string().describe("Name of the evaluation criterion"),
+  name: z.string().describe('Name of the evaluation criterion'),
   description: z
     .string()
-    .describe("Detailed description of what this criterion evaluates"),
+    .describe('Detailed description of what this criterion evaluates'),
   weight: z
     .number()
     .min(0)
     .max(100)
-    .describe("Weight of this criterion (0-100)"),
-  minScore: z.number().describe("Minimum score for this criterion"),
-  maxScore: z.number().describe("Maximum score for this criterion"),
+    .describe('Weight of this criterion (0-100)'),
+  minScore: z.number().describe('Minimum score for this criterion'),
+  maxScore: z.number().describe('Maximum score for this criterion'),
   isHardConstraint: z
     .boolean()
     .describe(
-      "Whether this is a hard constraint (must pass) or soft constraint"
+      'Whether this is a hard constraint (must pass) or soft constraint'
     ),
 });
 
 const rubricDraftSchema = z.object({
   criteria: z
     .array(rubricCriterionSchema)
-    .describe("List of evaluation criteria"),
+    .describe('List of evaluation criteria'),
   rationale: z
     .string()
-    .describe("Explanation of why these criteria were chosen"),
+    .describe('Explanation of why these criteria were chosen'),
 });
 
 /**
  * Generate a unique ID using crypto.randomUUID if available, otherwise fallback
  */
 function generateId(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
   // Fallback for environments without crypto.randomUUID
@@ -57,8 +57,11 @@ export async function rubricDrafterNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
-  const provider = config?.configurable?.["provider"] || "azure";
-  const modelName = config?.configurable?.["model"] || "gpt-4o";
+  const provider =
+    (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
+    'azure';
+  const modelName =
+    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
 
   const llm = getLLM({ provider, model: modelName });
   const llmWithStructuredOutput = llm.withStructuredOutput(rubricDraftSchema);
@@ -68,14 +71,14 @@ You are an evaluation rubric expert. Based on the query, context, and schema inf
 
 Query: """${state.query}"""
 
-Context: """${state.context || "No additional context provided."}"""
+Context: """${state.context || 'No additional context provided.'}"""
 
 Candidate Output to Evaluate: """${
-    state.candidateOutput || "No candidate output provided."
+    state.candidateOutput || 'No candidate output provided.'
   }"""
 
 Schema Expression: """${
-    state.schemaExpression || "No schema information available."
+    state.schemaExpression || 'No schema information available.'
   }"""
 
 Create evaluation criteria that:
@@ -90,9 +93,10 @@ Soft constraints examples: clarity, efficiency, best practices
 Generate 3-7 criteria with appropriate weights that sum to 100.
 `;
 
-  const response = await llmWithStructuredOutput.invoke(
-    [new HumanMessage(prompt)],
-    config
+  const response = await invokeWithRetry(
+    () => llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config),
+    provider,
+    { operationName: 'RubricDrafter.invoke' }
   );
 
   // Transform LLM response into Rubric format
@@ -119,7 +123,7 @@ Generate 3-7 criteria with appropriate weights that sum to 100.
 
   const rubricDraft: Rubric = {
     id: generateId(),
-    version: "1.0.0",
+    version: '1.0.0',
     criteria,
     totalWeight,
     createdAt: now,

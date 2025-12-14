@@ -1,16 +1,16 @@
-import { type RunnableConfig } from "@langchain/core/runnables";
-import { HumanMessage } from "@langchain/core/messages";
-import { rubricAnnotation } from "../state/index.ts";
-import { getLLM } from "../llm/index.ts";
-import * as z from "zod";
+import { type RunnableConfig } from '@langchain/core/runnables';
+import { HumanMessage } from '@langchain/core/messages';
+import { rubricAnnotation } from '../state/index.ts';
+import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import * as z from 'zod';
 
 const schemaCheckSchema = z.object({
   isSchemaNeeded: z
     .boolean()
-    .describe("Whether schema information is needed to evaluate the query"),
+    .describe('Whether schema information is needed to evaluate the query'),
   reasoning: z
     .string()
-    .describe("Explanation of why schema is or is not needed"),
+    .describe('Explanation of why schema is or is not needed'),
 });
 
 /**
@@ -21,8 +21,11 @@ export async function schemaCheckerNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
-  const provider = config?.configurable?.["provider"] || "azure";
-  const modelName = config?.configurable?.["model"] || "gpt-4o";
+  const provider =
+    (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
+    'azure';
+  const modelName =
+    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
 
   const llm = getLLM({ provider, model: modelName });
   const llmWithStructuredOutput = llm.withStructuredOutput(schemaCheckSchema);
@@ -38,18 +41,19 @@ Schema information is typically needed when:
 
 Query: """${state.query}"""
 
-Context: """${state.context || "No additional context provided."}"""
+Context: """${state.context || 'No additional context provided.'}"""
 
 Candidate Output: """${
-    state.candidateOutput || "No candidate output provided."
+    state.candidateOutput || 'No candidate output provided.'
   }"""
 
 Determine if schema information is needed and explain your reasoning.
 `;
 
-  const response = await llmWithStructuredOutput.invoke(
-    [new HumanMessage(prompt)],
-    config
+  const response = await invokeWithRetry(
+    () => llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config),
+    provider,
+    { operationName: 'SchemaChecker.invoke' }
   );
 
   const timestamp = new Date().toISOString();

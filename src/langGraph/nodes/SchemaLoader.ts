@@ -1,22 +1,22 @@
-import { type RunnableConfig } from "@langchain/core/runnables";
-import { HumanMessage } from "@langchain/core/messages";
-import { rubricAnnotation } from "../state/index.ts";
-import { getLLM } from "../llm/index.ts";
-import { SchemaDownloaderForTest } from "../tools/SchemaDownloader.ts";
-import * as z from "zod";
+import { type RunnableConfig } from '@langchain/core/runnables';
+import { HumanMessage } from '@langchain/core/messages';
+import { rubricAnnotation } from '../state/index.ts';
+import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import { SchemaDownloaderForTest } from '../tools/SchemaDownloader.ts';
+import * as z from 'zod';
 
 const schemaExpressionSchema = z.object({
   schemaExpression: z
     .string()
     .describe(
-      "A concise natural language expression of the relevant schema elements"
+      'A concise natural language expression of the relevant schema elements'
     ),
   keyEntities: z
     .array(z.string())
-    .describe("List of key entities identified in the schema"),
+    .describe('List of key entities identified in the schema'),
   keyRelationships: z
     .array(z.string())
-    .describe("List of key relationships identified in the schema"),
+    .describe('List of key relationships identified in the schema'),
 });
 
 /**
@@ -27,9 +27,12 @@ export async function schemaLoaderNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
-  const provider = config?.configurable?.["provider"] || "azure";
-  const modelName = config?.configurable?.["model"] || "gpt-4o";
-  const projectExId = config?.configurable?.["projectExId"] as
+  const provider =
+    (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
+    'azure';
+  const modelName =
+    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
+  const projectExId = config?.configurable?.['projectExId'] as
     | string
     | undefined;
 
@@ -39,15 +42,15 @@ export async function schemaLoaderNode(
     const auditEntry = `[${timestamp}] SchemaLoader: Skipped - schema not needed`;
     return {
       schema: null,
-      schemaExpression: "",
+      schemaExpression: '',
       auditTrace: [auditEntry],
     };
   }
 
   // Try to load schema if projectExId is provided
   let schemaData: object | null = null;
-  let schemaString = "";
-  let parseWarning = "";
+  let schemaString = '';
+  let parseWarning = '';
 
   if (projectExId) {
     try {
@@ -55,16 +58,16 @@ export async function schemaLoaderNode(
       try {
         schemaData = JSON.parse(schemaString) as object;
       } catch (parseError) {
-        console.error("Error parsing schema JSON:", parseError);
+        console.error('Error parsing schema JSON:', parseError);
         parseWarning = ` Warning: Schema JSON parsing failed - ${
-          parseError instanceof Error ? parseError.message : "Unknown error"
+          parseError instanceof Error ? parseError.message : 'Unknown error'
         }`;
         // Keep schemaString as is for LLM processing, but schemaData remains null
       }
     } catch (error) {
-      console.error("Error loading schema:", error);
+      console.error('Error loading schema:', error);
       schemaString = `Error loading schema: ${
-        error instanceof Error ? error.message : "Unknown error"
+        error instanceof Error ? error.message : 'Unknown error'
       }`;
     }
   }
@@ -80,7 +83,7 @@ You are a schema analyst. Analyze the provided schema information and generate a
 
 Query Context: """${state.query}"""
 
-Schema Information: """${schemaString || "No schema available"}"""
+Schema Information: """${schemaString || 'No schema available'}"""
 
 Generate:
 1. A natural language expression summarizing the relevant schema elements
@@ -90,9 +93,10 @@ Generate:
 Focus on elements relevant to evaluating the query.
 `;
 
-  const response = await llmWithStructuredOutput.invoke(
-    [new HumanMessage(prompt)],
-    config
+  const response = await invokeWithRetry(
+    () => llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config),
+    provider,
+    { operationName: 'SchemaLoader.invoke' }
   );
 
   const timestamp = new Date().toISOString();

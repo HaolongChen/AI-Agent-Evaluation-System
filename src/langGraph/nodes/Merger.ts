@@ -1,8 +1,8 @@
-import { type RunnableConfig } from "@langchain/core/runnables";
-import { HumanMessage } from "@langchain/core/messages";
-import { rubricAnnotation, type FinalReport } from "../state/index.ts";
-import { getLLM } from "../llm/index.ts";
-import * as z from "zod";
+import { type RunnableConfig } from '@langchain/core/runnables';
+import { HumanMessage } from '@langchain/core/messages';
+import { rubricAnnotation, type FinalReport } from '../state/index.ts';
+import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import * as z from 'zod';
 
 // Verdict threshold constants
 const PASS_THRESHOLD = 70;
@@ -11,14 +11,14 @@ const FAIL_THRESHOLD = 50;
 const reconciliationSchema = z.object({
   discrepancies: z
     .array(z.string())
-    .describe("List of discrepancies between agent and human evaluations"),
-  reconciledScore: z.number().describe("Final reconciled overall score"),
+    .describe('List of discrepancies between agent and human evaluations'),
+  reconciledScore: z.number().describe('Final reconciled overall score'),
   reconciliationRationale: z
     .string()
-    .describe("Explanation of how discrepancies were resolved"),
+    .describe('Explanation of how discrepancies were resolved'),
   verdict: z
-    .enum(["pass", "fail", "needs_review"])
-    .describe("Final verdict based on reconciled evaluation"),
+    .enum(['pass', 'fail', 'needs_review'])
+    .describe('Final verdict based on reconciled evaluation'),
 });
 
 /**
@@ -29,25 +29,28 @@ export async function mergerNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
-  const provider = config?.configurable?.["provider"] || "azure";
-  const modelName = config?.configurable?.["model"] || "gpt-4o";
+  const provider =
+    (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
+    'azure';
+  const modelName =
+    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
 
   const agentEval = state.agentEvaluation;
   const humanEval = state.humanEvaluation;
 
   // If only one evaluation is available, use it directly
   if (!agentEval && !humanEval) {
-    throw new Error("No evaluations available to merge");
+    throw new Error('No evaluations available to merge');
   }
 
   if (!agentEval || !humanEval) {
     const singleEval = agentEval || humanEval;
     if (!singleEval) {
-      throw new Error("No evaluation available");
+      throw new Error('No evaluation available');
     }
 
     if (!state.rubricFinal) {
-      throw new Error("No rubric available for verdict determination");
+      throw new Error('No rubric available for verdict determination');
     }
     const verdict = determineVerdict(
       singleEval.overallScore,
@@ -86,13 +89,13 @@ export async function mergerNode(
     .map(
       (s) => `- ${s.criterionId}: Score ${s.score}, Reasoning: ${s.reasoning}`
     )
-    .join("\n");
+    .join('\n');
 
   const humanScoresText = humanEval.scores
     .map(
       (s) => `- ${s.criterionId}: Score ${s.score}, Reasoning: ${s.reasoning}`
     )
-    .join("\n");
+    .join('\n');
 
   const prompt = `
 You are an evaluation reconciliation expert. Compare and reconcile the following agent and human evaluations.
@@ -121,9 +124,10 @@ Consider:
 - The verdict should be "needs_review" if there are unresolvable discrepancies
 `;
 
-  const response = await llmWithStructuredOutput.invoke(
-    [new HumanMessage(prompt)],
-    config
+  const response = await invokeWithRetry(
+    () => llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config),
+    provider,
+    { operationName: 'Merger.invoke' }
   );
 
   const report: FinalReport = {
@@ -163,7 +167,7 @@ function determineVerdict(
     scoringScale: { min: number; max: number };
   }>,
   scores: EvaluationScore[]
-): "pass" | "fail" | "needs_review" {
+): 'pass' | 'fail' | 'needs_review' {
   // Check for hard constraint failures
   const hardConstraintFailures = criteria
     .filter((c) => c.isHardConstraint)
@@ -176,14 +180,14 @@ function determineVerdict(
     });
 
   if (hardConstraintFailures.length > 0) {
-    return "fail";
+    return 'fail';
   }
 
   if (score >= PASS_THRESHOLD) {
-    return "pass";
+    return 'pass';
   } else if (score < FAIL_THRESHOLD) {
-    return "fail";
+    return 'fail';
   } else {
-    return "needs_review";
+    return 'needs_review';
   }
 }

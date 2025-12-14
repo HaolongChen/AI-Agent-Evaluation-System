@@ -10,15 +10,15 @@
 
 */
 
-import { type RunnableConfig } from "@langchain/core/runnables";
-import { HumanMessage } from "@langchain/core/messages";
-import { rubricAnnotation } from "../state/index.ts";
-import { getLLM } from "../llm/index.ts";
+import { type RunnableConfig } from '@langchain/core/runnables';
+import { HumanMessage } from '@langchain/core/messages';
+import { rubricAnnotation } from '../state/index.ts';
+import { getLLM, invokeWithRetry } from '../llm/index.ts';
 import {
   schemaDownloader,
   SchemaDownloaderForTest,
-} from "../tools/SchemaDownloader.ts";
-import * as z from "zod";
+} from '../tools/SchemaDownloader.ts';
+import * as z from 'zod';
 
 const analysisSchema = z.object({
   // isSchemaNeeded: z
@@ -26,7 +26,7 @@ const analysisSchema = z.object({
   //   .describe("Whether schema information is needed to answer the query"),
   analysisReport: z
     .string()
-    .describe("Detailed analysis report of the user query and context"),
+    .describe('Detailed analysis report of the user query and context'),
 });
 
 export async function analysisAgentNode(
@@ -34,9 +34,12 @@ export async function analysisAgentNode(
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
   // You can pass the model configuration via config.configurable
-  const provider = config?.configurable?.["provider"] || "azure";
-  const modelName = config?.configurable?.["model"] || "gpt-4o";
-  const projectExId = config?.configurable?.["projectExId"] as
+  const provider =
+    (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
+    'azure';
+  const modelName =
+    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
+  const projectExId = config?.configurable?.['projectExId'] as
     | string
     | undefined;
 
@@ -61,33 +64,34 @@ export async function analysisAgentNode(
 
   User's Query: """${state.query}"""
 
-  User's Context: """${state.context || "No additional context provided."}"""
+  User's Context: """${state.context || 'No additional context provided.'}"""
 
   ${
     projectExId
       ? `Project External ID: """${projectExId}"""`
-      : "No Project External ID provided - do not use the schema_downloader tool."
+      : 'No Project External ID provided - do not use the schema_downloader tool.'
   }
   `;
 
-  const toolCallResponse = await llmWithTools.invoke(
-    [new HumanMessage(toolCallPrompt)],
-    config
+  const toolCallResponse = await invokeWithRetry(
+    () => llmWithTools.invoke([new HumanMessage(toolCallPrompt)], config),
+    provider,
+    { operationName: 'AnalysisAgent.toolInvoke' }
   );
 
   // Process tool calls if any
-  let schemaInfo = "";
+  let schemaInfo = '';
   if (toolCallResponse.tool_calls && toolCallResponse.tool_calls.length > 0) {
     for (const toolCall of toolCallResponse.tool_calls) {
-      if (toolCall.name === "schema_downloader") {
+      if (toolCall.name === 'schema_downloader') {
         try {
           if (projectExId) {
             schemaInfo = await SchemaDownloaderForTest(projectExId);
           }
         } catch (error) {
-          console.error("Error downloading schema:", error);
+          console.error('Error downloading schema:', error);
           schemaInfo = `Error downloading schema: ${
-            error instanceof Error ? error.message : "Unknown error"
+            error instanceof Error ? error.message : 'Unknown error'
           }`;
         }
       }
@@ -102,12 +106,12 @@ export async function analysisAgentNode(
 
   User's Query: """${state.query}"""
 
-  User's Context: """${state.context || "No additional context provided."}"""
+  User's Context: """${state.context || 'No additional context provided.'}"""
 
   ${
     schemaInfo
       ? `Schema Information: """${schemaInfo}"""`
-      : "No schema information available."
+      : 'No schema information available.'
   }
 
   Provide your analysis including:
@@ -117,9 +121,14 @@ export async function analysisAgentNode(
   4. Recommendations for the rubric drafter
   `;
 
-  const response = await llmWithStructuredOutput.invoke(
-    [new HumanMessage(analysisPrompt)],
-    config
+  const response = await invokeWithRetry(
+    () =>
+      llmWithStructuredOutput.invoke(
+        [new HumanMessage(analysisPrompt)],
+        config
+      ),
+    provider,
+    { operationName: 'AnalysisAgent.invoke' }
   );
 
   return {

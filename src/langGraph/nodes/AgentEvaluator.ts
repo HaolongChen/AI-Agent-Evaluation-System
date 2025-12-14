@@ -1,30 +1,30 @@
-import { type RunnableConfig } from "@langchain/core/runnables";
-import { HumanMessage } from "@langchain/core/messages";
+import { type RunnableConfig } from '@langchain/core/runnables';
+import { HumanMessage } from '@langchain/core/messages';
 import {
   rubricAnnotation,
   type Evaluation,
   type EvaluationScore,
-} from "../state/index.ts";
-import { getLLM } from "../llm/index.ts";
-import * as z from "zod";
+} from '../state/index.ts';
+import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import * as z from 'zod';
 
 // Threshold for determining if a hard constraint passes (70% of score range)
 const HARD_CONSTRAINT_PASS_THRESHOLD = 0.7;
 
 const evaluationScoreSchema = z.object({
-  criterionId: z.string().describe("ID of the criterion being scored"),
-  criterionName: z.string().describe("Name of the criterion"),
-  score: z.number().describe("Score for this criterion"),
-  reasoning: z.string().describe("Detailed reasoning for the score"),
+  criterionId: z.string().describe('ID of the criterion being scored'),
+  criterionName: z.string().describe('Name of the criterion'),
+  score: z.number().describe('Score for this criterion'),
+  reasoning: z.string().describe('Detailed reasoning for the score'),
   evidence: z
     .array(z.string())
     .optional()
-    .describe("Specific evidence from the candidate output"),
+    .describe('Specific evidence from the candidate output'),
 });
 
 const agentEvaluationSchema = z.object({
-  scores: z.array(evaluationScoreSchema).describe("Scores for each criterion"),
-  overallAssessment: z.string().describe("Overall assessment summary"),
+  scores: z.array(evaluationScoreSchema).describe('Scores for each criterion'),
+  overallAssessment: z.string().describe('Overall assessment summary'),
 });
 
 /**
@@ -35,11 +35,14 @@ export async function agentEvaluatorNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
-  const provider = config?.configurable?.["provider"] || "azure";
-  const modelName = config?.configurable?.["model"] || "gpt-4o";
+  const provider =
+    (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
+    'azure';
+  const modelName =
+    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
 
   if (!state.rubricFinal) {
-    throw new Error("No final rubric available for evaluation");
+    throw new Error('No final rubric available for evaluation');
   }
 
   const llm = getLLM({ provider, model: modelName });
@@ -55,24 +58,24 @@ export async function agentEvaluatorNode(
   Description: ${c.description}
   Weight: ${c.weight}%
   Score Range: ${c.scoringScale.min} - ${c.scoringScale.max}
-  Type: ${c.isHardConstraint ? "Hard Constraint" : "Soft Constraint"}
+  Type: ${c.isHardConstraint ? 'Hard Constraint' : 'Soft Constraint'}
 `
     )
-    .join("\n");
+    .join('\n');
 
   const prompt = `
 You are an expert evaluator. Apply the following evaluation rubric to assess the candidate output.
 
 Query: """${state.query}"""
 
-Context: """${state.context || "No additional context provided."}"""
+Context: """${state.context || 'No additional context provided.'}"""
 
 Schema Information: """${
-    state.schemaExpression || "No schema information available."
+    state.schemaExpression || 'No schema information available.'
   }"""
 
 Candidate Output to Evaluate: """${
-    state.candidateOutput || "No candidate output provided."
+    state.candidateOutput || 'No candidate output provided.'
   }"""
 
 EVALUATION RUBRIC:
@@ -86,9 +89,10 @@ For each criterion:
 Be objective and thorough in your assessment.
 `;
 
-  const response = await llmWithStructuredOutput.invoke(
-    [new HumanMessage(prompt)],
-    config
+  const response = await invokeWithRetry(
+    () => llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config),
+    provider,
+    { operationName: 'AgentEvaluator.invoke' }
   );
 
   // Transform response into Evaluation format
@@ -127,7 +131,7 @@ Be objective and thorough in your assessment.
   const overallScore = totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
 
   const evaluation: Evaluation = {
-    evaluatorType: "agent",
+    evaluatorType: 'agent',
     scores,
     overallScore: Math.round(overallScore * 100) / 100,
     summary: response.overallAssessment,

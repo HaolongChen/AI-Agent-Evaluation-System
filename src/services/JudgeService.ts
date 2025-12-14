@@ -52,28 +52,34 @@ export class JudgeService {
           throw new Error('Invalid copilot type in session');
         }
 
-        const originalGoldenSet = await goldenSetService.getGoldenSets(
+        // const originalGoldenSet = await goldenSetService.getGoldenSets(
+        //   rubric.projectExId,
+        //   rubric.schemaExId,
+        //   copilotType
+        // );
+        // if (originalGoldenSet.length !== 1 || !originalGoldenSet[0]) {
+        //   throw new Error(
+        //     'Original golden set not found or ambiguous for updating judge records'
+        //   );
+        // }
+        // if (originalGoldenSet[0].nextGoldenSetId) {
+        //   const newGoldenSet =
+        //     await goldenSetService.simplyUpdateGoldenSetProject(
+        //       rubric.projectExId,
+        //       rubric.schemaExId,
+        //       copilotType,
+        //       originalGoldenSet[0].description ?? '',
+        //       originalGoldenSet[0].promptTemplate ?? '',
+        //       (originalGoldenSet[0].idealResponse as object) ?? {}
+        //     );
+        //   logger.info('Updated golden set with new ID:', newGoldenSet.id);
+        // }
+        const newGoldenSet = await goldenSetService.updateGoldenSetFromNextGoldenSet(
           rubric.projectExId,
           rubric.schemaExId,
           copilotType
         );
-        if (originalGoldenSet.length !== 1 || !originalGoldenSet[0]) {
-          throw new Error(
-            'Original golden set not found or ambiguous for updating judge records'
-          );
-        }
-        if (originalGoldenSet[0].nextGoldenSetId) {
-          const newGoldenSet =
-            await goldenSetService.simplyUpdateGoldenSetProject(
-              rubric.projectExId,
-              rubric.schemaExId,
-              copilotType,
-              originalGoldenSet[0].description ?? '',
-              originalGoldenSet[0].promptTemplate ?? '',
-              (originalGoldenSet[0].idealResponse as object) ?? {}
-            );
-          logger.info('Updated golden set with new ID:', newGoldenSet.id);
-        }
+        logger.info('Updated golden set to ID:', newGoldenSet.id);
         const finalResult = await analyticsService.createEvaluationResult(
           session.id.toString(),
           rubric.schemaExId,

@@ -138,6 +138,13 @@ export class GraphExecutionService {
         throw new Error('Multiple golden sets found, expected only one');
       }
 
+      const newGoldenSet = await goldenSetService.updateGoldenSetFromNextGoldenSet(
+        projectExId,
+        schemaExId,
+        REVERSE_COPILOT_TYPES[copilotType]
+      );
+      logger.info('Updated golden set to ID:', newGoldenSet.id);
+
       const goldenSet = goldenSets[0];
       if (!goldenSet) {
         throw new Error('Golden set is undefined');

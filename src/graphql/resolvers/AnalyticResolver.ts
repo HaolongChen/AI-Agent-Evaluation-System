@@ -44,6 +44,8 @@ export const analyticResolver = {
         schemaExId: string;
         copilotType: copilotType;
         modelName: string;
+        skipHumanReview?: boolean;
+        skipHumanEvaluation?: boolean;
       }
     ) => {
       try {
@@ -51,7 +53,15 @@ export const analyticResolver = {
           args.projectExId,
           args.schemaExId,
           args.copilotType,
-          args.modelName
+          args.modelName,
+          {
+            ...(args.skipHumanReview !== undefined && {
+              skipHumanReview: args.skipHumanReview,
+            }),
+            ...(args.skipHumanEvaluation !== undefined && {
+              skipHumanEvaluation: args.skipHumanEvaluation,
+            }),
+          }
         );
         // TODO: implement actual execution logic
         return !!result;
@@ -60,9 +70,20 @@ export const analyticResolver = {
         throw new Error('Failed to execute AI copilot');
       }
     },
-    execAiCopilot: async () => {
+    execAiCopilot: async (
+      _: unknown,
+      args: { skipHumanReview?: boolean; skipHumanEvaluation?: boolean }
+    ) => {
       try {
-        await executionService.createEvaluationSessions();
+        // Bulk execution currently defaults to automated; keep signature for forward compatibility
+        await executionService.createEvaluationSessions({
+          ...(args.skipHumanReview !== undefined && {
+            skipHumanReview: args.skipHumanReview,
+          }),
+          ...(args.skipHumanEvaluation !== undefined && {
+            skipHumanEvaluation: args.skipHumanEvaluation,
+          }),
+        });
         return true;
       } catch (error) {
         logger.error('Error executing AI copilot:', error);

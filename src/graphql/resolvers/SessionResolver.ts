@@ -28,11 +28,12 @@ function transformEvaluationResult(
   result: Record<string, unknown> | null | undefined
 ) {
   if (!result) return null;
+  const copilotKey = result[
+    'copilotType'
+  ] as keyof typeof REVERSE_COPILOT_TYPES;
   return {
     ...result,
-    copilotType:
-      REVERSE_COPILOT_TYPES[result['copilotType'] as string] ||
-      result['copilotType'],
+    copilotType: REVERSE_COPILOT_TYPES[copilotKey] || result['copilotType'],
     evaluationStatus:
       REVERSE_EVALUATION_STATUS[result['evaluationStatus'] as string] ||
       result['evaluationStatus'],
@@ -44,11 +45,12 @@ function transformEvaluationResult(
  * Converts lowercase enum values to uppercase GraphQL enum values
  */
 function transformSession(session: Record<string, unknown>) {
+  const copilotKey = session[
+    'copilotType'
+  ] as keyof typeof REVERSE_COPILOT_TYPES;
   return {
     ...session,
-    copilotType:
-      REVERSE_COPILOT_TYPES[session['copilotType'] as string] ||
-      session['copilotType'],
+    copilotType: REVERSE_COPILOT_TYPES[copilotKey] || session['copilotType'],
     status:
       REVERSE_SESSION_STATUS[session['status'] as string] || session['status'],
     rubric: transformRubric(

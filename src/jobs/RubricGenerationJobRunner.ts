@@ -1,20 +1,30 @@
-import { logger } from '../utils/logger.ts';
-import {
-  AZURE_OPENAI_DEPLOYMENT,
-  AZURE_OPENAI_ENDPOINT,
-  GEMINI_API_KEY,
-  GEMINI_MODEL,
-  OPENAI_API_KEY,
-  RUN_KUBERNETES_JOBS,
-} from '../config/env.ts';
+import { v4 as uuidv4 } from 'uuid';
 import * as z from 'zod';
-import { automatedGraph } from '../langGraph/agent.ts';
+import { logger } from '../utils/logger.ts';
+import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import {
+  graph,
+  automatedGraph,
+  type GraphConfigurable,
+} from '../langGraph/agent.ts';
 import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
+import { prisma } from '../config/prisma.ts';
+import type { Prisma } from '../../build/generated/prisma/client.ts';
+import { analyticsService } from '../services/AnalyticsService.ts';
+import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
+import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
 export interface RubricGenerationResult {
   status: 'succeeded' | 'failed';
+  sessionId?: number;
+  threadId?: string;
+  graphStatus?:
+    | 'completed'
+    | 'awaiting_rubric_review'
+    | 'awaiting_human_evaluation';
+  message?: string;
   rubric?: Rubric | null;
   hardConstraints?: string[];
   softConstraints?: string[];
@@ -27,9 +37,55 @@ export interface RubricGenerationResult {
 }
 
 /**
+ * Metadata stored in session for HITL tracking (kept aligned with GraphExecutionService)
+ */
+interface SessionMetadata {
+  threadId: string;
+  goldenSetId?: number;
+  skipHumanReview?: boolean;
+  skipHumanEvaluation?: boolean;
+}
+
+/**
+ * Interrupt payload structure from LangGraph
+ */
+interface InterruptInfo {
+  value: {
+    message?: string;
+    rubricDraft?: Rubric;
+    rubricFinal?: Rubric;
+    query?: string;
+    context?: string | null;
+    candidateOutput?: string;
+  };
+  resumable: boolean;
+  ns: string[];
+}
+
+/**
+ * Result from graph.invoke() with potential interrupt info
+ */
+interface GraphResult {
+  query: string;
+  context: string;
+  candidateOutput: string;
+  rubricDraft?: Rubric | null;
+  rubricApproved?: boolean;
+  rubricFinal?: Rubric | null;
+  finalReport?: FinalReport | null;
+  hardConstraints?: string[];
+  softConstraints?: string[];
+  hardConstraintsAnswers?: boolean[];
+  softConstraintsAnswers?: string[];
+  agentEvaluation?: { overallScore?: number } | null;
+  analysis?: string;
+  __interrupt__?: InterruptInfo[];
+}
+
+/**
  * Job runner for rubric generation using LangGraph workflow.
- * Follows the same pattern as EvaluationJobRunner but uses the LangGraph
- * automated graph to generate rubrics and perform evaluations.
+ * Uses the same LangGraph invocation + interrupt handling as GraphExecutionService,
+ * but wraps it in a JobRunner lifecycle (start/wait/stop) like EvaluationJobRunner.
  */
 export class RubricGenerationJobRunner {
   private completionPromise: Promise<RubricGenerationResult>;
@@ -39,12 +95,16 @@ export class RubricGenerationJobRunner {
   private isCompleted: boolean = false;
 
   constructor(
-    private readonly sessionId: string,
+    private readonly goldenSetId: string,
+    private readonly projectExId: string,
+    private readonly schemaExId: string,
+    private readonly copilotType: CopilotType,
     private readonly query: string,
     private readonly context: string,
     private readonly candidateOutput: string,
     private readonly modelName: string,
-    private readonly projectExId?: string
+    private readonly skipHumanReview: boolean = true,
+    private readonly skipHumanEvaluation: boolean = true
   ) {
     this.completionPromise = new Promise<RubricGenerationResult>(
       (resolve, reject) => {
@@ -65,65 +125,132 @@ export class RubricGenerationJobRunner {
   }
 
   /**
-   * Start the rubric generation job using LangGraph workflow
+   * Start the rubric generation job using LangGraph workflow.
+   * - Creates an EvaluationSession record for observability and HITL resumption
+   * - Invokes graph/automatedGraph depending on skip flags
+   * - Saves rubric + final report to DB following GraphExecutionService semantics
    */
   async startJob(): Promise<void> {
     logger.info(
-      `Starting rubric generation job for session ${this.sessionId} with model ${this.modelName}`
+      `Starting rubric generation job for goldenSet ${this.goldenSetId} (${this.projectExId}/${this.schemaExId}) with model ${this.modelName}`
     );
 
     try {
-      const azureReady = Boolean(AZURE_OPENAI_ENDPOINT && OPENAI_API_KEY);
-      const provider: 'azure' | 'gemini' = azureReady
-        ? 'azure'
-        : GEMINI_API_KEY
+      // Create a unique thread ID for this session (used by LangGraph checkpointer)
+      const threadId = uuidv4();
+
+      // Prepare metadata for HITL tracking
+      const metadata: SessionMetadata = {
+        threadId,
+        goldenSetId: Number.parseInt(this.goldenSetId, 10),
+        skipHumanReview: this.skipHumanReview,
+        skipHumanEvaluation: this.skipHumanEvaluation,
+      };
+
+      // Create the evaluation session in database
+      const session = await analyticsService.createEvaluationSession(
+        this.projectExId,
+        this.schemaExId,
+        this.copilotType,
+        this.modelName,
+        SESSION_STATUS.PENDING,
+        metadata as unknown as Prisma.InputJsonValue
+      );
+
+      const graphToUse =
+        this.skipHumanReview && this.skipHumanEvaluation
+          ? automatedGraph
+          : graph;
+
+      // Determine provider from model name (gemini models start with 'gemini', otherwise azure)
+      const provider = this.modelName.toLowerCase().startsWith('gemini')
         ? 'gemini'
         : 'azure';
 
-      const effectiveModel =
-        provider === 'azure'
-          ? AZURE_OPENAI_DEPLOYMENT || this.modelName
-          : GEMINI_MODEL || this.modelName;
+      const configurable: GraphConfigurable = {
+        thread_id: threadId,
+        provider,
+        model: this.modelName,
+        projectExId: this.projectExId,
+        skipHumanReview: this.skipHumanReview,
+        skipHumanEvaluation: this.skipHumanEvaluation,
+      };
 
-      if (!azureReady && provider === 'gemini') {
-        logger.warn(
-          `Azure OpenAI is not fully configured (need AZURE_OPENAI_ENDPOINT + OPENAI_API_KEY). Falling back to Gemini (${effectiveModel}).`
+      const initialState = {
+        query: this.query,
+        context: this.context,
+        candidateOutput: this.candidateOutput,
+      };
+
+      const result = (await graphToUse.invoke(initialState, {
+        configurable,
+      })) as GraphResult;
+
+      // Determine graph pause/completion status based on interrupts
+      let graphStatus: RubricGenerationResult['graphStatus'] = 'completed';
+      let message = 'Evaluation completed successfully';
+      let rubricForResponse: Rubric | null | undefined =
+        result.rubricFinal || result.rubricDraft;
+
+      if (result.__interrupt__ && result.__interrupt__.length > 0) {
+        const interruptValue = result.__interrupt__[0]?.value;
+        if (interruptValue?.rubricDraft && !interruptValue?.rubricFinal) {
+          graphStatus = 'awaiting_rubric_review';
+          message =
+            'Graph paused for rubric review. Call submitRubricReview to continue.';
+          rubricForResponse = interruptValue.rubricDraft || rubricForResponse;
+        } else if (interruptValue?.rubricFinal) {
+          graphStatus = 'awaiting_human_evaluation';
+          message =
+            'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
+          rubricForResponse = interruptValue.rubricFinal || rubricForResponse;
+        }
+      }
+
+      // Update session status
+      await prisma.evaluationSession.update({
+        where: { id: session.id },
+        data: {
+          status:
+            graphStatus === 'completed'
+              ? SESSION_STATUS.COMPLETED
+              : SESSION_STATUS.RUNNING,
+          ...(graphStatus === 'completed' && { completedAt: new Date() }),
+        },
+      });
+
+      // Save rubric to database for review/evaluation
+      if (rubricForResponse) {
+        await this.saveRubricToDatabase(
+          session.id,
+          this.projectExId,
+          this.schemaExId,
+          rubricForResponse,
+          this.query,
+          this.candidateOutput,
+          this.modelName
         );
       }
 
-      // Invoke the LangGraph automated workflow
-      // thread_id is required by LangGraph's MemorySaver checkpoint
-      const result = await automatedGraph.invoke(
-        {
-          query: this.query,
-          context: this.context,
-          candidateOutput: this.candidateOutput,
-        },
-        {
-          configurable: {
-            thread_id: `session-${this.sessionId}`,
-            provider,
-            model: effectiveModel,
-            projectExId: this.projectExId,
-            skipHumanReview: true,
-            skipHumanEvaluation: true,
-          },
-        }
-      );
+      // Save final report if completed
+      if (graphStatus === 'completed' && result.finalReport) {
+        await this.saveFinalReport(session.id, session, result.finalReport);
+      }
 
-      logger.info(`Rubric generation completed for session ${this.sessionId}`);
-
-      // Extract results from the LangGraph state
       const rubricResult: RubricGenerationResult = {
         status: 'succeeded',
-        rubric: result.rubricFinal || result.rubricDraft,
+        sessionId: session.id,
+        threadId,
+        graphStatus,
+        message,
+        rubric: rubricForResponse ?? null,
         hardConstraints: result.hardConstraints || [],
         softConstraints: result.softConstraints || [],
         hardConstraintsAnswers: result.hardConstraintsAnswers || [],
         softConstraintsAnswers: result.softConstraintsAnswers || [],
         evaluationScore: result.agentEvaluation?.overallScore,
-        finalReport: result.finalReport,
-        analysis: result.analysis,
+        finalReport: result.finalReport ?? null,
+        ...(result.analysis !== undefined && { analysis: result.analysis }),
       };
 
       // Log constraints and evaluation info for visibility
@@ -202,7 +329,7 @@ export class RubricGenerationJobRunner {
       }
     } catch (error) {
       logger.error(
-        `Rubric generation failed for session ${this.sessionId}:`,
+        `Rubric generation failed for goldenSet ${this.goldenSetId}:`,
         error
       );
 
@@ -258,6 +385,84 @@ export class RubricGenerationJobRunner {
       this.rejectCompletion?.(new Error('Job stopped by user'));
     }
   }
+
+  // --- DB helper methods (copied from GraphExecutionService for consistency) ---
+
+  private async saveRubricToDatabase(
+    sessionId: number,
+    projectExId: string,
+    schemaExId: string,
+    rubric: Rubric,
+    copilotInput: string,
+    copilotOutput: string,
+    modelName: string
+  ): Promise<void> {
+    // Upsert by sessionId: a session should have at most one rubric
+    const existing = await prisma.adaptiveRubric.findFirst({
+      where: { sessionId },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await prisma.adaptiveRubric.update({
+        where: { id: existing.id },
+        data: {
+          rubricId: rubric.id,
+          version: rubric.version,
+          criteria: JSON.parse(JSON.stringify(rubric.criteria)),
+          totalWeight: rubric.totalWeight,
+          copilotInput,
+          copilotOutput,
+          modelName,
+          reviewStatus: REVIEW_STATUS.PENDING,
+        },
+      });
+      return;
+    }
+
+    await prisma.adaptiveRubric.create({
+      data: {
+        projectExId,
+        schemaExId,
+        sessionId,
+        rubricId: rubric.id,
+        version: rubric.version,
+        criteria: JSON.parse(JSON.stringify(rubric.criteria)),
+        totalWeight: rubric.totalWeight,
+        copilotInput,
+        copilotOutput,
+        modelName,
+        reviewStatus: REVIEW_STATUS.PENDING,
+      },
+    });
+  }
+
+  private async saveFinalReport(
+    sessionId: number,
+    session: {
+      schemaExId: string;
+      copilotType: CopilotType;
+      modelName: string;
+    },
+    finalReport: FinalReport
+  ): Promise<void> {
+    await prisma.evaluationResult.create({
+      data: {
+        sessionId,
+        schemaExId: session.schemaExId,
+        copilotType: session.copilotType,
+        modelName: session.modelName,
+        evaluationStatus: 'completed',
+        verdict: finalReport.verdict,
+        overallScore: finalReport.overallScore,
+        summary: finalReport.summary,
+        detailedAnalysis: finalReport.detailedAnalysis,
+        discrepancies: finalReport.discrepancies,
+        auditTrace: finalReport.auditTrace,
+        generatedAt: new Date(finalReport.generatedAt),
+      },
+    });
+  }
 }
 
 // CLI entry point for Kubernetes job execution
@@ -272,39 +477,54 @@ if (
 
   const args = z
     .object({
-      sessionId: z.string().min(1, 'sessionId is required'),
+      goldenSetId: z.string().min(1, 'goldenSetId is required'),
+      projectExId: z.string().min(1, 'projectExId is required'),
+      schemaExId: z.string().min(1, 'schemaExId is required'),
+      copilotType: z.string().min(1, 'copilotType is required'),
       query: z.string().min(1, 'query is required'),
       context: z.string(),
       candidateOutput: z.string(),
       modelName: z.string().min(1, 'modelName is required'),
-      projectExId: z.string().optional(),
+      skipHumanReview: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+      skipHumanEvaluation: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
     })
     .parse({
-      sessionId: process.argv[2] || '',
-      query: process.argv[3] || '',
-      context: process.argv[4] || '',
-      candidateOutput: process.argv[5] || '',
-      modelName: process.argv[6] || 'gpt-4o',
-      projectExId: process.argv[7],
+      goldenSetId: process.argv[2] || '',
+      projectExId: process.argv[3] || '',
+      schemaExId: process.argv[4] || '',
+      copilotType: process.argv[5] || '',
+      query: process.argv[6] || '',
+      context: process.argv[7] || '',
+      candidateOutput: process.argv[8] || '',
+      modelName: process.argv[9] || 'gpt-4o',
+      skipHumanReview: process.argv[10],
+      skipHumanEvaluation: process.argv[11],
     });
 
   const jobRunner = new RubricGenerationJobRunner(
-    args.sessionId,
+    args.goldenSetId,
+    args.projectExId,
+    args.schemaExId,
+    args.copilotType as CopilotType,
     args.query,
     args.context,
     args.candidateOutput,
     args.modelName,
-    args.projectExId
+    args.skipHumanReview ?? true,
+    args.skipHumanEvaluation ?? true
   );
 
-  // Start the job asynchronously
   jobRunner.startJob();
 
-  // Wait for completion and output the result as JSON
   jobRunner
     .waitForCompletion()
     .then((result) => {
-      // Output the result as a special marker line that can be parsed from logs
       console.log(`JOB_RESULT_JSON: ${JSON.stringify(result)}`);
       process.exit(result.status === 'succeeded' ? 0 : 1);
     })

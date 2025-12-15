@@ -19,10 +19,16 @@ export class ExecutionService {
     projectExId: string,
     schemaExId: string,
     copilotType: CopilotType,
-    modelName: string
+    modelName: string,
+    options?: {
+      skipHumanReview?: boolean;
+      skipHumanEvaluation?: boolean;
+    }
   ) {
     try {
       const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
+      const skipHumanReview = options?.skipHumanReview ?? true;
+      const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
 
       const goldenSets = await goldenSetService.getGoldenSets(
         projectExId,
@@ -46,12 +52,9 @@ export class ExecutionService {
           './src/jobs/EvaluationJobRunner.ts',
           300000,
           'evaluation',
-          String(goldenSet.id),
           projectExId,
-          schemaExId,
-          goldenSet.copilotType,
           WS_URL,
-          modelName ?? 'copilot-latest'
+          goldenSet.promptTemplate
         )) as unknown as EvalJobResult;
         logger.info(
           'Evaluation job completed with status:',
@@ -67,8 +70,15 @@ export class ExecutionService {
           300000,
           'generation',
           String(goldenSet.id),
-          evalJobResult.editableText || '', // handle scenario where job fails
-          modelName ?? 'copilot-latest'
+          projectExId,
+          schemaExId,
+          String(copilotType),
+          goldenSet.promptTemplate,
+          JSON.stringify(goldenSet.idealResponse),
+          evalJobResult.editableText || '',
+          modelName ?? 'copilot-latest',
+          String(skipHumanReview),
+          String(skipHumanEvaluation)
         )) as unknown as GenJobResult;
         logger.info(
           'Rubric generation job completed with status:',
@@ -86,11 +96,15 @@ export class ExecutionService {
         logger.info('Evaluation job completed with response:', editableText);
         const genJobRunner = new RubricGenerationJobRunner(
           String(goldenSet.id),
-          goldenSet.promptTemplate, // query - the original prompt
-          '', // context - can be empty or derived from golden set
-          editableText, // candidateOutput - the AI-generated response to evaluate
+          projectExId,
+          schemaExId,
+          copilotType,
+          goldenSet.promptTemplate,
+          JSON.stringify(goldenSet.idealResponse),
+          editableText,
           modelName ?? 'copilot-latest',
-          projectExId // projectExId for schema loading
+          skipHumanReview,
+          skipHumanEvaluation
         );
         genJobRunner.startJob();
         const genResult = await genJobRunner.waitForCompletion();
@@ -98,7 +112,7 @@ export class ExecutionService {
           'Rubric generation job completed with response:',
           genResult
         );
-        return { response: editableText };
+        return { candidateOutput: editableText, ...genResult };
       }
     } catch (error) {
       logger.error('Error creating evaluation session:', error);
@@ -106,9 +120,15 @@ export class ExecutionService {
     }
   }
 
-  async createEvaluationSessions() {
+  async createEvaluationSessions(options?: {
+    skipHumanReview?: boolean;
+    skipHumanEvaluation?: boolean;
+  }) {
     try {
       const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
+      // Bulk execution defaults to fully automated evaluation
+      const skipHumanReview = options?.skipHumanReview ?? true;
+      const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
 
       const goldenSets = await goldenSetService.getGoldenSets();
       if (!goldenSets || goldenSets.length === 0) {
@@ -130,10 +150,7 @@ export class ExecutionService {
               './src/jobs/EvaluationJobRunner.ts',
               300000,
               'evaluation',
-              String(goldenSet.id),
               goldenSet.projectExId,
-              goldenSet.schemaExId,
-              goldenSet.copilotType,
               WS_URL,
               goldenSet.promptTemplate
             )) as unknown as EvalJobResult;
@@ -155,8 +172,15 @@ export class ExecutionService {
               300000,
               'generation',
               String(goldenSet.id),
-              evalJobResult.editableText || '', // handle scenario where job fails
-              'copilot-latest'
+              goldenSet.projectExId,
+              goldenSet.schemaExId,
+              String(goldenSet.copilotType as unknown as CopilotType),
+              goldenSet.promptTemplate,
+              JSON.stringify(goldenSet.idealResponse),
+              evalJobResult.editableText || '',
+              'copilot-latest',
+              String(skipHumanReview),
+              String(skipHumanEvaluation)
             )) as unknown as GenJobResult;
             logger.info(
               `Rubric generation job for golden set ${goldenSet.id} completed with status:`,
@@ -212,11 +236,15 @@ export class ExecutionService {
 
             const rubricJobRunner = new RubricGenerationJobRunner(
               String(goldenSet.id),
-              goldenSet.promptTemplate, // query - the original prompt
-              '', // context - can be empty or derived from golden set
-              editableText, // candidateOutput - the AI-generated response to evaluate
+              goldenSet.projectExId,
+              goldenSet.schemaExId,
+              goldenSet.copilotType as unknown as CopilotType,
+              goldenSet.promptTemplate,
+              JSON.stringify(goldenSet.idealResponse),
+              editableText,
               'copilot-latest',
-              goldenSet.projectExId // projectExId for schema loading
+              skipHumanReview,
+              skipHumanEvaluation
             );
             rubricJobRunner.startJob();
             const rubricResult = await rubricJobRunner.waitForCompletion();

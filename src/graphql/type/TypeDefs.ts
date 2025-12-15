@@ -232,9 +232,14 @@ export const typeDefs = `#graphql
       schemaExId: String!
       copilotType: CopilotType!
       modelName: String!
+      skipHumanReview: Boolean
+      skipHumanEvaluation: Boolean
     ): Boolean!
 
-    execAiCopilot: Boolean!
+    execAiCopilot(
+      skipHumanReview: Boolean
+      skipHumanEvaluation: Boolean
+    ): Boolean!
     
     # HITL Graph Execution - Start Session
     startGraphSession(

@@ -17,6 +17,7 @@ import type {
   Evaluation,
   FinalReport,
 } from '../langGraph/state/state.ts';
+import { analyticsService } from './AnalyticsService.ts';
 
 /**
  * Session state indicating where the graph is paused
@@ -138,14 +139,13 @@ export class GraphExecutionService {
         throw new Error('Multiple golden sets found, expected only one');
       }
 
-      const newGoldenSet = await goldenSetService.updateGoldenSetFromNextGoldenSet(
+      const goldenSet = await goldenSetService.updateGoldenSetFromNextGoldenSet(
         projectExId,
         schemaExId,
         REVERSE_COPILOT_TYPES[copilotType]
       );
-      logger.info('Updated golden set to ID:', newGoldenSet.id);
+      logger.info('Updated golden set to ID:', goldenSet.id);
 
-      const goldenSet = goldenSets[0];
       if (!goldenSet) {
         throw new Error('Golden set is undefined');
       }
@@ -162,16 +162,14 @@ export class GraphExecutionService {
       };
 
       // Create the evaluation session in database
-      const session = await prisma.evaluationSession.create({
-        data: {
-          projectExId,
-          schemaExId,
-          copilotType,
-          modelName,
-          status: SESSION_STATUS.RUNNING,
-          metadata: metadata as unknown as Prisma.InputJsonValue,
-        },
-      });
+      const session = await analyticsService.createEvaluationSession(
+        projectExId,
+        schemaExId,
+        copilotType,
+        modelName,
+        SESSION_STATUS.PENDING,
+        metadata as unknown as Prisma.InputJsonValue
+      )
 
       // Prepare initial state for the graph
       const initialState = {

@@ -1,6 +1,7 @@
 import { prisma } from '../config/prisma.ts';
 import { logger } from '../utils/logger.ts';
 import { COPILOT_TYPES } from '../config/constants.ts';
+import type { Prisma } from '../../build/generated/prisma/client.ts';
 
 export class AnalyticsService {
   async getEvaluationResult(sessionId: string) {
@@ -168,6 +169,31 @@ export class AnalyticsService {
     } catch (error) {
       logger.error('Error fetching dashboard metrics:', error);
       throw new Error('Failed to fetch dashboard metrics');
+    }
+  }
+
+  async createEvaluationSession(
+    projectExId: string,
+    schemaExId: string,
+    copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
+    modelName: string,
+    status: "pending" | "running" | "completed" | "failed",
+    metadata: Prisma.InputJsonValue
+  ) {
+    try {
+      return prisma.evaluationSession.create({
+        data: {
+          projectExId,
+          schemaExId,
+          copilotType,
+          modelName,
+          status,
+          metadata,
+        },
+      });
+    } catch (error) {
+      logger.error('Error creating evaluation session:', error);
+      throw new Error('Failed to create evaluation session');
     }
   }
 }

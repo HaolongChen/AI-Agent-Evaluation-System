@@ -126,12 +126,18 @@ const extractInstanceNameFromEndpoint = (endpoint: string): string | null => {
 };
 
 const resolveAzureDeploymentName = (requested: string): string => {
-  // If requested looks like a base model id (e.g. gpt-4o) and we have a configured
-  // deployment name, prefer the configured deployment.
-  if (AZURE_OPENAI_DEPLOYMENT && looksLikeOpenAIModelId(requested)) {
+  const trimmed = (requested || '').trim();
+  // Historical alias used elsewhere in the app; not a real Azure deployment name.
+  if (AZURE_OPENAI_DEPLOYMENT && trimmed === 'copilot-latest') {
     return AZURE_OPENAI_DEPLOYMENT;
   }
-  return requested || AZURE_OPENAI_DEPLOYMENT || requested;
+
+  // If requested looks like a base model id (e.g. gpt-4o) and we have a configured
+  // deployment name, prefer the configured deployment.
+  if (AZURE_OPENAI_DEPLOYMENT && looksLikeOpenAIModelId(trimmed)) {
+    return AZURE_OPENAI_DEPLOYMENT;
+  }
+  return trimmed || AZURE_OPENAI_DEPLOYMENT || trimmed;
 };
 
 export function getLLM(config: LLMConfig): BaseChatModel {

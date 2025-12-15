@@ -4,7 +4,14 @@ import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 import { logger } from '../utils/logger.ts';
 import { goldenSetService } from './GoldenSetService.ts';
 import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
-import { WS_URL } from '../config/env.ts';
+import {
+  AZURE_OPENAI_DEPLOYMENT,
+  GEMINI_API_KEY,
+  GEMINI_MODEL,
+  OPENAI_MODEL,
+  USES_AZURE_OPENAI,
+  WS_URL,
+} from '../config/env.ts';
 import {
   applyAndWatchJob,
   type EvalJobResult,
@@ -13,6 +20,21 @@ import {
 import { EvaluationJobRunner } from '../jobs/EvaluationJobRunner.ts';
 import { RubricGenerationJobRunner } from '../jobs/RubricGenerationJobRunner.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+
+const resolveDefaultModelName = (): string => {
+  // Prefer Azure deployment when Azure is configured; otherwise fall back to Gemini if available.
+  if (USES_AZURE_OPENAI) return AZURE_OPENAI_DEPLOYMENT || OPENAI_MODEL;
+  if (GEMINI_API_KEY) return GEMINI_MODEL;
+  // Last resort: still prefer OpenAI model string (will require Azure env in LangGraph).
+  return AZURE_OPENAI_DEPLOYMENT || OPENAI_MODEL;
+};
+
+const normalizeRequestedModelName = (modelName: string | undefined): string => {
+  if (!modelName) return resolveDefaultModelName();
+  // Historical alias used in some call sites; not a real Azure deployment name.
+  if (modelName === 'copilot-latest') return resolveDefaultModelName();
+  return modelName;
+};
 
 export class ExecutionService {
   async createEvaluationSession(
@@ -29,6 +51,7 @@ export class ExecutionService {
       const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
       const skipHumanReview = options?.skipHumanReview ?? true;
       const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
+      const resolvedModelName = normalizeRequestedModelName(modelName);
 
       const goldenSets = await goldenSetService.getGoldenSets(
         projectExId,
@@ -76,7 +99,7 @@ export class ExecutionService {
           goldenSet.promptTemplate,
           JSON.stringify(goldenSet.idealResponse),
           evalJobResult.editableText || '',
-          modelName ?? 'copilot-latest',
+          resolvedModelName,
           String(skipHumanReview),
           String(skipHumanEvaluation)
         )) as unknown as GenJobResult;
@@ -102,7 +125,7 @@ export class ExecutionService {
           goldenSet.promptTemplate,
           JSON.stringify(goldenSet.idealResponse),
           editableText,
-          modelName ?? 'copilot-latest',
+          resolvedModelName,
           skipHumanReview,
           skipHumanEvaluation
         );
@@ -129,6 +152,7 @@ export class ExecutionService {
       // Bulk execution defaults to fully automated evaluation
       const skipHumanReview = options?.skipHumanReview ?? true;
       const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
+      const resolvedModelName = normalizeRequestedModelName(undefined);
 
       const goldenSets = await goldenSetService.getGoldenSets();
       if (!goldenSets || goldenSets.length === 0) {
@@ -178,7 +202,7 @@ export class ExecutionService {
               goldenSet.promptTemplate,
               JSON.stringify(goldenSet.idealResponse),
               evalJobResult.editableText || '',
-              'copilot-latest',
+              resolvedModelName,
               String(skipHumanReview),
               String(skipHumanEvaluation)
             )) as unknown as GenJobResult;
@@ -242,7 +266,7 @@ export class ExecutionService {
               goldenSet.promptTemplate,
               JSON.stringify(goldenSet.idealResponse),
               editableText,
-              'copilot-latest',
+              resolvedModelName,
               skipHumanReview,
               skipHumanEvaluation
             );

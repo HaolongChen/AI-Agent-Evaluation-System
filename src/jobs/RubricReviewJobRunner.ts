@@ -345,7 +345,9 @@ if (
     });
 
   const modifiedRubric = args.modifiedRubricJson
-    ? (JSON.parse(args.modifiedRubricJson) as Rubric)
+    ? args.modifiedRubricJson === 'null'
+      ? undefined
+      : (JSON.parse(args.modifiedRubricJson) as Rubric)
     : undefined;
 
   const runner = new RubricReviewJobRunner(

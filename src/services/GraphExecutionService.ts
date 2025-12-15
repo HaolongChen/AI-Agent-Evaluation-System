@@ -4,7 +4,6 @@ import {
   automatedGraph,
   type GraphConfigurable,
 } from '../langGraph/agent.ts';
-import { Command } from '@langchain/langgraph';
 import { prisma } from '../config/prisma.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../../build/generated/prisma/enums.ts';
@@ -18,6 +17,15 @@ import type {
   FinalReport,
 } from '../langGraph/state/state.ts';
 import { analyticsService } from './AnalyticsService.ts';
+import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import {
+  applyAndWatchJob,
+  type GenJobResult,
+  type HumanEvaluationK8sJobResult,
+  type RubricReviewK8sJobResult,
+} from '../kubernetes/utils/apply-from-file.ts';
+import { HumanEvaluationJobRunner } from '../jobs/HumanEvaluationJobRunner.ts';
+import { RubricReviewJobRunner } from '../jobs/RubricReviewJobRunner.ts';
 
 /**
  * Session state indicating where the graph is paused
@@ -150,6 +158,69 @@ export class GraphExecutionService {
         throw new Error('Golden set is undefined');
       }
 
+      // In Kubernetes mode, delegate to the JobRunner entrypoint so the end-to-end
+      // flow is GraphExecutionService -> applyAndWatchJob -> ./src/jobs/*.ts
+      if (RUN_KUBERNETES_JOBS) {
+        const genJobResult = (await applyAndWatchJob(
+          `graph-start-session-${projectExId}-${schemaExId}-${Date.now()}`,
+          'default',
+          './src/jobs/RubricGenerationJobRunner.ts',
+          300000,
+          'generation',
+          String(goldenSet.id),
+          projectExId,
+          schemaExId,
+          String(copilotType),
+          goldenSet.promptTemplate,
+          JSON.stringify(goldenSet.idealResponse),
+          '',
+          modelName,
+          String(skipHumanReview),
+          String(skipHumanEvaluation)
+        )) as unknown as GenJobResult;
+
+        if (genJobResult.status !== 'succeeded') {
+          throw new Error(
+            genJobResult.reason || genJobResult.error || 'Kubernetes job failed'
+          );
+        }
+
+        if (!genJobResult.sessionId || !genJobResult.threadId) {
+          throw new Error(
+            'Kubernetes generation job did not return sessionId/threadId'
+          );
+        }
+
+        const status = (() => {
+          switch (genJobResult.graphStatus) {
+            case 'awaiting_rubric_review':
+              return 'awaiting_rubric_review' as const;
+            case 'awaiting_human_evaluation':
+              return 'awaiting_human_evaluation' as const;
+            case 'completed':
+              return 'completed' as const;
+            default:
+              return 'failed' as const;
+          }
+        })();
+
+        return {
+          sessionId: genJobResult.sessionId,
+          threadId: genJobResult.threadId,
+          status,
+          rubricDraft: genJobResult.rubric ?? null,
+          message:
+            genJobResult.message ||
+            (status === 'awaiting_rubric_review'
+              ? 'Graph paused for rubric review. Call submitRubricReview to continue.'
+              : status === 'awaiting_human_evaluation'
+              ? 'Graph paused for human evaluation. Call submitHumanEvaluation to continue.'
+              : status === 'completed'
+              ? 'Evaluation completed successfully'
+              : 'Graph execution failed'),
+        };
+      }
+
       // Create a unique thread ID for this session
       const threadId = uuidv4();
 
@@ -169,7 +240,7 @@ export class GraphExecutionService {
         modelName,
         SESSION_STATUS.PENDING,
         metadata as unknown as Prisma.InputJsonValue
-      )
+      );
 
       // Prepare initial state for the graph
       const initialState = {
@@ -283,110 +354,86 @@ export class GraphExecutionService {
     reviewerAccountId: string
   ): Promise<RubricReviewResult> {
     try {
-      // Get the session to retrieve metadata
-      const session = await prisma.evaluationSession.findUnique({
-        where: { id: sessionId },
-        include: { rubric: true },
-      });
+      if (RUN_KUBERNETES_JOBS) {
+        const args: string[] = [
+          String(sessionId),
+          threadId,
+          String(approved),
+          reviewerAccountId,
+        ];
 
-      if (!session) {
-        throw new Error('Session not found');
-      }
+        // CLI positional args: modifiedRubricJson (argv[6]) then feedback (argv[7])
+        if (modifiedRubric !== undefined) {
+          args.push(JSON.stringify(modifiedRubric));
+          if (feedback !== undefined) args.push(feedback);
+        } else if (feedback !== undefined) {
+          // allow feedback without a modified rubric
+          args.push('null');
+          args.push(feedback);
+        }
 
-      const metadata = session.metadata as SessionMetadata | null;
-      if (!metadata || metadata.threadId !== threadId) {
-        throw new Error('Thread ID mismatch');
-      }
+        const reviewJobResult = (await applyAndWatchJob(
+          `graph-rubric-review-${sessionId}-${Date.now()}`,
+          'default',
+          './src/jobs/RubricReviewJobRunner.ts',
+          300000,
+          'rubric-review',
+          ...args
+        )) as unknown as RubricReviewK8sJobResult;
 
-      // Update rubric in database with review status
-      if (session.rubric) {
-        const updateData: Prisma.adaptiveRubricUpdateInput = {
-          reviewStatus: approved
-            ? REVIEW_STATUS.APPROVED
-            : REVIEW_STATUS.REJECTED,
-          reviewedAt: new Date(),
-          reviewedBy: reviewerAccountId,
-        };
+        logger.info('Rubric review job completed:', reviewJobResult);
 
-        if (modifiedRubric) {
-          updateData.criteria = JSON.parse(
-            JSON.stringify(modifiedRubric.criteria)
+        if (reviewJobResult.status !== 'succeeded') {
+          throw new Error(
+            reviewJobResult.reason ||
+              reviewJobResult.error ||
+              'Rubric review Kubernetes job failed'
           );
-          updateData.totalWeight = modifiedRubric.totalWeight;
-          updateData.version = modifiedRubric.version;
         }
 
-        await prisma.adaptiveRubric.update({
-          where: { id: session.rubric.id },
-          data: updateData,
-        });
-      }
+        const status: GraphSessionStatus =
+          reviewJobResult.graphStatus === 'awaiting_human_evaluation'
+            ? 'awaiting_human_evaluation'
+            : 'completed';
 
-      // Prepare human review input for graph resumption
-      // This matches the HumanReviewInput interface expected by humanReviewerNode
-      const humanReviewInput = {
-        approved,
-        ...(modifiedRubric && { modifiedRubric }),
-        ...(feedback && { feedback }),
-      };
-
-      // Resume the graph with human review input
-      // Determine provider from session's model name
-      const provider = session.modelName.toLowerCase().startsWith('gemini')
-        ? 'gemini'
-        : 'azure';
-
-      const resumeConfigurable: GraphConfigurable = {
-        thread_id: threadId,
-        provider,
-        model: session.modelName,
-        projectExId: session.projectExId,
-        skipHumanReview: metadata.skipHumanReview ?? false,
-        skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
-      };
-      const result = (await graph.invoke(
-        new Command({ resume: humanReviewInput }),
-        {
-          configurable: resumeConfigurable,
-        }
-      )) as GraphResult;
-
-      // Determine the new status based on interrupt state
-      let status: GraphSessionStatus = 'completed';
-      let message = 'Evaluation completed successfully';
-      let rubricFinalForResponse = result.rubricFinal;
-
-      // Check if graph is interrupted again (waiting for human evaluation)
-      if (result.__interrupt__ && result.__interrupt__.length > 0) {
-        const interruptValue = result.__interrupt__[0]?.value;
-        if (interruptValue?.rubricFinal) {
-          status = 'awaiting_human_evaluation';
-          message =
-            'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
-          rubricFinalForResponse =
-            interruptValue.rubricFinal || result.rubricFinal;
-        }
-      }
-
-      // Update session status
-      await prisma.evaluationSession.update({
-        where: { id: sessionId },
-        data: {
+        return {
+          sessionId,
+          threadId,
+          status,
+          rubricFinal: reviewJobResult.rubricFinal ?? null,
+          message:
+            reviewJobResult.message ||
+            (status === 'awaiting_human_evaluation'
+              ? 'Graph paused for human evaluation. Call submitHumanEvaluation to continue.'
+              : 'Evaluation completed successfully'),
+        };
+      } else {
+        const reviewJobRunner = new RubricReviewJobRunner(
+          sessionId,
+          threadId,
+          approved,
+          reviewerAccountId,
+          modifiedRubric,
+          feedback
+        );
+        reviewJobRunner.startJob();
+        const result = await reviewJobRunner.waitForCompletion();
+        logger.info('Rubric review completed:', result);
+        return {
+          sessionId,
+          threadId,
           status:
-            status === 'completed'
-              ? SESSION_STATUS.COMPLETED
-              : SESSION_STATUS.RUNNING,
-          ...(status === 'completed' && { completedAt: new Date() }),
-        },
-      });
-
-      return {
-        sessionId,
-        threadId,
-        status,
-        rubricFinal: rubricFinalForResponse,
-        message,
-      };
+            result.graphStatus === 'awaiting_human_evaluation'
+              ? 'awaiting_human_evaluation'
+              : 'completed',
+          rubricFinal: result.rubricFinal ?? null,
+          message:
+            result.message ||
+            (result.graphStatus === 'awaiting_human_evaluation'
+              ? 'Graph paused for human evaluation. Call submitHumanEvaluation to continue.'
+              : 'Evaluation completed successfully'),
+        };
+      }
     } catch (error) {
       logger.error('Error submitting rubric review:', error);
       throw new Error(
@@ -408,82 +455,57 @@ export class GraphExecutionService {
     evaluatorAccountId: string
   ): Promise<HumanEvaluationResult> {
     try {
-      // Get the session
-      const session = await prisma.evaluationSession.findUnique({
-        where: { id: sessionId },
-        include: { rubric: true },
-      });
+      if (RUN_KUBERNETES_JOBS) {
+        const evaluationJobResult = (await applyAndWatchJob(
+          `graph-human-eval-${sessionId}-${Date.now()}`,
+          'default',
+          './src/jobs/HumanEvaluationJobRunner.ts',
+          300000,
+          'human-evaluation',
+          String(sessionId),
+          threadId,
+          JSON.stringify(scores),
+          overallAssessment,
+          evaluatorAccountId
+        )) as unknown as HumanEvaluationK8sJobResult;
 
-      if (!session) {
-        throw new Error('Session not found');
+        logger.info('Human evaluation job completed:', evaluationJobResult);
+
+        if (evaluationJobResult.status !== 'succeeded') {
+          throw new Error(
+            evaluationJobResult.reason ||
+              evaluationJobResult.error ||
+              'Human evaluation Kubernetes job failed'
+          );
+        }
+
+        return {
+          sessionId,
+          threadId,
+          status: 'completed',
+          finalReport: evaluationJobResult.finalReport ?? null,
+          message:
+            evaluationJobResult.message || 'Evaluation completed successfully',
+        };
+      } else {
+        const evaluationJobRunner = new HumanEvaluationJobRunner(
+          sessionId,
+          threadId,
+          scores,
+          overallAssessment,
+          evaluatorAccountId
+        );
+        evaluationJobRunner.startJob();
+        const result = await evaluationJobRunner.waitForCompletion();
+        logger.info('Human evaluation completed:', result);
+        return {
+          sessionId,
+          threadId,
+          status: 'completed',
+          finalReport: result.finalReport ?? null,
+          message: result.message || 'Evaluation completed successfully',
+        };
       }
-
-      const metadata = session.metadata as SessionMetadata | null;
-      if (!metadata || metadata.threadId !== threadId) {
-        throw new Error('Thread ID mismatch');
-      }
-
-      // Prepare human evaluation input
-      // This matches the HumanEvaluationInput interface expected by humanEvaluatorNode
-      const humanEvaluationInput = {
-        scores,
-        overallAssessment,
-      };
-
-      // Resume the graph with human evaluation input
-      // Determine provider from session's model name
-      const provider = session.modelName.toLowerCase().startsWith('gemini')
-        ? 'gemini'
-        : 'azure';
-
-      const evalConfigurable: GraphConfigurable = {
-        thread_id: threadId,
-        provider,
-        model: session.modelName,
-        projectExId: session.projectExId,
-        skipHumanReview: metadata.skipHumanReview ?? false,
-        skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
-      };
-      const result = (await graph.invoke(
-        new Command({ resume: humanEvaluationInput }),
-        { configurable: evalConfigurable }
-      )) as GraphResult;
-
-      // Store the human evaluation in database
-      if (session.rubric && result.humanEvaluation) {
-        await prisma.adaptiveRubricJudgeRecord.create({
-          data: {
-            adaptiveRubricId: session.rubric.id,
-            evaluatorType: 'human',
-            accountId: evaluatorAccountId,
-            scores: JSON.parse(JSON.stringify(result.humanEvaluation.scores)),
-            overallScore: result.humanEvaluation.overallScore,
-            summary: result.humanEvaluation.summary,
-          },
-        });
-      }
-
-      // Store the final report
-      if (result.finalReport) {
-        await this.saveFinalReport(sessionId, session, result.finalReport);
-      }
-
-      // Update session to completed
-      await prisma.evaluationSession.update({
-        where: { id: sessionId },
-        data: {
-          status: SESSION_STATUS.COMPLETED,
-          completedAt: new Date(),
-        },
-      });
-
-      return {
-        sessionId,
-        threadId,
-        status: 'completed',
-        finalReport: result.finalReport,
-        message: 'Evaluation completed successfully',
-      };
     } catch (error) {
       logger.error('Error submitting human evaluation:', error);
       throw new Error(

@@ -36,7 +36,40 @@ export interface GenJobResult {
   reason?: string;
 }
 
-export type JobTypes = 'evaluation' | 'generation';
+export interface RubricReviewK8sJobResult {
+  jobName: string;
+  namespace: string;
+  status: 'succeeded' | 'failed' | 'running';
+  sessionId?: number;
+  threadId?: string;
+  graphStatus?: string;
+  message?: string;
+  rubricFinal?: Rubric | null;
+  finalReport?: FinalReport | null;
+  error?: string;
+  completionTime?: Date;
+  reason?: string;
+}
+
+export interface HumanEvaluationK8sJobResult {
+  jobName: string;
+  namespace: string;
+  status: 'succeeded' | 'failed' | 'running';
+  sessionId?: number;
+  threadId?: string;
+  graphStatus?: string;
+  message?: string;
+  finalReport?: FinalReport | null;
+  error?: string;
+  completionTime?: Date;
+  reason?: string;
+}
+
+export type JobTypes =
+  | 'evaluation'
+  | 'generation'
+  | 'rubric-review'
+  | 'human-evaluation';
 
 /**
  * Apply a Kubernetes Job from the embedded YAML config, return the job name, and watch its status until completion.
@@ -51,7 +84,12 @@ export async function applyAndWatchJob(
   timeoutMs: number = 300000,
   jobType: JobTypes,
   ...scriptArgs: string[]
-): Promise<EvalJobResult | GenJobResult> {
+): Promise<
+  | EvalJobResult
+  | GenJobResult
+  | RubricReviewK8sJobResult
+  | HumanEvaluationK8sJobResult
+> {
   // Normalize job name to be lowercase and RFC 1123 compliant
   const normalizedName = name
     .toLowerCase()
@@ -154,7 +192,12 @@ async function extractJobResultFromLogs(
   jobName: string,
   namespace: string,
   jobType: JobTypes
-): Promise<Partial<EvalJobResult> | Partial<GenJobResult>> {
+): Promise<
+  | Partial<EvalJobResult>
+  | Partial<GenJobResult>
+  | Partial<RubricReviewK8sJobResult>
+  | Partial<HumanEvaluationK8sJobResult>
+> {
   try {
     // List pods for this job
     const podsResponse = await coreV1Api.listNamespacedPod({
@@ -228,6 +271,43 @@ async function extractJobResultFromLogs(
               analysis: result.analysis,
               error: result.error,
             };
+          } else if (jobType === 'rubric-review') {
+            const jsonStr = line
+              .substring(
+                line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
+              )
+              .trim();
+            const result = JSON.parse(jsonStr);
+            logger.info(
+              `Extracted job result from logs: ${JSON.stringify(result)}`
+            );
+            return {
+              sessionId: result.sessionId,
+              threadId: result.threadId,
+              graphStatus: result.graphStatus,
+              message: result.message,
+              rubricFinal: result.rubricFinal,
+              finalReport: result.finalReport,
+              error: result.error,
+            };
+          } else if (jobType === 'human-evaluation') {
+            const jsonStr = line
+              .substring(
+                line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
+              )
+              .trim();
+            const result = JSON.parse(jsonStr);
+            logger.info(
+              `Extracted job result from logs: ${JSON.stringify(result)}`
+            );
+            return {
+              sessionId: result.sessionId,
+              threadId: result.threadId,
+              graphStatus: result.graphStatus,
+              message: result.message,
+              finalReport: result.finalReport,
+              error: result.error,
+            };
           }
         } catch (parseErr) {
           logger.error('Failed to parse job result JSON from logs:', parseErr);
@@ -256,7 +336,12 @@ async function watchJobStatus(
   namespace: string,
   timeoutMs: number,
   jobType: JobTypes
-): Promise<EvalJobResult | GenJobResult> {
+): Promise<
+  | EvalJobResult
+  | GenJobResult
+  | RubricReviewK8sJobResult
+  | HumanEvaluationK8sJobResult
+> {
   const startTime = Date.now();
   logger.info(
     `Watching Job ${jobName} in namespace ${namespace} for completion...`
@@ -328,6 +413,10 @@ async function watchJobStatus(
               completionTime: job.status.completionTime
                 ? new Date(job.status.completionTime)
                 : new Date(),
+              sessionId: genResult.sessionId,
+              threadId: genResult.threadId,
+              graphStatus: genResult.graphStatus,
+              message: genResult.message,
               rubric: genResult.rubric,
               hardConstraints: genResult.hardConstraints,
               softConstraints: genResult.softConstraints,
@@ -337,6 +426,42 @@ async function watchJobStatus(
               finalReport: genResult.finalReport,
               analysis: genResult.analysis,
               error: genResult.error,
+            });
+            return;
+          } else if (jobType === 'rubric-review') {
+            const reviewResult = jobResult as Partial<RubricReviewK8sJobResult>;
+            resolve({
+              jobName,
+              namespace,
+              status: 'succeeded',
+              completionTime: job.status.completionTime
+                ? new Date(job.status.completionTime)
+                : new Date(),
+              sessionId: reviewResult.sessionId,
+              threadId: reviewResult.threadId,
+              graphStatus: reviewResult.graphStatus,
+              message: reviewResult.message,
+              rubricFinal: reviewResult.rubricFinal,
+              finalReport: reviewResult.finalReport,
+              error: reviewResult.error,
+            });
+            return;
+          } else if (jobType === 'human-evaluation') {
+            const humanResult =
+              jobResult as Partial<HumanEvaluationK8sJobResult>;
+            resolve({
+              jobName,
+              namespace,
+              status: 'succeeded',
+              completionTime: job.status.completionTime
+                ? new Date(job.status.completionTime)
+                : new Date(),
+              sessionId: humanResult.sessionId,
+              threadId: humanResult.threadId,
+              graphStatus: humanResult.graphStatus,
+              message: humanResult.message,
+              finalReport: humanResult.finalReport,
+              error: humanResult.error,
             });
             return;
           }

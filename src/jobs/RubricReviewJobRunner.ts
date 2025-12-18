@@ -3,6 +3,7 @@ import { Command } from '@langchain/langgraph';
 import { logger } from '../utils/logger.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import { prisma } from '../config/prisma.ts';
+import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
 import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
@@ -194,7 +195,7 @@ export class RubricReviewJobRunner {
 
     // If completed, persist final report when present
     if (graphStatus === 'completed' && result.finalReport) {
-      await this.saveFinalReport(
+      await evaluationPersistenceService.saveFinalReport(
         this.sessionId,
         {
           schemaExId: session.schemaExId,
@@ -203,6 +204,14 @@ export class RubricReviewJobRunner {
         },
         result.finalReport
       );
+
+      // Save judge records (agent and human evaluations) if rubric exists
+      if (session.rubric) {
+        await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
+          session.rubric.id,
+          result.finalReport
+        );
+      }
     }
 
     return {
@@ -284,33 +293,6 @@ export class RubricReviewJobRunner {
       this.isCompleted = true;
       this.rejectCompletion?.(new Error('Job stopped by user'));
     }
-  }
-
-  private async saveFinalReport(
-    sessionId: number,
-    session: {
-      schemaExId: string;
-      copilotType: CopilotType;
-      modelName: string;
-    },
-    finalReport: FinalReport
-  ): Promise<void> {
-    await prisma.evaluationResult.create({
-      data: {
-        sessionId,
-        schemaExId: session.schemaExId,
-        copilotType: session.copilotType,
-        modelName: session.modelName,
-        evaluationStatus: 'completed',
-        verdict: finalReport.verdict,
-        overallScore: finalReport.overallScore,
-        summary: finalReport.summary,
-        detailedAnalysis: finalReport.detailedAnalysis,
-        discrepancies: finalReport.discrepancies,
-        auditTrace: finalReport.auditTrace,
-        generatedAt: new Date(finalReport.generatedAt),
-      },
-    });
   }
 }
 

@@ -5,6 +5,7 @@ import {
   type GraphConfigurable,
 } from '../langGraph/agent.ts';
 import { prisma } from '../config/prisma.ts';
+import { evaluationPersistenceService } from './EvaluationPersistenceService.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 import type { Prisma } from '../../build/generated/prisma/client.ts';
@@ -309,7 +310,7 @@ export class GraphExecutionService {
 
       // If rubric draft was created, save it to database
       if (rubricDraftForResponse) {
-        await this.saveRubricToDatabase(
+        await evaluationPersistenceService.saveRubric(
           session.id,
           projectExId,
           schemaExId,
@@ -322,7 +323,25 @@ export class GraphExecutionService {
 
       // If graph completed (no interrupts), save the final report
       if (status === 'completed' && result.finalReport) {
-        await this.saveFinalReport(session.id, session, result.finalReport);
+        await evaluationPersistenceService.saveFinalReport(
+          session.id,
+          session,
+          result.finalReport
+        );
+
+        // Save judge records (agent and human evaluations) if rubric exists
+        if (rubricDraftForResponse) {
+          const rubricId =
+            await evaluationPersistenceService.getRubricIdBySessionId(
+              session.id
+            );
+          if (rubricId) {
+            await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
+              rubricId,
+              result.finalReport
+            );
+          }
+        }
       }
 
       return {
@@ -621,61 +640,6 @@ export class GraphExecutionService {
         ? this.transformResultToFinalReport(session.result)
         : null,
     };
-  }
-
-  // Helper methods
-
-  private async saveRubricToDatabase(
-    sessionId: number,
-    projectExId: string,
-    schemaExId: string,
-    rubric: Rubric,
-    copilotInput: string,
-    copilotOutput: string,
-    modelName: string
-  ): Promise<void> {
-    await prisma.adaptiveRubric.create({
-      data: {
-        projectExId,
-        schemaExId,
-        sessionId,
-        rubricId: rubric.id,
-        version: rubric.version,
-        criteria: JSON.parse(JSON.stringify(rubric.criteria)),
-        totalWeight: rubric.totalWeight,
-        copilotInput,
-        copilotOutput,
-        modelName,
-        reviewStatus: REVIEW_STATUS.PENDING,
-      },
-    });
-  }
-
-  private async saveFinalReport(
-    sessionId: number,
-    session: {
-      schemaExId: string;
-      copilotType: CopilotType;
-      modelName: string;
-    },
-    finalReport: FinalReport
-  ): Promise<void> {
-    await prisma.evaluationResult.create({
-      data: {
-        sessionId,
-        schemaExId: session.schemaExId,
-        copilotType: session.copilotType,
-        modelName: session.modelName,
-        evaluationStatus: 'completed',
-        verdict: finalReport.verdict,
-        overallScore: finalReport.overallScore,
-        summary: finalReport.summary,
-        detailedAnalysis: finalReport.detailedAnalysis,
-        discrepancies: finalReport.discrepancies,
-        auditTrace: finalReport.auditTrace,
-        generatedAt: new Date(finalReport.generatedAt),
-      },
-    });
   }
 
   private transformDbRubricToState(dbRubric: {

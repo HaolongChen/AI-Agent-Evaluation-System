@@ -3,6 +3,7 @@ import { Command } from '@langchain/langgraph';
 import { logger } from '../utils/logger.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import { prisma } from '../config/prisma.ts';
+import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
 import type { FinalReport } from '../langGraph/state/state.ts';
@@ -127,36 +128,35 @@ export class HumanEvaluationJobRunner {
 
     // Store the human evaluation in database
     if (session.rubric && result.humanEvaluation) {
-      await prisma.adaptiveRubricJudgeRecord.create({
-        data: {
-          adaptiveRubricId: session.rubric.id,
-          evaluatorType: 'human',
-          accountId: this.evaluatorAccountId,
-          scores: JSON.parse(JSON.stringify(result.humanEvaluation.scores)),
-          overallScore: result.humanEvaluation.overallScore,
-          summary: result.humanEvaluation.summary,
-        },
-      });
+      await evaluationPersistenceService.saveJudgeRecord(
+        session.rubric.id,
+        'human',
+        result.humanEvaluation.scores,
+        result.humanEvaluation.overallScore,
+        result.humanEvaluation.summary,
+        this.evaluatorAccountId
+      );
     }
 
     // Store the final report
     if (result.finalReport) {
-      await prisma.evaluationResult.create({
-        data: {
-          sessionId: this.sessionId,
+      await evaluationPersistenceService.saveFinalReport(
+        this.sessionId,
+        {
           schemaExId: session.schemaExId,
           copilotType: session.copilotType as CopilotType,
           modelName: session.modelName,
-          evaluationStatus: 'completed',
-          verdict: result.finalReport.verdict,
-          overallScore: result.finalReport.overallScore,
-          summary: result.finalReport.summary,
-          detailedAnalysis: result.finalReport.detailedAnalysis,
-          discrepancies: result.finalReport.discrepancies,
-          auditTrace: result.finalReport.auditTrace,
-          generatedAt: new Date(result.finalReport.generatedAt),
         },
-      });
+        result.finalReport
+      );
+
+      // Save judge records (including agent evaluation if present in final report)
+      if (session.rubric) {
+        await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
+          session.rubric.id,
+          result.finalReport
+        );
+      }
     }
 
     await prisma.evaluationSession.update({

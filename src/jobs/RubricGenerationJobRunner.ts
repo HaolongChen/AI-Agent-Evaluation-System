@@ -11,7 +11,8 @@ import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
 import { prisma } from '../config/prisma.ts';
 import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { analyticsService } from '../services/AnalyticsService.ts';
-import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
+import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
+import { SESSION_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
@@ -221,7 +222,7 @@ export class RubricGenerationJobRunner {
 
       // Save rubric to database for review/evaluation
       if (rubricForResponse) {
-        await this.saveRubricToDatabase(
+        await evaluationPersistenceService.saveRubric(
           session.id,
           this.projectExId,
           this.schemaExId,
@@ -234,7 +235,25 @@ export class RubricGenerationJobRunner {
 
       // Save final report if completed
       if (graphStatus === 'completed' && result.finalReport) {
-        await this.saveFinalReport(session.id, session, result.finalReport);
+        await evaluationPersistenceService.saveFinalReport(
+          session.id,
+          session,
+          result.finalReport
+        );
+
+        // Save judge records (agent and human evaluations) if rubric exists
+        if (rubricForResponse) {
+          const rubricId =
+            await evaluationPersistenceService.getRubricIdBySessionId(
+              session.id
+            );
+          if (rubricId) {
+            await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
+              rubricId,
+              result.finalReport
+            );
+          }
+        }
       }
 
       const rubricResult: RubricGenerationResult = {
@@ -384,84 +403,6 @@ export class RubricGenerationJobRunner {
       this.isCompleted = true;
       this.rejectCompletion?.(new Error('Job stopped by user'));
     }
-  }
-
-  // --- DB helper methods (copied from GraphExecutionService for consistency) ---
-
-  private async saveRubricToDatabase(
-    sessionId: number,
-    projectExId: string,
-    schemaExId: string,
-    rubric: Rubric,
-    copilotInput: string,
-    copilotOutput: string,
-    modelName: string
-  ): Promise<void> {
-    // Upsert by sessionId: a session should have at most one rubric
-    const existing = await prisma.adaptiveRubric.findFirst({
-      where: { sessionId },
-      select: { id: true },
-    });
-
-    if (existing) {
-      await prisma.adaptiveRubric.update({
-        where: { id: existing.id },
-        data: {
-          rubricId: rubric.id,
-          version: rubric.version,
-          criteria: JSON.parse(JSON.stringify(rubric.criteria)),
-          totalWeight: rubric.totalWeight,
-          copilotInput,
-          copilotOutput,
-          modelName,
-          reviewStatus: REVIEW_STATUS.PENDING,
-        },
-      });
-      return;
-    }
-
-    await prisma.adaptiveRubric.create({
-      data: {
-        projectExId,
-        schemaExId,
-        sessionId,
-        rubricId: rubric.id,
-        version: rubric.version,
-        criteria: JSON.parse(JSON.stringify(rubric.criteria)),
-        totalWeight: rubric.totalWeight,
-        copilotInput,
-        copilotOutput,
-        modelName,
-        reviewStatus: REVIEW_STATUS.PENDING,
-      },
-    });
-  }
-
-  private async saveFinalReport(
-    sessionId: number,
-    session: {
-      schemaExId: string;
-      copilotType: CopilotType;
-      modelName: string;
-    },
-    finalReport: FinalReport
-  ): Promise<void> {
-    await prisma.evaluationResult.create({
-      data: {
-        sessionId,
-        schemaExId: session.schemaExId,
-        copilotType: session.copilotType,
-        modelName: session.modelName,
-        evaluationStatus: 'completed',
-        verdict: finalReport.verdict,
-        overallScore: finalReport.overallScore,
-        summary: finalReport.summary,
-        detailedAnalysis: finalReport.detailedAnalysis,
-        discrepancies: finalReport.discrepancies,
-        auditTrace: finalReport.auditTrace,
-        generatedAt: new Date(finalReport.generatedAt),
-      },
-    });
   }
 }
 

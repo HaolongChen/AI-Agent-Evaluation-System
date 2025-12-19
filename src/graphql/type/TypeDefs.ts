@@ -29,8 +29,7 @@ export const typeDefs = `#graphql
 
   type CopilotOutput {
     id: ID!
-    description: String
-    content: JSON!
+    editableText: String!
     createdAt: DateTime!
     createdBy: String
   }
@@ -57,7 +56,7 @@ export const typeDefs = `#graphql
     inputTokens: Int
     outputTokens: Int
     totalTokens: Int
-    contextPercentage: Float
+    contextPercentage: Decimal
     metadata: JSON
 
     # Relations
@@ -239,8 +238,7 @@ export const typeDefs = `#graphql
   }
 
   input CopilotOutputInput {
-    description: String
-    content: JSON!
+    editableText: String!
   }
   
   # Input type for EvaluationScore

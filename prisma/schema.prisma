@@ -37,18 +37,15 @@ enum RubricReviewStatus {
 }
 
 model goldenSet {
-  id                 Int                 @id @default(autoincrement())
-  projectExId        String              @map("project_ex_id")
-  schemaExId         String              @map("schema_ex_id")
-  copilotType        CopilotType         @map("copilot_type")
-  userInput          userInput[]         @relation()
-  copilotOutput      copilotOutput[]     @relation()
-  idealResponse      Json                @map("ideal_response")
-  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy          String?             @map("created_by")
-  isActive           Boolean[]           @default([false]) @map("is_active") // Are specific input and output in progress
-  simulationIds      String[]            @default([]) @map("simulation_ids") // List of copilotSimulation IDs associated
-  copilotSimulations copilotSimulation[]
+  id            Int             @id @default(autoincrement())
+  projectExId   String          @map("project_ex_id")
+  schemaExId    String          @map("schema_ex_id")
+  copilotType   CopilotType     @map("copilot_type")
+  userInput     userInput[]     @relation()
+  copilotOutput copilotOutput[] @relation()
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy     String?         @map("created_by")
+  isActive      Boolean[]       @default([false]) @map("is_active") // Are specific input and output in progress
 
   @@unique([projectExId, schemaExId, copilotType])
   @@index([id], map: "idx_golden_set_schema")
@@ -97,22 +94,10 @@ model copilotSimulation {
   metadata Json?
 
   // Relations
-  goldenSet goldenSet         @relation(fields: [goldenSetId], references: [id])
-  rubric    adaptiveRubric?
-  result    evaluationResult?
+  rubric adaptiveRubric[]
+  result evaluationResult?
 
   @@index([id], map: "idx_copilot_simulation_schema")
-}
-
-model rubricCriterion {
-  id             Int                        @unique @default(autoincrement()) // Unique identifier for the criterion
-  rubricId       Int                        @map("rubric_id")
-  title          String                     @map("title")
-  content        String                     @map("description")
-  expectedAnswer Boolean                    @map("expected_answer")
-  judgeRecords   adaptiveRubricJudgeRecord?
-  rubric         adaptiveRubric             @relation(fields: [rubricId], references: [id])
-  weight         Decimal                    @map("weight") @db.Decimal(5, 2)
 }
 
 // Adaptive Rubrics (AI-generated evaluation questions)
@@ -121,10 +106,13 @@ model adaptiveRubric {
   simulationId Int @unique @map("simulation_id")
 
   // Rubric Content (structured to match LangGraph Rubric interface)
-  version       String            @default("1.0")
-  criteria      rubricCriterion[]
-  totalWeight   Decimal           @map("total_weight") @db.Decimal(10, 2)
-  modelProvider String?           @map("model_provider")
+  version        String  @default("1.0")
+  title          String  @map("title") // array of titles for different sections
+  content        String  @map("content") @db.Text // detailed description of the rubric
+  expectedAnswer Boolean @map("expected_answers") // array indicating if answers are expected for each section
+  weights        Decimal @map("weights") @db.Decimal(5, 2) // array of weights for each section
+  totalWeight    Decimal @map("total_weight") @db.Decimal(10, 2)
+  modelProvider  String? @map("model_provider")
 
   // Status
   reviewStatus RubricReviewStatus @default(pending) @map("review_status")
@@ -137,38 +125,25 @@ model adaptiveRubric {
   reviewedBy String?   @map("reviewed_by") // account ID of the reviewer
 
   // Relations
-  simulation   copilotSimulation           @relation(fields: [simulationId], references: [id]) // user input and copilot output come from here
-  judgeRecords adaptiveRubricJudgeRecord[]
+  simulation  copilotSimulation          @relation(fields: [simulationId], references: [id]) // user input and copilot output come from here
+  judgeRecord adaptiveRubricJudgeRecord?
 
   @@index([id], map: "idx_adaptive_rubric_session")
 }
 
-model feedback {
-  id            Int     @id @default(autoincrement())
-  answer        Boolean @map("answer") // true for positive feedback, false for negative
-  comments      String? @db.Text
-  judgeRecordId Int     @unique @map("judge_record_id")
-
-  // Relations
-  judgeRecord adaptiveRubricJudgeRecord @relation(fields: [judgeRecordId], references: [id])
-
-  @@index([id], map: "idx_feedback_session")
-}
-
 // Rubric Judgments (human and agent evaluations)
 model adaptiveRubricJudgeRecord {
-  id               Int       @id @default(autoincrement())
-  adaptiveRubricId Int       @map("adaptive_rubric_id")
-  evaluatorType    String    @map("evaluator_type") // 'agent' or 'human' to match LangGraph Evaluation.evaluatorType
-  accountId        String?   @map("account_id") // ID of the human judge (null for agent evaluations)
-  criterionId      Int       @unique @map("criterion_id")
-  feedback         feedback?
-  overallScore     Decimal   @map("overall_score") @db.Decimal(5, 2)
-  timestamp        DateTime  @default(now()) @map("timestamp") @db.Timestamptz(6)
+  id               Int      @id @default(autoincrement())
+  adaptiveRubricId Int      @unique @map("adaptive_rubric_id")
+  evaluatorType    String   @map("evaluator_type") // 'agent' or 'human' to match LangGraph Evaluation.evaluatorType
+  accountId        String?  @map("account_id") // ID of the human judge (null for agent evaluations)
+  answer           String   @db.Text // JSON string of answers to rubric questions
+  comment          String?  @db.Text
+  overallScore     Decimal  @map("overall_score") @db.Decimal(5, 2)
+  timestamp        DateTime @default(now()) @map("timestamp") @db.Timestamptz(6)
 
   // Relations
-  rubric    adaptiveRubric  @relation(fields: [adaptiveRubricId], references: [id])
-  criterion rubricCriterion @relation(fields: [criterionId], references: [id])
+  rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
 
   @@index([id], map: "idx_rubric_judge_rubric")
 }

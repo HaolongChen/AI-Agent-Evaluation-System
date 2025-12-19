@@ -54,7 +54,7 @@ model goldenSet {
 model userInput {
   id          Int        @id @default(autoincrement())
   description String?
-  content     Json       @map("input_content") // JSON content of user input
+  content     String     @map("input_content")
   createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy   String?    @map("created_by")
   goldenSet   goldenSet? @relation(fields: [id], references: [id])
@@ -63,12 +63,11 @@ model userInput {
 }
 
 model copilotOutput {
-  id          Int        @id @default(autoincrement())
-  description String?
-  content     Json       @map("output_content") // JSON content of copilot output
-  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy   String?    @map("created_by")
-  goldenSet   goldenSet? @relation(fields: [id], references: [id])
+  id           Int        @id @default(autoincrement())
+  editableText String     @map("output")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy    String?    @map("created_by")
+  goldenSet    goldenSet? @relation(fields: [id], references: [id])
 
   @@index([id], map: "idx_copilot_output_session")
 }

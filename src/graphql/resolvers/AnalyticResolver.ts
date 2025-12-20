@@ -225,11 +225,11 @@ export const analyticResolver = {
             langGraphPromises.push(langGraphPromise);
 
             // Set isActive[i] = false after processing
-            await goldenSetService.setIsActiveAtIndex(
-              goldenSetId,
-              absoluteIndex,
-              false
-            );
+            // await goldenSetService.setIsActiveAtIndex(
+            //   goldenSetId,
+            //   absoluteIndex,
+            //   false
+            // );
           } catch (error) {
             logger.error(
               `Error processing userInput at index ${absoluteIndex}`,

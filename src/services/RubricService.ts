@@ -1,182 +1,96 @@
-import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { prisma } from '../config/prisma.ts';
 import { REVIEW_STATUS } from '../config/constants.ts';
-import type { expectedAnswerType, rubricContentType } from '../utils/types.ts';
 import { logger } from '../utils/logger.ts';
 
 export class RubricService {
-  async createRubrics(
-    rubrics: Array<{
-      projectExId: string;
-      schemaExId: string;
-      sessionId: string;
-      content?: string[];
-      rubricType?: string[];
-      category?: string[];
-      expectedAnswer?: expectedAnswerType[];
-      newGoldenSetId?: number;
-      copilotInput?: string;
-      copilotOutput?: string;
+  /**
+   * Create a rubric for a simulation
+   * Uses the new single-value field structure matching Prisma schema
+   */
+  async createRubric(
+    simulationId: number,
+    rubricData: {
+      version?: string;
+      title: string;
+      content: string;
+      expectedAnswer: boolean;
+      weights: number;
+      totalWeight: number;
       modelProvider?: string;
-      modelName?: string;
-      generatorMetadata?: Record<string, unknown>;
-      fallbackReason?: string;
-    }>
+    }
   ) {
     try {
-      return prisma.adaptiveRubric.createMany({
-        data: rubrics.map((r) => {
-          // Transform flat array structure to LangGraph-compatible structured format
-          const criteria = this.transformToCriteria(
-            r.content || [],
-            r.rubricType || [],
-            r.category || [],
-            r.expectedAnswer || []
-          );
-          const totalWeight = criteria.reduce(
-            (sum: number, c: { weight?: number }) => sum + (c.weight || 1),
-            0
-          );
-
-          return {
-            projectExId: r.projectExId,
-            schemaExId: r.schemaExId,
-            sessionId: parseInt(r.sessionId),
-            rubricId: `rubric-${r.schemaExId}-${Date.now()}`,
-            version: '1.0',
-            criteria: criteria as Prisma.InputJsonValue,
-            totalWeight: totalWeight,
-            ...(r.copilotInput && { copilotInput: r.copilotInput }),
-            ...(r.copilotOutput && { copilotOutput: r.copilotOutput }),
-            ...(r.modelProvider !== undefined && {
-              modelProvider: r.modelProvider ?? null,
-            }),
-            ...(r.modelName !== undefined && {
-              modelName: r.modelName ?? null,
-            }),
-            ...(r.generatorMetadata && {
-              generatorMetadata: r.generatorMetadata as Prisma.InputJsonValue,
-            }),
-            ...(r.fallbackReason !== undefined && {
-              fallbackReason: r.fallbackReason ?? null,
-            }),
-            reviewStatus: REVIEW_STATUS.PENDING,
-            ...(r.newGoldenSetId && { newGoldenSetId: r.newGoldenSetId }),
-          };
-        }),
-      });
-    } catch (error) {
-      logger.error('Error creating rubrics:', error);
-      throw new Error('Failed to create rubrics');
-    }
-  }
-
-  private transformToCriteria(
-    content: string[],
-    rubricType: string[],
-    category: string[],
-    expectedAnswer: expectedAnswerType[]
-  ): Array<{
-    id: string;
-    description: string;
-    type: string;
-    category: string;
-    weight: number;
-    scale: {
-      minValue: number;
-      maxValue: number;
-      labels: string[];
-    };
-    expectedAnswer: string;
-  }> {
-    // Transform old flat arrays to LangGraph RubricCriterion[] structure
-    const criteria = [];
-    for (let i = 0; i < content.length; i++) {
-      criteria.push({
-        id: `criterion-${i + 1}`,
-        description: content[i] || '',
-        type: rubricType[i] || 'text',
-        category: category[i] || 'general',
-        weight: 1,
-        scale: {
-          minValue: 0,
-          maxValue: 10,
-          labels: ['Poor', 'Fair', 'Good', 'Excellent'],
+      const result = await prisma.adaptiveRubric.create({
+        data: {
+          simulationId,
+          version: rubricData.version ?? '1.0',
+          title: rubricData.title,
+          content: rubricData.content,
+          expectedAnswer: rubricData.expectedAnswer,
+          weights: rubricData.weights,
+          totalWeight: rubricData.totalWeight,
+          modelProvider: rubricData.modelProvider ?? null,
+          reviewStatus: REVIEW_STATUS.PENDING,
         },
-        expectedAnswer: expectedAnswer[i] || '',
       });
+      return result;
+    } catch (error) {
+      logger.error('Error creating rubric:', error);
+      throw new Error('Failed to create rubric');
     }
-    return criteria;
   }
 
-  async getRubricsBySchemaExId(schemaExId: string) {
+  async getRubricsBySimulationId(simulationId: number) {
     try {
-      return prisma.adaptiveRubric.findMany({
-        where: {
-          schemaExId: schemaExId,
-          isActive: true,
-        },
+      // Note: adaptiveRubric has a 1:1 relation with copilotSimulation via @unique
+      const rubric = await prisma.adaptiveRubric.findUnique({
+        where: { simulationId },
         include: {
-          judgeRecords: true,
+          judgeRecord: true,
         },
       });
+      return rubric ? [rubric] : [];
     } catch (error) {
-      logger.error('Error fetching rubrics by schemaExId:', error);
-      throw new Error('Failed to fetch rubrics by schemaExId');
+      logger.error('Error fetching rubrics by simulationId:', error);
+      throw new Error('Failed to fetch rubrics by simulationId');
     }
   }
 
   async getRubricById(rubricId: string) {
     try {
-      return prisma.adaptiveRubric.findUnique({
+      const result = await prisma.adaptiveRubric.findUnique({
         where: {
           id: parseInt(rubricId),
         },
+        include: {
+          judgeRecord: true,
+        },
       });
+      return result;
     } catch (error) {
       logger.error('Error fetching rubric by id:', error);
       throw new Error('Failed to fetch rubric by id');
     }
   }
 
-  async getRubricsBySession(sessionId: string) {
-    try {
-      return prisma.adaptiveRubric.findMany({
-        where: {
-          sessionId: parseInt(sessionId),
-          isActive: true,
-        },
-        include: {
-          judgeRecords: true,
-        },
-      });
-    } catch (error) {
-      logger.error('Error fetching rubrics by sessionId:', error);
-      throw new Error('Failed to fetch rubrics by sessionId');
-    }
-  }
-
   async getRubricsForReview(
-    sessionId?: number,
-    projectExId?: string,
-    schemaExId?: string,
+    rubricId?: number,
     reviewStatus?: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS]
   ) {
     try {
-      return prisma.adaptiveRubric.findMany({
+      const result = await prisma.adaptiveRubric.findMany({
         where: {
           isActive: true,
           ...(reviewStatus && { reviewStatus }),
-          ...(sessionId && { sessionId }),
-          ...(projectExId && { projectExId }),
-          ...(schemaExId && { schemaExId }),
+          ...(rubricId && { id: rubricId }),
         },
         include: {
-          judgeRecords: true,
-          session: true,
+          judgeRecord: true,
+          simulation: true,
         },
         orderBy: { createdAt: 'desc' },
       });
+      return result;
     } catch (error) {
       logger.error('Error fetching rubrics for review:', error);
       throw new Error('Failed to fetch rubrics for review');
@@ -187,30 +101,50 @@ export class RubricService {
     rubricId: string,
     reviewStatus: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS],
     reviewerAccountId: string,
-    modifiedRubricContent?: rubricContentType
+    modifiedRubricContent?: {
+      title?: string;
+      content?: string;
+      expectedAnswer?: boolean;
+      weights?: number;
+    }
   ) {
     try {
-      return prisma.adaptiveRubric.update({
+      const result = await prisma.adaptiveRubric.update({
         where: { id: parseInt(rubricId) },
         data: {
           reviewStatus: reviewStatus,
           reviewedAt: new Date(),
           reviewedBy: reviewerAccountId,
           ...(modifiedRubricContent && {
-            criteria: this.transformToCriteria(
-              modifiedRubricContent.content || [],
-              modifiedRubricContent.rubricType || [],
-              modifiedRubricContent.category || [],
-              modifiedRubricContent.expectedAnswer || []
-            ) as Prisma.InputJsonValue,
-            totalWeight: (modifiedRubricContent.content || []).length,
+            ...(modifiedRubricContent.title && {
+              title: modifiedRubricContent.title,
+            }),
+            ...(modifiedRubricContent.content && {
+              content: modifiedRubricContent.content,
+            }),
+            ...(modifiedRubricContent.expectedAnswer !== undefined && {
+              expectedAnswer: modifiedRubricContent.expectedAnswer,
+            }),
+            ...(modifiedRubricContent.weights && {
+              weights: modifiedRubricContent.weights,
+            }),
           }),
         },
       });
+      return result;
     } catch (error) {
       logger.error('Error reviewing rubric:', error);
       throw new Error('Failed to review rubric');
     }
+  }
+
+  /**
+   * Get rubric by session ID (for backward compatibility)
+   * @deprecated Use getRubricsBySimulationId instead
+   */
+  async getRubricsBySession(sessionId: string) {
+    const result = await this.getRubricsBySimulationId(parseInt(sessionId));
+    return result;
   }
 }
 

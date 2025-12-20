@@ -7,7 +7,6 @@ import { evaluationPersistenceService } from '../services/EvaluationPersistenceS
 import { SESSION_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
 import type { FinalReport } from '../langGraph/state/state.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
@@ -21,17 +20,12 @@ interface SessionMetadata {
   skipHumanEvaluation?: boolean;
 }
 
-/**
- * Minimal evaluation structures needed for persistence
- */
-type HumanEvaluation = {
-  scores: Array<{ criterionId: string; score: number; reasoning: string }>;
-  overallScore: number;
-  summary: string;
-};
-
 interface GraphResult {
-  humanEvaluation?: HumanEvaluation | null;
+  humanEvaluation?: {
+    answer: string;
+    overallScore: number;
+    comment?: string;
+  } | null;
   finalReport?: FinalReport | null;
 }
 
@@ -87,7 +81,7 @@ export class HumanEvaluationJobRunner {
    * Core logic for human evaluation submission (public as requested).
    */
   async submitHumanEvaluation(): Promise<HumanEvaluationJobResult> {
-    const session = await prisma.evaluationSession.findUnique({
+    const session = await prisma.copilotSimulation.findUnique({
       where: { id: this.sessionId },
       include: { rubric: true },
     });
@@ -114,7 +108,7 @@ export class HumanEvaluationJobRunner {
       thread_id: this.threadId,
       provider,
       model: session.modelName,
-      projectExId: session.projectExId,
+      goldenSetId: session.goldenSetId,
       skipHumanReview: metadata.skipHumanReview ?? false,
       skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
     };
@@ -126,14 +120,15 @@ export class HumanEvaluationJobRunner {
       }
     )) as GraphResult;
 
-    // Store the human evaluation in database
-    if (session.rubric && result.humanEvaluation) {
+    // Store the human evaluation in database (rubric is an array, get first element)
+    const rubric = session.rubric?.[0];
+    if (rubric && result.humanEvaluation) {
       await evaluationPersistenceService.saveJudgeRecord(
-        session.rubric.id,
+        rubric.id,
         'human',
-        result.humanEvaluation.scores,
+        result.humanEvaluation.answer,
         result.humanEvaluation.overallScore,
-        result.humanEvaluation.summary,
+        result.humanEvaluation.comment,
         this.evaluatorAccountId
       );
     }
@@ -142,24 +137,11 @@ export class HumanEvaluationJobRunner {
     if (result.finalReport) {
       await evaluationPersistenceService.saveFinalReport(
         this.sessionId,
-        {
-          schemaExId: session.schemaExId,
-          copilotType: session.copilotType as CopilotType,
-          modelName: session.modelName,
-        },
         result.finalReport
       );
-
-      // Save judge records (including agent evaluation if present in final report)
-      if (session.rubric) {
-        await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-          session.rubric.id,
-          result.finalReport
-        );
-      }
     }
 
-    await prisma.evaluationSession.update({
+    await prisma.copilotSimulation.update({
       where: { id: this.sessionId },
       data: {
         status: SESSION_STATUS.COMPLETED,

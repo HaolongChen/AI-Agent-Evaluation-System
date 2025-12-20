@@ -1,99 +1,78 @@
 import { prisma } from '../config/prisma.ts';
 import { logger } from '../utils/logger.ts';
-import { executionService } from './ExecutionService.ts';
-import { goldenSetService } from './GoldenSetService.ts';
 import { rubricService } from './RubricService.ts';
-import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
-import { analyticsService } from './AnalyticsService.ts';
 
 export class JudgeService {
+  /**
+   * Create a judge record for a rubric
+   * Uses the new field names: answer (string), comment (string)
+   */
   async createJudgeRecord(
     adaptiveRubricId: string,
     evaluatorType: string,
     accountId: string | null,
-    scores: object,
+    answer: string,
     overallScore: number,
-    summary?: string
+    comment?: string
   ) {
     try {
-      const createRecord = async () => {
-        const finalRecord = await prisma.adaptiveRubricJudgeRecord.create({
+      // Create the judge record
+      const finalRecord = await prisma.adaptiveRubricJudgeRecord.create({
+        data: {
+          adaptiveRubricId: parseInt(adaptiveRubricId),
+          evaluatorType,
+          accountId: accountId ?? null,
+          answer,
+          comment: comment ?? null,
+          overallScore,
+        },
+      });
+
+      // Get the rubric to find the simulation
+      const rubric = await rubricService.getRubricById(adaptiveRubricId);
+      if (!rubric) {
+        throw new Error('Rubric not found for creating evaluation result');
+      }
+
+      // Create or update evaluation result
+      const existingResult = await prisma.evaluationResult.findUnique({
+        where: { simulationId: rubric.simulationId },
+      });
+
+      let finalResult;
+      if (existingResult) {
+        finalResult = await prisma.evaluationResult.update({
+          where: { id: existingResult.id },
           data: {
-            adaptiveRubricId: parseInt(adaptiveRubricId),
-            evaluatorType,
-            accountId: accountId ?? null,
-            scores,
+            evaluationStatus: 'completed',
             overallScore,
-            summary: summary ?? '',
+            summary: comment ?? '',
+            verdict:
+              overallScore >= 70
+                ? 'pass'
+                : overallScore >= 50
+                ? 'needs_review'
+                : 'fail',
           },
         });
-        return finalRecord;
-      };
-      const createResult = async () => {
-        const rubric = await rubricService.getRubricById(adaptiveRubricId);
-        if (!rubric) {
-          throw new Error('Rubric not found for updating judge records');
-        }
-        const session = await executionService.getSession(
-          rubric.sessionId.toString()
-        );
-        if (!session) {
-          throw new Error(
-            'Evaluation session not found for updating judge records'
-          );
-        }
-
-        if (!session.copilotType) {
-          throw new Error('Copilot type not found in session');
-        }
-
-        const copilotType = REVERSE_COPILOT_TYPES[session.copilotType];
-        if (!copilotType) {
-          throw new Error('Invalid copilot type in session');
-        }
-
-        // const originalGoldenSet = await goldenSetService.getGoldenSets(
-        //   rubric.projectExId,
-        //   rubric.schemaExId,
-        //   copilotType
-        // );
-        // if (originalGoldenSet.length !== 1 || !originalGoldenSet[0]) {
-        //   throw new Error(
-        //     'Original golden set not found or ambiguous for updating judge records'
-        //   );
-        // }
-        // if (originalGoldenSet[0].nextGoldenSetId) {
-        //   const newGoldenSet =
-        //     await goldenSetService.simplyUpdateGoldenSetProject(
-        //       rubric.projectExId,
-        //       rubric.schemaExId,
-        //       copilotType,
-        //       originalGoldenSet[0].description ?? '',
-        //       originalGoldenSet[0].promptTemplate ?? '',
-        //       (originalGoldenSet[0].idealResponse as object) ?? {}
-        //     );
-        //   logger.info('Updated golden set with new ID:', newGoldenSet.id);
-        // }
-        const newGoldenSet = await goldenSetService.updateGoldenSetFromNextGoldenSet(
-          rubric.projectExId,
-          rubric.schemaExId,
-          copilotType
-        );
-        logger.info('Updated golden set to ID:', newGoldenSet.id);
-        const finalResult = await analyticsService.createEvaluationResult(
-          session.id.toString(),
-          rubric.schemaExId,
-          session.copilotType,
-          session.modelName,
-          {
-            summary: summary ?? '',
+      } else {
+        finalResult = await prisma.evaluationResult.create({
+          data: {
+            simulationId: rubric.simulationId,
+            evaluationStatus: 'completed',
+            overallScore,
+            summary: comment ?? '',
+            verdict:
+              overallScore >= 70
+                ? 'pass'
+                : overallScore >= 50
+                ? 'needs_review'
+                : 'fail',
+            discrepancies: [],
           },
-          overallScore
-        );
-        return finalResult;
-      };
-      const finalRecord = await createRecord();
-      const finalResult = await createResult();
+        });
+      }
+
       return { finalRecord, finalResult };
     } catch (error) {
       logger.error('Error creating judge record:', error);
@@ -103,12 +82,13 @@ export class JudgeService {
 
   async getJudgeRecordsByRubric(rubricId: string) {
     try {
-      return prisma.adaptiveRubricJudgeRecord.findMany({
+      // Note: judgeRecord is 1:1 with adaptiveRubric via @unique
+      const record = await prisma.adaptiveRubricJudgeRecord.findUnique({
         where: {
           adaptiveRubricId: parseInt(rubricId),
         },
-        orderBy: { timestamp: 'desc' },
       });
+      return record ? [record] : [];
     } catch (error) {
       logger.error('Error fetching judge records by rubric:', error);
       throw new Error('Failed to fetch judge records by rubric');

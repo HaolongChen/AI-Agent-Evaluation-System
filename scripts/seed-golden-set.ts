@@ -14,7 +14,6 @@ async function seedGoldenSet() {
         description: 'Example data model for e-commerce',
         promptTemplate:
           'create a table called like_table which contains post_id and user_id, etc. create anything else when needed', // TODO: implement meaningful prompt templates
-        idealResponse: { entities: ['User', 'Product', 'Order'] },
       },
       // {
       //   projectExId: 'example-project-2',
@@ -40,9 +39,12 @@ async function seedGoldenSet() {
           projectExId: data.projectExId,
           schemaExId: data.schemaExId,
           copilotType: data.copilotType,
-          description: data.description,
-          promptTemplate: data.promptTemplate,
-          idealResponse: data.idealResponse,
+          userInput: {
+            create: {
+              description: data.description,
+              content: data.promptTemplate,
+            },
+          },
         },
       });
     }

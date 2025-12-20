@@ -1,63 +1,70 @@
 import { prisma } from '../config/prisma.ts';
 import { logger } from '../utils/logger.ts';
-import { COPILOT_TYPES } from '../config/constants.ts';
-import type { Prisma } from '../../build/generated/prisma/client.ts';
 
 export class AnalyticsService {
-  async getEvaluationResult(sessionId: string) {
+  async getEvaluationResult(simulationId: string) {
     try {
-      return prisma.evaluationResult.findUnique({
-        where: { sessionId: parseInt(sessionId) },
+      const result = await prisma.evaluationResult.findUnique({
+        where: { simulationId: parseInt(simulationId) },
         include: {
-          session: true,
+          simulation: true,
         },
       });
+      return result;
     } catch (error) {
       logger.error('Error fetching evaluation result:', error);
       throw new Error('Failed to fetch evaluation result');
     }
   }
 
+  async getEvaluationResultsByGoldenSet(goldenSetId: number) {
+    try {
+      // Get all simulations for this golden set and their results
+      const simulations = await prisma.copilotSimulation.findMany({
+        where: { goldenSetId },
+        include: {
+          result: true,
+        },
+      });
+      return simulations.filter((s) => s.result !== null).map((s) => s.result);
+    } catch (error) {
+      logger.error('Error fetching evaluation results by golden set:', error);
+      throw new Error('Failed to fetch evaluation results');
+    }
+  }
+
   async createEvaluationResult(
-    sessionId: string,
-    schemaExId: string,
-    copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
-    modelName: string,
+    simulationId: number,
     reportData: {
       verdict?: string;
       summary?: string;
-      detailedAnalysis?: string;
       discrepancies?: string[];
-      auditTrace?: string[];
     },
     overallScore: number
   ) {
     try {
-      return prisma.evaluationResult.create({
+      const result = await prisma.evaluationResult.create({
         data: {
-          sessionId: parseInt(sessionId),
-          schemaExId: schemaExId,
-          copilotType: copilotType,
-          modelName: modelName,
+          simulationId,
+          evaluationStatus: 'completed',
           verdict: reportData.verdict ?? 'needs_review',
           overallScore: overallScore,
           summary: reportData.summary ?? '',
-          detailedAnalysis: reportData.detailedAnalysis ?? '',
           discrepancies: reportData.discrepancies ?? [],
-          auditTrace: reportData.auditTrace ?? [],
         },
       });
+      return result;
     } catch (error) {
       logger.error('Error creating evaluation result:', error);
       throw new Error('Failed to create evaluation result');
     }
   }
 
-  async compareModels(schemaExId: string, modelNames: string[]) {
+  async compareModels(goldenSetId: number, modelNames: string[]) {
     try {
-      const sessions = await prisma.evaluationSession.findMany({
+      const sessions = await prisma.copilotSimulation.findMany({
         where: {
-          schemaExId: schemaExId,
+          goldenSetId,
           modelName: { in: modelNames },
           status: 'completed',
         },
@@ -98,7 +105,6 @@ export class AnalyticsService {
         return {
           modelName,
           summary: modelSessions[0]?.result?.summary || '',
-          detailedAnalysis: modelSessions[0]?.result?.detailedAnalysis || '',
           overallScore: avgScore,
           avgLatencyMs: Math.round(avgLatency),
           avgTokens: Math.round(avgTokens),
@@ -107,7 +113,7 @@ export class AnalyticsService {
       });
 
       return {
-        schemaExId,
+        goldenSetId,
         models: modelPerformance,
       };
     } catch (error) {
@@ -117,23 +123,14 @@ export class AnalyticsService {
   }
 
   async getDashboardMetrics(filters: {
-    copilotType?: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES];
     modelName?: string;
     startDate?: Date;
     endDate?: Date;
   }) {
     try {
-      const sessions = await prisma.evaluationSession.findMany({
+      const sessions = await prisma.copilotSimulation.findMany({
         where: {
           status: 'completed',
-          ...(filters.copilotType && {
-            copilotType: filters.copilotType as
-              | 'dataModel'
-              | 'uiBuilder'
-              | 'actionflow'
-              | 'logAnalyzer'
-              | 'agentBuilder',
-          }),
           ...(filters.modelName && { modelName: filters.modelName }),
           ...(filters.startDate && { startedAt: { gte: filters.startDate } }),
           ...(filters.endDate && { startedAt: { lte: filters.endDate } }),
@@ -144,6 +141,17 @@ export class AnalyticsService {
       });
 
       const totalSessions = sessions.length;
+      if (totalSessions === 0) {
+        return {
+          totalSessions: 0,
+          avgOverallScore: 0,
+          avgLatencyMs: 0,
+          avgTokenUsage: 0,
+          passRateByCategory: [],
+          modelPerformanceTrend: [],
+        };
+      }
+
       const avgOverallScore =
         sessions.reduce(
           (sum, s) => sum + (s.result ? Number(s.result.overallScore) : 0),
@@ -169,31 +177,6 @@ export class AnalyticsService {
     } catch (error) {
       logger.error('Error fetching dashboard metrics:', error);
       throw new Error('Failed to fetch dashboard metrics');
-    }
-  }
-
-  async createEvaluationSession(
-    projectExId: string,
-    schemaExId: string,
-    copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
-    modelName: string,
-    status: "pending" | "running" | "completed" | "failed",
-    metadata: Prisma.InputJsonValue
-  ) {
-    try {
-      return prisma.evaluationSession.create({
-        data: {
-          projectExId,
-          schemaExId,
-          copilotType,
-          modelName,
-          status,
-          metadata,
-        },
-      });
-    } catch (error) {
-      logger.error('Error creating evaluation session:', error);
-      throw new Error('Failed to create evaluation session');
     }
   }
 }

@@ -1,50 +1,19 @@
 import { rubricService } from '../../services/RubricService.ts';
 import { judgeService } from '../../services/JudgeService.ts';
 import type { REVIEW_STATUS } from '../../config/constants.ts';
-import { REVERSE_REVIEW_STATUS } from '../../config/constants.ts';
 import { logger } from '../../utils/logger.ts';
-
-/**
- * Transform rubric data from Prisma to GraphQL format
- * Converts lowercase enum values to uppercase GraphQL enum values
- */
-function transformRubric(rubric: Record<string, unknown>) {
-  return {
-    ...rubric,
-    reviewStatus:
-      REVERSE_REVIEW_STATUS[rubric['reviewStatus'] as string] ||
-      rubric['reviewStatus'],
-  };
-}
 
 export const rubricResolver = {
   Query: {
-    getAdaptiveRubricsBySchemaExId: async (
+    getAdaptiveRubricBySession: async (
       _: unknown,
-      args: { schemaExId: string }
+      args: { sessionId: number }
     ) => {
       try {
-        const rubrics = await rubricService.getRubricsBySchemaExId(
-          args.schemaExId
+        const rubrics = await rubricService.getRubricsBySimulationId(
+          args.sessionId
         );
-        return rubrics.map((r) =>
-          transformRubric(r as unknown as Record<string, unknown>)
-        );
-      } catch (error) {
-        logger.error('Error fetching adaptive rubrics by schemaExId:', error);
-        throw new Error('Failed to fetch adaptive rubrics by schemaExId');
-      }
-    },
-
-    getAdaptiveRubricsBySession: async (
-      _: unknown,
-      args: { sessionId: string }
-    ) => {
-      try {
-        const rubrics = await rubricService.getRubricsBySession(args.sessionId);
-        return rubrics.map((r) =>
-          transformRubric(r as unknown as Record<string, unknown>)
-        );
+        return rubrics;
       } catch (error) {
         logger.error('Error fetching adaptive rubrics by sessionId:', error);
         throw new Error('Failed to fetch adaptive rubrics by sessionId');
@@ -54,22 +23,16 @@ export const rubricResolver = {
     getRubricsForReview: async (
       _: unknown,
       args: {
-        sessionId?: number;
-        projectExId?: string;
-        schemaExId?: string;
+        rubricId?: number;
         reviewStatus?: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS];
       }
     ) => {
       try {
         const rubrics = await rubricService.getRubricsForReview(
-          args.sessionId,
-          args.projectExId,
-          args.schemaExId,
+          args.rubricId,
           args.reviewStatus ?? 'pending'
         );
-        return rubrics.map((r) =>
-          transformRubric(r as unknown as Record<string, unknown>)
-        );
+        return rubrics;
       } catch (error) {
         logger.error('Error fetching rubrics for review:', error);
         throw new Error('Failed to fetch rubrics for review');
@@ -81,22 +44,22 @@ export const rubricResolver = {
     judge: async (
       _: unknown,
       args: {
-        adaptiveRubricId: string;
+        adaptiveRubricId: number;
         evaluatorType: string;
         accountId: string | null;
-        scores: object;
+        answer: string;
+        comment?: string;
         overallScore: number;
-        summary?: string;
       }
     ) => {
       try {
         const result = await judgeService.createJudgeRecord(
-          args.adaptiveRubricId,
+          String(args.adaptiveRubricId),
           args.evaluatorType,
           args.accountId,
-          args.scores,
+          args.answer,
           args.overallScore,
-          args.summary
+          args.comment
         );
         return result;
       } catch (error) {

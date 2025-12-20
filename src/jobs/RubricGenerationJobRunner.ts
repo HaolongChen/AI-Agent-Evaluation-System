@@ -9,11 +9,9 @@ import {
 } from '../langGraph/agent.ts';
 import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
 import { prisma } from '../config/prisma.ts';
-import type { Prisma } from '../../build/generated/prisma/client.ts';
-import { analyticsService } from '../services/AnalyticsService.ts';
+import { executionService } from '../services/ExecutionService.ts';
 import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
@@ -27,24 +25,9 @@ export interface RubricGenerationResult {
     | 'awaiting_human_evaluation';
   message?: string;
   rubric?: Rubric | null;
-  hardConstraints?: string[];
-  softConstraints?: string[];
-  hardConstraintsAnswers?: boolean[];
-  softConstraintsAnswers?: string[];
   evaluationScore?: number | undefined;
   finalReport?: FinalReport | null;
-  analysis?: string;
   error?: string;
-}
-
-/**
- * Metadata stored in session for HITL tracking (kept aligned with GraphExecutionService)
- */
-interface SessionMetadata {
-  threadId: string;
-  goldenSetId?: number;
-  skipHumanReview?: boolean;
-  skipHumanEvaluation?: boolean;
 }
 
 /**
@@ -74,12 +57,7 @@ interface GraphResult {
   rubricApproved?: boolean;
   rubricFinal?: Rubric | null;
   finalReport?: FinalReport | null;
-  hardConstraints?: string[];
-  softConstraints?: string[];
-  hardConstraintsAnswers?: boolean[];
-  softConstraintsAnswers?: string[];
   agentEvaluation?: { overallScore?: number } | null;
-  analysis?: string;
   __interrupt__?: InterruptInfo[];
 }
 
@@ -96,10 +74,7 @@ export class RubricGenerationJobRunner {
   private isCompleted: boolean = false;
 
   constructor(
-    private readonly goldenSetId: string,
-    private readonly projectExId: string,
-    private readonly schemaExId: string,
-    private readonly copilotType: CopilotType,
+    private readonly goldenSetId: number,
     private readonly query: string,
     private readonly context: string,
     private readonly candidateOutput: string,
@@ -127,36 +102,41 @@ export class RubricGenerationJobRunner {
 
   /**
    * Start the rubric generation job using LangGraph workflow.
-   * - Creates an EvaluationSession record for observability and HITL resumption
+   * - Creates a copilotSimulation record for observability and HITL resumption
    * - Invokes graph/automatedGraph depending on skip flags
    * - Saves rubric + final report to DB following GraphExecutionService semantics
    */
   async startJob(): Promise<void> {
     logger.info(
-      `Starting rubric generation job for goldenSet ${this.goldenSetId} (${this.projectExId}/${this.schemaExId}) with model ${this.modelName}`
+      `Starting rubric generation job for goldenSet ${this.goldenSetId} with model ${this.modelName}`
     );
 
     try {
       // Create a unique thread ID for this session (used by LangGraph checkpointer)
       const threadId = uuidv4();
 
-      // Prepare metadata for HITL tracking
-      const metadata: SessionMetadata = {
-        threadId,
-        goldenSetId: Number.parseInt(this.goldenSetId, 10),
-        skipHumanReview: this.skipHumanReview,
-        skipHumanEvaluation: this.skipHumanEvaluation,
-      };
-
-      // Create the evaluation session in database
-      const session = await analyticsService.createEvaluationSession(
-        this.projectExId,
-        this.schemaExId,
-        this.copilotType,
+      // Create the simulation session in database
+      const session = await executionService.createSimulationSession(
+        this.goldenSetId,
         this.modelName,
-        SESSION_STATUS.PENDING,
-        metadata as unknown as Prisma.InputJsonValue
+        {
+          skipHumanReview: this.skipHumanReview,
+          skipHumanEvaluation: this.skipHumanEvaluation,
+        }
       );
+
+      // Update metadata with threadId
+      await prisma.copilotSimulation.update({
+        where: { id: session.id },
+        data: {
+          metadata: {
+            threadId,
+            goldenSetId: this.goldenSetId,
+            skipHumanReview: this.skipHumanReview,
+            skipHumanEvaluation: this.skipHumanEvaluation,
+          },
+        },
+      });
 
       const graphToUse =
         this.skipHumanReview && this.skipHumanEvaluation
@@ -172,7 +152,7 @@ export class RubricGenerationJobRunner {
         thread_id: threadId,
         provider,
         model: this.modelName,
-        projectExId: this.projectExId,
+        goldenSetId: this.goldenSetId,
         skipHumanReview: this.skipHumanReview,
         skipHumanEvaluation: this.skipHumanEvaluation,
       };
@@ -209,7 +189,7 @@ export class RubricGenerationJobRunner {
       }
 
       // Update session status
-      await prisma.evaluationSession.update({
+      await prisma.copilotSimulation.update({
         where: { id: session.id },
         data: {
           status:
@@ -224,12 +204,7 @@ export class RubricGenerationJobRunner {
       if (rubricForResponse) {
         await evaluationPersistenceService.saveRubric(
           session.id,
-          this.projectExId,
-          this.schemaExId,
-          rubricForResponse,
-          this.query,
-          this.candidateOutput,
-          this.modelName
+          rubricForResponse
         );
       }
 
@@ -237,23 +212,8 @@ export class RubricGenerationJobRunner {
       if (graphStatus === 'completed' && result.finalReport) {
         await evaluationPersistenceService.saveFinalReport(
           session.id,
-          session,
           result.finalReport
         );
-
-        // Save judge records (agent and human evaluations) if rubric exists
-        if (rubricForResponse) {
-          const rubricId =
-            await evaluationPersistenceService.getRubricIdBySessionId(
-              session.id
-            );
-          if (rubricId) {
-            await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-              rubricId,
-              result.finalReport
-            );
-          }
-        }
       }
 
       const rubricResult: RubricGenerationResult = {
@@ -263,61 +223,13 @@ export class RubricGenerationJobRunner {
         graphStatus,
         message,
         rubric: rubricForResponse ?? null,
-        hardConstraints: result.hardConstraints || [],
-        softConstraints: result.softConstraints || [],
-        hardConstraintsAnswers: result.hardConstraintsAnswers || [],
-        softConstraintsAnswers: result.softConstraintsAnswers || [],
         evaluationScore: result.agentEvaluation?.overallScore,
         finalReport: result.finalReport ?? null,
-        ...(result.analysis !== undefined && { analysis: result.analysis }),
       };
-
-      // Log constraints and evaluation info for visibility
-      if (
-        rubricResult.hardConstraints &&
-        rubricResult.hardConstraints.length > 0
-      ) {
-        logger.info(
-          `Hard Constraints (${rubricResult.hardConstraints.length}):`
-        );
-        rubricResult.hardConstraints.forEach((constraint, index) => {
-          const answer = rubricResult.hardConstraintsAnswers?.[index];
-          logger.info(
-            `  ${index + 1}. ${constraint} ${
-              answer !== undefined ? `[${answer ? 'PASS' : 'FAIL'}]` : ''
-            }`
-          );
-        });
-      }
-
-      if (
-        rubricResult.softConstraints &&
-        rubricResult.softConstraints.length > 0
-      ) {
-        logger.info(
-          `Soft Constraints (${rubricResult.softConstraints.length}):`
-        );
-        rubricResult.softConstraints.forEach((constraint, index) => {
-          const answer = rubricResult.softConstraintsAnswers?.[index];
-          logger.info(
-            `  ${index + 1}. ${constraint} ${
-              answer !== undefined ? `[${answer}]` : ''
-            }`
-          );
-        });
-      }
 
       if (rubricResult.evaluationScore !== undefined) {
         logger.info(
           `Overall Evaluation Score: ${rubricResult.evaluationScore}`
-        );
-      }
-
-      if (rubricResult.analysis) {
-        logger.info(
-          `Analysis: ${rubricResult.analysis.substring(0, 200)}${
-            rubricResult.analysis.length > 200 ? '...' : ''
-          }`
         );
       }
 
@@ -337,7 +249,6 @@ export class RubricGenerationJobRunner {
         logger.info(
           `Generated Rubric: ${rubricResult.rubric.id} (v${rubricResult.rubric.version})`
         );
-        logger.info(`  Criteria count: ${rubricResult.rubric.criteria.length}`);
         logger.info(`  Total weight: ${rubricResult.rubric.totalWeight}`);
       }
 
@@ -411,17 +322,13 @@ if (
   RUN_KUBERNETES_JOBS &&
   process.argv[2] &&
   process.argv[3] &&
-  process.argv[4] &&
-  process.argv[5]
+  process.argv[4]
 ) {
   logger.debug(`RubricGenerationJobRunner CLI args: ${process.argv}`);
 
   const args = z
     .object({
-      goldenSetId: z.string().min(1, 'goldenSetId is required'),
-      projectExId: z.string().min(1, 'projectExId is required'),
-      schemaExId: z.string().min(1, 'schemaExId is required'),
-      copilotType: z.string().min(1, 'copilotType is required'),
+      goldenSetId: z.coerce.number().int().positive('goldenSetId is required'),
       query: z.string().min(1, 'query is required'),
       context: z.string(),
       candidateOutput: z.string(),
@@ -436,23 +343,17 @@ if (
         .transform((v) => v === 'true'),
     })
     .parse({
-      goldenSetId: process.argv[2] || '',
-      projectExId: process.argv[3] || '',
-      schemaExId: process.argv[4] || '',
-      copilotType: process.argv[5] || '',
-      query: process.argv[6] || '',
-      context: process.argv[7] || '',
-      candidateOutput: process.argv[8] || '',
-      modelName: process.argv[9] || 'gpt-4o',
-      skipHumanReview: process.argv[10],
-      skipHumanEvaluation: process.argv[11],
+      goldenSetId: process.argv[2],
+      query: process.argv[3] || '',
+      context: process.argv[4] || '',
+      candidateOutput: process.argv[5] || '',
+      modelName: process.argv[6] || 'gpt-4o',
+      skipHumanReview: process.argv[7],
+      skipHumanEvaluation: process.argv[8],
     });
 
   const jobRunner = new RubricGenerationJobRunner(
     args.goldenSetId,
-    args.projectExId,
-    args.schemaExId,
-    args.copilotType as CopilotType,
     args.query,
     args.context,
     args.candidateOutput,

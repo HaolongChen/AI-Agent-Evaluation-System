@@ -1,7 +1,10 @@
 import { prisma } from '../config/prisma.ts';
 import { REVIEW_STATUS } from '../config/constants.ts';
-import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
+import type {
+  Rubric,
+  Evaluation,
+  FinalReport,
+} from '../langGraph/state/state.ts';
 import { logger } from '../utils/logger.ts';
 
 /**
@@ -9,24 +12,34 @@ import { logger } from '../utils/logger.ts';
  *
  * Centralized service for persisting LangGraph evaluation results to the database.
  * Handles saving rubrics, judge records, and final reports from the LangGraph workflow.
+ *
+ * Note: LangGraph uses array-based criteria/scores, but DB uses single-value fields.
+ * This service handles the transformation by serializing arrays to JSON strings.
  */
 export class EvaluationPersistenceService {
   /**
    * Save or update a rubric to the database
+   * Maps LangGraph Rubric interface (with criteria array) to Prisma adaptiveRubric model
+   * The criteria array is serialized to JSON and stored in the content field
    */
   async saveRubric(
-    sessionId: number,
-    projectExId: string,
-    schemaExId: string,
+    simulationId: number,
     rubric: Rubric,
-    copilotInput: string,
-    copilotOutput: string,
-    modelName: string
+    modelProvider?: string
   ): Promise<{ id: number }> {
     try {
-      // Check if rubric already exists for this session (upsert by sessionId)
-      const existing = await prisma.adaptiveRubric.findFirst({
-        where: { sessionId },
+      // Serialize criteria to JSON for storage
+      const contentJson = JSON.stringify(rubric.criteria);
+      // Use first criterion's name as title, or default
+      const title = rubric.criteria[0]?.name ?? 'Evaluation Rubric';
+      // Use first criterion's weight or totalWeight
+      const weights = rubric.criteria[0]?.weight ?? rubric.totalWeight;
+      // expectedAnswer based on whether first criterion is hard constraint
+      const expectedAnswer = rubric.criteria[0]?.isHardConstraint ?? true;
+
+      // Check if rubric already exists for this simulation (1:1 relation via @unique)
+      const existing = await prisma.adaptiveRubric.findUnique({
+        where: { simulationId },
         select: { id: true },
       });
 
@@ -34,14 +47,15 @@ export class EvaluationPersistenceService {
         await prisma.adaptiveRubric.update({
           where: { id: existing.id },
           data: {
-            rubricId: rubric.id,
             version: rubric.version,
-            criteria: JSON.parse(JSON.stringify(rubric.criteria)),
+            title,
+            content: contentJson,
+            expectedAnswer,
+            weights,
             totalWeight: rubric.totalWeight,
-            copilotInput,
-            copilotOutput,
-            modelName,
+            modelProvider: modelProvider ?? null,
             reviewStatus: REVIEW_STATUS.PENDING,
+            updatedAt: new Date(),
           },
         });
         return { id: existing.id };
@@ -49,16 +63,14 @@ export class EvaluationPersistenceService {
 
       const created = await prisma.adaptiveRubric.create({
         data: {
-          projectExId,
-          schemaExId,
-          sessionId,
-          rubricId: rubric.id,
+          simulationId,
           version: rubric.version,
-          criteria: JSON.parse(JSON.stringify(rubric.criteria)),
+          title,
+          content: contentJson,
+          expectedAnswer,
+          weights,
           totalWeight: rubric.totalWeight,
-          copilotInput,
-          copilotOutput,
-          modelName,
+          modelProvider: modelProvider ?? null,
           reviewStatus: REVIEW_STATUS.PENDING,
         },
       });
@@ -70,7 +82,21 @@ export class EvaluationPersistenceService {
   }
 
   /**
+   * Transform Evaluation (with scores array) to DB format (answer as JSON string)
+   */
+  private transformEvaluationToDb(evaluation: Evaluation): {
+    answer: string;
+    comment: string;
+  } {
+    return {
+      answer: JSON.stringify(evaluation.scores),
+      comment: evaluation.summary,
+    };
+  }
+
+  /**
    * Save judge records (agent and human evaluations) from the final report
+   * Maps LangGraph Evaluation interface to Prisma adaptiveRubricJudgeRecord model
    */
   async saveJudgeRecordsFromFinalReport(
     adaptiveRubricId: number,
@@ -79,32 +105,34 @@ export class EvaluationPersistenceService {
     try {
       // Save agent evaluation as judge record if present
       if (finalReport.agentEvaluation) {
+        const { answer, comment } = this.transformEvaluationToDb(
+          finalReport.agentEvaluation
+        );
         await prisma.adaptiveRubricJudgeRecord.create({
           data: {
             adaptiveRubricId,
             evaluatorType: finalReport.agentEvaluation.evaluatorType,
             accountId: null, // null for agent evaluations
-            scores: JSON.parse(
-              JSON.stringify(finalReport.agentEvaluation.scores)
-            ),
+            answer,
+            comment,
             overallScore: finalReport.agentEvaluation.overallScore,
-            summary: finalReport.agentEvaluation.summary,
           },
         });
       }
 
       // Save human evaluation as judge record if present
       if (finalReport.humanEvaluation) {
+        const { answer, comment } = this.transformEvaluationToDb(
+          finalReport.humanEvaluation
+        );
         await prisma.adaptiveRubricJudgeRecord.create({
           data: {
             adaptiveRubricId,
             evaluatorType: finalReport.humanEvaluation.evaluatorType,
-            accountId: null, // would be set by human evaluator in submitHumanEvaluation
-            scores: JSON.parse(
-              JSON.stringify(finalReport.humanEvaluation.scores)
-            ),
+            accountId: finalReport.humanEvaluation.accountId ?? null,
+            answer,
+            comment,
             overallScore: finalReport.humanEvaluation.overallScore,
-            summary: finalReport.humanEvaluation.summary,
           },
         });
       }
@@ -120,14 +148,9 @@ export class EvaluationPersistenceService {
   async saveJudgeRecord(
     adaptiveRubricId: number,
     evaluatorType: 'agent' | 'human',
-    scores: Array<{
-      criterionId: string;
-      score: number;
-      reasoning: string;
-      evidence?: string[];
-    }>,
+    answer: string,
     overallScore: number,
-    summary: string,
+    comment?: string | null,
     accountId?: string | null
   ): Promise<void> {
     try {
@@ -136,9 +159,9 @@ export class EvaluationPersistenceService {
           adaptiveRubricId,
           evaluatorType,
           accountId: accountId ?? null,
-          scores: JSON.parse(JSON.stringify(scores)),
+          answer,
+          comment: comment ?? null,
           overallScore,
-          summary,
         },
       });
     } catch (error) {
@@ -149,30 +172,21 @@ export class EvaluationPersistenceService {
 
   /**
    * Save final report to the database
+   * Maps LangGraph FinalReport interface to Prisma evaluationResult model
    */
   async saveFinalReport(
-    sessionId: number,
-    session: {
-      schemaExId: string;
-      copilotType: CopilotType;
-      modelName: string;
-    },
+    simulationId: number,
     finalReport: FinalReport
   ): Promise<void> {
     try {
       await prisma.evaluationResult.create({
         data: {
-          sessionId,
-          schemaExId: session.schemaExId,
-          copilotType: session.copilotType,
-          modelName: session.modelName,
+          simulationId,
           evaluationStatus: 'completed',
           verdict: finalReport.verdict,
           overallScore: finalReport.overallScore,
           summary: finalReport.summary,
-          detailedAnalysis: finalReport.detailedAnalysis,
           discrepancies: finalReport.discrepancies,
-          auditTrace: finalReport.auditTrace,
           generatedAt: new Date(finalReport.generatedAt),
         },
       });
@@ -183,17 +197,19 @@ export class EvaluationPersistenceService {
   }
 
   /**
-   * Get the adaptive rubric ID for a session
+   * Get the adaptive rubric ID for a simulation
    */
-  async getRubricIdBySessionId(sessionId: number): Promise<number | null> {
+  async getRubricIdBySimulationId(
+    simulationId: number
+  ): Promise<number | null> {
     try {
-      const rubric = await prisma.adaptiveRubric.findFirst({
-        where: { sessionId },
+      const rubric = await prisma.adaptiveRubric.findUnique({
+        where: { simulationId },
         select: { id: true },
       });
       return rubric?.id ?? null;
     } catch (error) {
-      logger.error('Error getting rubric ID by session ID:', error);
+      logger.error('Error getting rubric ID by simulation ID:', error);
       return null;
     }
   }

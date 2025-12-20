@@ -8,7 +8,6 @@ import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
 import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
 import type { Prisma } from '../../build/generated/prisma/client.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
@@ -99,7 +98,7 @@ export class RubricReviewJobRunner {
    */
   async submitRubricReview(): Promise<RubricReviewJobResult> {
     // Get the session to retrieve metadata
-    const session = await prisma.evaluationSession.findUnique({
+    const session = await prisma.copilotSimulation.findUnique({
       where: { id: this.sessionId },
       include: { rubric: true },
     });
@@ -113,8 +112,11 @@ export class RubricReviewJobRunner {
       throw new Error('Thread ID mismatch');
     }
 
+    // Get first rubric from array (1:N relation but typically 1:1)
+    const rubric = session.rubric?.[0];
+
     // Update rubric in database with review status
-    if (session.rubric) {
+    if (rubric) {
       const updateData: Prisma.adaptiveRubricUpdateInput = {
         reviewStatus: this.approved
           ? REVIEW_STATUS.APPROVED
@@ -124,15 +126,16 @@ export class RubricReviewJobRunner {
       };
 
       if (this.modifiedRubric) {
-        updateData.criteria = JSON.parse(
-          JSON.stringify(this.modifiedRubric.criteria)
-        );
+        // Transform workflow criteria to DB format (serialize to JSON)
+        updateData.content = JSON.stringify(this.modifiedRubric.criteria);
+        updateData.title = this.modifiedRubric.criteria[0]?.name ?? 'Rubric';
+        updateData.weights = this.modifiedRubric.criteria[0]?.weight ?? 1;
         updateData.totalWeight = this.modifiedRubric.totalWeight;
         updateData.version = this.modifiedRubric.version;
       }
 
       await prisma.adaptiveRubric.update({
-        where: { id: session.rubric.id },
+        where: { id: rubric.id },
         data: updateData,
       });
     }
@@ -153,7 +156,7 @@ export class RubricReviewJobRunner {
       thread_id: this.threadId,
       provider,
       model: session.modelName,
-      projectExId: session.projectExId,
+      goldenSetId: session.goldenSetId,
       skipHumanReview: metadata.skipHumanReview ?? false,
       skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
     };
@@ -182,7 +185,7 @@ export class RubricReviewJobRunner {
     }
 
     // Update session status
-    await prisma.evaluationSession.update({
+    await prisma.copilotSimulation.update({
       where: { id: this.sessionId },
       data: {
         status:
@@ -197,21 +200,8 @@ export class RubricReviewJobRunner {
     if (graphStatus === 'completed' && result.finalReport) {
       await evaluationPersistenceService.saveFinalReport(
         this.sessionId,
-        {
-          schemaExId: session.schemaExId,
-          copilotType: session.copilotType as CopilotType,
-          modelName: session.modelName,
-        },
         result.finalReport
       );
-
-      // Save judge records (agent and human evaluations) if rubric exists
-      if (session.rubric) {
-        await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-          session.rubric.id,
-          result.finalReport
-        );
-      }
     }
 
     return {

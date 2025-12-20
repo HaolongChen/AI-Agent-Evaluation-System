@@ -1,9 +1,6 @@
 import { executionService } from '../../services/ExecutionService.ts';
 import { logger } from '../../utils/logger.ts';
-import type { copilotType } from '../../utils/types.ts';
 import {
-  REVERSE_COPILOT_TYPES,
-  REVERSE_SESSION_STATUS,
   REVERSE_REVIEW_STATUS,
   REVERSE_EVALUATION_STATUS,
 } from '../../config/constants.ts';
@@ -28,12 +25,8 @@ function transformEvaluationResult(
   result: Record<string, unknown> | null | undefined
 ) {
   if (!result) return null;
-  const copilotKey = result[
-    'copilotType'
-  ] as keyof typeof REVERSE_COPILOT_TYPES;
   return {
     ...result,
-    copilotType: REVERSE_COPILOT_TYPES[copilotKey] || result['copilotType'],
     evaluationStatus:
       REVERSE_EVALUATION_STATUS[result['evaluationStatus'] as string] ||
       result['evaluationStatus'],
@@ -45,19 +38,17 @@ function transformEvaluationResult(
  * Converts lowercase enum values to uppercase GraphQL enum values
  */
 function transformSession(session: Record<string, unknown>) {
-  const copilotKey = session[
-    'copilotType'
-  ] as keyof typeof REVERSE_COPILOT_TYPES;
   return {
     ...session,
-    copilotType: REVERSE_COPILOT_TYPES[copilotKey] || session['copilotType'],
-    status:
-      REVERSE_SESSION_STATUS[session['status'] as string] || session['status'],
-    rubric: transformRubric(
-      session['rubric'] as Record<string, unknown> | null | undefined
-    ),
-    evaluationResult: transformEvaluationResult(
-      session['evaluationResult'] as Record<string, unknown> | null | undefined
+    rubric: Array.isArray(session['rubric'])
+      ? (session['rubric'] as Record<string, unknown>[]).map((r) =>
+          transformRubric(r)
+        )
+      : session['rubric']
+      ? [transformRubric(session['rubric'] as Record<string, unknown>)]
+      : [],
+    result: transformEvaluationResult(
+      session['result'] as Record<string, unknown> | null | undefined
     ),
   };
 }
@@ -66,16 +57,14 @@ export const sessionResolver = {
   Query: {
     getSession: async (_: unknown, args: { id: string }) => {
       const session = await executionService.getSession(args.id);
-      return session
-        ? transformSession(session as unknown as Record<string, unknown>)
-        : null;
+      logger.debug('Fetched session:', session);
+      return session;
     },
 
     getSessions: async (
       _: unknown,
       args: {
-        schemaExId?: string;
-        copilotType?: copilotType;
+        goldenSetId?: number;
         modelName?: string;
       }
     ) => {

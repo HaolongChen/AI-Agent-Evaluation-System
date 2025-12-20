@@ -1,25 +1,14 @@
 import { prisma } from '../config/prisma.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 import { logger } from '../utils/logger.ts';
 import { goldenSetService } from './GoldenSetService.ts';
-import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
 import {
   AZURE_OPENAI_DEPLOYMENT,
   GEMINI_API_KEY,
   GEMINI_MODEL,
   OPENAI_MODEL,
   USES_AZURE_OPENAI,
-  WS_URL,
 } from '../config/env.ts';
-import {
-  applyAndWatchJob,
-  type EvalJobResult,
-  type GenJobResult,
-} from '../kubernetes/utils/apply-from-file.ts';
-import { EvaluationJobRunner } from '../jobs/EvaluationJobRunner.ts';
-import { RubricGenerationJobRunner } from '../jobs/RubricGenerationJobRunner.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 
 const resolveDefaultModelName = (): string => {
   // Prefer Azure deployment when Azure is configured; otherwise fall back to Gemini if available.
@@ -37,10 +26,11 @@ const normalizeRequestedModelName = (modelName: string | undefined): string => {
 };
 
 export class ExecutionService {
-  async createEvaluationSession(
-    projectExId: string,
-    schemaExId: string,
-    copilotType: CopilotType,
+  /**
+   * Create a copilot simulation session for a golden set
+   */
+  async createSimulationSession(
+    goldenSetId: number,
     modelName: string,
     options?: {
       skipHumanReview?: boolean;
@@ -48,312 +38,80 @@ export class ExecutionService {
     }
   ) {
     try {
-      const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
-      const skipHumanReview = options?.skipHumanReview ?? true;
-      const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
       const resolvedModelName = normalizeRequestedModelName(modelName);
-
-      const goldenSets = await goldenSetService.getGoldenSets(
-        projectExId,
-        schemaExId,
-        REVERSE_COPILOT_TYPES[copilotType]
-      );
-      if (!goldenSets || goldenSets.length === 0) {
-        throw new Error('No golden sets found');
-      }
-      if (goldenSets.length > 1) {
-        throw new Error('Multiple golden sets found, expected only one');
-      }
-      const goldenSet = goldenSets[0];
-      if (!goldenSet) {
-        throw new Error('Golden set is undefined');
-      }
-      if (USE_KUBERNETES_JOBS) {
-        const evalJobResult = (await applyAndWatchJob(
-          `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
-          'default',
-          './src/jobs/EvaluationJobRunner.ts',
-          300000,
-          'evaluation',
-          projectExId,
-          WS_URL,
-          goldenSet.promptTemplate
-        )) as unknown as EvalJobResult;
-        logger.info(
-          'Evaluation job completed with status:',
-          evalJobResult.status
-        );
-        if (evalJobResult.status !== 'succeeded') {
-          throw new Error('Evaluation job failed');
-        }
-        const genJobResult = (await applyAndWatchJob(
-          `rubric-job-${projectExId}-${schemaExId}-${Date.now()}`,
-          'default',
-          './src/jobs/RubricGenerationJobRunner.ts',
-          300000,
-          'generation',
-          String(goldenSet.id),
-          projectExId,
-          schemaExId,
-          String(copilotType),
-          goldenSet.promptTemplate,
-          JSON.stringify(goldenSet.idealResponse),
-          evalJobResult.editableText || '',
-          resolvedModelName,
-          String(skipHumanReview),
-          String(skipHumanEvaluation)
-        )) as unknown as GenJobResult;
-        logger.info(
-          'Rubric generation job completed with status:',
-          genJobResult.status
-        );
-        return genJobResult;
-      } else {
-        const evalJobRunner = new EvaluationJobRunner(
-          projectExId,
-          WS_URL,
-          goldenSet.promptTemplate
-        );
-        evalJobRunner.startJob();
-        const { editableText } = await evalJobRunner.waitForCompletion();
-        logger.info('Evaluation job completed with response:', editableText);
-        const genJobRunner = new RubricGenerationJobRunner(
-          String(goldenSet.id),
-          projectExId,
-          schemaExId,
-          copilotType,
-          goldenSet.promptTemplate,
-          JSON.stringify(goldenSet.idealResponse),
-          editableText,
-          resolvedModelName,
-          skipHumanReview,
-          skipHumanEvaluation
-        );
-        genJobRunner.startJob();
-        const genResult = await genJobRunner.waitForCompletion();
-        logger.info(
-          'Rubric generation job completed with response:',
-          genResult
-        );
-        return { candidateOutput: editableText, ...genResult };
-      }
-    } catch (error) {
-      logger.error('Error creating evaluation session:', error);
-      throw new Error('Failed to create evaluation session');
-    }
-  }
-
-  async createEvaluationSessions(options?: {
-    skipHumanReview?: boolean;
-    skipHumanEvaluation?: boolean;
-  }) {
-    try {
-      const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
-      // Bulk execution defaults to fully automated evaluation
       const skipHumanReview = options?.skipHumanReview ?? true;
       const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
-      const resolvedModelName = normalizeRequestedModelName(undefined);
 
-      const goldenSets = await goldenSetService.getGoldenSets();
-      if (!goldenSets || goldenSets.length === 0) {
-        throw new Error('No golden sets found');
+      // Verify golden set exists
+      const goldenSet = await goldenSetService.getGoldenSetById(goldenSetId);
+      if (!goldenSet) {
+        throw new Error('Golden set not found');
       }
 
-      logger.info(
-        `Creating ${goldenSets.length} evaluation sessions concurrently`
-      );
+      // Create copilot simulation session
+      const session = await prisma.copilotSimulation.create({
+        data: {
+          goldenSetId,
+          modelName: resolvedModelName,
+          status: SESSION_STATUS.PENDING,
+          metadata: {
+            skipHumanReview,
+            skipHumanEvaluation,
+          },
+        },
+      });
 
-      if (USE_KUBERNETES_JOBS) {
-        const results = await Promise.allSettled(
-          goldenSets.map(async (goldenSet) => {
-            const evalJobResult = (await applyAndWatchJob(
-              `evaluation-job-${goldenSet.projectExId}-${
-                goldenSet.schemaExId
-              }-${Date.now()}`,
-              'default',
-              './src/jobs/EvaluationJobRunner.ts',
-              300000,
-              'evaluation',
-              goldenSet.projectExId,
-              WS_URL,
-              goldenSet.promptTemplate
-            )) as unknown as EvalJobResult;
-            logger.info(
-              `Evaluation job for golden set ${goldenSet.id} completed with status:`,
-              evalJobResult.status
-            );
-            if (evalJobResult.status !== 'succeeded') {
-              throw new Error(
-                `Evaluation job for golden set ${goldenSet.id} failed`
-              );
-            }
-            const genJobResult = (await applyAndWatchJob(
-              `rubric-job-${goldenSet.projectExId}-${
-                goldenSet.schemaExId
-              }-${Date.now()}`,
-              'default',
-              './src/jobs/RubricGenerationJobRunner.ts',
-              300000,
-              'generation',
-              String(goldenSet.id),
-              goldenSet.projectExId,
-              goldenSet.schemaExId,
-              String(goldenSet.copilotType as unknown as CopilotType),
-              goldenSet.promptTemplate,
-              JSON.stringify(goldenSet.idealResponse),
-              evalJobResult.editableText || '',
-              resolvedModelName,
-              String(skipHumanReview),
-              String(skipHumanEvaluation)
-            )) as unknown as GenJobResult;
-            logger.info(
-              `Rubric generation job for golden set ${goldenSet.id} completed with status:`,
-              genJobResult.status
-            );
-            return genJobResult;
-          })
-        );
-
-        const successful = results.filter((r) => r.status === 'fulfilled');
-        const failed = results.filter((r) => r.status === 'rejected');
-
-        logger.info(
-          `Kubernetes jobs created: ${successful.length} successful, ${failed.length} failed`
-        );
-
-        if (failed.length > 0) {
-          failed.forEach((result, index) => {
-            if (result.status === 'rejected') {
-              logger.error(`Job ${index + 1} failed:`, result.reason);
-            }
-          });
-        }
-
-        // return {
-        //   successful: successful.map((r) =>
-        //     r.status === 'fulfilled' ? r.value : null
-        //   ),
-        //   failed: failed.map((r, index) => ({
-        //     goldenSet: goldenSets[successful.length + index],
-        //     error: r.status === 'rejected' ? r.reason : null,
-        //   })),
-        //   summary: {
-        //     total: goldenSets.length,
-        //     successCount: successful.length,
-        //     failureCount: failed.length,
-        //   },
-        // };
-      } else {
-        const results = await Promise.allSettled(
-          goldenSets.map(async (goldenSet) => {
-            const evalJobRunner = new EvaluationJobRunner(
-              goldenSet.projectExId,
-              WS_URL,
-              goldenSet.promptTemplate
-            );
-            evalJobRunner.startJob();
-            const { editableText } = await evalJobRunner.waitForCompletion();
-            logger.info(
-              `Evaluation job for golden set ${goldenSet.id} completed with response:`,
-              editableText
-            );
-
-            const rubricJobRunner = new RubricGenerationJobRunner(
-              String(goldenSet.id),
-              goldenSet.projectExId,
-              goldenSet.schemaExId,
-              goldenSet.copilotType as unknown as CopilotType,
-              goldenSet.promptTemplate,
-              JSON.stringify(goldenSet.idealResponse),
-              editableText,
-              resolvedModelName,
-              skipHumanReview,
-              skipHumanEvaluation
-            );
-            rubricJobRunner.startJob();
-            const rubricResult = await rubricJobRunner.waitForCompletion();
-            logger.info(
-              `Rubric generation job for golden set ${goldenSet.id} completed with response:`,
-              rubricResult
-            );
-            return rubricResult;
-          })
-        );
-
-        const successful = results.filter((r) => r.status === 'fulfilled');
-        const failed = results.filter((r) => r.status === 'rejected');
-
-        logger.info(
-          `Local evaluation jobs completed: ${successful.length} successful, ${failed.length} failed`
-        );
-
-        if (failed.length > 0) {
-          failed.forEach((result, index) => {
-            if (result.status === 'rejected') {
-              logger.error(`Local job ${index + 1} failed:`, result.reason);
-            }
-          });
-        }
-
-        // return {
-        //   successful: successful.map((r) =>
-        //     r.status === "fulfilled" ? r.value : null
-        //   ),
-        //   failed: failed.map((r, index) => ({
-        //     goldenSet: goldenSets[successful.length + index],
-        //     error: r.status === "rejected" ? r.reason : null,
-        //   })),
-        //   summary: {
-        //     total: goldenSets.length,
-        //     successCount: successful.length,
-        //     failureCount: failed.length,
-        //   },
-        // };
-      }
+      return session;
     } catch (error) {
-      logger.error('Error creating evaluation sessions:', error);
-      throw new Error('Failed to create evaluation sessions');
+      logger.error('Error creating simulation session:', error);
+      throw new Error('Failed to create simulation session');
     }
   }
 
   async getSession(id: string) {
     try {
-      return prisma.evaluationSession.findUnique({
+      return prisma.copilotSimulation.findUnique({
         where: { id: parseInt(id) },
         include: {
-          rubric: true,
+          rubric: {
+            include: {
+              judgeRecord: true,
+            },
+          },
           result: true,
         },
       });
     } catch (error) {
-      logger.error('Error fetching evaluation session:', error);
-      throw new Error('Failed to fetch evaluation session');
+      logger.error('Error fetching simulation session:', error);
+      throw new Error('Failed to fetch simulation session');
     }
   }
 
   async getSessions(filters: {
-    schemaExId?: string;
-    copilotType?: CopilotType;
+    goldenSetId?: number;
     modelName?: string;
     status?: (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS];
   }) {
     try {
-      return prisma.evaluationSession.findMany({
+      return prisma.copilotSimulation.findMany({
         where: {
-          ...(filters.schemaExId && { schemaExId: filters.schemaExId }),
-          ...(filters.copilotType && { copilotType: filters.copilotType }),
+          ...(filters.goldenSetId && { goldenSetId: filters.goldenSetId }),
           ...(filters.modelName && { modelName: filters.modelName }),
           ...(filters.status && { status: filters.status }),
         },
         include: {
-          rubric: true,
+          rubric: {
+            include: {
+              judgeRecord: true,
+            },
+          },
           result: true,
         },
         orderBy: { startedAt: 'desc' },
       });
     } catch (error) {
-      logger.error('Error fetching evaluation sessions:', error);
-      throw new Error('Failed to fetch evaluation sessions');
+      logger.error('Error fetching simulation sessions:', error);
+      throw new Error('Failed to fetch simulation sessions');
     }
   }
 
@@ -365,12 +123,13 @@ export class ExecutionService {
       roundtripCount?: number;
       inputTokens?: number;
       outputTokens?: number;
+      totalTokens?: number;
       contextPercentage?: number;
       metadata?: object;
     }
   ) {
     try {
-      return prisma.evaluationSession.update({
+      return prisma.copilotSimulation.update({
         where: { id: parseInt(sessionId) },
         data: {
           status,
@@ -382,14 +141,15 @@ export class ExecutionService {
             roundtripCount: metrics.roundtripCount,
             inputTokens: metrics.inputTokens,
             outputTokens: metrics.outputTokens,
+            totalTokens: metrics.totalTokens,
             contextPercentage: metrics.contextPercentage,
             metadata: metrics.metadata,
           }),
         },
       });
     } catch (error) {
-      logger.error('Error updating evaluation session status:', error);
-      throw new Error('Failed to update evaluation session status');
+      logger.error('Error updating simulation session status:', error);
+      throw new Error('Failed to update simulation session status');
     }
   }
 }

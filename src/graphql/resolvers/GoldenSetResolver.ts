@@ -1,6 +1,10 @@
 import { goldenSetService } from '../../services/GoldenSetService.ts';
-import { COPILOT_TYPES } from '../../config/constants.ts';
+import {
+  COPILOT_TYPES,
+  REVERSE_COPILOT_TYPES,
+} from '../../config/constants.ts';
 import { logger } from '../../utils/logger.ts';
+import type { CopilotType } from '../../../build/generated/prisma/enums.ts';
 
 export const goldenResolver = {
   Query: {
@@ -8,12 +12,15 @@ export const goldenResolver = {
       _: unknown,
       args: { copilotType?: keyof typeof COPILOT_TYPES }
     ) => {
-      return goldenSetService.getGoldenSetSchemas(args.copilotType);
+      const result = await goldenSetService.getGoldenSetSchemas(
+        args.copilotType
+      );
+      return result;
     },
 
     getGoldenSets: async (
       _: unknown,
-      args: { projectExId?: string; copilotType?: keyof typeof COPILOT_TYPES }
+      args: { projectExId?: string; copilotType?: CopilotType }
     ) => {
       try {
         const goldenSets = await goldenSetService.getGoldenSets(
@@ -24,11 +31,7 @@ export const goldenResolver = {
         const results = goldenSets.map((gs) => {
           return {
             ...gs,
-            copilotType: Object.keys(COPILOT_TYPES).find(
-              (key) =>
-                COPILOT_TYPES[key as keyof typeof COPILOT_TYPES] ===
-                gs.copilotType
-            ) as keyof typeof COPILOT_TYPES,
+            copilotType: gs.copilotType,
           };
         });
         return results;
@@ -40,45 +43,59 @@ export const goldenResolver = {
   },
 
   Mutation: {
-    updateGoldenSetProject: async (
+    createGoldenSet: async (
       _: unknown,
       args: {
         projectExId: string;
         schemaExId: string;
         copilotType: keyof typeof COPILOT_TYPES;
-        description: string;
-        promptTemplate: string;
-        idealResponse: object;
+        userInput: Array<{ description?: string; content: object }>;
+        copilotOutput: Array<{ editableText: string }>;
       }
     ) => {
       try {
-        const result = await goldenSetService.updateGoldenSetProject(
+        const result = await goldenSetService.createGoldenSet(
           args.projectExId,
           args.schemaExId,
           args.copilotType,
-          args.description,
-          args.promptTemplate,
-          args.idealResponse
+          args.userInput,
+          args.copilotOutput
         );
         if (!result) {
-          logger.warn('No result returned from updateGoldenSetProject');
-          throw new Error('Failed to update golden set project');
+          throw new Error('Failed to create golden set');
         }
-        if ('message' in result) {
-          throw new Error(result.message);
-        }
-        const newResult = {
+        return {
           ...result,
-          copilotType: Object.keys(COPILOT_TYPES).find(
-            (key) =>
-              COPILOT_TYPES[key as keyof typeof COPILOT_TYPES] ===
-              result.copilotType
-          ) as keyof typeof COPILOT_TYPES,
+          copilotType: REVERSE_COPILOT_TYPES[result.copilotType as CopilotType],
         };
-        return newResult;
       } catch (error) {
-        logger.error('Error updating golden set project:', error);
-        throw new Error('Failed to update golden set project');
+        logger.error('Error creating golden set:', error);
+        throw new Error('Failed to create golden set');
+      }
+    },
+
+    updateGoldenSet: async (
+      _: unknown,
+      args: {
+        id: string;
+        isActive?: boolean[];
+      }
+    ) => {
+      try {
+        if (!args.isActive) {
+          throw new Error('isActive is required');
+        }
+        const result = await goldenSetService.updateGoldenSetIsActive(
+          parseInt(args.id),
+          args.isActive
+        );
+        return {
+          ...result,
+          copilotType: REVERSE_COPILOT_TYPES[result.copilotType as CopilotType],
+        };
+      } catch (error) {
+        logger.error('Error updating golden set:', error);
+        throw new Error('Failed to update golden set');
       }
     },
   },

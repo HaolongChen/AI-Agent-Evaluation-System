@@ -15,7 +15,7 @@ import { schemaLoaderNode } from './nodes/SchemaLoader.ts';
 const ContextSchema = z.object({
   provider: z.string().optional(),
   model: z.string().optional(),
-  projectExId: z.string().optional(),
+  goldenSetId: z.number().optional(),
   skipHumanReview: z.boolean().optional(),
   skipHumanEvaluation: z.boolean().optional(),
 });
@@ -28,7 +28,7 @@ export type GraphConfigurable = {
   thread_id: string;
   provider: string | undefined;
   model: string | undefined;
-  projectExId: string | undefined;
+  goldenSetId: number | undefined;
   skipHumanReview: boolean | undefined;
   skipHumanEvaluation: boolean | undefined;
 };

@@ -1,19 +1,31 @@
-import { Annotation } from "@langchain/langgraph";
+import { Annotation } from '@langchain/langgraph';
 
-// Types for rubric criteria
+/**
+ * Scoring scale for a rubric criterion
+ */
+export interface ScoringScale {
+  min: number;
+  max: number;
+  labels?: Record<number, string>;
+}
+
+/**
+ * Individual rubric criterion used in LangGraph workflow
+ * This is the internal workflow format - transformed when persisting to DB
+ */
 export interface RubricCriterion {
   id: string;
   name: string;
   description: string;
   weight: number;
-  scoringScale: {
-    min: number;
-    max: number;
-    labels?: Record<number, string>;
-  };
+  scoringScale: ScoringScale;
   isHardConstraint: boolean;
 }
 
+/**
+ * Rubric interface for LangGraph workflow
+ * Contains array of criteria for evaluation
+ */
 export interface Rubric {
   id: string;
   version: string;
@@ -23,23 +35,34 @@ export interface Rubric {
   updatedAt: string;
 }
 
+/**
+ * Individual evaluation score for a criterion
+ */
 export interface EvaluationScore {
   criterionId: string;
   score: number;
   reasoning: string;
-  evidence?: string[] | undefined;
+  evidence?: string[];
 }
 
+/**
+ * Evaluation interface for LangGraph workflow
+ * Contains array of scores for each criterion
+ */
 export interface Evaluation {
-  evaluatorType: "agent" | "human";
+  evaluatorType: 'agent' | 'human';
+  accountId?: string | null;
   scores: EvaluationScore[];
   overallScore: number;
   summary: string;
   timestamp: string;
 }
 
+/**
+ * FinalReport interface for LangGraph workflow
+ */
 export interface FinalReport {
-  verdict: "pass" | "fail" | "needs_review";
+  verdict: 'pass' | 'fail' | 'needs_review';
   overallScore: number;
   summary: string;
   detailedAnalysis: string;
@@ -66,7 +89,7 @@ export const rubricAnnotation = Annotation.Root({
   context: Annotation<string>,
   candidateOutput: Annotation<string>({
     value: (_prev, next) => next,
-    default: () => "",
+    default: () => '',
   }), // copilot's output to be evaluated
 
   // Schema fields

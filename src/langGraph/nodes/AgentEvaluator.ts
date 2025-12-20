@@ -100,7 +100,7 @@ Be objective and thorough in your assessment.
     criterionId: s.criterionId,
     score: s.score,
     reasoning: s.reasoning,
-    evidence: s.evidence,
+    evidence: s.evidence ?? [],
   }));
 
   // Calculate weighted overall score

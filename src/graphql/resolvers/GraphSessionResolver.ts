@@ -1,21 +1,11 @@
 import { graphExecutionService } from '../../services/GraphExecutionService.ts';
 import { logger } from '../../utils/logger.ts';
-import { CopilotType } from '../../../build/generated/prisma/enums.ts';
-import type { Rubric, RubricCriterion } from '../../langGraph/state/state.ts';
-
-/**
- * Map GraphQL CopilotType enum to Prisma CopilotType enum
- */
-const graphqlToPrismaCopilotType: Record<
-  string,
-  (typeof CopilotType)[keyof typeof CopilotType]
-> = {
-  DATA_MODEL_BUILDER: CopilotType.dataModel,
-  UI_BUILDER: CopilotType.uiBuilder,
-  ACTIONFLOW_BUILDER: CopilotType.actionflow,
-  LOG_ANALYZER: CopilotType.logAnalyzer,
-  AGENT_BUILDER: CopilotType.agentBuilder,
-};
+import type {
+  Rubric,
+  RubricCriterion,
+  Evaluation,
+  FinalReport,
+} from '../../langGraph/state/state.ts';
 
 /**
  * Input types matching GraphQL schema
@@ -25,11 +15,7 @@ export interface RubricCriterionInput {
   name: string;
   description: string;
   weight: number;
-  scoringScale: {
-    min: number;
-    max: number;
-    labels?: Record<string, string>;
-  };
+  scoringScale: { min: number; max: number; labels?: Record<number, string> };
   isHardConstraint: boolean;
 }
 
@@ -65,13 +51,7 @@ function transformRubricInput(
         name: c.name,
         description: c.description,
         weight: c.weight,
-        scoringScale: {
-          min: c.scoringScale.min,
-          max: c.scoringScale.max,
-          ...(c.scoringScale.labels && {
-            labels: c.scoringScale.labels as Record<number, string>,
-          }),
-        },
+        scoringScale: c.scoringScale,
         isHardConstraint: c.isHardConstraint,
       })
     ),
@@ -90,9 +70,6 @@ function transformRubricInput(
  * 1. startGraphSession - Starts the evaluation, returns when paused at humanReviewer
  * 2. submitRubricReview - Provides rubric review, resumes until humanEvaluator
  * 3. submitHumanEvaluation - Provides evaluation, completes the flow
- *
- * Alternatively:
- * - runAutomatedEvaluation - Runs the entire flow without human intervention
  */
 export const graphSessionResolver = {
   Query: {
@@ -108,11 +85,21 @@ export const graphSessionResolver = {
           sessionId: state.sessionId,
           status: mapStatusToGraphQL(state.status),
           threadId: state.threadId,
-          rubricDraft: state.rubricDraft,
-          rubricFinal: state.rubricFinal,
-          agentEvaluation: state.agentEvaluation,
-          humanEvaluation: state.humanEvaluation,
-          finalReport: state.finalReport,
+          rubricDraft: state.rubricDraft
+            ? transformRubricToOutput(state.rubricDraft)
+            : null,
+          rubricFinal: state.rubricFinal
+            ? transformRubricToOutput(state.rubricFinal)
+            : null,
+          agentEvaluation: state.agentEvaluation
+            ? transformEvaluationToOutput(state.agentEvaluation)
+            : null,
+          humanEvaluation: state.humanEvaluation
+            ? transformEvaluationToOutput(state.humanEvaluation)
+            : null,
+          finalReport: state.finalReport
+            ? transformFinalReportToOutput(state.finalReport)
+            : null,
         };
       } catch (error) {
         logger.error('Error getting graph session state:', error);
@@ -129,32 +116,20 @@ export const graphSessionResolver = {
     startGraphSession: async (
       _: unknown,
       args: {
-        projectExId: string;
-        schemaExId: string;
-        copilotType: string; // GraphQL enum comes as string
+        goldenSetId: number;
         modelName: string;
         skipHumanReview?: boolean;
         skipHumanEvaluation?: boolean;
       }
     ) => {
       try {
-        // Map GraphQL CopilotType to Prisma CopilotType
-        const prismaCopilotType = graphqlToPrismaCopilotType[args.copilotType];
-        if (!prismaCopilotType) {
-          throw new Error(`Invalid copilotType: ${args.copilotType}`);
-        }
-
         logger.info('Starting graph session', {
-          projectExId: args.projectExId,
-          schemaExId: args.schemaExId,
-          copilotType: prismaCopilotType,
+          goldenSetId: args.goldenSetId,
           modelName: args.modelName,
         });
 
         const result = await graphExecutionService.startSession(
-          args.projectExId,
-          args.schemaExId,
-          prismaCopilotType,
+          args.goldenSetId,
           args.modelName,
           args.skipHumanReview ?? false,
           args.skipHumanEvaluation ?? false
@@ -164,7 +139,9 @@ export const graphSessionResolver = {
           sessionId: result.sessionId,
           threadId: result.threadId,
           status: mapStatusToGraphQL(result.status),
-          rubricDraft: result.rubricDraft,
+          rubricDraft: result.rubricDraft
+            ? transformRubricToOutput(result.rubricDraft)
+            : null,
           message: result.message,
         };
       } catch (error) {
@@ -189,7 +166,7 @@ export const graphSessionResolver = {
         approved: boolean;
         modifiedRubric?: RubricInput | null;
         feedback?: string | null;
-        reviewerAccountId: string;
+        accountId: string;
       }
     ) => {
       try {
@@ -204,14 +181,16 @@ export const graphSessionResolver = {
           args.approved,
           transformRubricInput(args.modifiedRubric),
           args.feedback ?? undefined,
-          args.reviewerAccountId
+          args.accountId
         );
 
         return {
           sessionId: result.sessionId,
           threadId: result.threadId,
           status: mapStatusToGraphQL(result.status),
-          rubricFinal: result.rubricFinal,
+          rubricFinal: result.rubricFinal
+            ? transformRubricToOutput(result.rubricFinal)
+            : null,
           message: result.message,
         };
       } catch (error) {
@@ -235,7 +214,7 @@ export const graphSessionResolver = {
         threadId: string;
         scores: EvaluationScoreInput[];
         overallAssessment: string;
-        evaluatorAccountId: string;
+        accountId: string;
       }
     ) => {
       try {
@@ -249,70 +228,22 @@ export const graphSessionResolver = {
           args.threadId,
           args.scores,
           args.overallAssessment,
-          args.evaluatorAccountId
+          args.accountId
         );
 
         return {
           sessionId: result.sessionId,
           threadId: result.threadId,
           status: mapStatusToGraphQL(result.status),
-          finalReport: result.finalReport,
+          finalReport: result.finalReport
+            ? transformFinalReportToOutput(result.finalReport)
+            : null,
           message: result.message,
         };
       } catch (error) {
         logger.error('Error submitting human evaluation:', error);
         throw new Error(
           `Failed to submit human evaluation: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        );
-      }
-    },
-
-    /**
-     * Run a fully automated evaluation without human intervention.
-     * Useful for batch processing or when HITL is not required.
-     */
-    runAutomatedEvaluation: async (
-      _: unknown,
-      args: {
-        projectExId: string;
-        schemaExId: string;
-        copilotType: string; // GraphQL enum comes as string
-        modelName: string;
-      }
-    ) => {
-      try {
-        // Map GraphQL CopilotType to Prisma CopilotType
-        const prismaCopilotType = graphqlToPrismaCopilotType[args.copilotType];
-        if (!prismaCopilotType) {
-          throw new Error(`Invalid copilotType: ${args.copilotType}`);
-        }
-
-        logger.info('Running automated evaluation', {
-          projectExId: args.projectExId,
-          schemaExId: args.schemaExId,
-          copilotType: prismaCopilotType,
-        });
-
-        const result = await graphExecutionService.runAutomatedEvaluation(
-          args.projectExId,
-          args.schemaExId,
-          prismaCopilotType,
-          args.modelName
-        );
-
-        return {
-          sessionId: result.sessionId,
-          threadId: result.threadId,
-          status: 'COMPLETED',
-          finalReport: result.finalReport,
-          message: 'Automated evaluation completed successfully',
-        };
-      } catch (error) {
-        logger.error('Error running automated evaluation:', error);
-        throw new Error(
-          `Failed to run automated evaluation: ${
             error instanceof Error ? error.message : 'Unknown error'
           }`
         );
@@ -340,4 +271,52 @@ function mapStatusToGraphQL(
     failed: 'FAILED',
   };
   return mapping[status] || 'PENDING';
+}
+
+/**
+ * Transform Rubric to GraphQL RubricOutput
+ */
+function transformRubricToOutput(rubric: Rubric) {
+  return {
+    id: rubric.id,
+    version: rubric.version,
+    criteria: rubric.criteria,
+    totalWeight: rubric.totalWeight,
+    createdAt: rubric.createdAt,
+    updatedAt: rubric.updatedAt,
+  };
+}
+
+/**
+ * Transform Evaluation to GraphQL EvaluationOutput
+ */
+function transformEvaluationToOutput(evaluation: Evaluation) {
+  return {
+    evaluatorType: evaluation.evaluatorType,
+    scores: evaluation.scores,
+    overallScore: evaluation.overallScore,
+    summary: evaluation.summary,
+    timestamp: evaluation.timestamp,
+  };
+}
+
+/**
+ * Transform FinalReport to GraphQL FinalReportOutput
+ */
+function transformFinalReportToOutput(report: FinalReport) {
+  return {
+    verdict: report.verdict,
+    overallScore: report.overallScore,
+    summary: report.summary,
+    detailedAnalysis: report.detailedAnalysis,
+    agentEvaluation: report.agentEvaluation
+      ? transformEvaluationToOutput(report.agentEvaluation)
+      : null,
+    humanEvaluation: report.humanEvaluation
+      ? transformEvaluationToOutput(report.humanEvaluation)
+      : null,
+    discrepancies: report.discrepancies,
+    auditTrace: report.auditTrace,
+    generatedAt: report.generatedAt,
+  };
 }

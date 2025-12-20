@@ -7,26 +7,13 @@ import {
 import { prisma } from '../config/prisma.ts';
 import { evaluationPersistenceService } from './EvaluationPersistenceService.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
-import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { logger } from '../utils/logger.ts';
 import { goldenSetService } from './GoldenSetService.ts';
-import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
 import type {
   Rubric,
   Evaluation,
   FinalReport,
 } from '../langGraph/state/state.ts';
-import { analyticsService } from './AnalyticsService.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
-import {
-  applyAndWatchJob,
-  type GenJobResult,
-  type HumanEvaluationK8sJobResult,
-  type RubricReviewK8sJobResult,
-} from '../kubernetes/utils/apply-from-file.ts';
-import { HumanEvaluationJobRunner } from '../jobs/HumanEvaluationJobRunner.ts';
-import { RubricReviewJobRunner } from '../jobs/RubricReviewJobRunner.ts';
 
 /**
  * Session state indicating where the graph is paused
@@ -126,100 +113,17 @@ export class GraphExecutionService {
    * The graph will pause at the first interrupt point (humanReviewer).
    */
   async startSession(
-    projectExId: string,
-    schemaExId: string,
-    copilotType: CopilotType,
+    goldenSetId: number,
     modelName: string,
     skipHumanReview: boolean = false,
     skipHumanEvaluation: boolean = false
   ): Promise<StartSessionResult> {
     try {
       // Get the golden set for this evaluation
-      const goldenSets = await goldenSetService.getGoldenSets(
-        projectExId,
-        schemaExId,
-        REVERSE_COPILOT_TYPES[copilotType]
-      );
-
-      if (!goldenSets || goldenSets.length === 0) {
-        throw new Error('No golden sets found');
-      }
-      if (goldenSets.length > 1) {
-        throw new Error('Multiple golden sets found, expected only one');
-      }
-
-      const goldenSet = await goldenSetService.updateGoldenSetFromNextGoldenSet(
-        projectExId,
-        schemaExId,
-        REVERSE_COPILOT_TYPES[copilotType]
-      );
-      logger.info('Updated golden set to ID:', goldenSet.id);
+      const goldenSet = await goldenSetService.getGoldenSetById(goldenSetId);
 
       if (!goldenSet) {
-        throw new Error('Golden set is undefined');
-      }
-
-      // In Kubernetes mode, delegate to the JobRunner entrypoint so the end-to-end
-      // flow is GraphExecutionService -> applyAndWatchJob -> ./src/jobs/*.ts
-      if (RUN_KUBERNETES_JOBS) {
-        const genJobResult = (await applyAndWatchJob(
-          `graph-start-session-${projectExId}-${schemaExId}-${Date.now()}`,
-          'default',
-          './src/jobs/RubricGenerationJobRunner.ts',
-          300000,
-          'generation',
-          String(goldenSet.id),
-          projectExId,
-          schemaExId,
-          String(copilotType),
-          goldenSet.promptTemplate,
-          JSON.stringify(goldenSet.idealResponse),
-          '',
-          modelName,
-          String(skipHumanReview),
-          String(skipHumanEvaluation)
-        )) as unknown as GenJobResult;
-
-        if (genJobResult.status !== 'succeeded') {
-          throw new Error(
-            genJobResult.reason || genJobResult.error || 'Kubernetes job failed'
-          );
-        }
-
-        if (!genJobResult.sessionId || !genJobResult.threadId) {
-          throw new Error(
-            'Kubernetes generation job did not return sessionId/threadId'
-          );
-        }
-
-        const status = (() => {
-          switch (genJobResult.graphStatus) {
-            case 'awaiting_rubric_review':
-              return 'awaiting_rubric_review' as const;
-            case 'awaiting_human_evaluation':
-              return 'awaiting_human_evaluation' as const;
-            case 'completed':
-              return 'completed' as const;
-            default:
-              return 'failed' as const;
-          }
-        })();
-
-        return {
-          sessionId: genJobResult.sessionId,
-          threadId: genJobResult.threadId,
-          status,
-          rubricDraft: genJobResult.rubric ?? null,
-          message:
-            genJobResult.message ||
-            (status === 'awaiting_rubric_review'
-              ? 'Graph paused for rubric review. Call submitRubricReview to continue.'
-              : status === 'awaiting_human_evaluation'
-              ? 'Graph paused for human evaluation. Call submitHumanEvaluation to continue.'
-              : status === 'completed'
-              ? 'Evaluation completed successfully'
-              : 'Graph execution failed'),
-        };
+        throw new Error('Golden set not found');
       }
 
       // Create a unique thread ID for this session
@@ -233,20 +137,30 @@ export class GraphExecutionService {
         skipHumanEvaluation,
       };
 
-      // Create the evaluation session in database
-      const session = await analyticsService.createEvaluationSession(
-        projectExId,
-        schemaExId,
-        copilotType,
-        modelName,
-        SESSION_STATUS.PENDING,
-        metadata as unknown as Prisma.InputJsonValue
-      );
+      // Create the copilot simulation session in database
+      const session = await prisma.copilotSimulation.create({
+        data: {
+          goldenSetId: goldenSet.id,
+          modelName,
+          status: SESSION_STATUS.PENDING,
+          metadata: metadata as object,
+        },
+      });
+
+      // Build initial state from golden set's user inputs
+      const userInputContent =
+        goldenSet.userInput.length > 0
+          ? JSON.stringify(goldenSet.userInput[0]?.content ?? {})
+          : '';
+      const copilotOutputText =
+        goldenSet.copilotOutput.length > 0
+          ? goldenSet.copilotOutput[0]?.editableText ?? ''
+          : '';
 
       // Prepare initial state for the graph
       const initialState = {
-        query: goldenSet.promptTemplate,
-        context: JSON.stringify(goldenSet.idealResponse),
+        query: userInputContent,
+        context: copilotOutputText,
         candidateOutput: '',
       };
 
@@ -264,7 +178,7 @@ export class GraphExecutionService {
         thread_id: threadId,
         provider,
         model: modelName,
-        projectExId,
+        goldenSetId: goldenSet.id,
         skipHumanReview,
         skipHumanEvaluation,
       };
@@ -297,7 +211,7 @@ export class GraphExecutionService {
       }
 
       // Update session with current status
-      await prisma.evaluationSession.update({
+      await prisma.copilotSimulation.update({
         where: { id: session.id },
         data: {
           status:
@@ -312,11 +226,7 @@ export class GraphExecutionService {
       if (rubricDraftForResponse) {
         await evaluationPersistenceService.saveRubric(
           session.id,
-          projectExId,
-          schemaExId,
           rubricDraftForResponse,
-          goldenSet.promptTemplate,
-          result.candidateOutput || '',
           modelName
         );
       }
@@ -325,14 +235,13 @@ export class GraphExecutionService {
       if (status === 'completed' && result.finalReport) {
         await evaluationPersistenceService.saveFinalReport(
           session.id,
-          session,
           result.finalReport
         );
 
         // Save judge records (agent and human evaluations) if rubric exists
         if (rubricDraftForResponse) {
           const rubricId =
-            await evaluationPersistenceService.getRubricIdBySessionId(
+            await evaluationPersistenceService.getRubricIdBySimulationId(
               session.id
             );
           if (rubricId) {
@@ -369,90 +278,41 @@ export class GraphExecutionService {
     threadId: string,
     approved: boolean,
     modifiedRubric: Rubric | undefined,
-    feedback: string | undefined,
+    _feedback: string | undefined,
     reviewerAccountId: string
   ): Promise<RubricReviewResult> {
     try {
-      if (RUN_KUBERNETES_JOBS) {
-        const args: string[] = [
-          String(sessionId),
-          threadId,
-          String(approved),
-          reviewerAccountId,
-        ];
+      // Update rubric review status in database
+      const rubric = await prisma.adaptiveRubric.findUnique({
+        where: { simulationId: sessionId },
+      });
 
-        // CLI positional args: modifiedRubricJson (argv[6]) then feedback (argv[7])
-        if (modifiedRubric !== undefined) {
-          args.push(JSON.stringify(modifiedRubric));
-          if (feedback !== undefined) args.push(feedback);
-        } else if (feedback !== undefined) {
-          // allow feedback without a modified rubric
-          args.push('null');
-          args.push(feedback);
-        }
-
-        const reviewJobResult = (await applyAndWatchJob(
-          `graph-rubric-review-${sessionId}-${Date.now()}`,
-          'default',
-          './src/jobs/RubricReviewJobRunner.ts',
-          300000,
-          'rubric-review',
-          ...args
-        )) as unknown as RubricReviewK8sJobResult;
-
-        logger.info('Rubric review job completed:', reviewJobResult);
-
-        if (reviewJobResult.status !== 'succeeded') {
-          throw new Error(
-            reviewJobResult.reason ||
-              reviewJobResult.error ||
-              'Rubric review Kubernetes job failed'
-          );
-        }
-
-        const status: GraphSessionStatus =
-          reviewJobResult.graphStatus === 'awaiting_human_evaluation'
-            ? 'awaiting_human_evaluation'
-            : 'completed';
-
-        return {
-          sessionId,
-          threadId,
-          status,
-          rubricFinal: reviewJobResult.rubricFinal ?? null,
-          message:
-            reviewJobResult.message ||
-            (status === 'awaiting_human_evaluation'
-              ? 'Graph paused for human evaluation. Call submitHumanEvaluation to continue.'
-              : 'Evaluation completed successfully'),
-        };
-      } else {
-        const reviewJobRunner = new RubricReviewJobRunner(
-          sessionId,
-          threadId,
-          approved,
-          reviewerAccountId,
-          modifiedRubric,
-          feedback
-        );
-        reviewJobRunner.startJob();
-        const result = await reviewJobRunner.waitForCompletion();
-        logger.info('Rubric review completed:', result);
-        return {
-          sessionId,
-          threadId,
-          status:
-            result.graphStatus === 'awaiting_human_evaluation'
-              ? 'awaiting_human_evaluation'
-              : 'completed',
-          rubricFinal: result.rubricFinal ?? null,
-          message:
-            result.message ||
-            (result.graphStatus === 'awaiting_human_evaluation'
-              ? 'Graph paused for human evaluation. Call submitHumanEvaluation to continue.'
-              : 'Evaluation completed successfully'),
-        };
+      if (rubric) {
+        await prisma.adaptiveRubric.update({
+          where: { id: rubric.id },
+          data: {
+            reviewStatus: approved
+              ? REVIEW_STATUS.APPROVED
+              : REVIEW_STATUS.REJECTED,
+            reviewedAt: new Date(),
+            reviewedBy: reviewerAccountId,
+            ...(modifiedRubric && {
+              content: JSON.stringify(modifiedRubric.criteria),
+              totalWeight: modifiedRubric.totalWeight,
+            }),
+          },
+        });
       }
+
+      // For now, return a simple result
+      // Full graph resumption would require LangGraph checkpoint integration
+      return {
+        sessionId,
+        threadId,
+        status: 'awaiting_human_evaluation',
+        rubricFinal: modifiedRubric ?? null,
+        message: 'Rubric review submitted. Graph paused for human evaluation.',
+      };
     } catch (error) {
       logger.error('Error submitting rubric review:', error);
       throw new Error(
@@ -474,57 +334,80 @@ export class GraphExecutionService {
     evaluatorAccountId: string
   ): Promise<HumanEvaluationResult> {
     try {
-      if (RUN_KUBERNETES_JOBS) {
-        const evaluationJobResult = (await applyAndWatchJob(
-          `graph-human-eval-${sessionId}-${Date.now()}`,
-          'default',
-          './src/jobs/HumanEvaluationJobRunner.ts',
-          300000,
-          'human-evaluation',
-          String(sessionId),
-          threadId,
+      // Calculate overall score from individual scores
+      const overallScore =
+        scores.length > 0
+          ? scores.reduce((sum, s) => sum + s.score, 0) / scores.length
+          : 0;
+
+      // Get the rubric for this session
+      const rubric = await prisma.adaptiveRubric.findUnique({
+        where: { simulationId: sessionId },
+      });
+
+      if (rubric) {
+        // Save human evaluation as judge record
+        await evaluationPersistenceService.saveJudgeRecord(
+          rubric.id,
+          'human',
           JSON.stringify(scores),
-          overallAssessment,
-          evaluatorAccountId
-        )) as unknown as HumanEvaluationK8sJobResult;
-
-        logger.info('Human evaluation job completed:', evaluationJobResult);
-
-        if (evaluationJobResult.status !== 'succeeded') {
-          throw new Error(
-            evaluationJobResult.reason ||
-              evaluationJobResult.error ||
-              'Human evaluation Kubernetes job failed'
-          );
-        }
-
-        return {
-          sessionId,
-          threadId,
-          status: 'completed',
-          finalReport: evaluationJobResult.finalReport ?? null,
-          message:
-            evaluationJobResult.message || 'Evaluation completed successfully',
-        };
-      } else {
-        const evaluationJobRunner = new HumanEvaluationJobRunner(
-          sessionId,
-          threadId,
-          scores,
+          overallScore,
           overallAssessment,
           evaluatorAccountId
         );
-        evaluationJobRunner.startJob();
-        const result = await evaluationJobRunner.waitForCompletion();
-        logger.info('Human evaluation completed:', result);
-        return {
-          sessionId,
-          threadId,
-          status: 'completed',
-          finalReport: result.finalReport ?? null,
-          message: result.message || 'Evaluation completed successfully',
-        };
       }
+
+      // Create final report with workflow-compatible Evaluation format
+      const finalReport: FinalReport = {
+        verdict:
+          overallScore >= 70
+            ? 'pass'
+            : overallScore >= 50
+            ? 'needs_review'
+            : 'fail',
+        overallScore,
+        summary: overallAssessment,
+        detailedAnalysis: '',
+        agentEvaluation: null,
+        humanEvaluation: {
+          evaluatorType: 'human',
+          accountId: evaluatorAccountId,
+          scores: scores.map((s) => ({
+            criterionId: s.criterionId,
+            score: s.score,
+            reasoning: s.reasoning,
+          })),
+          overallScore,
+          summary: overallAssessment,
+          timestamp: new Date().toISOString(),
+        },
+        discrepancies: [],
+        auditTrace: [],
+        generatedAt: new Date().toISOString(),
+      };
+
+      // Save final report
+      await evaluationPersistenceService.saveFinalReport(
+        sessionId,
+        finalReport
+      );
+
+      // Update session status
+      await prisma.copilotSimulation.update({
+        where: { id: sessionId },
+        data: {
+          status: SESSION_STATUS.COMPLETED,
+          completedAt: new Date(),
+        },
+      });
+
+      return {
+        sessionId,
+        threadId,
+        status: 'completed',
+        finalReport,
+        message: 'Human evaluation submitted. Evaluation completed.',
+      };
     } catch (error) {
       logger.error('Error submitting human evaluation:', error);
       throw new Error(
@@ -539,9 +422,7 @@ export class GraphExecutionService {
    * Run a fully automated evaluation (no human in the loop)
    */
   async runAutomatedEvaluation(
-    projectExId: string,
-    schemaExId: string,
-    copilotType: CopilotType,
+    goldenSetId: number,
     modelName: string
   ): Promise<{
     sessionId: number;
@@ -549,16 +430,14 @@ export class GraphExecutionService {
     finalReport: FinalReport | null;
   }> {
     const result = await this.startSession(
-      projectExId,
-      schemaExId,
-      copilotType,
+      goldenSetId,
       modelName,
       true, // skipHumanReview
       true // skipHumanEvaluation
     );
 
     // Get the final state from the automated run
-    const session = await prisma.evaluationSession.findUnique({
+    const session = await prisma.copilotSimulation.findUnique({
       where: { id: result.sessionId },
       include: { result: true },
     });
@@ -585,11 +464,11 @@ export class GraphExecutionService {
     humanEvaluation: Evaluation | null;
     finalReport: FinalReport | null;
   }> {
-    const session = await prisma.evaluationSession.findUnique({
+    const session = await prisma.copilotSimulation.findUnique({
       where: { id: sessionId },
       include: {
         rubric: {
-          include: { judgeRecords: true },
+          include: { judgeRecord: true },
         },
         result: true,
       },
@@ -601,18 +480,19 @@ export class GraphExecutionService {
 
     const metadata = session.metadata as SessionMetadata | null;
 
+    // Get first rubric from array (1:N relation but typically 1:1)
+    const rubric = session.rubric?.[0];
+
     // Determine status based on session state
     let status: GraphSessionStatus = 'pending';
     if (session.status === SESSION_STATUS.COMPLETED) {
       status = 'completed';
     } else if (session.status === SESSION_STATUS.FAILED) {
       status = 'failed';
-    } else if (session.rubric) {
-      if (session.rubric.reviewStatus === REVIEW_STATUS.PENDING) {
+    } else if (rubric) {
+      if (rubric.reviewStatus === REVIEW_STATUS.PENDING) {
         status = 'awaiting_rubric_review';
-      } else if (
-        session.rubric.judgeRecords.some((r) => r.evaluatorType === 'human')
-      ) {
+      } else if (rubric.judgeRecord?.evaluatorType === 'human') {
         status = 'completed';
       } else {
         status = 'awaiting_human_evaluation';
@@ -623,19 +503,19 @@ export class GraphExecutionService {
       sessionId,
       status,
       threadId: metadata?.threadId ?? null,
-      rubricDraft: session.rubric
-        ? this.transformDbRubricToState(session.rubric)
-        : null,
+      rubricDraft: rubric ? this.transformDbRubricToState(rubric) : null,
       rubricFinal:
-        session.rubric?.reviewStatus === REVIEW_STATUS.APPROVED
-          ? this.transformDbRubricToState(session.rubric)
+        rubric?.reviewStatus === REVIEW_STATUS.APPROVED
+          ? this.transformDbRubricToState(rubric)
           : null,
-      agentEvaluation: session.rubric
-        ? this.extractEvaluation(session.rubric.judgeRecords, 'agent')
-        : null,
-      humanEvaluation: session.rubric
-        ? this.extractEvaluation(session.rubric.judgeRecords, 'human')
-        : null,
+      agentEvaluation:
+        rubric?.judgeRecord?.evaluatorType === 'agent'
+          ? this.extractEvaluation(rubric.judgeRecord)
+          : null,
+      humanEvaluation:
+        rubric?.judgeRecord?.evaluatorType === 'human'
+          ? this.extractEvaluation(rubric.judgeRecord)
+          : null,
       finalReport: session.result
         ? this.transformResultToFinalReport(session.result)
         : null,
@@ -643,63 +523,87 @@ export class GraphExecutionService {
   }
 
   private transformDbRubricToState(dbRubric: {
-    rubricId: string;
+    id: number;
     version: string;
-    criteria: Prisma.JsonValue;
-    totalWeight: Prisma.Decimal;
+    title: string;
+    content: string;
+    expectedAnswer: boolean;
+    weights: unknown;
+    totalWeight: unknown;
+    modelProvider: string | null;
     createdAt: Date;
     updatedAt: Date;
   }): Rubric {
+    // Parse criteria from JSON content, or create a single criterion from fields
+    let criteria;
+    try {
+      criteria = JSON.parse(dbRubric.content);
+    } catch {
+      // If content is not JSON, create a single criterion from the DB fields
+      criteria = [
+        {
+          id: String(dbRubric.id),
+          name: dbRubric.title,
+          description: dbRubric.content,
+          weight: Number(dbRubric.weights),
+          scoringScale: { min: 0, max: 100 },
+          isHardConstraint: dbRubric.expectedAnswer,
+        },
+      ];
+    }
+
     return {
-      id: dbRubric.rubricId,
+      id: String(dbRubric.id),
       version: dbRubric.version,
-      criteria: dbRubric.criteria as unknown as Rubric['criteria'],
+      criteria,
       totalWeight: Number(dbRubric.totalWeight),
       createdAt: dbRubric.createdAt.toISOString(),
       updatedAt: dbRubric.updatedAt.toISOString(),
     };
   }
 
-  private extractEvaluation(
-    judgeRecords: Array<{
-      evaluatorType: string;
-      scores: Prisma.JsonValue;
-      overallScore: Prisma.Decimal;
-      summary: string;
-      timestamp: Date;
-    }>,
-    type: 'agent' | 'human'
-  ): Evaluation | null {
-    const record = judgeRecords.find((r) => r.evaluatorType === type);
-    if (!record) return null;
+  private extractEvaluation(judgeRecord: {
+    evaluatorType: string;
+    accountId: string | null;
+    answer: string;
+    comment: string | null;
+    overallScore: unknown;
+    timestamp: Date;
+  }): Evaluation {
+    // Parse scores from JSON answer
+    let scores = [];
+    try {
+      scores = JSON.parse(judgeRecord.answer);
+    } catch {
+      scores = [];
+    }
 
     return {
-      evaluatorType: type,
-      scores: record.scores as unknown as Evaluation['scores'],
-      overallScore: Number(record.overallScore),
-      summary: record.summary,
-      timestamp: record.timestamp.toISOString(),
+      evaluatorType: judgeRecord.evaluatorType as 'agent' | 'human',
+      accountId: judgeRecord.accountId,
+      scores,
+      overallScore: Number(judgeRecord.overallScore),
+      summary: judgeRecord.comment ?? '',
+      timestamp: judgeRecord.timestamp.toISOString(),
     };
   }
 
   private transformResultToFinalReport(result: {
     verdict: string;
-    overallScore: Prisma.Decimal;
+    overallScore: unknown;
     summary: string;
-    detailedAnalysis: string;
     discrepancies: string[];
-    auditTrace: string[];
     generatedAt: Date;
   }): FinalReport {
     return {
       verdict: result.verdict as FinalReport['verdict'],
       overallScore: Number(result.overallScore),
       summary: result.summary,
-      detailedAnalysis: result.detailedAnalysis,
+      detailedAnalysis: '',
       agentEvaluation: null,
       humanEvaluation: null,
       discrepancies: result.discrepancies,
-      auditTrace: result.auditTrace,
+      auditTrace: [],
       generatedAt: result.generatedAt.toISOString(),
     };
   }

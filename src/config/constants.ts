@@ -23,13 +23,6 @@ export const SESSION_STATUS = {
   FAILED: 'failed',
 } as const;
 
-export const REVERSE_SESSION_STATUS: { [key: string]: string } = {
-  pending: 'PENDING',
-  running: 'RUNNING',
-  completed: 'COMPLETED',
-  failed: 'FAILED',
-};
-
 export const EVALUATION_STATUS = {
   PENDING: 'pending',
   IN_PROGRESS: 'in_progress',

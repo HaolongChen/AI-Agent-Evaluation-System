@@ -158,7 +158,7 @@ export const typeDefs = `#graphql
     ): [AdaptiveRubric!]!
 
     # Results & Analytics
-    getEvaluationResult(goldenSetId: Int!): EvaluationResult[]!
+    getEvaluationResult(goldenSetId: Int!): [EvaluationResult]!
     compareModels(goldenSetId: Int!, modelNames: [String!]!): ModelComparison!
 
     # Dashboard Metrics

@@ -2,7 +2,17 @@ import { graphExecutionService } from '../../services/GraphExecutionService.ts';
 import { analyticsService } from '../../services/AnalyticsService.ts';
 import { goldenSetService } from '../../services/GoldenSetService.ts';
 import { EvaluationJobRunner } from '../../jobs/EvaluationJobRunner.ts';
+import { RUN_KUBERNETES_JOBS } from '../../config/env.ts';
+import {
+  applyAndWatchJob,
+  type EvalJobResult,
+} from '../../kubernetes/utils/apply-from-file.ts';
 import { logger } from '../../utils/logger.ts';
+
+// Kubernetes namespace for evaluation jobs
+const K8S_NAMESPACE = process.env['KUBERNETES_NAMESPACE'] || 'ai-evaluation';
+// Path to the EvaluationJobRunner script for K8s execution
+const EVALUATION_JOB_SCRIPT_PATH = 'src/jobs/EvaluationJobRunner.ts';
 
 /**
  * Build WebSocket URL for copilot simulation.
@@ -167,29 +177,61 @@ export const analyticResolver = {
             // Build WebSocket URL for this project
             const wsUrl = buildWsUrl(goldenSet.projectExId);
 
-            // Create and run EvaluationJobRunner
-            const jobRunner = new EvaluationJobRunner(
-              goldenSet.projectExId,
-              wsUrl,
-              userInput.content // This is already a string from DB
-            );
+            let editableText: string;
 
-            jobRunner.startJob();
+            if (RUN_KUBERNETES_JOBS) {
+              // Run as Kubernetes job
+              const jobName = `eval-${
+                goldenSet.projectExId
+              }-${absoluteIndex}-${Date.now()}`;
+              logger.info(`Running evaluation as K8s job: ${jobName}`);
 
-            // Wait for copilot to complete (sequential - copilot doesn't support concurrency)
-            const result = await jobRunner.waitForCompletion();
+              const k8sResult = (await applyAndWatchJob(
+                jobName,
+                K8S_NAMESPACE,
+                EVALUATION_JOB_SCRIPT_PATH,
+                300000, // 5 minute timeout
+                'evaluation',
+                goldenSet.projectExId,
+                wsUrl,
+                userInput.content
+              )) as EvalJobResult;
+
+              if (k8sResult.status !== 'succeeded' || !k8sResult.editableText) {
+                throw new Error(
+                  `K8s evaluation job failed: ${
+                    k8sResult.reason || 'No editable text returned'
+                  }`
+                );
+              }
+
+              editableText = k8sResult.editableText;
+            } else {
+              // Run directly in-process
+              const jobRunner = new EvaluationJobRunner(
+                goldenSet.projectExId,
+                wsUrl,
+                userInput.content // This is already a string from DB
+              );
+
+              jobRunner.startJob();
+
+              // Wait for copilot to complete (sequential - copilot doesn't support concurrency)
+              const result = await jobRunner.waitForCompletion();
+              editableText = result.editableText;
+            }
 
             logger.info(
               `Copilot simulation complete for index ${absoluteIndex}`,
               {
-                editableTextLength: result.editableText.length,
+                editableTextLength: editableText.length,
               }
             );
 
             // Append copilotOutput to goldenSet
             await goldenSetService.appendCopilotOutput(
               goldenSetId,
-              result.editableText,
+              editableText,
               absoluteIndex
             );
 

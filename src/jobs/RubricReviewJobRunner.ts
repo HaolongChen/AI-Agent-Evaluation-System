@@ -129,7 +129,7 @@ export class RubricReviewJobRunner {
         // Transform workflow criteria to DB format (serialize to JSON)
         updateData.content = JSON.stringify(this.modifiedRubric.criteria);
         updateData.title = this.modifiedRubric.criteria[0]?.name ?? 'Rubric';
-        updateData.weights = this.modifiedRubric.criteria[0]?.weight ?? 1;
+        updateData.weight = this.modifiedRubric.criteria[0]?.weight ?? 1;
         updateData.totalWeight = this.modifiedRubric.totalWeight;
         updateData.version = this.modifiedRubric.version;
       }

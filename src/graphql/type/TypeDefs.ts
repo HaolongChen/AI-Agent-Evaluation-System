@@ -93,7 +93,7 @@ export const typeDefs = `#graphql
     title: String!
     content: String!
     expectedAnswer: Boolean!
-    weights: Decimal!
+    weight: Decimal!
     totalWeight: Decimal!
     modelProvider: String
     
@@ -254,7 +254,7 @@ export const typeDefs = `#graphql
     id: String!
     version: String!
     content: String!
-    weights: Float!
+    weight: Float!
   }
 
   # HITL Session Types

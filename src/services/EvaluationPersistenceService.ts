@@ -33,7 +33,7 @@ export class EvaluationPersistenceService {
       // Use first criterion's name as title, or default
       const title = rubric.criteria[0]?.name ?? 'Evaluation Rubric';
       // Use first criterion's weight or totalWeight
-      const weights = rubric.criteria[0]?.weight ?? rubric.totalWeight;
+      const weight = rubric.criteria[0]?.weight ?? rubric.totalWeight;
       // expectedAnswer based on whether first criterion is hard constraint
       const expectedAnswer = rubric.criteria[0]?.isHardConstraint ?? true;
 
@@ -51,7 +51,7 @@ export class EvaluationPersistenceService {
             title,
             content: contentJson,
             expectedAnswer,
-            weights,
+            weight,
             totalWeight: rubric.totalWeight,
             modelProvider: modelProvider ?? null,
             reviewStatus: REVIEW_STATUS.PENDING,
@@ -68,7 +68,7 @@ export class EvaluationPersistenceService {
           title,
           content: contentJson,
           expectedAnswer,
-          weights,
+          weight,
           totalWeight: rubric.totalWeight,
           modelProvider: modelProvider ?? null,
           reviewStatus: REVIEW_STATUS.PENDING,

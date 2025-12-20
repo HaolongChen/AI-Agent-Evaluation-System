@@ -534,7 +534,7 @@ export class GraphExecutionService {
     title: string;
     content: string;
     expectedAnswer: boolean;
-    weights: unknown;
+    weight: unknown;
     totalWeight: unknown;
     modelProvider: string | null;
     createdAt: Date;
@@ -551,7 +551,7 @@ export class GraphExecutionService {
           id: String(dbRubric.id),
           name: dbRubric.title,
           description: dbRubric.content,
-          weight: Number(dbRubric.weights),
+          weight: Number(dbRubric.weight),
           scoringScale: { min: 0, max: 100 },
           isHardConstraint: dbRubric.expectedAnswer,
         },

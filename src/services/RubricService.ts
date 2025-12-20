@@ -14,7 +14,7 @@ export class RubricService {
       title: string;
       content: string;
       expectedAnswer: boolean;
-      weights: number;
+      weight: number;
       totalWeight: number;
       modelProvider?: string;
     }
@@ -27,7 +27,7 @@ export class RubricService {
           title: rubricData.title,
           content: rubricData.content,
           expectedAnswer: rubricData.expectedAnswer,
-          weights: rubricData.weights,
+          weight: rubricData.weight,
           totalWeight: rubricData.totalWeight,
           modelProvider: rubricData.modelProvider ?? null,
           reviewStatus: REVIEW_STATUS.PENDING,
@@ -105,7 +105,7 @@ export class RubricService {
       title?: string;
       content?: string;
       expectedAnswer?: boolean;
-      weights?: number;
+      weight?: number;
     }
   ) {
     try {
@@ -125,8 +125,8 @@ export class RubricService {
             ...(modifiedRubricContent.expectedAnswer !== undefined && {
               expectedAnswer: modifiedRubricContent.expectedAnswer,
             }),
-            ...(modifiedRubricContent.weights && {
-              weights: modifiedRubricContent.weights,
+            ...(modifiedRubricContent.weight && {
+              weight: modifiedRubricContent.weight,
             }),
           }),
         },

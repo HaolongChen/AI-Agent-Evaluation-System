@@ -91,7 +91,7 @@ Create evaluation criteria that:
 Hard constraints examples: correctness, completeness, safety
 Soft constraints examples: clarity, efficiency, best practices
 
-Generate 3-7 criteria with appropriate weights that sum to 100.
+Generate 3-7 criteria with appropriate weight that sum to 100.
 `;
 
   const response = await invokeWithRetry(
@@ -113,7 +113,7 @@ Generate 3-7 criteria with appropriate weights that sum to 100.
     isHardConstraint: c.isHardConstraint,
   }));
 
-  // Normalize weights to sum to 100 if necessary
+  // Normalize weight to sum to 100 if necessary
   let totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
   if (Math.abs(totalWeight - 100) > 0.01 && totalWeight > 0) {
     const factor = 100 / totalWeight;

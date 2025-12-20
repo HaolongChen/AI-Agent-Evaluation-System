@@ -8,7 +8,7 @@ An evaluation framework for AI Copilot that allows rapid testing and quality ass
 
 - 🔄 **HITL Workflow**: Interactive evaluation with human review at rubric generation and evaluation stages
 - 🤖 **Automated Mode**: Fully automated AI-based evaluation for batch processing
-- 📊 **Structured Rubrics**: AI-generated evaluation criteria with customizable weights and scoring scales
+- 📊 **Structured Rubrics**: AI-generated evaluation criteria with customizable weight and scoring scales
 - 🔍 **Dual Evaluation**: Compare agent vs human evaluation scores with discrepancy detection
 - 📈 **Analytics Dashboard**: Query metrics, compare models, track performance trends
 - 🎯 **GraphQL API**: Comprehensive API for all evaluation operations

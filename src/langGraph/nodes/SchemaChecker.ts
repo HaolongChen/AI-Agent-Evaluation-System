@@ -2,6 +2,7 @@ import { type RunnableConfig } from '@langchain/core/runnables';
 import { HumanMessage } from '@langchain/core/messages';
 import { rubricAnnotation } from '../state/index.ts';
 import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import { OPENAI_MODEL } from '../../config/env.ts';
 import * as z from 'zod';
 
 const schemaCheckSchema = z.object({
@@ -25,7 +26,7 @@ export async function schemaCheckerNode(
     (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
     'azure';
   const modelName =
-    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
+    (config?.configurable?.['model'] as string | undefined) || OPENAI_MODEL;
 
   const llm = getLLM({ provider, model: modelName });
   const llmWithStructuredOutput = llm.withStructuredOutput(schemaCheckSchema);

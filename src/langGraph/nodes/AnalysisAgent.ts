@@ -14,6 +14,7 @@ import { type RunnableConfig } from '@langchain/core/runnables';
 import { HumanMessage } from '@langchain/core/messages';
 import { rubricAnnotation } from '../state/index.ts';
 import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import { OPENAI_MODEL } from '../../config/env.ts';
 import {
   schemaDownloader,
   SchemaDownloaderForTest,
@@ -38,7 +39,7 @@ export async function analysisAgentNode(
     (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
     'azure';
   const modelName =
-    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
+    (config?.configurable?.['model'] as string | undefined) || OPENAI_MODEL;
   const projectExId = config?.configurable?.['projectExId'] as
     | string
     | undefined;
@@ -56,7 +57,7 @@ export async function analysisAgentNode(
 
   const toolCallPrompt = `
   You are an analysis agent. Analyze the user's query and context to determine if you need to download the schema graph.
-  If schema information would help answer the query, use the 'schema_downloader' tool with the provided projectExId.
+  If schema information would help answer the query, use the 'fetchSchema' tool with the provided projectExId.
 
   Description of schema: The schema graph contains the structure of the database, including entities, relationships, and attributes. It is useful for understanding complex data models and answering queries related to data organization.
 
@@ -69,7 +70,7 @@ export async function analysisAgentNode(
   ${
     projectExId
       ? `Project External ID: """${projectExId}"""`
-      : 'No Project External ID provided - do not use the schema_downloader tool.'
+      : 'No Project External ID provided - do not use the fetchSchema tool.'
   }
   `;
 
@@ -83,7 +84,7 @@ export async function analysisAgentNode(
   let schemaInfo = '';
   if (toolCallResponse.tool_calls && toolCallResponse.tool_calls.length > 0) {
     for (const toolCall of toolCallResponse.tool_calls) {
-      if (toolCall.name === 'schema_downloader') {
+      if (toolCall.name === 'fetchSchema') {
         try {
           if (projectExId) {
             schemaInfo = await SchemaDownloaderForTest(projectExId);

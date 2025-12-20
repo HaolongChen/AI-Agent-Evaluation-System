@@ -2,6 +2,7 @@ import { type RunnableConfig } from '@langchain/core/runnables';
 import { HumanMessage } from '@langchain/core/messages';
 import { rubricAnnotation } from '../state/index.ts';
 import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import { OPENAI_MODEL } from '../../config/env.ts';
 import { SchemaDownloaderForTest } from '../tools/SchemaDownloader.ts';
 import * as z from 'zod';
 
@@ -31,7 +32,7 @@ export async function schemaLoaderNode(
     (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
     'azure';
   const modelName =
-    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
+    (config?.configurable?.['model'] as string | undefined) || OPENAI_MODEL;
   const projectExId = config?.configurable?.['projectExId'] as
     | string
     | undefined;

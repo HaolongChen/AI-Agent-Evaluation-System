@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import * as z from 'zod';
 import { logger } from '../utils/logger.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import { RUN_KUBERNETES_JOBS, OPENAI_MODEL } from '../config/env.ts';
 import {
   graph,
   automatedGraph,
@@ -347,7 +347,7 @@ if (
       query: process.argv[3] || '',
       context: process.argv[4] || '',
       candidateOutput: process.argv[5] || '',
-      modelName: process.argv[6] || 'gpt-4o',
+      modelName: process.argv[6] || OPENAI_MODEL,
       skipHumanReview: process.argv[7],
       skipHumanEvaluation: process.argv[8],
     });

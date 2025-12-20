@@ -1,19 +1,39 @@
-import { v4 as uuidv4 } from 'uuid';
-import {
-  graph,
-  automatedGraph,
-  type GraphConfigurable,
-} from '../langGraph/agent.ts';
 import { prisma } from '../config/prisma.ts';
-import { evaluationPersistenceService } from './EvaluationPersistenceService.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import { logger } from '../utils/logger.ts';
 import { goldenSetService } from './GoldenSetService.ts';
+import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import {
+  RubricGenerationJobRunner,
+  type RubricGenerationResult,
+} from '../jobs/RubricGenerationJobRunner.ts';
+import {
+  RubricReviewJobRunner,
+  type RubricReviewJobResult,
+} from '../jobs/RubricReviewJobRunner.ts';
+import {
+  HumanEvaluationJobRunner,
+  type HumanEvaluationJobResult,
+} from '../jobs/HumanEvaluationJobRunner.ts';
+import {
+  applyAndWatchJob,
+  type GenJobResult,
+  type RubricReviewK8sJobResult,
+  type HumanEvaluationK8sJobResult,
+} from '../kubernetes/utils/apply-from-file.ts';
 import type {
   Rubric,
   Evaluation,
   FinalReport,
 } from '../langGraph/state/state.ts';
+
+// Kubernetes namespace for jobs
+const K8S_NAMESPACE = process.env['KUBERNETES_NAMESPACE'] || 'ai-evaluation';
+// Path to job runner scripts for K8s execution
+const RUBRIC_GENERATION_JOB_SCRIPT_PATH =
+  'src/jobs/RubricGenerationJobRunner.ts';
+const RUBRIC_REVIEW_JOB_SCRIPT_PATH = 'src/jobs/RubricReviewJobRunner.ts';
+const HUMAN_EVALUATION_JOB_SCRIPT_PATH = 'src/jobs/HumanEvaluationJobRunner.ts';
 
 /**
  * Session state indicating where the graph is paused
@@ -33,38 +53,6 @@ interface SessionMetadata {
   goldenSetId?: number;
   skipHumanReview?: boolean;
   skipHumanEvaluation?: boolean;
-}
-
-/**
- * Interrupt payload structure from LangGraph
- */
-interface InterruptInfo {
-  value: {
-    message?: string;
-    rubricDraft?: Rubric;
-    rubricFinal?: Rubric;
-    query?: string;
-    context?: string | null;
-    candidateOutput?: string;
-  };
-  resumable: boolean;
-  ns: string[];
-}
-
-/**
- * Result from graph.invoke() with potential interrupt info
- */
-interface GraphResult {
-  query: string;
-  context: string;
-  candidateOutput: string;
-  rubricDraft?: Rubric | null;
-  rubricApproved?: boolean;
-  rubricFinal?: Rubric | null;
-  agentEvaluation?: Evaluation | null;
-  humanEvaluation?: Evaluation | null;
-  finalReport?: FinalReport | null;
-  __interrupt__?: InterruptInfo[];
 }
 
 /**
@@ -104,12 +92,11 @@ export interface HumanEvaluationResult {
  * GraphExecutionService
  *
  * Manages LangGraph execution with Human-in-the-Loop (HITL) support.
- * Uses callbacks pattern where mutations return immediately after starting or resuming,
- * and the graph pauses at interrupt points waiting for human input.
+ * Uses job runners for execution - either directly or via Kubernetes jobs.
  */
 export class GraphExecutionService {
   /**
-   * Start a new evaluation session using LangGraph.
+   * Start a new evaluation session using LangGraph via job runners.
    * The graph will pause at the first interrupt point (humanReviewer).
    */
   async startSession(
@@ -126,27 +113,6 @@ export class GraphExecutionService {
         throw new Error('Golden set not found');
       }
 
-      // Create a unique thread ID for this session
-      const threadId = uuidv4();
-
-      // Prepare metadata for HITL tracking
-      const metadata: SessionMetadata = {
-        threadId,
-        goldenSetId: goldenSet.id,
-        skipHumanReview,
-        skipHumanEvaluation,
-      };
-
-      // Create the copilot simulation session in database
-      const session = await prisma.copilotSimulation.create({
-        data: {
-          goldenSetId: goldenSet.id,
-          modelName,
-          status: SESSION_STATUS.PENDING,
-          metadata: metadata as object,
-        },
-      });
-
       // Build initial state from golden set's user inputs
       const userInputContent =
         goldenSet.userInput.length > 0
@@ -157,108 +123,100 @@ export class GraphExecutionService {
           ? goldenSet.copilotOutput[0]?.editableText ?? ''
           : '';
 
-      // Prepare initial state for the graph
-      const initialState = {
-        query: userInputContent,
-        context: copilotOutputText,
-        candidateOutput: '',
-      };
+      let result: RubricGenerationResult;
 
-      // Choose graph based on whether we need interrupts
-      const graphToUse =
-        skipHumanReview && skipHumanEvaluation ? automatedGraph : graph;
+      if (RUN_KUBERNETES_JOBS) {
+        // Run as Kubernetes job
+        const jobName = `rubric-gen-${goldenSetId}-${Date.now()}`;
+        logger.info(`Running rubric generation as K8s job: ${jobName}`);
 
-      // Determine provider from model name (gemini models start with 'gemini', otherwise azure)
-      const provider = modelName.toLowerCase().startsWith('gemini')
-        ? 'gemini'
-        : 'azure';
+        const k8sResult = (await applyAndWatchJob(
+          jobName,
+          K8S_NAMESPACE,
+          RUBRIC_GENERATION_JOB_SCRIPT_PATH,
+          300000, // 5 minute timeout
+          'generation',
+          String(goldenSetId),
+          userInputContent,
+          copilotOutputText,
+          '', // candidateOutput
+          modelName,
+          String(skipHumanReview),
+          String(skipHumanEvaluation)
+        )) as GenJobResult;
 
-      // Start the graph execution - it will pause at first interrupt
-      const configurable: GraphConfigurable = {
-        thread_id: threadId,
-        provider,
-        model: modelName,
-        goldenSetId: goldenSet.id,
-        skipHumanReview,
-        skipHumanEvaluation,
-      };
-      const result = (await graphToUse.invoke(initialState, {
-        configurable,
-      })) as GraphResult;
+        if (k8sResult.status === 'failed') {
+          throw new Error(
+            `K8s rubric generation job failed: ${
+              k8sResult.reason || k8sResult.error || 'Unknown error'
+            }`
+          );
+        }
 
-      // Determine the current status based on whether graph is interrupted
-      let status: GraphSessionStatus = 'completed';
-      let message = 'Evaluation completed successfully';
-      let rubricDraftForResponse = result.rubricDraft;
+        if (!k8sResult.sessionId || !k8sResult.threadId) {
+          throw new Error(
+            'K8s rubric generation job succeeded but missing sessionId or threadId'
+          );
+        }
 
-      // Check if graph is interrupted (paused waiting for human input)
-      if (result.__interrupt__ && result.__interrupt__.length > 0) {
-        const interruptValue = result.__interrupt__[0]?.value;
+        result = {
+          status: 'succeeded',
+          sessionId: k8sResult.sessionId,
+          threadId: k8sResult.threadId,
+          graphStatus:
+            (k8sResult.graphStatus as RubricGenerationResult['graphStatus']) ||
+            'completed',
+          ...(k8sResult.message && { message: k8sResult.message }),
+          ...(k8sResult.rubric !== undefined && { rubric: k8sResult.rubric }),
+          ...(k8sResult.evaluationScore !== undefined && {
+            evaluationScore: k8sResult.evaluationScore,
+          }),
+          ...(k8sResult.finalReport !== undefined && {
+            finalReport: k8sResult.finalReport,
+          }),
+          ...(k8sResult.error && { error: k8sResult.error }),
+        };
+      } else {
+        // Run directly in-process using job runner
+        const jobRunner = new RubricGenerationJobRunner(
+          goldenSetId,
+          userInputContent,
+          copilotOutputText,
+          '', // candidateOutput
+          modelName,
+          skipHumanReview,
+          skipHumanEvaluation
+        );
 
-        // Determine which interrupt point based on interrupt payload
-        if (interruptValue?.rubricDraft && !interruptValue?.rubricFinal) {
+        jobRunner.startJob();
+        result = await jobRunner.waitForCompletion();
+      }
+
+      if (result.status === 'failed') {
+        throw new Error(result.error || 'Rubric generation failed');
+      }
+
+      // Map graphStatus to GraphSessionStatus
+      let status: GraphSessionStatus;
+      switch (result.graphStatus) {
+        case 'awaiting_rubric_review':
           status = 'awaiting_rubric_review';
-          message =
-            'Graph paused for rubric review. Call submitRubricReview to continue.';
-          // Use rubric from interrupt value as it's what the human needs to review
-          rubricDraftForResponse =
-            interruptValue.rubricDraft || result.rubricDraft;
-        } else if (interruptValue?.rubricFinal) {
+          break;
+        case 'awaiting_human_evaluation':
           status = 'awaiting_human_evaluation';
-          message =
-            'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
-        }
-      }
-
-      // Update session with current status
-      await prisma.copilotSimulation.update({
-        where: { id: session.id },
-        data: {
-          status:
-            status === 'completed'
-              ? SESSION_STATUS.COMPLETED
-              : SESSION_STATUS.RUNNING,
-          ...(status === 'completed' && { completedAt: new Date() }),
-        },
-      });
-
-      // If rubric draft was created, save it to database
-      if (rubricDraftForResponse) {
-        await evaluationPersistenceService.saveRubric(
-          session.id,
-          rubricDraftForResponse,
-          modelName
-        );
-      }
-
-      // If graph completed (no interrupts), save the final report
-      if (status === 'completed' && result.finalReport) {
-        await evaluationPersistenceService.saveFinalReport(
-          session.id,
-          result.finalReport
-        );
-
-        // Save judge records (agent and human evaluations) if rubric exists
-        if (rubricDraftForResponse) {
-          const rubricId =
-            await evaluationPersistenceService.getRubricIdBySimulationId(
-              session.id
-            );
-          if (rubricId) {
-            await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-              rubricId,
-              result.finalReport
-            );
-          }
-        }
+          break;
+        case 'completed':
+        default:
+          status = 'completed';
+          break;
       }
 
       return {
-        sessionId: session.id,
-        threadId,
+        sessionId: result.sessionId!,
+        threadId: result.threadId!,
         status,
-        rubricDraft: rubricDraftForResponse,
-        message,
+        rubricDraft: result.rubric,
+        message: result.message || 'Session started successfully',
       };
     } catch (error) {
       logger.error('Error starting graph session:', error);
@@ -271,47 +229,99 @@ export class GraphExecutionService {
   }
 
   /**
-   * Submit rubric review and resume the graph.
+   * Submit rubric review and resume the graph via job runners.
    */
   async submitRubricReview(
     sessionId: number,
     threadId: string,
     approved: boolean,
     modifiedRubric: Rubric | undefined,
-    _feedback: string | undefined,
+    feedback: string | undefined,
     reviewerAccountId: string
   ): Promise<RubricReviewResult> {
     try {
-      // Update rubric review status in database
-      const rubric = await prisma.adaptiveRubric.findUnique({
-        where: { simulationId: sessionId },
-      });
+      let result: RubricReviewJobResult;
 
-      if (rubric) {
-        await prisma.adaptiveRubric.update({
-          where: { id: rubric.id },
-          data: {
-            reviewStatus: approved
-              ? REVIEW_STATUS.APPROVED
-              : REVIEW_STATUS.REJECTED,
-            reviewedAt: new Date(),
-            reviewedBy: reviewerAccountId,
-            ...(modifiedRubric && {
-              content: JSON.stringify(modifiedRubric.criteria),
-              totalWeight: modifiedRubric.totalWeight,
-            }),
-          },
-        });
+      if (RUN_KUBERNETES_JOBS) {
+        // Run as Kubernetes job
+        const jobName = `rubric-review-${sessionId}-${Date.now()}`;
+        logger.info(`Running rubric review as K8s job: ${jobName}`);
+
+        const k8sResult = (await applyAndWatchJob(
+          jobName,
+          K8S_NAMESPACE,
+          RUBRIC_REVIEW_JOB_SCRIPT_PATH,
+          300000, // 5 minute timeout
+          'rubric-review',
+          String(sessionId),
+          threadId,
+          String(approved),
+          reviewerAccountId,
+          modifiedRubric ? JSON.stringify(modifiedRubric) : 'null',
+          feedback || ''
+        )) as RubricReviewK8sJobResult;
+
+        if (k8sResult.status === 'failed') {
+          throw new Error(
+            `K8s rubric review job failed: ${
+              k8sResult.reason || k8sResult.error || 'Unknown error'
+            }`
+          );
+        }
+
+        if (!k8sResult.sessionId || !k8sResult.threadId) {
+          throw new Error(
+            'K8s rubric review job succeeded but missing sessionId or threadId'
+          );
+        }
+
+        result = {
+          status: 'succeeded',
+          sessionId: k8sResult.sessionId,
+          threadId: k8sResult.threadId,
+          graphStatus:
+            (k8sResult.graphStatus as RubricReviewJobResult['graphStatus']) ||
+            'completed',
+          ...(k8sResult.message && { message: k8sResult.message }),
+          ...(k8sResult.rubricFinal !== undefined && {
+            rubricFinal: k8sResult.rubricFinal,
+          }),
+          ...(k8sResult.finalReport !== undefined && {
+            finalReport: k8sResult.finalReport,
+          }),
+          ...(k8sResult.error && { error: k8sResult.error }),
+        };
+      } else {
+        // Run directly in-process using job runner
+        const jobRunner = new RubricReviewJobRunner(
+          sessionId,
+          threadId,
+          approved,
+          reviewerAccountId,
+          modifiedRubric,
+          feedback
+        );
+
+        jobRunner.startJob();
+        result = await jobRunner.waitForCompletion();
       }
 
-      // For now, return a simple result
-      // Full graph resumption would require LangGraph checkpoint integration
+      if (result.status === 'failed') {
+        throw new Error(result.error || 'Rubric review failed');
+      }
+
+      // Map graphStatus to GraphSessionStatus
+      const status: GraphSessionStatus =
+        result.graphStatus === 'completed'
+          ? 'completed'
+          : 'awaiting_human_evaluation';
+
       return {
-        sessionId,
-        threadId,
-        status: 'awaiting_human_evaluation',
-        rubricFinal: modifiedRubric ?? null,
-        message: 'Rubric review submitted. Graph paused for human evaluation.',
+        sessionId: result.sessionId!,
+        threadId: result.threadId!,
+        status,
+        rubricFinal: result.rubricFinal,
+        message: result.message || 'Rubric review submitted successfully',
       };
     } catch (error) {
       logger.error('Error submitting rubric review:', error);
@@ -324,7 +334,7 @@ export class GraphExecutionService {
   }
 
   /**
-   * Submit human evaluation and resume the graph to completion.
+   * Submit human evaluation and resume the graph to completion via job runners.
    */
   async submitHumanEvaluation(
     sessionId: number,
@@ -334,79 +344,75 @@ export class GraphExecutionService {
     evaluatorAccountId: string
   ): Promise<HumanEvaluationResult> {
     try {
-      // Calculate overall score from individual scores
-      const overallScore =
-        scores.length > 0
-          ? scores.reduce((sum, s) => sum + s.score, 0) / scores.length
-          : 0;
+      let result: HumanEvaluationJobResult;
 
-      // Get the rubric for this session
-      const rubric = await prisma.adaptiveRubric.findUnique({
-        where: { simulationId: sessionId },
-      });
+      if (RUN_KUBERNETES_JOBS) {
+        // Run as Kubernetes job
+        const jobName = `human-eval-${sessionId}-${Date.now()}`;
+        logger.info(`Running human evaluation as K8s job: ${jobName}`);
 
-      if (rubric) {
-        // Save human evaluation as judge record
-        await evaluationPersistenceService.saveJudgeRecord(
-          rubric.id,
-          'human',
+        const k8sResult = (await applyAndWatchJob(
+          jobName,
+          K8S_NAMESPACE,
+          HUMAN_EVALUATION_JOB_SCRIPT_PATH,
+          300000, // 5 minute timeout
+          'human-evaluation',
+          String(sessionId),
+          threadId,
           JSON.stringify(scores),
-          overallScore,
+          overallAssessment,
+          evaluatorAccountId
+        )) as HumanEvaluationK8sJobResult;
+
+        if (k8sResult.status === 'failed') {
+          throw new Error(
+            `K8s human evaluation job failed: ${
+              k8sResult.reason || k8sResult.error || 'Unknown error'
+            }`
+          );
+        }
+
+        if (!k8sResult.sessionId || !k8sResult.threadId) {
+          throw new Error(
+            'K8s human evaluation job succeeded but missing sessionId or threadId'
+          );
+        }
+
+        result = {
+          status: 'succeeded',
+          sessionId: k8sResult.sessionId,
+          threadId: k8sResult.threadId,
+          graphStatus: 'completed',
+          ...(k8sResult.message && { message: k8sResult.message }),
+          ...(k8sResult.finalReport !== undefined && {
+            finalReport: k8sResult.finalReport,
+          }),
+          ...(k8sResult.error && { error: k8sResult.error }),
+        };
+      } else {
+        // Run directly in-process using job runner
+        const jobRunner = new HumanEvaluationJobRunner(
+          sessionId,
+          threadId,
+          scores,
           overallAssessment,
           evaluatorAccountId
         );
+
+        jobRunner.startJob();
+        result = await jobRunner.waitForCompletion();
       }
 
-      // Create final report with workflow-compatible Evaluation format
-      const finalReport: FinalReport = {
-        verdict:
-          overallScore >= 70
-            ? 'pass'
-            : overallScore >= 50
-            ? 'needs_review'
-            : 'fail',
-        overallScore,
-        summary: overallAssessment,
-        detailedAnalysis: '',
-        agentEvaluation: null,
-        humanEvaluation: {
-          evaluatorType: 'human',
-          accountId: evaluatorAccountId,
-          scores: scores.map((s) => ({
-            criterionId: s.criterionId,
-            score: s.score,
-            reasoning: s.reasoning,
-          })),
-          overallScore,
-          summary: overallAssessment,
-          timestamp: new Date().toISOString(),
-        },
-        discrepancies: [],
-        auditTrace: [],
-        generatedAt: new Date().toISOString(),
-      };
-
-      // Save final report
-      await evaluationPersistenceService.saveFinalReport(
-        sessionId,
-        finalReport
-      );
-
-      // Update session status
-      await prisma.copilotSimulation.update({
-        where: { id: sessionId },
-        data: {
-          status: SESSION_STATUS.COMPLETED,
-          completedAt: new Date(),
-        },
-      });
+      if (result.status === 'failed') {
+        throw new Error(result.error || 'Human evaluation failed');
+      }
 
       return {
-        sessionId,
-        threadId,
+        sessionId: result.sessionId!,
+        threadId: result.threadId!,
         status: 'completed',
-        finalReport,
-        message: 'Human evaluation submitted. Evaluation completed.',
+        finalReport: result.finalReport,
+        message: result.message || 'Human evaluation submitted successfully',
       };
     } catch (error) {
       logger.error('Error submitting human evaluation:', error);

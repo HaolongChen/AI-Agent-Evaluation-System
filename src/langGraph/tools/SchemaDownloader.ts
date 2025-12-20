@@ -1,5 +1,5 @@
 // FetchAppDetailsBySchemaId
-import { tool } from 'langchain';
+import { tool } from '@langchain/core/tools';
 import * as z from 'zod';
 import { TypeSystemStore } from '../../utils/zed/TypeSystemStore.ts';
 
@@ -44,7 +44,7 @@ export const schemaDownloader = tool(
     return safeStringify(schemaGraph);
   },
   {
-    name: 'schema_downloader',
+    name: 'fetchSchema',
     description: 'Download the schema graph for a given projectExId.',
     schema: z.object({
       projectExId: z

@@ -6,6 +6,7 @@ import {
   type RubricCriterion,
 } from '../state/index.ts';
 import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import { OPENAI_MODEL } from '../../config/env.ts';
 import * as z from 'zod';
 
 const rubricCriterionSchema = z.object({
@@ -61,7 +62,7 @@ export async function rubricDrafterNode(
     (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
     'azure';
   const modelName =
-    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
+    (config?.configurable?.['model'] as string | undefined) || OPENAI_MODEL;
 
   const llm = getLLM({ provider, model: modelName });
   const llmWithStructuredOutput = llm.withStructuredOutput(rubricDraftSchema);

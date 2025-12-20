@@ -1,6 +1,7 @@
 import { automatedGraph } from '../src/langGraph/agent.ts';
 import { config } from 'dotenv';
 import { logger } from '../src/utils/logger.ts';
+import { OPENAI_MODEL } from '../src/config/env.ts';
 
 config();
 
@@ -13,13 +14,13 @@ async function main() {
     const result = await automatedGraph.invoke(
       {
         query: "Hello, world! Please reply with 'Hello from LangGraph!'",
-        candidateOutput: "",
+        candidateOutput: '',
       },
       {
         configurable: {
-          "thread_id": "session111",
+          thread_id: 'session111',
           provider: 'azure',
-          model: process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o',
+          model: process.env.AZURE_OPENAI_DEPLOYMENT || OPENAI_MODEL,
           projectExId: undefined,
           skipHumanReview: true,
           skipHumanEvaluation: true,
@@ -38,7 +39,7 @@ async function main() {
       const geminiResult = await automatedGraph.invoke(
         {
           query: "Hello, world! Please reply with 'Hello from LangGraph!'",
-          candidateOutput: "",
+          candidateOutput: '',
         },
         {
           configurable: {

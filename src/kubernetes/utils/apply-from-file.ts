@@ -21,16 +21,14 @@ export interface GenJobResult {
   status: 'succeeded' | 'failed' | 'running';
   sessionId?: number;
   threadId?: string;
-  graphStatus?: string;
+  graphStatus?:
+    | 'completed'
+    | 'awaiting_rubric_review'
+    | 'awaiting_human_evaluation';
   message?: string;
   rubric?: Rubric | null;
-  hardConstraints?: string[];
-  softConstraints?: string[];
-  hardConstraintsAnswers?: boolean[];
-  softConstraintsAnswers?: string[];
   evaluationScore?: number | undefined;
   finalReport?: FinalReport | null;
-  analysis?: string;
   error?: string;
   completionTime?: Date;
   reason?: string;
@@ -262,13 +260,8 @@ async function extractJobResultFromLogs(
               graphStatus: result.graphStatus,
               message: result.message,
               rubric: result.rubric,
-              hardConstraints: result.hardConstraints,
-              softConstraints: result.softConstraints,
-              hardConstraintsAnswers: result.hardConstraintsAnswers,
-              softConstraintsAnswers: result.softConstraintsAnswers,
               evaluationScore: result.evaluationScore,
               finalReport: result.finalReport,
-              analysis: result.analysis,
               error: result.error,
             };
           } else if (jobType === 'rubric-review') {
@@ -418,13 +411,8 @@ async function watchJobStatus(
               graphStatus: genResult.graphStatus,
               message: genResult.message,
               rubric: genResult.rubric,
-              hardConstraints: genResult.hardConstraints,
-              softConstraints: genResult.softConstraints,
-              hardConstraintsAnswers: genResult.hardConstraintsAnswers,
-              softConstraintsAnswers: genResult.softConstraintsAnswers,
               evaluationScore: genResult.evaluationScore,
               finalReport: genResult.finalReport,
-              analysis: genResult.analysis,
               error: genResult.error,
             });
             return;

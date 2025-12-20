@@ -6,6 +6,7 @@ import {
   type EvaluationScore,
 } from '../state/index.ts';
 import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import { OPENAI_MODEL } from '../../config/env.ts';
 import * as z from 'zod';
 
 // Threshold for determining if a hard constraint passes (70% of score range)
@@ -39,7 +40,7 @@ export async function agentEvaluatorNode(
     (config?.configurable?.['provider'] as 'azure' | 'gemini' | undefined) ||
     'azure';
   const modelName =
-    (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
+    (config?.configurable?.['model'] as string | undefined) || OPENAI_MODEL;
 
   if (!state.rubricFinal) {
     throw new Error('No final rubric available for evaluation');

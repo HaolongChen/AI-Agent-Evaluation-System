@@ -99,7 +99,10 @@ export const analyticResolver = {
         const skipHumanReview = args.skipHumanReview ?? true;
         const skipHumanEvaluation = args.skipHumanEvaluation ?? true;
 
-        logger.info('Starting execAiCopilot workflow', { goldenSetId, modelName });
+        logger.info('Starting execAiCopilot workflow', {
+          goldenSetId,
+          modelName,
+        });
 
         // Step 1: Get pending userInputs
         const {
@@ -152,10 +155,13 @@ export const analyticResolver = {
             continue;
           }
 
-          logger.info(`Processing userInput ${absoluteIndex + 1}/${totalUserInputs}`, {
-            userInputId: userInput.id,
-            contentPreview: userInput.content.substring(0, 100),
-          });
+          logger.info(
+            `Processing userInput ${absoluteIndex + 1}/${totalUserInputs}`,
+            {
+              userInputId: userInput.id,
+              contentPreview: userInput.content.substring(0, 100),
+            }
+          );
 
           try {
             // Build WebSocket URL for this project
@@ -173,9 +179,12 @@ export const analyticResolver = {
             // Wait for copilot to complete (sequential - copilot doesn't support concurrency)
             const result = await jobRunner.waitForCompletion();
 
-            logger.info(`Copilot simulation complete for index ${absoluteIndex}`, {
-              editableTextLength: result.editableText.length,
-            });
+            logger.info(
+              `Copilot simulation complete for index ${absoluteIndex}`,
+              {
+                editableTextLength: result.editableText.length,
+              }
+            );
 
             // Append copilotOutput to goldenSet
             await goldenSetService.appendCopilotOutput(
@@ -195,14 +204,20 @@ export const analyticResolver = {
                 skipHumanEvaluation
               )
               .then((sessionResult) => {
-                logger.info(`LangGraph workflow started for index ${absoluteIndex}`, {
-                  sessionId: sessionResult.sessionId,
-                  status: sessionResult.status,
-                });
+                logger.info(
+                  `LangGraph workflow started for index ${absoluteIndex}`,
+                  {
+                    sessionId: sessionResult.sessionId,
+                    status: sessionResult.status,
+                  }
+                );
                 return sessionResult;
               })
               .catch((error) => {
-                logger.error(`LangGraph workflow failed for index ${absoluteIndex}`, error);
+                logger.error(
+                  `LangGraph workflow failed for index ${absoluteIndex}`,
+                  error
+                );
                 // Don't throw - let other workflows continue
                 return null;
               });
@@ -210,19 +225,31 @@ export const analyticResolver = {
             langGraphPromises.push(langGraphPromise);
 
             // Set isActive[i] = false after processing
-            await goldenSetService.setIsActiveAtIndex(goldenSetId, absoluteIndex, false);
-
+            await goldenSetService.setIsActiveAtIndex(
+              goldenSetId,
+              absoluteIndex,
+              false
+            );
           } catch (error) {
-            logger.error(`Error processing userInput at index ${absoluteIndex}`, error);
+            logger.error(
+              `Error processing userInput at index ${absoluteIndex}`,
+              error
+            );
             // Set isActive to false even on error
-            await goldenSetService.setIsActiveAtIndex(goldenSetId, absoluteIndex, false);
+            await goldenSetService.setIsActiveAtIndex(
+              goldenSetId,
+              absoluteIndex,
+              false
+            );
             // Continue with next input instead of failing entire workflow
           }
         }
 
         // Wait for all LangGraph workflows to complete (they run concurrently)
         if (langGraphPromises.length > 0) {
-          logger.info(`Waiting for ${langGraphPromises.length} LangGraph workflows to complete`);
+          logger.info(
+            `Waiting for ${langGraphPromises.length} LangGraph workflows to complete`
+          );
           await Promise.all(langGraphPromises);
           logger.info('All LangGraph workflows completed');
         }

@@ -355,42 +355,6 @@ export class ExecutionService {
       throw new Error('Failed to fetch evaluation sessions');
     }
   }
-
-  async updateSessionStatus(
-    sessionId: string,
-    status: (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS],
-    metrics?: {
-      totalLatencyMs?: number;
-      roundtripCount?: number;
-      inputTokens?: number;
-      outputTokens?: number;
-      contextPercentage?: number;
-      metadata?: object;
-    }
-  ) {
-    try {
-      return prisma.evaluationSession.update({
-        where: { id: parseInt(sessionId) },
-        data: {
-          status,
-          ...(status === SESSION_STATUS.COMPLETED && {
-            completedAt: new Date(),
-          }),
-          ...(metrics && {
-            totalLatencyMs: metrics.totalLatencyMs,
-            roundtripCount: metrics.roundtripCount,
-            inputTokens: metrics.inputTokens,
-            outputTokens: metrics.outputTokens,
-            contextPercentage: metrics.contextPercentage,
-            metadata: metrics.metadata,
-          }),
-        },
-      });
-    } catch (error) {
-      logger.error('Error updating evaluation session status:', error);
-      throw new Error('Failed to update evaluation session status');
-    }
-  }
 }
 
 export const executionService = new ExecutionService();

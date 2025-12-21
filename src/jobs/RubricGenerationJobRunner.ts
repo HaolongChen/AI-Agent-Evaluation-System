@@ -154,6 +154,7 @@ export class RubricGenerationJobRunner {
         this.schemaExId,
         this.copilotType,
         this.modelName,
+        this.candidateOutput,
         SESSION_STATUS.PENDING,
         metadata as unknown as Prisma.InputJsonValue
       );

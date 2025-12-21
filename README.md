@@ -1,3 +1,246 @@
+# AI Agent Evaluation System
+
+An end-to-end evaluation framework for Copilot-style agents. It orchestrates Human-in-the-Loop (HITL) workflows with LangGraph, stores structured results in PostgreSQL via Prisma, and exposes a GraphQL API for golden set management, evaluations, and analytics.
+
+## Highlights
+
+- HITL with LangGraph interrupts for rubric review and human scoring; automated mode skips both steps
+- Adaptive, weighted rubrics with structured criteria and scoring scales
+- Dual evaluations (agent + human) with discrepancy tracing and audit logs
+- GraphQL API for sessions, rubrics, results, and dashboard metrics
+- Prisma-backed persistence; optional Kubernetes Job runners for scalable execution
+
+## Architecture
+
+- **Server:** Express + Apollo Server (GraphQL) in `src/index.ts`
+- **Workflow:** LangGraph state machine in `src/langGraph/agent.ts` with nodes under `src/langGraph/nodes/*`
+- **State types:** `src/langGraph/state/state.ts`
+- **Business logic:** services in `src/services/*` (GraphExecutionService, GoldenSetService, EvaluationPersistenceService, AnalyticsService, etc.)
+- **GraphQL schema:** `src/graphql/type/TypeDefs.ts` with resolvers in `src/graphql/resolvers/*`
+- **Persistence:** PostgreSQL + Prisma (`prisma/schema.prisma`)
+- **Scale-out:** Optional Kubernetes Jobs when `RUN_KUBERNETES_JOBS=true`
+
+## Tech stack
+
+- TypeScript (ESM), Node.js 18+
+- Express + Apollo Server
+- LangGraph + LangChain
+- Prisma ORM + PostgreSQL
+- Optional: @kubernetes/client-node for job runners
+
+## Prerequisites
+
+- Node.js 18+ and pnpm
+- PostgreSQL 14+ reachable via `DATABASE_URL`
+- At least one LLM provider configured (Azure OpenAI or Google Gemini)
+- Functorz Copilot WebSocket access (required to boot)
+
+## Environment variables (required at startup)
+
+- `PORT` (default 4000)
+- `DATABASE_URL` (e.g., `postgresql://user:pass@localhost:5432/ai_eval`)
+- `WS_URL` Base Copilot WebSocket endpoint; app appends `userToken`, `projectExId`, `clientType` (e.g., `wss://zion.functorz.work/ws?`)
+- `userToken` Functorz user token
+- `projectExId` Project external ID
+- `clientType` Optional, defaults to `WEB`
+- `BACKEND_GRAPHQL_URL` Functorz backend GraphQL (default `https://zionbackend.functorz.work/api/graphql`)
+
+LLM providers (set one or both):
+
+- Azure OpenAI: `OPENAI_API_KEY` (or `AZURE_API_KEY`), `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, optional `AZURE_OPENAI_API_VERSION` (default `2025-04-01-preview`)
+- Google Gemini: `GOOGLE_API_KEY`
+
+Other:
+
+- `LLM_PROVIDER` (`auto` | `openai` | `gemini`, default `auto`)
+- `LLM_TEMPERATURE` (default `0.2`), `LLM_MAX_OUTPUT_TOKENS` (default `1024`)
+- `RUN_KUBERNETES_JOBS` (`true` to run rubric/eval resumes via K8s jobs)
+
+See `.env.example` for a full template.
+
+## Setup
+
+```bash
+pnpm install
+pnpm db:generate
+pnpm db:push
+# optional
+pnpm db:seed      # seed example golden set
+pnpm db:delete    # delete golden sets
+```
+
+## Run
+
+```bash
+# Live dev (nodemon + tsx)
+pnpm dev
+
+# Production build
+pnpm build:bundle
+pnpm start
+```
+
+GraphQL playground: `http://localhost:4000/graphql` (or your configured `PORT`).
+
+## GraphQL quickstart
+
+### Start a HITL session
+
+```graphql
+mutation Start {
+  startGraphSession(
+    projectExId: "proj-123"
+    schemaExId: "schema-abc"
+    copilotType: DATA_MODEL_BUILDER
+    modelName: "gpt-4o-mini"
+    skipHumanReview: false
+    skipHumanEvaluation: false
+  ) {
+    sessionId
+    threadId
+    status
+    rubricDraft {
+      id
+      version
+      totalWeight
+      criteria {
+        id
+        name
+        weight
+      }
+    }
+    message
+  }
+}
+```
+
+### Approve or modify the rubric
+
+```graphql
+mutation Review {
+  submitRubricReview(
+    sessionId: 1
+    threadId: "<thread-id>"
+    approved: true
+    reviewerAccountId: "account-xyz"
+  ) {
+    status
+    rubricFinal {
+      id
+      version
+      totalWeight
+    }
+    message
+  }
+}
+```
+
+### Submit human evaluation
+
+```graphql
+mutation Eval {
+  submitHumanEvaluation(
+    sessionId: 1
+    threadId: "<thread-id>"
+    overallAssessment: "Looks good"
+    evaluatorAccountId: "account-xyz"
+    scores: [{ criterionId: "c1", score: 0.9, reasoning: "Accurate" }]
+  ) {
+    status
+    finalReport {
+      verdict
+      overallScore
+      summary
+      discrepancies
+      auditTrace
+    }
+    message
+  }
+}
+```
+
+### Run fully automated evaluation
+
+```graphql
+mutation Auto {
+  runAutomatedEvaluation(
+    projectExId: "proj-123"
+    schemaExId: "schema-abc"
+    copilotType: DATA_MODEL_BUILDER
+    modelName: "gemini-2.5-pro"
+  ) {
+    status
+    finalReport {
+      verdict
+      overallScore
+      summary
+    }
+    message
+  }
+}
+```
+
+### Inspect session state
+
+```graphql
+query State {
+  getGraphSessionState(sessionId: 1) {
+    status
+    threadId
+    rubricDraft {
+      id
+    }
+    rubricFinal {
+      id
+    }
+    agentEvaluation {
+      overallScore
+    }
+    humanEvaluation {
+      overallScore
+    }
+    finalReport {
+      verdict
+      overallScore
+    }
+  }
+}
+```
+
+## Golden set management
+
+- List schemas: `getGoldenSetSchemas(copilotType)`
+- Upsert: `updateGoldenSetProject` mutation or service
+- Golden sets include `promptTemplate` and `idealResponse`; staged updates supported via `nextGoldenSet`
+
+## Analytics and results
+
+- `getEvaluationResult(sessionId)` returns the final report
+- `compareModels(schemaExId, modelNames[])` compares models
+- `getDashboardMetrics(...)` returns trend and pass-rate summaries
+
+## Kubernetes job mode
+
+Set `RUN_KUBERNETES_JOBS=true` to delegate rubric review and human evaluation resume steps to Kubernetes Jobs. Job runners live in `src/jobs/*`; backend observes completion via DB writes.
+
+## Development scripts
+
+- Tests/demos: `pnpm test:graphql`, `pnpm test:introspection`, `pnpm test:lg`, `pnpm test:tools`
+- Prisma: `pnpm db:generate`, `pnpm db:push`, `pnpm db:migrate`, `pnpm db:studio`
+
+## Notes
+
+- The app will throw on boot if `WS_URL`, `userToken`, or `projectExId` are missing.
+- `LLM_PROVIDER=auto` prefers OpenAI if keys exist; otherwise Gemini. Azure deployment name is honored when model names look like base models (e.g., `gpt-4o`).
+
+## Health
+
+- `GET http://localhost:<PORT>/health`
+
+## License
+
+ISC
+
 # AI-Agent-Evaluation-System
 
 ## Project Overview

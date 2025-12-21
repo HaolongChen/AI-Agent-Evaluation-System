@@ -1,21 +1,7 @@
 import { graphExecutionService } from '../../services/GraphExecutionService.ts';
 import { logger } from '../../utils/logger.ts';
-import { CopilotType } from '../../../build/generated/prisma/enums.ts';
 import type { Rubric, RubricCriterion } from '../../langGraph/state/state.ts';
 
-/**
- * Map GraphQL CopilotType enum to Prisma CopilotType enum
- */
-const graphqlToPrismaCopilotType: Record<
-  string,
-  (typeof CopilotType)[keyof typeof CopilotType]
-> = {
-  DATA_MODEL_BUILDER: CopilotType.dataModel,
-  UI_BUILDER: CopilotType.uiBuilder,
-  ACTIONFLOW_BUILDER: CopilotType.actionflow,
-  LOG_ANALYZER: CopilotType.logAnalyzer,
-  AGENT_BUILDER: CopilotType.agentBuilder,
-};
 
 /**
  * Input types matching GraphQL schema
@@ -123,61 +109,6 @@ export const graphSessionResolver = {
 
   Mutation: {
     /**
-     * Start a new graph-based evaluation session.
-     * Returns immediately after the graph pauses at the first interrupt point.
-     */
-    startGraphSession: async (
-      _: unknown,
-      args: {
-        projectExId: string;
-        schemaExId: string;
-        copilotType: string; // GraphQL enum comes as string
-        modelName: string;
-        skipHumanReview?: boolean;
-        skipHumanEvaluation?: boolean;
-      }
-    ) => {
-      try {
-        // Map GraphQL CopilotType to Prisma CopilotType
-        const prismaCopilotType = graphqlToPrismaCopilotType[args.copilotType];
-        if (!prismaCopilotType) {
-          throw new Error(`Invalid copilotType: ${args.copilotType}`);
-        }
-
-        logger.info('Starting graph session', {
-          projectExId: args.projectExId,
-          schemaExId: args.schemaExId,
-          copilotType: prismaCopilotType,
-          modelName: args.modelName,
-        });
-
-        const result = await graphExecutionService.startSession(
-          args.projectExId,
-          args.schemaExId,
-          prismaCopilotType,
-          args.modelName,
-          args.skipHumanReview ?? false,
-          args.skipHumanEvaluation ?? false
-        );
-
-        return {
-          sessionId: result.sessionId,
-          threadId: result.threadId,
-          status: mapStatusToGraphQL(result.status),
-          rubricDraft: result.rubricDraft,
-          message: result.message,
-        };
-      } catch (error) {
-        logger.error('Error starting graph session:', error);
-        throw new Error(
-          `Failed to start graph session: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        );
-      }
-    },
-
-    /**
      * Submit rubric review and resume the graph.
      * Called after startGraphSession when status is AWAITING_RUBRIC_REVIEW.
      */
@@ -263,56 +194,6 @@ export const graphSessionResolver = {
         logger.error('Error submitting human evaluation:', error);
         throw new Error(
           `Failed to submit human evaluation: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        );
-      }
-    },
-
-    /**
-     * Run a fully automated evaluation without human intervention.
-     * Useful for batch processing or when HITL is not required.
-     */
-    runAutomatedEvaluation: async (
-      _: unknown,
-      args: {
-        projectExId: string;
-        schemaExId: string;
-        copilotType: string; // GraphQL enum comes as string
-        modelName: string;
-      }
-    ) => {
-      try {
-        // Map GraphQL CopilotType to Prisma CopilotType
-        const prismaCopilotType = graphqlToPrismaCopilotType[args.copilotType];
-        if (!prismaCopilotType) {
-          throw new Error(`Invalid copilotType: ${args.copilotType}`);
-        }
-
-        logger.info('Running automated evaluation', {
-          projectExId: args.projectExId,
-          schemaExId: args.schemaExId,
-          copilotType: prismaCopilotType,
-        });
-
-        const result = await graphExecutionService.runAutomatedEvaluation(
-          args.projectExId,
-          args.schemaExId,
-          prismaCopilotType,
-          args.modelName
-        );
-
-        return {
-          sessionId: result.sessionId,
-          threadId: result.threadId,
-          status: 'COMPLETED',
-          finalReport: result.finalReport,
-          message: 'Automated evaluation completed successfully',
-        };
-      } catch (error) {
-        logger.error('Error running automated evaluation:', error);
-        throw new Error(
-          `Failed to run automated evaluation: ${
             error instanceof Error ? error.message : 'Unknown error'
           }`
         );

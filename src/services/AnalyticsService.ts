@@ -177,7 +177,8 @@ export class AnalyticsService {
     schemaExId: string,
     copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
     modelName: string,
-    status: "pending" | "running" | "completed" | "failed",
+    candidateOutput: string,
+    status: 'pending' | 'running' | 'completed' | 'failed',
     metadata: Prisma.InputJsonValue
   ) {
     try {
@@ -187,6 +188,7 @@ export class AnalyticsService {
           schemaExId,
           copilotType,
           modelName,
+          editableText: candidateOutput,
           status,
           metadata,
         },

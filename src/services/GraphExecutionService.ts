@@ -1,27 +1,15 @@
-import { v4 as uuidv4 } from 'uuid';
-import {
-  graph,
-  automatedGraph,
-  type GraphConfigurable,
-} from '../langGraph/agent.ts';
 import { prisma } from '../config/prisma.ts';
-import { evaluationPersistenceService } from './EvaluationPersistenceService.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { logger } from '../utils/logger.ts';
-import { goldenSetService } from './GoldenSetService.ts';
-import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
 import type {
   Rubric,
   Evaluation,
   FinalReport,
 } from '../langGraph/state/state.ts';
-import { analyticsService } from './AnalyticsService.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import {
   applyAndWatchJob,
-  type GenJobResult,
   type HumanEvaluationK8sJobResult,
   type RubricReviewK8sJobResult,
 } from '../kubernetes/utils/apply-from-file.ts';
@@ -46,38 +34,6 @@ interface SessionMetadata {
   goldenSetId?: number;
   skipHumanReview?: boolean;
   skipHumanEvaluation?: boolean;
-}
-
-/**
- * Interrupt payload structure from LangGraph
- */
-interface InterruptInfo {
-  value: {
-    message?: string;
-    rubricDraft?: Rubric;
-    rubricFinal?: Rubric;
-    query?: string;
-    context?: string | null;
-    candidateOutput?: string;
-  };
-  resumable: boolean;
-  ns: string[];
-}
-
-/**
- * Result from graph.invoke() with potential interrupt info
- */
-interface GraphResult {
-  query: string;
-  context: string;
-  candidateOutput: string;
-  rubricDraft?: Rubric | null;
-  rubricApproved?: boolean;
-  rubricFinal?: Rubric | null;
-  agentEvaluation?: Evaluation | null;
-  humanEvaluation?: Evaluation | null;
-  finalReport?: FinalReport | null;
-  __interrupt__?: InterruptInfo[];
 }
 
 /**
@@ -121,244 +77,6 @@ export interface HumanEvaluationResult {
  * and the graph pauses at interrupt points waiting for human input.
  */
 export class GraphExecutionService {
-  /**
-   * Start a new evaluation session using LangGraph.
-   * The graph will pause at the first interrupt point (humanReviewer).
-   */
-  async startSession(
-    projectExId: string,
-    schemaExId: string,
-    copilotType: CopilotType,
-    modelName: string,
-    skipHumanReview: boolean = false,
-    skipHumanEvaluation: boolean = false
-  ): Promise<StartSessionResult> {
-    try {
-      // Get the golden set for this evaluation
-      const goldenSets = await goldenSetService.getGoldenSets(
-        projectExId,
-        schemaExId,
-        REVERSE_COPILOT_TYPES[copilotType]
-      );
-
-      if (!goldenSets || goldenSets.length === 0) {
-        throw new Error('No golden sets found');
-      }
-      if (goldenSets.length > 1) {
-        throw new Error('Multiple golden sets found, expected only one');
-      }
-
-      const goldenSet = await goldenSetService.updateGoldenSetFromNextGoldenSet(
-        projectExId,
-        schemaExId,
-        REVERSE_COPILOT_TYPES[copilotType]
-      );
-      logger.info('Updated golden set to ID:', goldenSet.id);
-
-      if (!goldenSet) {
-        throw new Error('Golden set is undefined');
-      }
-
-      // In Kubernetes mode, delegate to the JobRunner entrypoint so the end-to-end
-      // flow is GraphExecutionService -> applyAndWatchJob -> ./src/jobs/*.ts
-      if (RUN_KUBERNETES_JOBS) {
-        const genJobResult = (await applyAndWatchJob(
-          `graph-start-session-${projectExId}-${schemaExId}-${Date.now()}`,
-          'default',
-          './src/jobs/RubricGenerationJobRunner.ts',
-          300000,
-          'generation',
-          String(goldenSet.id),
-          projectExId,
-          schemaExId,
-          String(copilotType),
-          goldenSet.query,
-          '',
-          modelName,
-          String(skipHumanReview),
-          String(skipHumanEvaluation)
-        )) as unknown as GenJobResult;
-
-        if (genJobResult.status !== 'succeeded') {
-          throw new Error(
-            genJobResult.reason || genJobResult.error || 'Kubernetes job failed'
-          );
-        }
-
-        if (!genJobResult.sessionId || !genJobResult.threadId) {
-          throw new Error(
-            'Kubernetes generation job did not return sessionId/threadId'
-          );
-        }
-
-        const status = (() => {
-          switch (genJobResult.graphStatus) {
-            case 'awaiting_rubric_review':
-              return 'awaiting_rubric_review' as const;
-            case 'awaiting_human_evaluation':
-              return 'awaiting_human_evaluation' as const;
-            case 'completed':
-              return 'completed' as const;
-            default:
-              return 'failed' as const;
-          }
-        })();
-
-        return {
-          sessionId: genJobResult.sessionId,
-          threadId: genJobResult.threadId,
-          status,
-          rubricDraft: genJobResult.rubric ?? null,
-          message:
-            genJobResult.message ||
-            (status === 'awaiting_rubric_review'
-              ? 'Graph paused for rubric review. Call submitRubricReview to continue.'
-              : status === 'awaiting_human_evaluation'
-              ? 'Graph paused for human evaluation. Call submitHumanEvaluation to continue.'
-              : status === 'completed'
-              ? 'Evaluation completed successfully'
-              : 'Graph execution failed'),
-        };
-      }
-
-      // Create a unique thread ID for this session
-      const threadId = uuidv4();
-
-      // Prepare metadata for HITL tracking
-      const metadata: SessionMetadata = {
-        threadId,
-        goldenSetId: goldenSet.id,
-        skipHumanReview,
-        skipHumanEvaluation,
-      };
-
-      // Create the evaluation session in database
-      const session = await analyticsService.createEvaluationSession(
-        projectExId,
-        schemaExId,
-        copilotType,
-        modelName,
-        SESSION_STATUS.PENDING,
-        metadata as unknown as Prisma.InputJsonValue
-      );
-
-      // Prepare initial state for the graph
-      const initialState = {
-        query: goldenSet.query,
-        candidateOutput: '',
-      };
-
-      // Choose graph based on whether we need interrupts
-      const graphToUse =
-        skipHumanReview && skipHumanEvaluation ? automatedGraph : graph;
-
-      // Determine provider from model name (gemini models start with 'gemini', otherwise azure)
-      const provider = modelName.toLowerCase().startsWith('gemini')
-        ? 'gemini'
-        : 'azure';
-
-      // Start the graph execution - it will pause at first interrupt
-      const configurable: GraphConfigurable = {
-        thread_id: threadId,
-        provider,
-        model: modelName,
-        projectExId,
-        skipHumanReview,
-        skipHumanEvaluation,
-      };
-      const result = (await graphToUse.invoke(initialState, {
-        configurable,
-      })) as GraphResult;
-
-      // Determine the current status based on whether graph is interrupted
-      let status: GraphSessionStatus = 'completed';
-      let message = 'Evaluation completed successfully';
-      let rubricDraftForResponse = result.rubricDraft;
-
-      // Check if graph is interrupted (paused waiting for human input)
-      if (result.__interrupt__ && result.__interrupt__.length > 0) {
-        const interruptValue = result.__interrupt__[0]?.value;
-
-        // Determine which interrupt point based on interrupt payload
-        if (interruptValue?.rubricDraft && !interruptValue?.rubricFinal) {
-          status = 'awaiting_rubric_review';
-          message =
-            'Graph paused for rubric review. Call submitRubricReview to continue.';
-          // Use rubric from interrupt value as it's what the human needs to review
-          rubricDraftForResponse =
-            interruptValue.rubricDraft || result.rubricDraft;
-        } else if (interruptValue?.rubricFinal) {
-          status = 'awaiting_human_evaluation';
-          message =
-            'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
-        }
-      }
-
-      // Update session with current status
-      await prisma.evaluationSession.update({
-        where: { id: session.id },
-        data: {
-          status:
-            status === 'completed'
-              ? SESSION_STATUS.COMPLETED
-              : SESSION_STATUS.RUNNING,
-          ...(status === 'completed' && { completedAt: new Date() }),
-        },
-      });
-
-      // If rubric draft was created, save it to database
-      if (rubricDraftForResponse) {
-        await evaluationPersistenceService.saveRubric(
-          session.id,
-          projectExId,
-          schemaExId,
-          rubricDraftForResponse,
-          goldenSet.query,
-          result.candidateOutput || '',
-          modelName
-        );
-      }
-
-      // If graph completed (no interrupts), save the final report
-      if (status === 'completed' && result.finalReport) {
-        await evaluationPersistenceService.saveFinalReport(
-          session.id,
-          session,
-          result.finalReport
-        );
-
-        // Save judge records (agent and human evaluations) if rubric exists
-        if (rubricDraftForResponse) {
-          const rubricId =
-            await evaluationPersistenceService.getRubricIdBySessionId(
-              session.id
-            );
-          if (rubricId) {
-            await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-              rubricId,
-              result.finalReport
-            );
-          }
-        }
-      }
-
-      return {
-        sessionId: session.id,
-        threadId,
-        status,
-        rubricDraft: rubricDraftForResponse,
-        message,
-      };
-    } catch (error) {
-      logger.error('Error starting graph session:', error);
-      throw new Error(
-        `Failed to start evaluation session: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
-    }
-  }
-
   /**
    * Submit rubric review and resume the graph.
    */
@@ -531,43 +249,6 @@ export class GraphExecutionService {
         }`
       );
     }
-  }
-
-  /**
-   * Run a fully automated evaluation (no human in the loop)
-   */
-  async runAutomatedEvaluation(
-    projectExId: string,
-    schemaExId: string,
-    copilotType: CopilotType,
-    modelName: string
-  ): Promise<{
-    sessionId: number;
-    threadId: string;
-    finalReport: FinalReport | null;
-  }> {
-    const result = await this.startSession(
-      projectExId,
-      schemaExId,
-      copilotType,
-      modelName,
-      true, // skipHumanReview
-      true // skipHumanEvaluation
-    );
-
-    // Get the final state from the automated run
-    const session = await prisma.evaluationSession.findUnique({
-      where: { id: result.sessionId },
-      include: { result: true },
-    });
-
-    return {
-      sessionId: result.sessionId,
-      threadId: result.threadId,
-      finalReport: session?.result
-        ? this.transformResultToFinalReport(session.result)
-        : null,
-    };
   }
 
   /**

@@ -12,17 +12,15 @@ async function seedGoldenSet() {
         schemaExId: 'example-schema-1',
         copilotType: 'dataModel' as const,
         description: 'Example data model for e-commerce',
-        promptTemplate:
+        query:
           'create a table called like_table which contains post_id and user_id, etc. create anything else when needed', // TODO: implement meaningful prompt templates
-        idealResponse: { entities: ['User', 'Product', 'Order'] },
       },
       // {
       //   projectExId: 'example-project-2',
       //   schemaExId: 'example-schema-2',
       //   copilotType: 'uiBuilder' as const,
       //   description: 'Example UI for dashboard',
-      //   promptTemplate: 'Create a dashboard UI with charts and tables',
-      //   idealResponse: { components: ['Chart', 'Table', 'Card'] },
+      //   query: 'Create a dashboard UI with charts and tables',
       // },
     ];
 
@@ -41,8 +39,7 @@ async function seedGoldenSet() {
           schemaExId: data.schemaExId,
           copilotType: data.copilotType,
           description: data.description,
-          promptTemplate: data.promptTemplate,
-          idealResponse: data.idealResponse,
+          query: data.query,
         },
       });
     }

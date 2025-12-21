@@ -77,7 +77,7 @@ export class ExecutionService {
           'evaluation',
           projectExId,
           WS_URL,
-          goldenSet.promptTemplate
+          goldenSet.query
         )) as unknown as EvalJobResult;
         logger.info(
           'Evaluation job completed with status:',
@@ -96,8 +96,8 @@ export class ExecutionService {
           projectExId,
           schemaExId,
           String(copilotType),
-          goldenSet.promptTemplate,
-          JSON.stringify(goldenSet.idealResponse),
+          goldenSet.query,
+          '',
           evalJobResult.editableText || '',
           resolvedModelName,
           String(skipHumanReview),
@@ -112,7 +112,7 @@ export class ExecutionService {
         const evalJobRunner = new EvaluationJobRunner(
           projectExId,
           WS_URL,
-          goldenSet.promptTemplate
+          goldenSet.query
         );
         evalJobRunner.startJob();
         const { editableText } = await evalJobRunner.waitForCompletion();
@@ -122,8 +122,8 @@ export class ExecutionService {
           projectExId,
           schemaExId,
           copilotType,
-          goldenSet.promptTemplate,
-          JSON.stringify(goldenSet.idealResponse),
+          goldenSet.query,
+          '',
           editableText,
           resolvedModelName,
           skipHumanReview,
@@ -176,7 +176,7 @@ export class ExecutionService {
               'evaluation',
               goldenSet.projectExId,
               WS_URL,
-              goldenSet.promptTemplate
+              goldenSet.query
             )) as unknown as EvalJobResult;
             logger.info(
               `Evaluation job for golden set ${goldenSet.id} completed with status:`,
@@ -199,8 +199,7 @@ export class ExecutionService {
               goldenSet.projectExId,
               goldenSet.schemaExId,
               String(goldenSet.copilotType as unknown as CopilotType),
-              goldenSet.promptTemplate,
-              JSON.stringify(goldenSet.idealResponse),
+              goldenSet.query,
               evalJobResult.editableText || '',
               resolvedModelName,
               String(skipHumanReview),
@@ -249,7 +248,7 @@ export class ExecutionService {
             const evalJobRunner = new EvaluationJobRunner(
               goldenSet.projectExId,
               WS_URL,
-              goldenSet.promptTemplate
+              goldenSet.query
             );
             evalJobRunner.startJob();
             const { editableText } = await evalJobRunner.waitForCompletion();
@@ -263,8 +262,8 @@ export class ExecutionService {
               goldenSet.projectExId,
               goldenSet.schemaExId,
               goldenSet.copilotType as unknown as CopilotType,
-              goldenSet.promptTemplate,
-              JSON.stringify(goldenSet.idealResponse),
+              goldenSet.query,
+              '',
               editableText,
               resolvedModelName,
               skipHumanReview,

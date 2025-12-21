@@ -172,8 +172,7 @@ export class GraphExecutionService {
           projectExId,
           schemaExId,
           String(copilotType),
-          goldenSet.promptTemplate,
-          JSON.stringify(goldenSet.idealResponse),
+          goldenSet.query,
           '',
           modelName,
           String(skipHumanReview),
@@ -245,8 +244,7 @@ export class GraphExecutionService {
 
       // Prepare initial state for the graph
       const initialState = {
-        query: goldenSet.promptTemplate,
-        context: JSON.stringify(goldenSet.idealResponse),
+        query: goldenSet.query,
         candidateOutput: '',
       };
 
@@ -315,7 +313,7 @@ export class GraphExecutionService {
           projectExId,
           schemaExId,
           rubricDraftForResponse,
-          goldenSet.promptTemplate,
+          goldenSet.query,
           result.candidateOutput || '',
           modelName
         );

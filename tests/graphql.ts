@@ -12,8 +12,7 @@ const query = new QueryBuilder(operationName)
     'schemaExId',
     'copilotType',
     'description',
-    'promptTemplate',
-    'idealResponse',
+    'query',
     'createdAt',
     'isActive'
   )

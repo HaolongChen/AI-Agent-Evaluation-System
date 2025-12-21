@@ -39,12 +39,8 @@ async function simulateHITLFlow() {
           schemaExId: TEST_SCHEMA_EX_ID,
           copilotType: 'dataModel', // Prisma uses the actual enum value
           description: 'Test golden set for HITL simulation',
-          promptTemplate:
+          query:
             'Create a data model for a blog application with users, posts, and comments.',
-          idealResponse: {
-            entities: ['User', 'Post', 'Comment'],
-            relationships: ['User hasMany Posts', 'Post hasMany Comments'],
-          },
         },
       });
       console.log('Test golden set created.\n');

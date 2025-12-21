@@ -33,8 +33,7 @@ interface GoldenSet {
   schemaExId: string;
   copilotType: string;
   description?: string;
-  promptTemplate: string;
-  idealResponse: unknown;
+  query: string;
 }
 
 async function graphqlRequest<T>(
@@ -73,7 +72,7 @@ async function testGetGoldenSets(): Promise<boolean> {
           schemaExId
           copilotType
           description
-          promptTemplate
+          query
         }
       }
     `;
@@ -100,8 +99,8 @@ async function testGetGoldenSets(): Promise<boolean> {
       console.log(`     Schema: ${gs.schemaExId}`);
       console.log(`     Copilot Type: ${gs.copilotType}`);
       console.log(
-        `     Prompt: ${gs.promptTemplate.substring(0, 100)}${
-          gs.promptTemplate.length > 100 ? '...' : ''
+        `     Prompt: ${gs.query.substring(0, 100)}${
+          gs.query.length > 100 ? '...' : ''
         }`
       );
     });

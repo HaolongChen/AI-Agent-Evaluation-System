@@ -24,7 +24,6 @@ export interface CopilotRubricInput {
   copilotType: copilotType;
   copilotInput: string;
   copilotOutput: string;
-  idealResponse?: unknown;
   preferredProvider?: LLMProvider;
 }
 
@@ -191,21 +190,6 @@ const PROMPT_WITH_FORMAT = copilotRubricPrompt.partial({
 const sanitizeSnippet = (text: string): string =>
   text.replace(/\s+/g, ' ').trim().slice(0, 1_000);
 
-const formatIdealResponse = (idealResponse?: unknown): string => {
-  if (idealResponse === undefined || idealResponse === null) {
-    return 'Not provided';
-  }
-  if (typeof idealResponse === 'string') {
-    return sanitizeSnippet(idealResponse);
-  }
-  try {
-    return sanitizeSnippet(JSON.stringify(idealResponse));
-  } catch (error) {
-    logger.warn('Failed to stringify ideal response', error);
-    return 'Not provided';
-  }
-};
-
 const metricHintsAsText = (copilot: copilotType): string => {
   const hints = METRIC_HINT_MAP[copilot] || [];
   return hints.length
@@ -281,7 +265,6 @@ export async function generateAdaptiveRubric(
     copilotType: COPILOT_LABEL[input.copilotType] || input.copilotType,
     copilotInput: sanitizeSnippet(input.copilotInput),
     copilotOutput: sanitizeSnippet(input.copilotOutput),
-    idealResponse: formatIdealResponse(input.idealResponse),
     metricHints: metricHintsAsText(input.copilotType),
   };
 

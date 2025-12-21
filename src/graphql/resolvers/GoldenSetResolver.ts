@@ -47,8 +47,7 @@ export const goldenResolver = {
         schemaExId: string;
         copilotType: keyof typeof COPILOT_TYPES;
         description: string;
-        promptTemplate: string;
-        idealResponse: object;
+        query: string;
       }
     ) => {
       try {
@@ -57,8 +56,7 @@ export const goldenResolver = {
           args.schemaExId,
           args.copilotType,
           args.description,
-          args.promptTemplate,
-          args.idealResponse
+          args.query,
         );
         if (!result) {
           logger.warn('No result returned from updateGoldenSetProject');

@@ -48,9 +48,7 @@ model goldenSet {
   nextGoldenSetId Int?        @unique @map("next_golden_set_id")
   copilotType     CopilotType @map("copilot_type")
   description     String?
-  promptTemplate  String      @map("prompt_template")
-  // TODO: implement context if needed
-  idealResponse   Json        @map("ideal_response")
+  query           String      @db.Text
   createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy       String?     @map("created_by")
   isActive        Boolean     @default(true) @map("is_active")
@@ -62,13 +60,12 @@ model goldenSet {
 }
 
 model nextGoldenSet {
-  id             Int      @id @default(autoincrement())
-  description    String?
-  promptTemplate String   @map("prompt_template")
-  idealResponse  Json     @map("ideal_response")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy      String?  @map("created_by")
-  isActive       Boolean  @default(true) @map("is_active")
+  id          Int      @id @default(autoincrement())
+  description String?
+  query       String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy   String?  @map("created_by")
+  isActive    Boolean  @default(true) @map("is_active")
 
   goldenSet goldenSet?
 

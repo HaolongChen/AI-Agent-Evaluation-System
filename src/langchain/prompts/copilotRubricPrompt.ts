@@ -19,7 +19,6 @@ Schema: {schemaExId}
 Copilot type: {copilotType}
 
 Reference metrics to emphasize: {metricHints}
-Ideal response exemplar (optional): {idealResponse}
 
 Copilot input / instructions:
 """

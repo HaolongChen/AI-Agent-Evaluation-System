@@ -37,7 +37,7 @@ const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 export class EvaluationJobRunner {
   private projectExId: string;
   private wsUrl: string;
-  private promptTemplate: string;
+  private query: string;
   response: string = '';
   editableText: string = '';
   tasks: TaskMessage[] | null = null;
@@ -56,10 +56,10 @@ export class EvaluationJobRunner {
   private isCompleted: boolean = false;
   private timeoutId: NodeJS.Timeout | null = null;
 
-  constructor(projectExId: string, wsUrl: string, promptTemplate: string) {
+  constructor(projectExId: string, wsUrl: string, query: string) {
     this.projectExId = projectExId;
     this.wsUrl = wsUrl;
-    this.promptTemplate = promptTemplate;
+    this.query = query;
     // Create the completion promise in the constructor
     this.completionPromise = new Promise<{
       // response: string;
@@ -222,7 +222,7 @@ export class EvaluationJobRunner {
     }
     const response: HumanInputMessage = {
       type: CopilotMessageType.HUMAN_INPUT,
-      content: this.promptTemplate,
+      content: this.query,
     };
     this.send(response);
   }
@@ -404,18 +404,18 @@ if (
     .object({
       projectExId: z.string().min(1, 'projectExId is required'),
       wsUrl: z.url('wsUrl must be a valid URL'),
-      promptTemplate: z.string().min(1, 'promptTemplate is required'),
+      query: z.string().min(1, 'query is required'),
     })
     .parse({
       projectExId: process.argv[2] || '',
       wsUrl: process.argv[3] || '',
-      promptTemplate: process.argv[4] || '',
+      query: process.argv[4] || '',
     });
 
   const evaluationJobRunner = new EvaluationJobRunner(
     args.projectExId,
     args.wsUrl,
-    args.promptTemplate
+    args.query
   );
 
   evaluationJobRunner.startJob();

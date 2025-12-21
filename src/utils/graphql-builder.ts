@@ -199,8 +199,7 @@ export const GoldenSetQueries = {
       'schemaExId',
       'copilotType',
       'description',
-      'promptTemplate',
-      'idealResponse',
+      'query',
       'createdAt',
       'isActive'
     );
@@ -222,24 +221,21 @@ export const GoldenSetMutations = {
     schemaExId: string;
     copilotType: string;
     description?: string;
-    promptTemplate: string;
-    idealResponse: object;
+    query: string;
   }) => {
     return mutation('updateGoldenSetProject')
       .withVariable('projectExId', data.projectExId)
       .withVariable('schemaExId', data.schemaExId)
       .withVariable('copilotType', data.copilotType)
       .withVariable('description', data.description)
-      .withVariable('promptTemplate', data.promptTemplate)
-      .withVariable('idealResponse', data.idealResponse)
+      .withVariable('query', data.query)
       .select(
         'id',
         'projectExId',
         'schemaExId',
         'copilotType',
         'description',
-        'promptTemplate',
-        'idealResponse',
+        'query',
         'createdAt'
       )
       .build();

@@ -69,16 +69,16 @@ export class JudgeService {
         //       rubric.schemaExId,
         //       copilotType,
         //       originalGoldenSet[0].description ?? '',
-        //       originalGoldenSet[0].promptTemplate ?? '',
-        //       (originalGoldenSet[0].idealResponse as object) ?? {}
+        //       originalGoldenSet[0].query ?? '',
         //     );
         //   logger.info('Updated golden set with new ID:', newGoldenSet.id);
         // }
-        const newGoldenSet = await goldenSetService.updateGoldenSetFromNextGoldenSet(
-          rubric.projectExId,
-          rubric.schemaExId,
-          copilotType
-        );
+        const newGoldenSet =
+          await goldenSetService.updateGoldenSetFromNextGoldenSet(
+            rubric.projectExId,
+            rubric.schemaExId,
+            copilotType
+          );
         logger.info('Updated golden set to ID:', newGoldenSet.id);
         const finalResult = await analyticsService.createEvaluationResult(
           session.id.toString(),

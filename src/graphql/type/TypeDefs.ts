@@ -11,8 +11,7 @@ export const typeDefs = `#graphql
     nextGoldenSetId: Int
     copilotType: CopilotType!
     description: String
-    promptTemplate: String!
-    idealResponse: JSON!
+    query: String!
     createdAt: DateTime!
     createdBy: String
     isActive: Boolean!
@@ -24,8 +23,7 @@ export const typeDefs = `#graphql
   type NextGoldenSet {
     id: ID!
     description: String
-    promptTemplate: String!
-    idealResponse: JSON!
+    query: String!
     createdAt: DateTime!
     createdBy: String
     isActive: Boolean!
@@ -222,8 +220,7 @@ export const typeDefs = `#graphql
       schemaExId: String!
       copilotType: CopilotType!
       description: String
-      promptTemplate: String!
-      idealResponse: JSON!
+      query: String!
     ): GoldenSet!
 
     # Execution (Legacy - uses JobRunners)

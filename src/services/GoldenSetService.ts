@@ -1,6 +1,6 @@
-import { prisma } from "../config/prisma.ts";
-import { COPILOT_TYPES } from "../config/constants.ts";
-import { logger } from "../utils/logger.ts";
+import { prisma } from '../config/prisma.ts';
+import { COPILOT_TYPES } from '../config/constants.ts';
+import { logger } from '../utils/logger.ts';
 
 export class GoldenSetService {
   async simplyUpdateGoldenSetProject(
@@ -8,8 +8,7 @@ export class GoldenSetService {
     schemaExId: string,
     copilotType: keyof typeof COPILOT_TYPES,
     description: string,
-    promptTemplate: string,
-    idealResponse: object
+    query: string,
   ) {
     try {
       return prisma.goldenSet.upsert({
@@ -22,8 +21,7 @@ export class GoldenSetService {
         },
         update: {
           description,
-          promptTemplate,
-          idealResponse,
+          query,
           isActive: true,
         },
         create: {
@@ -31,13 +29,12 @@ export class GoldenSetService {
           schemaExId,
           copilotType: COPILOT_TYPES[copilotType],
           description,
-          promptTemplate,
-          idealResponse,
+          query,
         },
       });
     } catch (error) {
-      logger.error("Error updating golden set project:", error);
-      throw new Error("Failed to update golden set project");
+      logger.error('Error updating golden set project:', error);
+      throw new Error('Failed to update golden set project');
     }
   }
 
@@ -53,13 +50,13 @@ export class GoldenSetService {
         copilotType
       );
       if (originalGoldenSets.length !== 1 || !originalGoldenSets[0]) {
-        logger.error("Golden set not found or ambiguous for update");
-        throw new Error("Golden set not found or ambiguous");
+        logger.error('Golden set not found or ambiguous for update');
+        throw new Error('Golden set not found or ambiguous');
       }
       const originalGoldenSet = originalGoldenSets[0];
       if (!originalGoldenSet.nextGoldenSet) {
-        logger.error("No next golden set to update from");
-        throw new Error("No next golden set to update from");
+        logger.error('No next golden set to update from');
+        throw new Error('No next golden set to update from');
       }
       const nextGoldenSet = originalGoldenSet.nextGoldenSet;
       return prisma.goldenSet.update({
@@ -68,14 +65,13 @@ export class GoldenSetService {
         },
         data: {
           description: nextGoldenSet.description,
-          promptTemplate: nextGoldenSet.promptTemplate,
-          idealResponse: nextGoldenSet.idealResponse as object,
+          query: nextGoldenSet.query,
           nextGoldenSetId: null,
         },
       });
     } catch (error) {
-      logger.error("Error updating golden set from next golden set:", error);
-      throw new Error("Failed to update golden set from next golden set");
+      logger.error('Error updating golden set from next golden set:', error);
+      throw new Error('Failed to update golden set from next golden set');
     }
   }
 
@@ -84,8 +80,7 @@ export class GoldenSetService {
     schemaExId: string,
     copilotType: keyof typeof COPILOT_TYPES,
     description: string,
-    promptTemplate: string,
-    idealResponse: object
+    query: string,
   ): Promise<
     | Awaited<ReturnType<typeof this.simplyUpdateGoldenSetProject>>
     | { message: string }
@@ -97,20 +92,19 @@ export class GoldenSetService {
         copilotType
       );
       if (originalGoldenSets.length !== 1 || !originalGoldenSets[0]) {
-        logger.error("Golden set not found or ambiguous for update");
-        return { message: "Golden set not found or ambiguous" };
+        logger.error('Golden set not found or ambiguous for update');
+        return { message: 'Golden set not found or ambiguous' };
       }
       const originalGoldenSet = originalGoldenSets[0];
       if (originalGoldenSet?.nextGoldenSetId) {
-        logger.info("A next golden set is already pending for this golden set");
+        logger.info('A next golden set is already pending for this golden set');
         return {
-          message: "A next golden set is already pending for this golden set",
+          message: 'A next golden set is already pending for this golden set',
         };
       }
       const nextGoldenSet = await this.createNextGoldenSet(
         description,
-        promptTemplate,
-        idealResponse
+        query,
       );
       return prisma.goldenSet.update({
         where: {
@@ -121,8 +115,8 @@ export class GoldenSetService {
         },
       });
     } catch (error) {
-      logger.error("Error updating golden set project:", error);
-      throw new Error("Failed to update golden set project");
+      logger.error('Error updating golden set project:', error);
+      throw new Error('Failed to update golden set project');
     }
   }
 
@@ -136,13 +130,13 @@ export class GoldenSetService {
         select: {
           schemaExId: true,
         },
-        distinct: ["schemaExId"],
+        distinct: ['schemaExId'],
       });
 
       return results.map((r) => r.schemaExId);
     } catch (error) {
-      logger.error("Error fetching golden set schemas:", error);
-      throw new Error("Failed to fetch golden set schemas");
+      logger.error('Error fetching golden set schemas:', error);
+      throw new Error('Failed to fetch golden set schemas');
     }
   }
 
@@ -163,30 +157,28 @@ export class GoldenSetService {
           nextGoldenSet: true,
         },
       });
-      logger.debug("Fetched golden sets:", results);
+      logger.debug('Fetched golden sets:', results);
       return results;
     } catch (error) {
-      logger.error("Error fetching golden sets:", error);
-      throw new Error("Failed to fetch golden sets");
+      logger.error('Error fetching golden sets:', error);
+      throw new Error('Failed to fetch golden sets');
     }
   }
 
   async createNextGoldenSet(
     description: string,
-    promptTemplate: string,
-    idealResponse: object
+    query: string,
   ) {
     try {
       return prisma.nextGoldenSet.create({
         data: {
           description,
-          promptTemplate,
-          idealResponse,
+          query,
         },
       });
     } catch (error) {
-      logger.error("Error creating next golden set:", error);
-      throw new Error("Failed to create next golden set");
+      logger.error('Error creating next golden set:', error);
+      throw new Error('Failed to create next golden set');
     }
   }
 }

@@ -248,7 +248,7 @@ query State {
 
 - List schemas: `getGoldenSetSchemas(copilotType)`
 - Upsert through service or use `updateGoldenSetProject` mutation
-- Golden set structure: `description`, `promptTemplate`, `idealResponse` JSON; supports staged updates via `nextGoldenSet`
+- Golden set structure: `description`, `query`; supports staged updates via `nextGoldenSet`
 
 ## Analytics and results
 
@@ -722,8 +722,7 @@ type GoldenSet {
   schemaExId: String!
   copilotType: CopilotType!
   description: String
-  promptTemplate: String!
-  idealResponse: JSON!
+  query: String!
   createdAt: DateTime!
   createdBy: String
   isActive: Boolean!

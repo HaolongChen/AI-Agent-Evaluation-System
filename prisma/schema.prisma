@@ -68,8 +68,6 @@ model nextGoldenSet {
   isActive    Boolean  @default(true) @map("is_active")
 
   goldenSet goldenSet?
-
-  @@index([id], map: "idx_next_golden_set_id")
 }
 
 // Execution Sessions (references copilot schema tables)
@@ -152,7 +150,7 @@ model adaptiveRubricJudgeRecord {
   // Relations
   rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
 
-  @@index([id], map: "idx_rubric_judge_rubric")
+  @@index([adaptiveRubricId], map: "idx_rubric_judge_rubric")
 }
 
 // Evaluation Results Summary (matching LangGraph FinalReport interface)
@@ -178,4 +176,6 @@ model evaluationResult {
 
   // Relations
   session evaluationSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId], map: "idx_evaluation_result_lookup")
 }

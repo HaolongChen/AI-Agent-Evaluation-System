@@ -58,7 +58,7 @@ model goldenSet {
   nextGoldenSet nextGoldenSet? @relation(fields: [nextGoldenSetId], references: [id])
 
   @@unique([projectExId, schemaExId, copilotType])
-  @@index([schemaExId], map: "idx_golden_set_schema")
+  @@index([id], map: "idx_golden_set_schema")
 }
 
 model nextGoldenSet {
@@ -102,7 +102,7 @@ model evaluationSession {
   rubric adaptiveRubric?
   result evaluationResult?
 
-  @@index([schemaExId], map: "idx_evaluation_session_schema")
+  @@index([id], map: "idx_evaluation_session_schema")
 }
 
 // Adaptive Rubrics (AI-generated evaluation questions)
@@ -136,7 +136,7 @@ model adaptiveRubric {
   session      evaluationSession           @relation(fields: [sessionId], references: [id])
   judgeRecords adaptiveRubricJudgeRecord[]
 
-  @@index([sessionId], map: "idx_adaptive_rubric_session")
+  @@index([id], map: "idx_adaptive_rubric_session")
 }
 
 // Rubric Judgments (human and agent evaluations)
@@ -153,7 +153,7 @@ model adaptiveRubricJudgeRecord {
   // Relations
   rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
 
-  @@index([adaptiveRubricId], map: "idx_rubric_judge_rubric")
+  @@index([id], map: "idx_rubric_judge_rubric")
 }
 
 // Evaluation Results Summary (matching LangGraph FinalReport interface)

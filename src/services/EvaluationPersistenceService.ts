@@ -13,8 +13,26 @@ import { logger } from '../utils/logger.ts';
  * Centralized service for persisting LangGraph evaluation results to the database.
  * Handles saving rubrics, judge records, and final reports from the LangGraph workflow.
  *
- * Note: LangGraph uses array-based criteria/scores, but DB uses single-value fields.
- * This service handles the transformation by serializing arrays to JSON strings.
+ * IMPORTANT: This service persists LangGraph workflow outputs (rubrics, evaluations, reports).
+ * The simulationId parameter references copilotSimulation records, which are created by
+ * the caller after EvaluationJobRunner completes the remote copilot WebSocket session.
+ * copilotSimulation tracks the remote copilot interaction, NOT the LangGraph workflow.
+ *
+ * Schema Mapping:
+ * - adaptiveRubric table represents ONE question/criterion
+ *   - title: RubricCriterion.name
+ *   - content: RubricCriterion.description
+ *   - expectedAnswer: RubricCriterion.isHardConstraint
+ *   - weight: RubricCriterion.weight
+ *
+ * - adaptiveRubricJudgeRecord table represents ONE answer for ONE question
+ *   - answer: EvaluationScore.reasoning + evidence
+ *   - overallScore: EvaluationScore.score
+ *   - comment: Evaluation.summary
+ *
+ * Note: Due to @unique constraints on simulationId and adaptiveRubricId in the schema,
+ * the current implementation stores all criteria/scores as JSON in a single record.
+ * A future schema migration could remove these constraints to enable true 1:1 mapping.
  */
 export class EvaluationPersistenceService {
   /**

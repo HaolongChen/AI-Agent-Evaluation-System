@@ -138,8 +138,8 @@ export class GraphExecutionService {
           'generation',
           String(goldenSetId),
           userInputContent,
+          '', // schema context
           copilotOutputText,
-          '', // candidateOutput
           modelName,
           String(skipHumanReview),
           String(skipHumanEvaluation)
@@ -181,8 +181,8 @@ export class GraphExecutionService {
         const jobRunner = new RubricGenerationJobRunner(
           goldenSetId,
           userInputContent,
+          '', // schema context
           copilotOutputText,
-          '', // candidateOutput
           modelName,
           skipHumanReview,
           skipHumanEvaluation

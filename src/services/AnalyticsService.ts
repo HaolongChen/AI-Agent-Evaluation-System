@@ -20,7 +20,6 @@ export class AnalyticsService {
 
   async createEvaluationResult(
     sessionId: string,
-    schemaExId: string,
     copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
     modelName: string,
     reportData: {
@@ -36,7 +35,6 @@ export class AnalyticsService {
       return prisma.evaluationResult.create({
         data: {
           sessionId: parseInt(sessionId),
-          schemaExId: schemaExId,
           copilotType: copilotType,
           modelName: modelName,
           verdict: reportData.verdict ?? 'needs_review',
@@ -57,7 +55,6 @@ export class AnalyticsService {
     try {
       const sessions = await prisma.evaluationSession.findMany({
         where: {
-          schemaExId: schemaExId,
           modelName: { in: modelNames },
           status: 'completed',
         },
@@ -173,8 +170,7 @@ export class AnalyticsService {
   }
 
   async createEvaluationSession(
-    projectExId: string,
-    schemaExId: string,
+    goldenSetId: number,
     copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
     modelName: string,
     candidateOutput: string,
@@ -184,8 +180,7 @@ export class AnalyticsService {
     try {
       return prisma.evaluationSession.create({
         data: {
-          projectExId,
-          schemaExId,
+          goldenSetId,
           copilotType,
           modelName,
           editableText: candidateOutput,

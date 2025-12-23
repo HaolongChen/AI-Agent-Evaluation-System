@@ -153,7 +153,6 @@ export class RubricReviewJobRunner {
       thread_id: this.threadId,
       provider,
       model: session.modelName,
-      projectExId: session.projectExId,
       skipHumanReview: metadata.skipHumanReview ?? false,
       skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
     };
@@ -161,7 +160,7 @@ export class RubricReviewJobRunner {
     const result = (await graph.invoke(
       new Command({ resume: humanReviewInput }),
       {
-        configurable: resumeConfigurable,
+        configurable: { ...resumeConfigurable, projectExId: '' },
       }
     )) as GraphResult;
 
@@ -198,7 +197,6 @@ export class RubricReviewJobRunner {
       await evaluationPersistenceService.saveFinalReport(
         this.sessionId,
         {
-          schemaExId: session.schemaExId,
           copilotType: session.copilotType as CopilotType,
           modelName: session.modelName,
         },

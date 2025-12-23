@@ -73,8 +73,7 @@ model nextGoldenSet {
 // Execution Sessions (references copilot schema tables)
 model evaluationSession {
   id           Int           @id @default(autoincrement())
-  projectExId  String        @map("project_ex_id")
-  schemaExId   String        @map("schema_ex_id")
+  goldenSetId Int          @map("golden_set_id") // Reference to golden_set.id
   copilotType  CopilotType   @map("copilot_type")
   modelName    String        @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
   sessionIdRef Int?          @map("session_id_ref") // Reference to copilot_session.id
@@ -105,8 +104,6 @@ model evaluationSession {
 // Adaptive Rubrics (AI-generated evaluation questions)
 model adaptiveRubric {
   id          Int    @id @default(autoincrement())
-  projectExId String @map("project_ex_id")
-  schemaExId  String @map("schema_ex_id")
   sessionId   Int    @unique @map("session_id")
 
   // Rubric Content (structured to match LangGraph Rubric interface)
@@ -157,7 +154,6 @@ model adaptiveRubricJudgeRecord {
 model evaluationResult {
   id          Int         @id @default(autoincrement())
   sessionId   Int         @unique @map("session_id")
-  schemaExId  String      @map("schema_ex_id")
   copilotType CopilotType @map("copilot_type")
   modelName   String      @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
 

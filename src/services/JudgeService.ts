@@ -1,7 +1,6 @@
 import { prisma } from '../config/prisma.ts';
 import { logger } from '../utils/logger.ts';
 import { executionService } from './ExecutionService.ts';
-import { goldenSetService } from './GoldenSetService.ts';
 import { rubricService } from './RubricService.ts';
 import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
 import { analyticsService } from './AnalyticsService.ts';
@@ -73,16 +72,15 @@ export class JudgeService {
         //     );
         //   logger.info('Updated golden set with new ID:', newGoldenSet.id);
         // }
-        const newGoldenSet =
-          await goldenSetService.updateGoldenSetFromNextGoldenSet(
-            rubric.projectExId,
-            rubric.schemaExId,
-            copilotType
-          );
-        logger.info('Updated golden set to ID:', newGoldenSet.id);
+        // const newGoldenSet =
+        //   await goldenSetService.updateGoldenSetFromNextGoldenSet(
+        //     rubric.projectExId,
+        //     rubric.schemaExId,
+        //     copilotType
+        //   );
+        // logger.info('Updated golden set to ID:', newGoldenSet.id);
         const finalResult = await analyticsService.createEvaluationResult(
           session.id.toString(),
-          rubric.schemaExId,
           session.copilotType,
           session.modelName,
           {

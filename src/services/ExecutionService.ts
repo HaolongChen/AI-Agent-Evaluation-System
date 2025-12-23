@@ -118,7 +118,7 @@ export class ExecutionService {
         const { editableText } = await evalJobRunner.waitForCompletion();
         logger.info('Evaluation job completed with response:', editableText);
         const genJobRunner = new RubricGenerationJobRunner(
-          String(goldenSet.id),
+          goldenSet.id,
           projectExId,
           schemaExId,
           copilotType,
@@ -258,7 +258,7 @@ export class ExecutionService {
             );
 
             const rubricJobRunner = new RubricGenerationJobRunner(
-              String(goldenSet.id),
+              goldenSet.id,
               goldenSet.projectExId,
               goldenSet.schemaExId,
               goldenSet.copilotType as unknown as CopilotType,

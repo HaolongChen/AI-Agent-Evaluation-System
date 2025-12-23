@@ -96,7 +96,7 @@ export class RubricGenerationJobRunner {
   private isCompleted: boolean = false;
 
   constructor(
-    private readonly goldenSetId: string,
+    private readonly goldenSetId: number,
     private readonly projectExId: string,
     private readonly schemaExId: string,
     private readonly copilotType: CopilotType,
@@ -143,15 +143,14 @@ export class RubricGenerationJobRunner {
       // Prepare metadata for HITL tracking
       const metadata: SessionMetadata = {
         threadId,
-        goldenSetId: Number.parseInt(this.goldenSetId, 10),
+        goldenSetId: this.goldenSetId,
         skipHumanReview: this.skipHumanReview,
         skipHumanEvaluation: this.skipHumanEvaluation,
       };
 
       // Create the evaluation session in database
       const session = await analyticsService.createEvaluationSession(
-        this.projectExId,
-        this.schemaExId,
+        this.goldenSetId,
         this.copilotType,
         this.modelName,
         this.candidateOutput,
@@ -173,7 +172,6 @@ export class RubricGenerationJobRunner {
         thread_id: threadId,
         provider,
         model: this.modelName,
-        projectExId: this.projectExId,
         skipHumanReview: this.skipHumanReview,
         skipHumanEvaluation: this.skipHumanEvaluation,
       };
@@ -185,7 +183,7 @@ export class RubricGenerationJobRunner {
       };
 
       const result = (await graphToUse.invoke(initialState, {
-        configurable,
+        configurable: { ...configurable, projectExId: this.projectExId },
       })) as GraphResult;
 
       // Determine graph pause/completion status based on interrupts
@@ -225,8 +223,6 @@ export class RubricGenerationJobRunner {
       if (rubricForResponse) {
         await evaluationPersistenceService.saveRubric(
           session.id,
-          this.projectExId,
-          this.schemaExId,
           rubricForResponse,
           this.query,
           this.candidateOutput,
@@ -419,7 +415,7 @@ if (
 
   const args = z
     .object({
-      goldenSetId: z.string().min(1, 'goldenSetId is required'),
+      goldenSetId: z.int(),
       projectExId: z.string().min(1, 'projectExId is required'),
       schemaExId: z.string().min(1, 'schemaExId is required'),
       copilotType: z.string().min(1, 'copilotType is required'),

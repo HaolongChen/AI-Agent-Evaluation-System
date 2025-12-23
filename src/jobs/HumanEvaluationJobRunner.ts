@@ -114,7 +114,6 @@ export class HumanEvaluationJobRunner {
       thread_id: this.threadId,
       provider,
       model: session.modelName,
-      projectExId: session.projectExId,
       skipHumanReview: metadata.skipHumanReview ?? false,
       skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
     };
@@ -122,7 +121,7 @@ export class HumanEvaluationJobRunner {
     const result = (await graph.invoke(
       new Command({ resume: humanEvaluationInput }),
       {
-        configurable: evalConfigurable,
+        configurable: { ...evalConfigurable, projectExId: '' },
       }
     )) as GraphResult;
 
@@ -143,7 +142,6 @@ export class HumanEvaluationJobRunner {
       await evaluationPersistenceService.saveFinalReport(
         this.sessionId,
         {
-          schemaExId: session.schemaExId,
           copilotType: session.copilotType as CopilotType,
           modelName: session.modelName,
         },

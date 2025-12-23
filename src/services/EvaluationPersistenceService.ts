@@ -16,8 +16,6 @@ export class EvaluationPersistenceService {
    */
   async saveRubric(
     sessionId: number,
-    projectExId: string,
-    schemaExId: string,
     rubric: Rubric,
     copilotInput: string,
     copilotOutput: string,
@@ -49,8 +47,6 @@ export class EvaluationPersistenceService {
 
       const created = await prisma.adaptiveRubric.create({
         data: {
-          projectExId,
-          schemaExId,
           sessionId,
           rubricId: rubric.id,
           version: rubric.version,
@@ -153,7 +149,6 @@ export class EvaluationPersistenceService {
   async saveFinalReport(
     sessionId: number,
     session: {
-      schemaExId: string;
       copilotType: CopilotType;
       modelName: string;
     },
@@ -163,7 +158,6 @@ export class EvaluationPersistenceService {
       await prisma.evaluationResult.create({
         data: {
           sessionId,
-          schemaExId: session.schemaExId,
           copilotType: session.copilotType,
           modelName: session.modelName,
           evaluationStatus: 'completed',

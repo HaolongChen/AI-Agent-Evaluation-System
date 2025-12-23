@@ -109,23 +109,6 @@ export class RubricService {
     return criteria;
   }
 
-  async getRubricsBySchemaExId(schemaExId: string) {
-    try {
-      return prisma.adaptiveRubric.findMany({
-        where: {
-          schemaExId: schemaExId,
-          isActive: true,
-        },
-        include: {
-          judgeRecords: true,
-        },
-      });
-    } catch (error) {
-      logger.error('Error fetching rubrics by schemaExId:', error);
-      throw new Error('Failed to fetch rubrics by schemaExId');
-    }
-  }
-
   async getRubricById(rubricId: string) {
     try {
       return prisma.adaptiveRubric.findUnique({

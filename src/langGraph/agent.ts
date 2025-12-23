@@ -28,7 +28,6 @@ export type GraphConfigurable = {
   thread_id: string;
   provider: string | undefined;
   model: string | undefined;
-  projectExId: string | undefined;
   skipHumanReview: boolean | undefined;
   skipHumanEvaluation: boolean | undefined;
 };

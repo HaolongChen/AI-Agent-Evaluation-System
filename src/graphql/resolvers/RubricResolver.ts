@@ -19,20 +19,20 @@ function transformRubric(rubric: Record<string, unknown>) {
 
 export const rubricResolver = {
   Query: {
-    getAdaptiveRubricsBySchemaExId: async (
+    getAdaptiveRubricsBySessionId: async (
       _: unknown,
-      args: { schemaExId: string }
+      args: { sessionId: string }
     ) => {
       try {
-        const rubrics = await rubricService.getRubricsBySchemaExId(
-          args.schemaExId
+        const rubrics = await rubricService.getRubricsBySession(
+          args.sessionId
         );
         return rubrics.map((r) =>
           transformRubric(r as unknown as Record<string, unknown>)
         );
       } catch (error) {
-        logger.error('Error fetching adaptive rubrics by schemaExId:', error);
-        throw new Error('Failed to fetch adaptive rubrics by schemaExId');
+        logger.error('Error fetching adaptive rubrics by sessionId:', error);
+        throw new Error('Failed to fetch adaptive rubrics by sessionId');
       }
     },
 

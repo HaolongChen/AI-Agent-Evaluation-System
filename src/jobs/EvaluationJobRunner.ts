@@ -389,6 +389,7 @@ export class EvaluationJobRunner {
     // Clean up timeout when stopping the job
     this.clearTimeout();
     // this.socket?.send(JSON.stringify({ action: "stop", jobId }));
+    this.terminate();
     this.socket?.close();
   }
 }

@@ -3,7 +3,6 @@ import { SESSION_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 import { logger } from '../utils/logger.ts';
 import { goldenSetService } from './GoldenSetService.ts';
-import { REVERSE_COPILOT_TYPES } from '../config/constants.ts';
 import {
   AZURE_OPENAI_DEPLOYMENT,
   GEMINI_API_KEY,
@@ -37,11 +36,8 @@ const normalizeRequestedModelName = (modelName: string | undefined): string => {
 };
 
 export class ExecutionService {
-  async createEvaluationSession(
-    projectExId: string,
-    schemaExId: string,
-    copilotType: CopilotType,
-    modelName: string,
+  async createEvaluationSessions(
+    goldenSetId: number,
     options?: {
       skipHumanReview?: boolean;
       skipHumanEvaluation?: boolean;
@@ -49,134 +45,38 @@ export class ExecutionService {
   ) {
     try {
       const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
-      const skipHumanReview = options?.skipHumanReview ?? true;
-      const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
-      const resolvedModelName = normalizeRequestedModelName(modelName);
-
-      const goldenSets = await goldenSetService.getGoldenSets(
-        projectExId,
-        schemaExId,
-        REVERSE_COPILOT_TYPES[copilotType]
-      );
-      if (!goldenSets || goldenSets.length === 0) {
-        throw new Error('No golden sets found');
-      }
-      if (goldenSets.length > 1) {
-        throw new Error('Multiple golden sets found, expected only one');
-      }
-      const goldenSet = goldenSets[0];
-      if (!goldenSet) {
-        throw new Error('Golden set is undefined');
-      }
-      if (USE_KUBERNETES_JOBS) {
-        const evalJobResult = (await applyAndWatchJob(
-          `evaluation-job-${projectExId}-${schemaExId}-${Date.now()}`,
-          'default',
-          './src/jobs/EvaluationJobRunner.ts',
-          300000,
-          'evaluation',
-          projectExId,
-          WS_URL,
-          goldenSet.query
-        )) as unknown as EvalJobResult;
-        logger.info(
-          'Evaluation job completed with status:',
-          evalJobResult.status
-        );
-        if (evalJobResult.status !== 'succeeded') {
-          throw new Error('Evaluation job failed');
-        }
-        const genJobResult = (await applyAndWatchJob(
-          `rubric-job-${projectExId}-${schemaExId}-${Date.now()}`,
-          'default',
-          './src/jobs/RubricGenerationJobRunner.ts',
-          300000,
-          'generation',
-          String(goldenSet.id),
-          projectExId,
-          schemaExId,
-          String(copilotType),
-          goldenSet.query,
-          '',
-          evalJobResult.editableText || '',
-          resolvedModelName,
-          String(skipHumanReview),
-          String(skipHumanEvaluation)
-        )) as unknown as GenJobResult;
-        logger.info(
-          'Rubric generation job completed with status:',
-          genJobResult.status
-        );
-        return genJobResult;
-      } else {
-        const evalJobRunner = new EvaluationJobRunner(
-          projectExId,
-          WS_URL,
-          goldenSet.query
-        );
-        evalJobRunner.startJob();
-        const { editableText } = await evalJobRunner.waitForCompletion();
-        logger.info('Evaluation job completed with response:', editableText);
-        const genJobRunner = new RubricGenerationJobRunner(
-          goldenSet.id,
-          projectExId,
-          schemaExId,
-          copilotType,
-          goldenSet.query,
-          '',
-          editableText,
-          resolvedModelName,
-          skipHumanReview,
-          skipHumanEvaluation
-        );
-        genJobRunner.startJob();
-        const genResult = await genJobRunner.waitForCompletion();
-        logger.info(
-          'Rubric generation job completed with response:',
-          genResult
-        );
-        return { candidateOutput: editableText, ...genResult };
-      }
-    } catch (error) {
-      logger.error('Error creating evaluation session:', error);
-      throw new Error('Failed to create evaluation session');
-    }
-  }
-
-  async createEvaluationSessions(options?: {
-    skipHumanReview?: boolean;
-    skipHumanEvaluation?: boolean;
-  }) {
-    try {
-      const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
       // Bulk execution defaults to fully automated evaluation
       const skipHumanReview = options?.skipHumanReview ?? true;
       const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
       const resolvedModelName = normalizeRequestedModelName(undefined);
 
-      const goldenSets = await goldenSetService.getGoldenSets();
-      if (!goldenSets || goldenSets.length === 0) {
-        throw new Error('No golden sets found');
+      const goldenSet = await goldenSetService.getGoldenSet(goldenSetId);
+      if (!goldenSet) {
+        throw new Error('No golden set found');
       }
 
       logger.info(
-        `Creating ${goldenSets.length} evaluation sessions concurrently`
+        `Creating ${goldenSet.userInput.length - goldenSet.copilotOutput.length} evaluation sessions concurrently`
       );
 
       if (USE_KUBERNETES_JOBS) {
+        await prisma.goldenSet.update({
+          where: { id: goldenSetId },
+          data: { isActive: true },
+        });
         const results = await Promise.allSettled(
-          goldenSets.map(async (goldenSet) => {
+          goldenSet.userInput.map(async (userInput, index) => {
             const evalJobResult = (await applyAndWatchJob(
               `evaluation-job-${goldenSet.projectExId}-${
                 goldenSet.schemaExId
-              }-${Date.now()}`,
+              }-${index}-${Date.now()}`,
               'default',
               './src/jobs/EvaluationJobRunner.ts',
               300000,
               'evaluation',
               goldenSet.projectExId,
               WS_URL,
-              goldenSet.query
+              userInput.content
             )) as unknown as EvalJobResult;
             logger.info(
               `Evaluation job for golden set ${goldenSet.id} completed with status:`,
@@ -190,7 +90,7 @@ export class ExecutionService {
             const genJobResult = (await applyAndWatchJob(
               `rubric-job-${goldenSet.projectExId}-${
                 goldenSet.schemaExId
-              }-${Date.now()}`,
+              }-${index}-${Date.now()}`,
               'default',
               './src/jobs/RubricGenerationJobRunner.ts',
               300000,
@@ -198,8 +98,8 @@ export class ExecutionService {
               String(goldenSet.id),
               goldenSet.projectExId,
               goldenSet.schemaExId,
-              String(goldenSet.copilotType as unknown as CopilotType),
-              goldenSet.query,
+              goldenSet.copilotType,
+              userInput.content,
               evalJobResult.editableText || '',
               resolvedModelName,
               String(skipHumanReview),
@@ -244,11 +144,11 @@ export class ExecutionService {
         // };
       } else {
         const results = await Promise.allSettled(
-          goldenSets.map(async (goldenSet) => {
+          goldenSet.userInput.map(async (userInput) => {
             const evalJobRunner = new EvaluationJobRunner(
               goldenSet.projectExId,
               WS_URL,
-              goldenSet.query
+              userInput.content
             );
             evalJobRunner.startJob();
             const { editableText } = await evalJobRunner.waitForCompletion();
@@ -261,8 +161,8 @@ export class ExecutionService {
               goldenSet.id,
               goldenSet.projectExId,
               goldenSet.schemaExId,
-              goldenSet.copilotType as unknown as CopilotType,
-              goldenSet.query,
+              goldenSet.copilotType,
+              userInput.content,
               '',
               editableText,
               resolvedModelName,

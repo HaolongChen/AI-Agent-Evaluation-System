@@ -38,8 +38,12 @@ async function seedGoldenSet() {
           projectExId: data.projectExId,
           schemaExId: data.schemaExId,
           copilotType: data.copilotType,
-          description: data.description,
-          query: data.query,
+          userInput: {
+            create: {
+              description: data.description,
+              content: data.query,
+            },
+          },
         },
       });
     }

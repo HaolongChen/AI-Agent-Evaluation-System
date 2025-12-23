@@ -151,7 +151,6 @@ export class RubricGenerationJobRunner {
       // Create the evaluation session in database
       const session = await analyticsService.createEvaluationSession(
         this.goldenSetId,
-        this.copilotType,
         this.modelName,
         this.candidateOutput,
         SESSION_STATUS.PENDING,
@@ -234,7 +233,8 @@ export class RubricGenerationJobRunner {
       if (graphStatus === 'completed' && result.finalReport) {
         await evaluationPersistenceService.saveFinalReport(
           session.id,
-          session,
+          this.copilotType,
+          this.modelName,
           result.finalReport
         );
 

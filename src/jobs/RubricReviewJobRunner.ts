@@ -8,7 +8,6 @@ import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
 import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
 import type { Prisma } from '../../build/generated/prisma/client.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
@@ -196,10 +195,8 @@ export class RubricReviewJobRunner {
     if (graphStatus === 'completed' && result.finalReport) {
       await evaluationPersistenceService.saveFinalReport(
         this.sessionId,
-        {
-          copilotType: session.copilotType as CopilotType,
-          modelName: session.modelName,
-        },
+        undefined,
+        session.modelName,
         result.finalReport
       );
 

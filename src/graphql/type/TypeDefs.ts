@@ -8,25 +8,31 @@ export const typeDefs = `#graphql
     id: ID!
     projectExId: String!
     schemaExId: String!
-    nextGoldenSetId: Int
     copilotType: CopilotType!
-    description: String
-    query: String!
     createdAt: DateTime!
     createdBy: String
     isActive: Boolean!
     
     # Relations
-    nextGoldenSet: NextGoldenSet
+    userInput: [UserInput!]!
+    copilotOutput: [CopilotOutput!]!
+    evaluationSessions: [CopilotSimulation!]!
   }
   
-  type NextGoldenSet {
+  type UserInput {
     id: ID!
     description: String
-    query: String!
+    content: String!
     createdAt: DateTime!
     createdBy: String
-    isActive: Boolean!
+  }
+  
+  type CopilotOutput {
+    id: ID!
+    description: String
+    content: String!
+    createdAt: DateTime!
+    createdBy: String
   }
 
   enum CopilotType {
@@ -37,13 +43,10 @@ export const typeDefs = `#graphql
     AGENT_BUILDER
   }
 
-  type EvaluationSession {
+  type CopilotSimulation {
     id: ID!
-    projectExId: String!
-    schemaExId: String!
-    copilotType: CopilotType!
+    goldenSetId: Int!
     modelName: String!
-    sessionIdRef: Int
     startedAt: DateTime!
     completedAt: DateTime
     status: SessionStatus!
@@ -57,7 +60,7 @@ export const typeDefs = `#graphql
     contextPercentage: Float
 
     # Relations
-    rubric: AdaptiveRubric
+    rubric: [AdaptiveRubric!]!
     result: EvaluationResult
   }
 
@@ -66,11 +69,6 @@ export const typeDefs = `#graphql
     RUNNING
     COMPLETED
     FAILED
-  }
-
-  enum ExpectedAnswer {
-    YES
-    NO
   }
 
   enum RubricReviewStatus {
@@ -89,20 +87,17 @@ export const typeDefs = `#graphql
 
   type AdaptiveRubric {
     id: ID!
-    projectExId: String!
-    schemaExId: String!
-    sessionId: Int!
+    simulationId: Int!
     
     # Structured Rubric (matching LangGraph Rubric interface)
-    rubricId: String!
     version: String!
-    criteria: [RubricCriterion!]!
+    title: String!
+    content: String!
+    expectedAnswers: Boolean!
+    weights: Float!
     totalWeight: Float!
     
-    copilotInput: String
-    copilotOutput: String
     modelProvider: String
-    modelName: String
     reviewStatus: RubricReviewStatus!
     isActive: Boolean!
     
@@ -113,7 +108,7 @@ export const typeDefs = `#graphql
     reviewedBy: String
 
     # Relations
-    judgeRecords: [JudgeRecord!]!
+    judgeRecord: JudgeRecord
   }
   
   type RubricCriterion {
@@ -138,9 +133,9 @@ export const typeDefs = `#graphql
     accountId: String
     
     # Structured Evaluation (matching LangGraph Evaluation interface)
-    scores: [EvaluationScore!]!
+    answer: String!
+    comment: String
     overallScore: Float!
-    summary: String!
     timestamp: DateTime!
   }
   
@@ -153,19 +148,14 @@ export const typeDefs = `#graphql
 
   type EvaluationResult {
     id: ID!
-    sessionId: Int!
-    schemaExId: String!
-    copilotType: CopilotType!
-    modelName: String!
+    simulationId: Int!
     evaluationStatus: EvaluationStatus!
     
     # FinalReport fields (matching LangGraph FinalReport interface)
     verdict: String!
     overallScore: Float!
     summary: String!
-    detailedAnalysis: String!
     discrepancies: [String!]!
-    auditTrace: [String!]!
     generatedAt: DateTime!
     
     createdAt: DateTime!
@@ -174,24 +164,22 @@ export const typeDefs = `#graphql
   # Queries
   type Query {
     # Golden Set
-    getGoldenSetSchemas(copilotType: CopilotType): [String!]!
-    getGoldenSets(projectExId: String, copilotType: CopilotType): [GoldenSet!]!
-    getNextGoldenSet(id: ID!): NextGoldenSet
+    getGoldenSets(goldenSetId: Int!): GoldenSet
 
     # Evaluation Sessions
-    getSession(id: ID!): EvaluationSession
+    getSession(id: String!): CopilotSimulation
     getSessions(
       schemaExId: String
       copilotType: CopilotType
       modelName: String
-    ): [EvaluationSession!]!
+    ): [CopilotSimulation!]!
     
     # HITL Session State
     getGraphSessionState(sessionId: Int!): SessionStateResult!
 
     # Adaptive Rubrics
-    getAdaptiveRubricsBySchemaExId(schemaExId: String!): [AdaptiveRubric!]!
-    getAdaptiveRubricsBySession(sessionId: Int!): [AdaptiveRubric!]!
+    getAdaptiveRubricsBySessionId(sessionId: String!): [AdaptiveRubric!]!
+    getAdaptiveRubricsBySession(sessionId: String!): [AdaptiveRubric!]!
     getRubricsForReview(
       sessionId: Int,
       projectExId: String,
@@ -200,7 +188,7 @@ export const typeDefs = `#graphql
     ): [AdaptiveRubric!]!
 
     # Results & Analytics
-    getEvaluationResult(sessionId: Int!): EvaluationResult
+    getEvaluationResult(sessionId: String!): EvaluationResult
     compareModels(schemaExId: String!, modelNames: [String!]!): ModelComparison!
 
     # Dashboard Metrics
@@ -215,7 +203,7 @@ export const typeDefs = `#graphql
   # Mutations
   type Mutation {
     # Golden Set Management
-    updateGoldenSetProject(
+    updateGoldenSetInput(
       projectExId: String!
       schemaExId: String!
       copilotType: CopilotType!
@@ -224,29 +212,11 @@ export const typeDefs = `#graphql
     ): GoldenSet!
 
     # Execution (Legacy - uses JobRunners)
-    execAiCopilotByTypeAndModel(
-      projectExId: String!
-      schemaExId: String!
-      copilotType: CopilotType!
-      modelName: String!
-      skipHumanReview: Boolean
-      skipHumanEvaluation: Boolean
-    ): Boolean!
-
     execAiCopilot(
+      goldenSetId: Int!
       skipHumanReview: Boolean
       skipHumanEvaluation: Boolean
     ): Boolean!
-    
-    # HITL Graph Execution - Start Session
-    startGraphSession(
-      projectExId: String!
-      schemaExId: String!
-      copilotType: CopilotType!
-      modelName: String!
-      skipHumanReview: Boolean
-      skipHumanEvaluation: Boolean
-    ): StartSessionResult!
     
     # HITL Graph Execution - Submit Rubric Review (resumes graph)
     submitRubricReview(
@@ -266,32 +236,6 @@ export const typeDefs = `#graphql
       overallAssessment: String!
       evaluatorAccountId: String!
     ): HumanEvaluationResult!
-    
-    # Run fully automated evaluation (no HITL)
-    runAutomatedEvaluation(
-      projectExId: String!
-      schemaExId: String!
-      copilotType: CopilotType!
-      modelName: String!
-    ): HumanEvaluationResult!
-
-    # Rubric Review (Legacy)
-    reviewAdaptiveRubric(
-      rubricId: Int!
-      reviewStatus: RubricReviewStatus!
-      reviewerAccountId: String!
-      modifiedRubricContent: JSON!
-    ): AdaptiveRubric!
-
-    # Judge - submit evaluation matching LangGraph Evaluation interface
-    judge(
-      adaptiveRubricId: Int!
-      evaluatorType: String!
-      accountId: String
-      scores: [EvaluationScoreInput!]!
-      overallScore: Float!
-      summary: String!
-    ): JudgeResult!
   }
   
   # Input type for EvaluationScore
@@ -335,23 +279,6 @@ export const typeDefs = `#graphql
     FAILED
   }
 
-  type StartSessionResult {
-    sessionId: Int!
-    threadId: String!
-    status: GraphSessionStatus!
-    rubricDraft: RubricOutput
-    message: String!
-  }
-  
-  type RubricOutput {
-    id: String!
-    version: String!
-    criteria: [RubricCriterion!]!
-    totalWeight: Float!
-    createdAt: String!
-    updatedAt: String!
-  }
-
   type RubricReviewResult {
     sessionId: Int!
     threadId: String!
@@ -366,6 +293,15 @@ export const typeDefs = `#graphql
     status: GraphSessionStatus!
     finalReport: FinalReportOutput
     message: String!
+  }
+  
+  type RubricOutput {
+    id: String!
+    version: String!
+    criteria: [RubricCriterion!]!
+    totalWeight: Float!
+    createdAt: String!
+    updatedAt: String!
   }
   
   type EvaluationOutput {

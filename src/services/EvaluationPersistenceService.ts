@@ -1,7 +1,7 @@
 import { prisma } from '../config/prisma.ts';
 import { REVIEW_STATUS } from '../config/constants.ts';
 import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
+import { CopilotType } from '../../build/generated/prisma/enums.ts';
 import { logger } from '../utils/logger.ts';
 
 /**
@@ -148,18 +148,16 @@ export class EvaluationPersistenceService {
    */
   async saveFinalReport(
     sessionId: number,
-    session: {
-      copilotType: CopilotType;
-      modelName: string;
-    },
+    copilotType: CopilotType | undefined,
+    modelName: string,
     finalReport: FinalReport
   ): Promise<void> {
     try {
       await prisma.evaluationResult.create({
         data: {
           sessionId,
-          copilotType: session.copilotType,
-          modelName: session.modelName,
+          copilotType: copilotType ?? CopilotType.dataModel,
+          modelName: modelName,
           evaluationStatus: 'completed',
           verdict: finalReport.verdict,
           overallScore: finalReport.overallScore,

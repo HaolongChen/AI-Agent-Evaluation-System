@@ -134,11 +134,11 @@ mutation Eval {
 
 The system uses a structured schema to track the entire evaluation lifecycle:
 
-- **`goldenSet`**: Stores reference queries and contexts for evaluation.
-- **`evaluationSession`**: Tracks individual runs, including performance metrics (latency, tokens, reasoning tokens).
-- **`adaptiveRubric`**: Stores the AI-generated or human-modified evaluation criteria.
-- **`adaptiveRubricJudgeRecord`**: Records both agent and human evaluation scores.
-- **`evaluationResult`**: The final report containing the verdict, summary, and audit trace.
+- **`goldenSet`**: Stores reference queries and contexts for evaluation, including `projectExId`, `schemaExId`, and `copilotType`.
+- **`evaluationSession`**: Tracks individual runs via `goldenSetId` reference, including performance metrics (latency, tokens, reasoning tokens, context percentage) and session metadata.
+- **`adaptiveRubric`**: Stores the AI-generated or human-modified evaluation criteria, linked to `evaluationSession`.
+- **`adaptiveRubricJudgeRecord`**: Records both agent and human evaluation scores with detailed scoring data.
+- **`evaluationResult`**: The final report containing the verdict, overall score, summary, and audit trace.
 
 ## Development
 

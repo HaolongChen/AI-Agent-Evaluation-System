@@ -42,46 +42,38 @@ enum ExpectedAnswer {
 }
 
 model goldenSet {
-  id              Int         @id @default(autoincrement())
-  projectExId     String      @map("project_ex_id")
-  schemaExId      String      @map("schema_ex_id")
-  nextGoldenSetId Int?        @unique @map("next_golden_set_id")
-  copilotType     CopilotType @map("copilot_type")
-  description     String?
-  query           String      @db.Text
-  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy       String?     @map("created_by")
-  isActive        Boolean     @default(true) @map("is_active")
-
-  nextGoldenSet nextGoldenSet? @relation(fields: [nextGoldenSetId], references: [id])
+  id                 Int                 @id @default(autoincrement())
+  projectExId        String              @map("project_ex_id")
+  schemaExId         String              @map("schema_ex_id")
+  copilotType        CopilotType         @map("copilot_type")
+  userInput          userInput[]         @relation()
+  copilotOutput      copilotOutput[]     @relation()
+  evaluationSessions evaluationSession[] @relation()
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy          String?             @map("created_by")
+  isActive           Boolean           @default(false) @map("is_active") // Is goldenSet in progress
 
   @@unique([projectExId, schemaExId, copilotType])
   @@index([id], map: "idx_golden_set_schema")
 }
 
-model nextGoldenSet {
-  id          Int      @id @default(autoincrement())
+model userInput {
+  id          Int       @id @default(autoincrement())
+  goldenSetId Int       @map("golden_set_id") // Reference to golden_set.id
   description String?
-  query       String   @db.Text
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy   String?  @map("created_by")
-  isActive    Boolean  @default(true) @map("is_active")
+  content     String    @map("input_content") // user input
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy   String?   @map("created_by")
+  goldenSet   goldenSet @relation(fields: [goldenSetId], references: [id])
 
-  goldenSet goldenSet?
+  @@index([id], map: "idx_user_input_session")
 }
 
-// Execution Sessions (references copilot schema tables)
-model evaluationSession {
-  id           Int           @id @default(autoincrement())
-  goldenSetId Int          @map("golden_set_id") // Reference to golden_set.id
-  copilotType  CopilotType   @map("copilot_type")
-  modelName    String        @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-  sessionIdRef Int?          @map("session_id_ref") // Reference to copilot_session.id
-  startedAt    DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
-  completedAt  DateTime?     @map("completed_at") @db.Timestamptz(6)
-  status       SessionStatus @default(running)
-
-  editableText String? @map("editable_text") @db.Text // response from the copilot session
+model copilotOutput {
+  id          Int         @id @default(autoincrement())
+  goldenSetId Int         @map("golden_set_id") // Reference to golden_set.id
+  content     String      @map("output_content") // copilot output
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Performance Metrics
   totalLatencyMs    Int?     @map("total_latency_ms")
@@ -91,20 +83,36 @@ model evaluationSession {
   totalTokens       Int?     @map("total_tokens") // input_tokens + output_tokens + reasoning tokens
   contextPercentage Decimal? @map("context_percentage") @db.Decimal(5, 2) // % of max context window used
 
+  goldenSet goldenSet @relation(fields: [goldenSetId], references: [id])
+
+  @@index([id], map: "idx_copilot_output_session")
+}
+
+// Execution Sessions (references copilot schema tables)
+model evaluationSession {
+  id           Int           @id @default(autoincrement())
+  goldenSetId  Int           @map("golden_set_id") // Reference to golden_set.id
+  modelName    String        @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
+  sessionIdRef Int?          @map("session_id_ref") // Reference to copilot_session.id
+  startedAt    DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt  DateTime?     @map("completed_at") @db.Timestamptz(6)
+  status       SessionStatus @default(running)
+
   // Metadata for HITL graph execution (stores threadId, skipHumanReview, etc.)
   metadata Json?
 
   // Relations
-  rubric adaptiveRubric?
-  result evaluationResult?
+  goldenSet goldenSet         @relation(fields: [goldenSetId], references: [id])
+  rubric    adaptiveRubric?
+  result    evaluationResult?
 
   @@index([id], map: "idx_evaluation_session_schema")
 }
 
 // Adaptive Rubrics (AI-generated evaluation questions)
 model adaptiveRubric {
-  id          Int    @id @default(autoincrement())
-  sessionId   Int    @unique @map("session_id")
+  id        Int @id @default(autoincrement())
+  sessionId Int @unique @map("session_id")
 
   // Rubric Content (structured to match LangGraph Rubric interface)
   rubricId      String  @map("rubric_id") // Rubric.id from LangGraph

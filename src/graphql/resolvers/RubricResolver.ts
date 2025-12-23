@@ -1,5 +1,4 @@
 import { rubricService } from '../../services/RubricService.ts';
-import { judgeService } from '../../services/JudgeService.ts';
 import type { REVIEW_STATUS } from '../../config/constants.ts';
 import { REVERSE_REVIEW_STATUS } from '../../config/constants.ts';
 import { logger } from '../../utils/logger.ts';
@@ -78,31 +77,5 @@ export const rubricResolver = {
   },
 
   Mutation: {
-    judge: async (
-      _: unknown,
-      args: {
-        adaptiveRubricId: string;
-        evaluatorType: string;
-        accountId: string | null;
-        scores: object;
-        overallScore: number;
-        summary?: string;
-      }
-    ) => {
-      try {
-        const result = await judgeService.createJudgeRecord(
-          args.adaptiveRubricId,
-          args.evaluatorType,
-          args.accountId,
-          args.scores,
-          args.overallScore,
-          args.summary
-        );
-        return result;
-      } catch (error) {
-        logger.error('Error creating judge record:', error);
-        throw new Error('Failed to create judge record');
-      }
-    },
   },
 };

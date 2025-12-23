@@ -1,6 +1,5 @@
 import { executionService } from '../../services/ExecutionService.ts';
 import { logger } from '../../utils/logger.ts';
-import type { copilotType } from '../../utils/types.ts';
 
 export const analyticResolver = {
   Query: {
@@ -37,46 +36,40 @@ export const analyticResolver = {
   },
 
   Mutation: {
-    execAiCopilotByTypeAndModel: async (
-      _: unknown,
-      args: {
-        projectExId: string;
-        schemaExId: string;
-        copilotType: copilotType;
-        modelName: string;
-        skipHumanReview?: boolean;
-        skipHumanEvaluation?: boolean;
-      }
-    ) => {
-      try {
-        const result = await executionService.createEvaluationSession(
-          args.projectExId,
-          args.schemaExId,
-          args.copilotType,
-          args.modelName,
-          {
-            ...(args.skipHumanReview !== undefined && {
-              skipHumanReview: args.skipHumanReview,
-            }),
-            ...(args.skipHumanEvaluation !== undefined && {
-              skipHumanEvaluation: args.skipHumanEvaluation,
-            }),
-          }
-        );
-        // TODO: implement actual execution logic
-        return !!result;
-      } catch (error) {
-        logger.error('Error executing AI copilot:', error);
-        throw new Error('Failed to execute AI copilot');
-      }
-    },
+    // execAiCopilotByTypeAndModel: async (
+    //   _: unknown,
+    //   args: {
+    //     goldenSetId: number;
+    //     skipHumanReview?: boolean;
+    //     skipHumanEvaluation?: boolean;
+    //   }
+    // ) => {
+    //   try {
+    //     const result = await executionService.createEvaluationSessions(
+    //       args.goldenSetId,
+    //       {
+    //         ...(args.skipHumanReview !== undefined && {
+    //           skipHumanReview: args.skipHumanReview,
+    //         }),
+    //         ...(args.skipHumanEvaluation !== undefined && {
+    //           skipHumanEvaluation: args.skipHumanEvaluation,
+    //         }),
+    //       }
+    //     );
+    //     // TODO: implement actual execution logic
+    //     return result;
+    //   } catch (error) {
+    //     logger.error('Error executing AI copilot:', error);
+    //     throw new Error('Failed to execute AI copilot');
+    //   }
+    // },
     execAiCopilot: async (
       _: unknown,
-      args: { skipHumanReview?: boolean; skipHumanEvaluation?: boolean }
+      args: { goldenSetId: number; skipHumanReview?: boolean; skipHumanEvaluation?: boolean }
     ) => {
       try {
         // Bulk execution currently defaults to automated; keep signature for forward compatibility
-        await executionService.createEvaluationSessions({
+        await executionService.createEvaluationSessions(args.goldenSetId, {
           ...(args.skipHumanReview !== undefined && {
             skipHumanReview: args.skipHumanReview,
           }),

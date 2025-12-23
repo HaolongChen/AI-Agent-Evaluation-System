@@ -1,37 +1,21 @@
 import { goldenSetService } from '../../services/GoldenSetService.ts';
-import { COPILOT_TYPES } from '../../config/constants.ts';
+import { COPILOT_TYPES, REVERSE_COPILOT_TYPES } from '../../config/constants.ts';
 import { logger } from '../../utils/logger.ts';
 
 export const goldenResolver = {
   Query: {
-    getGoldenSetSchemas: async (
-      _: unknown,
-      args: { copilotType?: keyof typeof COPILOT_TYPES }
-    ) => {
-      return goldenSetService.getGoldenSetSchemas(args.copilotType);
-    },
-
     getGoldenSets: async (
       _: unknown,
-      args: { projectExId?: string; copilotType?: keyof typeof COPILOT_TYPES }
+      args: { goldenSetId: number }
     ) => {
       try {
-        const goldenSets = await goldenSetService.getGoldenSets(
-          args.projectExId,
-          undefined, // ensure correct arg position for schemaExId
-          args.copilotType
+        const goldenSet = await goldenSetService.getGoldenSet(
+          args.goldenSetId
         );
-        const results = goldenSets.map((gs) => {
-          return {
-            ...gs,
-            copilotType: Object.keys(COPILOT_TYPES).find(
-              (key) =>
-                COPILOT_TYPES[key as keyof typeof COPILOT_TYPES] ===
-                gs.copilotType
-            ) as keyof typeof COPILOT_TYPES,
-          };
-        });
-        return results;
+        if (!goldenSet) {
+          throw new Error('Golden set not found');
+        }
+        return { ...goldenSet, copilotType: REVERSE_COPILOT_TYPES[goldenSet.copilotType] };
       } catch (error) {
         logger.error('Error fetching golden sets:', error);
         throw new Error('Failed to fetch golden sets');
@@ -40,7 +24,7 @@ export const goldenResolver = {
   },
 
   Mutation: {
-    updateGoldenSetProject: async (
+    updateGoldenSetInput: async (
       _: unknown,
       args: {
         projectExId: string;
@@ -51,7 +35,7 @@ export const goldenResolver = {
       }
     ) => {
       try {
-        const result = await goldenSetService.updateGoldenSetProject(
+        const result = await goldenSetService.updateGoldenSetInput(
           args.projectExId,
           args.schemaExId,
           args.copilotType,
@@ -59,24 +43,13 @@ export const goldenResolver = {
           args.query,
         );
         if (!result) {
-          logger.warn('No result returned from updateGoldenSetProject');
-          throw new Error('Failed to update golden set project');
+          logger.warn('No result returned from updateGoldenSetInput');
+          throw new Error('Failed to update golden set input');
         }
-        if ('message' in result) {
-          throw new Error(result.message);
-        }
-        const newResult = {
-          ...result,
-          copilotType: Object.keys(COPILOT_TYPES).find(
-            (key) =>
-              COPILOT_TYPES[key as keyof typeof COPILOT_TYPES] ===
-              result.copilotType
-          ) as keyof typeof COPILOT_TYPES,
-        };
-        return newResult;
+        return result;
       } catch (error) {
-        logger.error('Error updating golden set project:', error);
-        throw new Error('Failed to update golden set project');
+        logger.error('Error updating golden set input:', error);
+        throw new Error('Failed to update golden set input');
       }
     },
   },

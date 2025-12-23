@@ -121,13 +121,11 @@ export class EvaluationJobRunner {
       this.socket.send(JSON.stringify(data));
       if (data.type === CopilotMessageType.TERMINATE) {
         this.rejectCompletion?.(new Error('Job terminated by user'));
-        this.stopJob();
+        this.clearTimeout();
+        this.socket.close();
       }
     } else {
       logger.error('WebSocket is not open. Cannot send message:', data);
-      setTimeout(() => {
-        this.send(data);
-      }, 1000); // Retry after 1 second
     }
   }
 
@@ -214,7 +212,8 @@ export class EvaluationJobRunner {
         this.isCompleted = true;
         this.rejectCompletion(new Error('Job has terminated'));
       }
-      this.stopJob();
+      this.clearTimeout();
+      this.socket?.close();
       return;
     }
     if (message.currentJobIsRunning === true) {
@@ -386,11 +385,7 @@ export class EvaluationJobRunner {
   }
 
   stopJob(): void {
-    // Clean up timeout when stopping the job
-    this.clearTimeout();
-    // this.socket?.send(JSON.stringify({ action: "stop", jobId }));
     this.terminate();
-    this.socket?.close();
   }
 }
 

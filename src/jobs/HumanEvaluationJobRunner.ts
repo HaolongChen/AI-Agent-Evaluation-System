@@ -7,7 +7,6 @@ import { evaluationPersistenceService } from '../services/EvaluationPersistenceS
 import { SESSION_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
 import type { FinalReport } from '../langGraph/state/state.ts';
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
@@ -141,10 +140,8 @@ export class HumanEvaluationJobRunner {
     if (result.finalReport) {
       await evaluationPersistenceService.saveFinalReport(
         this.sessionId,
-        {
-          copilotType: session.copilotType as CopilotType,
-          modelName: session.modelName,
-        },
+        undefined,
+        session.modelName,
         result.finalReport
       );
 

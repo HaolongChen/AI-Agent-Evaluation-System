@@ -19,11 +19,31 @@ export interface RubricCriterionInput {
   isHardConstraint: boolean;
 }
 
+export interface RubricCriterionPatchInput {
+  criterionId: string;
+  name?: string;
+  description?: string;
+  weight?: number;
+  scoringScale?: {
+    min: number;
+    max: number;
+    labels?: Record<string, string>;
+  };
+  isHardConstraint?: boolean;
+}
+
 export interface RubricInput {
   id: string;
   version: string;
   criteria: RubricCriterionInput[];
   totalWeight: number;
+}
+
+export interface EvaluationScorePatchInput {
+  criterionId: string;
+  score?: number;
+  reasoning?: string;
+  evidence?: string[];
 }
 
 export interface EvaluationScoreInput {
@@ -119,6 +139,7 @@ export const graphSessionResolver = {
         threadId: string;
         approved: boolean;
         modifiedRubric?: RubricInput | null;
+        criteriaPatches?: RubricCriterionPatchInput[] | null;
         feedback?: string | null;
         reviewerAccountId: string;
       }
@@ -134,6 +155,7 @@ export const graphSessionResolver = {
           args.threadId,
           args.approved,
           transformRubricInput(args.modifiedRubric),
+          args.criteriaPatches ?? undefined,
           args.feedback ?? undefined,
           args.reviewerAccountId
         );
@@ -164,7 +186,8 @@ export const graphSessionResolver = {
       args: {
         sessionId: number;
         threadId: string;
-        scores: EvaluationScoreInput[];
+        scores?: EvaluationScoreInput[] | null;
+        scorePatches?: EvaluationScorePatchInput[] | null;
         overallAssessment: string;
         evaluatorAccountId: string;
       }
@@ -172,13 +195,14 @@ export const graphSessionResolver = {
       try {
         logger.info('Submitting human evaluation', {
           sessionId: args.sessionId,
-          scoresCount: args.scores.length,
+          scoresCount: args.scores?.length ?? args.scorePatches?.length ?? 0,
         });
 
         const result = await graphExecutionService.submitHumanEvaluation(
           args.sessionId,
           args.threadId,
-          args.scores,
+          args.scores ?? undefined,
+          args.scorePatches ?? undefined,
           args.overallAssessment,
           args.evaluatorAccountId
         );

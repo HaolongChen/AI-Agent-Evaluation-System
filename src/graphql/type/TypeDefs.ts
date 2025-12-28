@@ -223,7 +223,8 @@ export const typeDefs = `#graphql
       sessionId: Int!
       threadId: String!
       approved: Boolean!
-      modifiedRubric: RubricInput
+      modifiedRubric: RubricInput @deprecated(reason: "Use criteriaPatches for partial updates")
+      criteriaPatches: [RubricCriterionPatchInput!]
       feedback: String
       reviewerAccountId: String!
     ): RubricReviewResult!
@@ -232,7 +233,8 @@ export const typeDefs = `#graphql
     submitHumanEvaluation(
       sessionId: Int!
       threadId: String!
-      scores: [EvaluationScoreInput!]!
+      scores: [EvaluationScoreInput!] @deprecated(reason: "Use scorePatches for partial updates")
+      scorePatches: [EvaluationScorePatchInput!]
       overallAssessment: String!
       evaluatorAccountId: String!
     ): HumanEvaluationResult!
@@ -268,6 +270,24 @@ export const typeDefs = `#graphql
     version: String!
     criteria: [RubricCriterionInput!]!
     totalWeight: Float!
+  }
+  
+  # Partial update for single criterion (NEW)
+  input RubricCriterionPatchInput {
+    criterionId: String!
+    name: String
+    description: String
+    weight: Float
+    scoringScale: ScoringScaleInput
+    isHardConstraint: Boolean
+  }
+  
+  # Partial update for single evaluation score (NEW)
+  input EvaluationScorePatchInput {
+    criterionId: String!
+    score: Float
+    reasoning: String
+    evidence: [String!]
   }
 
   # HITL Session Types

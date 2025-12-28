@@ -78,6 +78,141 @@ export interface HumanEvaluationResult {
  */
 export class GraphExecutionService {
   /**
+   * Validate criteria patches against base rubric
+   */
+  private validateCriteriaPatches(
+    patches: Array<{ criterionId: string }>,
+    baseRubric: Rubric
+  ): void {
+    const validIds = new Set(baseRubric.criteria.map((c) => c.id));
+
+    for (const patch of patches) {
+      if (!validIds.has(patch.criterionId)) {
+        throw new Error(`Invalid criterionId in patch: ${patch.criterionId}`);
+      }
+    }
+  }
+
+  /**
+   * Merge partial criterion patches into existing rubric
+   */
+  private mergeRubricPatches(
+    baseRubric: Rubric,
+    patches: Array<{
+      criterionId: string;
+      name?: string;
+      description?: string;
+      weight?: number;
+      scoringScale?: { min: number; max: number; labels?: Record<number, string> };
+      isHardConstraint?: boolean;
+    }>
+  ): Rubric {
+    this.validateCriteriaPatches(patches, baseRubric);
+
+    const criteria = baseRubric.criteria.map((criterion) => {
+      const patch = patches.find((p) => p.criterionId === criterion.id);
+      if (!patch) return criterion;
+
+      return {
+        ...criterion,
+        ...(patch.name !== undefined && { name: patch.name }),
+        ...(patch.description !== undefined && {
+          description: patch.description,
+        }),
+        ...(patch.weight !== undefined && { weight: patch.weight }),
+        ...(patch.scoringScale !== undefined && {
+          scoringScale: patch.scoringScale,
+        }),
+        ...(patch.isHardConstraint !== undefined && {
+          isHardConstraint: patch.isHardConstraint,
+        }),
+      };
+    });
+
+    // Recalculate total weight
+    const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+
+    return {
+      ...baseRubric,
+      criteria,
+      totalWeight,
+      version: `${baseRubric.version}-modified`,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Validate score patches against rubric criteria
+   */
+  private validateScorePatches(
+    patches: Array<{ criterionId: string; score?: number }>,
+    rubric: Rubric
+  ): void {
+    const validIds = new Set(rubric.criteria.map((c) => c.id));
+
+    for (const patch of patches) {
+      if (!validIds.has(patch.criterionId)) {
+        throw new Error(`Invalid criterionId in patch: ${patch.criterionId}`);
+      }
+
+      if (patch.score !== undefined) {
+        const criterion = rubric.criteria.find((c) => c.id === patch.criterionId);
+        if (
+          criterion &&
+          (patch.score < criterion.scoringScale.min ||
+            patch.score > criterion.scoringScale.max)
+        ) {
+          throw new Error(
+            `Score ${patch.score} out of range [${criterion.scoringScale.min}, ${criterion.scoringScale.max}] for criterion ${patch.criterionId}`
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Merge partial score patches into agent evaluation
+   */
+  private mergeEvaluationPatches(
+    baseEvaluation: Evaluation,
+    patches: Array<{
+      criterionId: string;
+      score?: number;
+      reasoning?: string;
+      evidence?: string[];
+    }>,
+    rubric: Rubric
+  ): Evaluation {
+    this.validateScorePatches(patches, rubric);
+
+    const scores = baseEvaluation.scores.map((score) => {
+      const patch = patches.find((p) => p.criterionId === score.criterionId);
+      if (!patch) return score;
+
+      return {
+        ...score,
+        ...(patch.score !== undefined && { score: patch.score }),
+        ...(patch.reasoning !== undefined && { reasoning: patch.reasoning }),
+        ...(patch.evidence !== undefined && { evidence: patch.evidence }),
+      };
+    });
+
+    const overallScore = scores.reduce((sum, s) => {
+      const criterion = rubric.criteria.find((c) => c.id === s.criterionId);
+      const weight = criterion ? criterion.weight / rubric.totalWeight : 0;
+      return sum + s.score * weight;
+    }, 0);
+
+    return {
+      evaluatorType: 'human',
+      scores,
+      overallScore,
+      summary: baseEvaluation.summary,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
    * Submit rubric review and resume the graph.
    */
   async submitRubricReview(
@@ -85,27 +220,49 @@ export class GraphExecutionService {
     threadId: string,
     approved: boolean,
     modifiedRubric: Rubric | undefined,
+    criteriaPatches:
+      | Array<{
+          criterionId: string;
+          name?: string;
+          description?: string;
+          weight?: number;
+          scoringScale?: { min: number; max: number };
+          isHardConstraint?: boolean;
+        }>
+      | undefined,
     feedback: string | undefined,
     reviewerAccountId: string
   ): Promise<RubricReviewResult> {
     try {
+      let finalRubric: Rubric | undefined;
+
+      if (criteriaPatches && criteriaPatches.length > 0) {
+        const state = await this.getSessionState(sessionId);
+        if (!state.rubricDraft) {
+          throw new Error('No rubric draft found to patch');
+        }
+
+        finalRubric = this.mergeRubricPatches(state.rubricDraft, criteriaPatches);
+        logger.info('Merged rubric patches:', { patchCount: criteriaPatches.length });
+      } else if (modifiedRubric) {
+        finalRubric = modifiedRubric;
+        logger.warn(
+          'Using deprecated full rubric submission. Consider using criteriaPatches.'
+        );
+      } else if (!approved) {
+        // Rejection without modification is allowed
+        finalRubric = undefined;
+      }
+
       if (RUN_KUBERNETES_JOBS) {
-        const args: string[] = [
+        const args = [
           String(sessionId),
           threadId,
           String(approved),
           reviewerAccountId,
+          finalRubric ? JSON.stringify(finalRubric) : '',
+          feedback ?? '',
         ];
-
-        // CLI positional args: modifiedRubricJson (argv[6]) then feedback (argv[7])
-        if (modifiedRubric !== undefined) {
-          args.push(JSON.stringify(modifiedRubric));
-          if (feedback !== undefined) args.push(feedback);
-        } else if (feedback !== undefined) {
-          // allow feedback without a modified rubric
-          args.push('null');
-          args.push(feedback);
-        }
 
         const reviewJobResult = (await applyAndWatchJob(
           `graph-rubric-review-${sessionId}-${Date.now()}`,
@@ -126,21 +283,12 @@ export class GraphExecutionService {
           );
         }
 
-        const status: GraphSessionStatus =
-          reviewJobResult.graphStatus === 'awaiting_human_evaluation'
-            ? 'awaiting_human_evaluation'
-            : 'completed';
-
         return {
           sessionId,
           threadId,
-          status,
+          status: 'completed',
           rubricFinal: reviewJobResult.rubricFinal ?? null,
-          message:
-            reviewJobResult.message ||
-            (status === 'awaiting_human_evaluation'
-              ? 'Graph paused for human evaluation. Call submitHumanEvaluation to continue.'
-              : 'Evaluation completed successfully'),
+          message: reviewJobResult.message || 'Rubric review completed successfully',
         };
       } else {
         const reviewJobRunner = new RubricReviewJobRunner(
@@ -148,7 +296,7 @@ export class GraphExecutionService {
           threadId,
           approved,
           reviewerAccountId,
-          modifiedRubric,
+          finalRubric,
           feedback
         );
         reviewJobRunner.startJob();
@@ -157,16 +305,9 @@ export class GraphExecutionService {
         return {
           sessionId,
           threadId,
-          status:
-            result.graphStatus === 'awaiting_human_evaluation'
-              ? 'awaiting_human_evaluation'
-              : 'completed',
+          status: 'completed',
           rubricFinal: result.rubricFinal ?? null,
-          message:
-            result.message ||
-            (result.graphStatus === 'awaiting_human_evaluation'
-              ? 'Graph paused for human evaluation. Call submitHumanEvaluation to continue.'
-              : 'Evaluation completed successfully'),
+          message: result.message || 'Rubric review completed successfully',
         };
       }
     } catch (error) {
@@ -185,11 +326,55 @@ export class GraphExecutionService {
   async submitHumanEvaluation(
     sessionId: number,
     threadId: string,
-    scores: Array<{ criterionId: string; score: number; reasoning: string }>,
+    scores:
+      | Array<{ criterionId: string; score: number; reasoning: string }>
+      | undefined,
+    scorePatches:
+      | Array<{
+          criterionId: string;
+          score?: number;
+          reasoning?: string;
+          evidence?: string[];
+        }>
+      | undefined,
     overallAssessment: string,
     evaluatorAccountId: string
   ): Promise<HumanEvaluationResult> {
     try {
+      let finalScores: Array<{
+        criterionId: string;
+        score: number;
+        reasoning: string;
+        evidence?: string[] | undefined;
+      }>;
+
+      if (scorePatches && scorePatches.length > 0) {
+        const state = await this.getSessionState(sessionId);
+        if (!state.agentEvaluation) {
+          throw new Error('No agent evaluation found to patch');
+        }
+        if (!state.rubricFinal) {
+          throw new Error('No final rubric found for weight calculation');
+        }
+
+        const mergedEvaluation = this.mergeEvaluationPatches(
+          state.agentEvaluation,
+          scorePatches,
+          state.rubricFinal
+        );
+        finalScores = mergedEvaluation.scores;
+        logger.info('Merged evaluation patches:', {
+          patchCount: scorePatches.length,
+        });
+      } else if (scores) {
+        finalScores = scores;
+        logger.warn(
+          'Using deprecated full score submission. Consider using scorePatches.'
+        );
+      } else {
+        throw new Error('Either scores or scorePatches must be provided');
+      }
+
       if (RUN_KUBERNETES_JOBS) {
         const evaluationJobResult = (await applyAndWatchJob(
           `graph-human-eval-${sessionId}-${Date.now()}`,
@@ -199,7 +384,7 @@ export class GraphExecutionService {
           'human-evaluation',
           String(sessionId),
           threadId,
-          JSON.stringify(scores),
+          JSON.stringify(finalScores),
           overallAssessment,
           evaluatorAccountId
         )) as unknown as HumanEvaluationK8sJobResult;
@@ -226,7 +411,7 @@ export class GraphExecutionService {
         const evaluationJobRunner = new HumanEvaluationJobRunner(
           sessionId,
           threadId,
-          scores,
+          finalScores,
           overallAssessment,
           evaluatorAccountId
         );

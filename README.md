@@ -98,6 +98,8 @@ mutation RunEval {
 
 ### 3. (Optional) Submit rubric review and human evaluation
 
+#### Full Replacement Approach (Deprecated)
+
 ```graphql
 mutation Review {
   submitRubricReview(
@@ -134,6 +136,93 @@ mutation Eval {
 }
 ```
 
+#### Partial Update Approach (Recommended)
+
+**Submit only modified criteria** instead of the entire rubric:
+
+```graphql
+mutation ReviewWithPatches {
+  submitRubricReview(
+    sessionId: 1
+    threadId: "thread-xyz"
+    approved: false
+    reviewerAccountId: "user-456"
+    criteriaPatches: [
+      {
+        criterionId: "crit-1"
+        weight: 0.6  # Increase weight
+        name: "Correctness - Enhanced"
+      }
+      {
+        criterionId: "crit-2"
+        isHardConstraint: true  # Make it a hard constraint
+      }
+    ]
+    feedback: "Adjusted weights based on project priorities"
+  ) {
+    status
+    rubricFinal {
+      criteria {
+        id
+        name
+        weight
+        isHardConstraint
+      }
+      totalWeight
+    }
+    message
+  }
+}
+```
+
+**Submit only adjusted scores** instead of all evaluation scores:
+
+```graphql
+mutation EvalWithPatches {
+  submitHumanEvaluation(
+    sessionId: 1
+    threadId: "thread-xyz"
+    overallAssessment: "Minor corrections needed"
+    evaluatorAccountId: "user-456"
+    scorePatches: [
+      {
+        criterionId: "crit-1"
+        score: 0.95  # Adjust from agent's 0.8
+        reasoning: "Nearly perfect, minor edge case"
+      }
+      {
+        criterionId: "crit-3"
+        score: 0.6  # Adjust from agent's 0.7
+        reasoning: "Code quality needs improvement"
+      }
+    ]
+  ) {
+    status
+    finalReport {
+      verdict
+      overallScore
+      humanEvaluation {
+        scores {
+          criterionId
+          score
+          reasoning
+        }
+        overallScore
+      }
+      discrepancies
+    }
+    message
+  }
+}
+```
+
+**Benefits of partial updates:**
+- **Less data transfer**: Send only what changed
+- **Fewer errors**: No risk of accidentally modifying unrelated fields
+- **Better UX**: Clearer intent - reviewers see exactly what they're changing
+- **Automatic recalculation**: System recalculates `totalWeight` and `overallScore` based on patches
+
+
 ## Data Model
 
 The system uses a structured schema to track the entire evaluation lifecycle:
@@ -149,7 +238,10 @@ The system uses a structured schema to track the entire evaluation lifecycle:
 
 - **Run Dev**: `pnpm dev`
 - **Build**: `pnpm build:bundle`
-- **Test**: `pnpm test:lg` (LangGraph), `pnpm test:graphql` (API)
+- **Test**: 
+  - `pnpm test:lg` (LangGraph workflow)
+  - `pnpm test:graphql` (GraphQL API)
+  - `pnpm test:partial-update` (Partial update functionality)
 - **DB Studio**: `pnpm db:studio`
 
 ## License

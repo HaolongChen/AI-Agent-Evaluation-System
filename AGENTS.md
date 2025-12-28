@@ -319,13 +319,88 @@ export const resolver = {
 };
 ```
 
+### Partial Update Pattern (HITL)
+
+**Problem**: Users shouldn't need to copy and resubmit entire objects when reviewing rubrics or evaluations.
+
+**Solution**: Use `criteriaPatches` for rubric reviews and `scorePatches` for evaluations.
+
+#### Rubric Review with Patches
+```typescript
+await graphExecutionService.submitRubricReview(
+  sessionId,
+  threadId,
+  false, // Not fully approved - has modifications
+  undefined, // No full rubric replacement
+  [
+    // Only specify criteria that need changes
+    {
+      criterionId: 'crit-1',
+      weight: 0.6, // Update weight
+      name: 'Correctness - Enhanced', // Update name
+    },
+    {
+      criterionId: 'crit-2',
+      isHardConstraint: true, // Make it a hard constraint
+    },
+  ],
+  'Adjusted based on project priorities',
+  'reviewer-123'
+);
+```
+
+#### Human Evaluation with Patches
+```typescript
+await graphExecutionService.submitHumanEvaluation(
+  sessionId,
+  threadId,
+  undefined, // No full score array
+  [
+    // Only specify scores that differ from agent evaluation
+    {
+      criterionId: 'crit-1',
+      score: 0.95, // Override agent's 0.8
+      reasoning: 'Nearly perfect, minor edge case',
+    },
+    {
+      criterionId: 'crit-3',
+      score: 0.6, // Override agent's 0.7
+      reasoning: 'Code quality needs improvement',
+    },
+  ],
+  'Minor corrections to agent evaluation',
+  'evaluator-456'
+);
+```
+
+**Benefits**:
+- Less data transfer (only changed fields)
+- Clearer intent (explicit about what's changing)
+- Automatic recalculation (totalWeight, overallScore)
+- Validation (prevents invalid criterion IDs or out-of-range scores)
+
+**Implementation Notes**:
+- Service layer handles merge logic before passing to job runners
+- Old parameters (`modifiedRubric`, `scores`) still work but are deprecated
+- Patches are validated against base rubric/evaluation before merging
+
 ## Testing Guidelines
 
 - Place tests in `tests/` directory
-- Name test files descriptively (e.g., `langgraph-test.ts`)
+- Name test files descriptively (e.g., `langgraph-test.ts`, `partial-update-test.ts`)
 - Use `ts-node` to run tests
 - Include both unit and integration tests
 - Test error handling paths
+
+**Run tests**:
+```bash
+pnpm test:lg              # LangGraph workflow tests
+pnpm test:graphql         # GraphQL API tests
+pnpm test:partial-update  # Partial update functionality
+pnpm test:fetch           # Fetch tests
+pnpm test:introspection   # Introspection tests
+pnpm test:tools           # Tools tests
+```
 
 ## Important Notes
 

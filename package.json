@@ -11,6 +11,7 @@
     "test:introspection": "ts-node ./tests/introspection.ts",
     "test:tools": "ts-node ./tests/tools-test.ts",
     "test:lg": "ts-node ./tests/langgraph-test.ts",
+    "test:partial-update": "ts-node ./tests/partial-update-test.ts",
     "start": "node dist/index.js",
     "dev": "nodemon --exec tsx src/index.ts",
     "build": "tsx --tsconfig tsconfig.build.json src/index.ts",

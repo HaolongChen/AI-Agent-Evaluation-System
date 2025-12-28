@@ -430,15 +430,29 @@ async function testOutOfRangeScoreValidation(): Promise<void> {
 
 async function cleanupTestData(): Promise<void> {
   try {
-    await prisma.evaluationSession.deleteMany({
+    const testSessions = await prisma.evaluationSession.findMany({
       where: {
         metadata: {
           path: ['threadId'],
           string_starts_with: 'test-thread-',
         },
       },
+      select: { id: true },
     });
-    logger.info('Test data cleaned up successfully');
+
+    const sessionIds = testSessions.map((s) => s.id);
+
+    if (sessionIds.length > 0) {
+      await prisma.adaptiveRubric.deleteMany({
+        where: { sessionId: { in: sessionIds } },
+      });
+
+      await prisma.evaluationSession.deleteMany({
+        where: { id: { in: sessionIds } },
+      });
+
+      logger.info(`Test data cleaned up successfully: ${sessionIds.length} sessions`);
+    }
   } catch (error) {
     logger.error('Error cleaning up test data:', error);
   }

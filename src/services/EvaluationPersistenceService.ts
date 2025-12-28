@@ -17,9 +17,6 @@ export class EvaluationPersistenceService {
   async saveRubric(
     sessionId: number,
     rubric: Rubric,
-    copilotInput: string,
-    copilotOutput: string,
-    modelName: string
   ): Promise<{ id: number }> {
     try {
       // Check if rubric already exists for this session (upsert by sessionId)
@@ -36,9 +33,6 @@ export class EvaluationPersistenceService {
             version: rubric.version,
             criteria: JSON.parse(JSON.stringify(rubric.criteria)),
             totalWeight: rubric.totalWeight,
-            copilotInput,
-            copilotOutput,
-            modelName,
             reviewStatus: REVIEW_STATUS.PENDING,
           },
         });
@@ -52,9 +46,6 @@ export class EvaluationPersistenceService {
           version: rubric.version,
           criteria: JSON.parse(JSON.stringify(rubric.criteria)),
           totalWeight: rubric.totalWeight,
-          copilotInput,
-          copilotOutput,
-          modelName,
           reviewStatus: REVIEW_STATUS.PENDING,
         },
       });

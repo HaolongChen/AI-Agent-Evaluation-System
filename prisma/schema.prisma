@@ -119,10 +119,6 @@ model adaptiveRubric {
   version       String  @default("1.0")
   criteria      Json    @map("criteria") // Array of RubricCriterion objects
   totalWeight   Decimal @map("total_weight") @db.Decimal(10, 2)
-  copilotInput  String? @map("copilot_input") @db.Text
-  copilotOutput String? @map("copilot_output") @db.Text
-  modelProvider String? @map("model_provider")
-  modelName     String? @map("model_name")
 
   // Status
   reviewStatus RubricReviewStatus @default(pending) @map("review_status")

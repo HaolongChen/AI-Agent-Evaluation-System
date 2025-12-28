@@ -222,10 +222,7 @@ export class RubricGenerationJobRunner {
       if (rubricForResponse) {
         await evaluationPersistenceService.saveRubric(
           session.id,
-          rubricForResponse,
-          this.query,
-          this.candidateOutput,
-          this.modelName
+          rubricForResponse
         );
       }
 

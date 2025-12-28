@@ -59,36 +59,44 @@ pnpm db:seed
 
 ## GraphQL API Quickstart
 
-### 1. Start a HITL Session
+### 1. Create or append a Golden Set input
 
 ```graphql
-mutation Start {
-  startGraphSession(
+mutation UpsertGoldenSetInput {
+  updateGoldenSetInput(
     projectExId: "proj-123"
     schemaExId: "schema-abc"
     copilotType: DATA_MODEL_BUILDER
-    modelName: "gpt-4o"
-    skipHumanReview: false
-    skipHumanEvaluation: false
+    description: "login flow"
+    query: "Generate a login page with email + OTP"
   ) {
-    sessionId
-    threadId
-    status
-    rubricDraft {
+    id
+    projectExId
+    schemaExId
+    copilotType
+    isActive
+    userInput {
       id
-      version
-      criteria {
-        id
-        name
-        weight
-      }
+      description
+      content
     }
-    message
   }
 }
 ```
 
-### 2. Approve or Modify the Rubric
+### 2. Run an automated evaluation for that Golden Set
+
+```graphql
+mutation RunEval {
+  execAiCopilot(
+    goldenSetId: 1
+    skipHumanReview: true
+    skipHumanEvaluation: true
+  )
+}
+```
+
+### 3. (Optional) Submit rubric review and human evaluation
 
 ```graphql
 mutation Review {
@@ -106,11 +114,7 @@ mutation Review {
     message
   }
 }
-```
 
-### 3. Submit Human Evaluation
-
-```graphql
 mutation Eval {
   submitHumanEvaluation(
     sessionId: 1
@@ -134,11 +138,12 @@ mutation Eval {
 
 The system uses a structured schema to track the entire evaluation lifecycle:
 
-- **`goldenSet`**: Stores reference queries and contexts for evaluation, including `projectExId`, `schemaExId`, and `copilotType`.
-- **`evaluationSession`**: Tracks individual runs via `goldenSetId` reference, including performance metrics (latency, tokens, reasoning tokens, context percentage) and session metadata.
-- **`adaptiveRubric`**: Stores the AI-generated or human-modified evaluation criteria, linked to `evaluationSession`.
-- **`adaptiveRubricJudgeRecord`**: Records both agent and human evaluation scores with detailed scoring data.
-- **`evaluationResult`**: The final report containing the verdict, overall score, summary, and audit trace.
+- **`goldenSet`**: Identified by (`projectExId`, `schemaExId`, `copilotType`); holds user-provided prompts and context through related `userInput` rows, and stores generated outputs via `copilotOutput` rows. A single `isActive` flag guards in-progress sets.
+- **`userInput` / `copilotOutput`**: Child records that capture multiple inputs and outputs per golden set (each uses the golden set’s ID as its primary/foreign key).
+- **`evaluationSession`**: Runs are keyed by `goldenSetId` and store performance metrics (latency, tokens, context usage) plus metadata.
+- **`adaptiveRubric`**: Generated or reviewed rubric content tied to an `evaluationSession`, with criteria and weights.
+- **`adaptiveRubricJudgeRecord`**: Stores agent or human scoring against a rubric.
+- **`evaluationResult`**: Final report for a session (verdict, score, summary, discrepancies, audit trace).
 
 ## Development
 

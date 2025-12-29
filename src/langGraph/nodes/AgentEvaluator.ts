@@ -2,20 +2,17 @@ import { type RunnableConfig } from '@langchain/core/runnables';
 import { HumanMessage } from '@langchain/core/messages';
 import {
   rubricAnnotation,
-  type Evaluation,
-  type EvaluationScore,
+  type QuestionEvaluation,
+  type QuestionAnswer,
 } from '../state/index.ts';
 import { getLLM, invokeWithRetry } from '../llm/index.ts';
 import * as z from 'zod';
 
-// Threshold for determining if a hard constraint passes (70% of score range)
-const HARD_CONSTRAINT_PASS_THRESHOLD = 0.7;
-
-const evaluationScoreSchema = z.object({
-  criterionId: z.string().describe('ID of the criterion being scored'),
-  criterionName: z.string().describe('Name of the criterion'),
-  score: z.number().describe('Score for this criterion'),
-  reasoning: z.string().describe('Detailed reasoning for the score'),
+const answerSchema = z.object({
+  questionId: z.number().describe('Question ID'),
+  questionTitle: z.string().describe('Title of the question'),
+  answer: z.boolean().describe('Your answer (true for YES, false for NO)'),
+  explanation: z.string().describe('Detailed explanation for your answer'),
   evidence: z
     .array(z.string())
     .optional()
@@ -23,14 +20,10 @@ const evaluationScoreSchema = z.object({
 });
 
 const agentEvaluationSchema = z.object({
-  scores: z.array(evaluationScoreSchema).describe('Scores for each criterion'),
+  answers: z.array(answerSchema).describe('Answers for each question'),
   overallAssessment: z.string().describe('Overall assessment summary'),
 });
 
-/**
- * Agent Evaluator Node
- * Applies rubric to produce structured agent evaluation
- */
 export async function agentEvaluatorNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
@@ -41,30 +34,26 @@ export async function agentEvaluatorNode(
   const modelName =
     (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
 
-  if (!state.rubricFinal) {
-    throw new Error('No final rubric available for evaluation');
+  if (!state.questionSetFinal) {
+    throw new Error('No final question set available for evaluation');
   }
 
   const llm = getLLM({ provider, model: modelName });
-  const llmWithStructuredOutput = llm.withStructuredOutput(
-    agentEvaluationSchema
-  );
+  const llmWithStructuredOutput = llm.withStructuredOutput(agentEvaluationSchema);
 
-  // Build criteria description for prompt
-  const criteriaDescription = state.rubricFinal.criteria
+  const questionsDescription = state.questionSetFinal.questions
     .map(
-      (c) => `
-- ${c.name} (ID: ${c.id})
-  Description: ${c.description}
-  Weight: ${c.weight}%
-  Score Range: ${c.scoringScale.min} - ${c.scoringScale.max}
-  Type: ${c.isHardConstraint ? 'Hard Constraint' : 'Soft Constraint'}
+      (q) => `
+- Question ID: ${q.id}
+  Title: ${q.title}
+  Question: ${q.content}
+  Weight: ${q.weight}%
 `
     )
     .join('\n');
 
   const prompt = `
-You are an expert evaluator. Apply the following evaluation rubric to assess the candidate output.
+You are an expert evaluator. Answer each yes/no question based on the candidate output.
 
 Query: """${state.query}"""
 
@@ -78,11 +67,11 @@ Candidate Output to Evaluate: """${
     state.candidateOutput || 'No candidate output provided.'
   }"""
 
-EVALUATION RUBRIC:
-${criteriaDescription}
+EVALUATION QUESTIONS:
+${questionsDescription}
 
-For each criterion:
-1. Provide a score within the specified range
+For each question:
+1. Answer with YES (true) or NO (false)
 2. Explain your reasoning in detail
 3. Cite specific evidence from the candidate output
 
@@ -95,79 +84,46 @@ Be objective and thorough in your assessment.
     { operationName: 'AgentEvaluator.invoke' }
   );
 
-  // Transform response into Evaluation format
-  const scores: EvaluationScore[] = response.scores.map((s) => ({
-    criterionId: s.criterionId,
-    score: s.score,
-    reasoning: s.reasoning,
-    evidence: s.evidence,
+  const answers: QuestionAnswer[] = response.answers.map((a) => ({
+    questionId: a.questionId,
+    answer: a.answer,
+    explanation: a.explanation,
+    ...(a.evidence && { evidence: a.evidence }),
   }));
 
-  // Calculate weighted overall score
-  const totalWeight = state.rubricFinal.criteria.reduce(
-    (sum, c) => sum + c.weight,
+  const totalWeight = state.questionSetFinal.questions.reduce(
+    (sum, q) => sum + q.weight,
     0
   );
-  let weightedSum = 0;
+  let correctWeight = 0;
 
-  for (const score of scores) {
-    const criterion = state.rubricFinal.criteria.find(
-      (c) => c.id === score.criterionId
+  for (const answer of answers) {
+    const question = state.questionSetFinal.questions.find(
+      (q) => q.id === answer.questionId
     );
-    if (criterion) {
-      const scoreRange =
-        criterion.scoringScale.max - criterion.scoringScale.min;
-      // Handle case where min equals max (avoid division by zero)
-      const normalizedScore =
-        scoreRange > 0
-          ? (score.score - criterion.scoringScale.min) / scoreRange
-          : score.score >= criterion.scoringScale.min
-          ? 1
-          : 0;
-      weightedSum += normalizedScore * criterion.weight;
+    if (question) {
+      const isCorrect = answer.answer === question.expectedAnswer;
+      if (isCorrect) {
+        correctWeight += question.weight;
+      }
     }
   }
 
-  const overallScore = totalWeight > 0 ? (weightedSum / totalWeight) * 100 : 0;
+  const overallScore = totalWeight > 0 ? (correctWeight / totalWeight) * 100 : 0;
 
-  const evaluation: Evaluation = {
+  const evaluation: QuestionEvaluation = {
     evaluatorType: 'agent',
-    scores,
+    answers,
     overallScore: Math.round(overallScore * 100) / 100,
     summary: response.overallAssessment,
     timestamp: new Date().toISOString(),
   };
-
-  // Extract hard constraint answers for backward compatibility
-  const hardConstraintsAnswers = state.rubricFinal.criteria
-    .filter((c) => c.isHardConstraint)
-    .map((c) => {
-      const score = scores.find((s) => s.criterionId === c.id);
-      if (!score) return false;
-      const threshold =
-        (c.scoringScale.max - c.scoringScale.min) *
-          HARD_CONSTRAINT_PASS_THRESHOLD +
-        c.scoringScale.min;
-      return score.score >= threshold;
-    });
-
-  // Extract soft constraint answers for backward compatibility
-  const softConstraintsAnswers = state.rubricFinal.criteria
-    .filter((c) => !c.isHardConstraint)
-    .map((c) => {
-      const score = scores.find((s) => s.criterionId === c.id);
-      return score
-        ? `${c.name}: ${score.score}/${c.scoringScale.max} - ${score.reasoning}`
-        : `${c.name}: Not evaluated`;
-    });
 
   const timestamp = new Date().toISOString();
   const auditEntry = `[${timestamp}] AgentEvaluator: Completed evaluation. Overall score: ${evaluation.overallScore}%`;
 
   return {
     agentEvaluation: evaluation,
-    hardConstraintsAnswers,
-    softConstraintsAnswers,
     auditTrace: [auditEntry],
   };
 }

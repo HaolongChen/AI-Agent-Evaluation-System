@@ -25,6 +25,7 @@ const ContextSchema = z.object({
  * All fields are required but can be undefined to match LangGraph's StateType inference
  */
 export type GraphConfigurable = {
+  sessionId: number;
   thread_id: string;
   provider: string | undefined;
   model: string | undefined;
@@ -33,26 +34,26 @@ export type GraphConfigurable = {
 };
 
 /**
- * Conditional edge: Determine if rubric needs re-drafting after human review
+ * Conditional edge: Determine if question set needs re-drafting after human review
  */
-function shouldRedraftRubric(state: typeof rubricAnnotation.State): string {
-  if (state.rubricApproved) {
-    return 'rubricInterpreter';
+function shouldRedraftQuestions(state: typeof rubricAnnotation.State): string {
+  if (state.questionsApproved) {
+    return 'questionInterpreter';
   }
-  return 'rubricDrafter';
+  return 'questionDrafter';
 }
 
 /**
  * Conditional edge: Skip human review if configured
  */
-function afterRubricDrafter(
+function afterQuestionDrafter(
   state: typeof rubricAnnotation.State,
   config?: { configurable?: Record<string, unknown> }
 ): string {
   void state;
   const skipHumanReview = config?.configurable?.['skipHumanReview'] === true;
   if (skipHumanReview) {
-    return 'rubricInterpreterDirect';
+    return 'questionInterpreterDirect';
   }
   return 'humanReviewer';
 }
@@ -74,19 +75,19 @@ function afterAgentEvaluator(
 }
 
 // Define the graph with the evaluation workflow
-// Starting from Analysis Agent to handle schema loading, then to Rubric Drafter
+// Starting from Analysis Agent to handle schema loading, then to Question Drafter
 const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   // Add all nodes
   .addNode('inputCollector', inputCollectorNode)
   .addNode('schemaChecker', schemaCheckerNode)
   .addNode('schemaLoader', schemaLoaderNode)
-  .addNode('rubricDrafter', rubricDrafterNode)
+  .addNode('questionDrafter', rubricDrafterNode)
   .addNode('humanReviewer', humanReviewerNode)
-  .addNode('rubricInterpreter', rubricInterpreterNode)
-  // Node for direct rubric interpretation (skipping human review)
-  .addNode('rubricInterpreterDirect', async (state, config) => {
-    // Auto-approve the rubric by returning updated state with approval
-    return rubricInterpreterNode({ ...state, rubricApproved: true }, config);
+  .addNode('questionInterpreter', rubricInterpreterNode)
+  // Node for direct question interpretation (skipping human review)
+  .addNode('questionInterpreterDirect', async (state, config) => {
+    // Auto-approve the questions by returning updated state with approval
+    return rubricInterpreterNode({ ...state, questionsApproved: true }, config);
   })
   .addNode('agentEvaluator', agentEvaluatorNode)
   .addNode('humanEvaluator', humanEvaluatorNode)
@@ -99,36 +100,36 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
 
   .addEdge('inputCollector', 'schemaChecker')
   .addEdge('schemaChecker', 'schemaLoader')
-  .addEdge('schemaLoader', 'rubricDrafter')
+  .addEdge('schemaLoader', 'questionDrafter')
 
-  // Rubric Drafter -> Human Reviewer (conditional)
-  .addConditionalEdges('rubricDrafter', afterRubricDrafter, {
+  // Question Drafter -> Human Reviewer (conditional)
+  .addConditionalEdges('questionDrafter', afterQuestionDrafter, {
     humanReviewer: 'humanReviewer',
-    rubricInterpreterDirect: 'rubricInterpreterDirect',
+    questionInterpreterDirect: 'questionInterpreterDirect',
   })
 
-  // Human Reviewer -> Rubric Interpreter or back to Drafter (conditional)
+  // Human Reviewer -> Question Interpreter or back to Drafter (conditional)
   .addConditionalEdges(
     'humanReviewer',
     (state) => {
-      // Check if rubricDraftAttempts exceeds threshold
-      const attempts = state.rubricDraftAttempts || 0;
+      // Check if questionDraftAttempts exceeds threshold
+      const attempts = state.questionDraftAttempts || 0;
       if (attempts >= 5) {
-        throw new Error('Maximum rubric drafting attempts exceeded');
+        throw new Error('Maximum question drafting attempts exceeded');
       }
-      return shouldRedraftRubric(state);
+      return shouldRedraftQuestions(state);
     },
     {
-      rubricInterpreter: 'rubricInterpreter',
-      rubricDrafter: 'rubricDrafter',
+      questionInterpreter: 'questionInterpreter',
+      questionDrafter: 'questionDrafter',
     }
   )
 
   // Direct interpretation after auto-approval
-  .addEdge('rubricInterpreterDirect', 'agentEvaluator')
+  .addEdge('questionInterpreterDirect', 'agentEvaluator')
 
-  // Rubric Interpreter -> Agent Evaluator
-  .addEdge('rubricInterpreter', 'agentEvaluator')
+  // Question Interpreter -> Agent Evaluator
+  .addEdge('questionInterpreter', 'agentEvaluator')
 
   // Agent Evaluator -> Human Evaluator or Merger (conditional)
   .addConditionalEdges('agentEvaluator', afterAgentEvaluator, {

@@ -37,56 +37,32 @@ export async function reportGeneratorNode(
   const llm = getLLM({ provider, model: modelName });
   const llmWithStructuredOutput = llm.withStructuredOutput(reportSchema);
 
-  // Build context for report generation
-  const agentScores =
-    state.agentEvaluation?.scores
-      ?.map((s) => `- ${s.criterionId}: ${s.score} - ${s.reasoning}`)
+  const agentAnswers =
+    state.agentEvaluation?.answers
+      ?.map(
+        (a) =>
+          `- ${a.questionId}: ${a.answer ? 'YES' : 'NO'} - ${a.explanation}`
+      )
       .join('\n') || 'No agent evaluation';
 
-  const humanScores =
-    state.humanEvaluation?.scores
-      ?.map((s) => `- ${s.criterionId}: ${s.score} - ${s.reasoning}`)
+  const humanAnswers =
+    state.humanEvaluation?.answers
+      ?.map(
+        (a) =>
+          `- ${a.questionId}: ${a.answer ? 'YES' : 'NO'} - ${a.explanation}`
+      )
       .join('\n') || 'No human evaluation';
 
-  // Build constraints context
-  const hardConstraintsInfo =
-    state.hardConstraints && state.hardConstraints.length > 0
-      ? state.hardConstraints
-          .map((constraint, index) => {
-            const answer = state.hardConstraintsAnswers?.[index];
-            return `- ${constraint} [${
-              answer !== undefined
-                ? answer
-                  ? 'PASS'
-                  : 'FAIL'
-                : 'NOT EVALUATED'
-            }]`;
-          })
-          .join('\n')
-      : 'No hard constraints defined';
-
-  const softConstraintsInfo =
-    state.softConstraints && state.softConstraints.length > 0
-      ? state.softConstraints
-          .map((constraint, index) => {
-            const answer = state.softConstraintsAnswers?.[index];
-            return `- ${constraint} [${
-              answer !== undefined ? answer : 'NOT EVALUATED'
-            }]`;
-          })
-          .join('\n')
-      : 'No soft constraints defined';
-
-  // Build rubric criteria context
-  const rubricCriteria =
-    state.rubricFinal?.criteria
+  // Build evaluation questions context (new model)
+  const questionsInfo =
+    state.questionSetFinal?.questions
       ?.map(
-        (c) =>
-          `- ${c.name} (weight: ${c.weight}%, ${
-            c.isHardConstraint ? 'HARD' : 'SOFT'
-          }): ${c.description}`
+        (q) =>
+          `- ${q.title} (weight: ${q.weight}%, expected: ${
+            q.expectedAnswer ? 'YES' : 'NO'
+          }): ${q.content}`
       )
-      .join('\n') || 'No rubric criteria available';
+      .join('\n') || 'No evaluation questions available';
 
   // Build analysis context
   const analysisContext = state.analysis || 'No analysis available';
@@ -102,33 +78,27 @@ CANDIDATE OUTPUT: """${state.candidateOutput || 'No candidate output'}"""
 
 ANALYSIS: """${analysisContext}"""
 
-RUBRIC CRITERIA:
-${rubricCriteria}
-
-HARD CONSTRAINTS (must pass):
-${hardConstraintsInfo}
-
-SOFT CONSTRAINTS (quality indicators):
-${softConstraintsInfo}
+EVALUATION QUESTIONS:
+${questionsInfo}
 
 VERDICT: ${state.finalReport.verdict}
 OVERALL SCORE: ${state.finalReport.overallScore}%
 
-AGENT EVALUATION SCORES:
-${agentScores}
+AGENT EVALUATION ANSWERS:
+${agentAnswers}
 
-HUMAN EVALUATION SCORES:
-${humanScores}
+HUMAN EVALUATION ANSWERS:
+${humanAnswers}
 
 DISCREPANCIES:
 ${state.finalReport.discrepancies.join('\n') || 'No discrepancies'}
 
 Generate:
 1. A brief executive summary (2-3 sentences)
-2. Detailed findings and analysis (reference the constraints and their evaluation results)
-3. Recommendations for improvement (based on failed constraints or low scores)
-4. Identified strengths (based on passed constraints and high scores)
-5. Identified weaknesses (based on failed constraints and low scores)
+2. Detailed findings and analysis (reference the questions and their evaluation results)
+3. Recommendations for improvement (based on failed questions or incorrect answers)
+4. Identified strengths (based on correct answers and high scores)
+5. Identified weaknesses (based on incorrect answers and low scores)
 `;
 
   const response = await invokeWithRetry(

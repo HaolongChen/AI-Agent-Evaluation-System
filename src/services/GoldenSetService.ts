@@ -1,7 +1,13 @@
 import { prisma } from '../config/prisma.ts';
 import { COPILOT_TYPES } from '../config/constants.ts';
 import { logger } from '../utils/logger.ts';
-import type { Prisma } from '../../build/generated/prisma/client.ts';
+import type { Prisma, goldenSet, userInput, copilotOutput, evaluationSession } from '../../build/generated/prisma/client.ts';
+
+export interface GoldenSetWithRelations extends goldenSet {
+  userInput: userInput[];
+  copilotOutput: copilotOutput[];
+  evaluationSessions?: evaluationSession[];
+}
 
 export class GoldenSetService {
   async updateGoldenSetInput(
@@ -10,7 +16,7 @@ export class GoldenSetService {
     copilotType: keyof typeof COPILOT_TYPES,
     description: string,
     query: string
-  ) {
+  ): Promise<GoldenSetWithRelations> {
     try {
       const copilotTypeValue = COPILOT_TYPES[copilotType];
 
@@ -79,7 +85,7 @@ export class GoldenSetService {
     modelName: string,
     status: 'pending' | 'running' | 'completed' | 'failed',
     metadata: Prisma.InputJsonValue
-  ) {
+  ): Promise<GoldenSetWithRelations> {
     try {
       const goldenSet = await prisma.goldenSet.update({
         where: {
@@ -114,7 +120,7 @@ export class GoldenSetService {
     }
   }
 
-  async getGoldenSet(goldenSetId: number) {
+  async getGoldenSet(goldenSetId: number): Promise<GoldenSetWithRelations> {
     try {
       const goldenSet = await prisma.goldenSet.findUnique({
         where: {

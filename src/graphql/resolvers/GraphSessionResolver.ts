@@ -1,84 +1,66 @@
 import { graphExecutionService } from '../../services/GraphExecutionService.ts';
 import { logger } from '../../utils/logger.ts';
-import type { Rubric, RubricCriterion } from '../../langGraph/state/state.ts';
+import type { QuestionSet, EvaluationQuestion } from '../../langGraph/state/state.ts';
 
 
 /**
- * Input types matching GraphQL schema
+ * Input types matching GraphQL schema - Question-based evaluation
  */
-export interface RubricCriterionInput {
-  id: string;
-  name: string;
-  description: string;
+export interface EvaluationQuestionInput {
+  id: number;
+  title: string;
+  content: string;
+  expectedAnswer: boolean;
   weight: number;
-  scoringScale: {
-    min: number;
-    max: number;
-    labels?: Record<string, string>;
-  };
-  isHardConstraint: boolean;
 }
 
-export interface RubricCriterionPatchInput {
-  criterionId: string;
-  name?: string;
-  description?: string;
-  weight?: number;
-  scoringScale?: {
-    min: number;
-    max: number;
-    labels?: Record<string, string>;
-  };
-  isHardConstraint?: boolean;
-}
-
-export interface RubricInput {
-  id: string;
+export interface QuestionSetInput {
+  id: number;
   version: string;
-  criteria: RubricCriterionInput[];
+  questions: EvaluationQuestionInput[];
   totalWeight: number;
 }
 
-export interface EvaluationScorePatchInput {
-  criterionId: string;
-  score?: number;
-  reasoning?: string;
+export interface QuestionPatchInput {
+  questionId: number;
+  title?: string;
+  content?: string;
+  expectedAnswer?: boolean;
+  weight?: number;
+}
+
+export interface QuestionAnswerInput {
+  questionId: number;
+  answer: boolean;
+  explanation: string;
   evidence?: string[];
 }
 
-export interface EvaluationScoreInput {
-  criterionId: string;
-  score: number;
-  reasoning: string;
+export interface QuestionAnswerPatchInput {
+  questionId: number;
+  answer?: boolean;
+  explanation?: string;
   evidence?: string[];
 }
 
 /**
- * Transform RubricInput to Rubric (adds timestamps)
+ * Transform QuestionSetInput to QuestionSet (adds timestamps)
  */
-function transformRubricInput(
-  input: RubricInput | null | undefined
-): Rubric | undefined {
+function transformQuestionSetInput(
+  input: QuestionSetInput | null | undefined
+): QuestionSet | undefined {
   if (!input) return undefined;
 
   const now = new Date().toISOString();
   return {
-    id: input.id,
     version: input.version,
-    criteria: input.criteria.map(
-      (c): RubricCriterion => ({
-        id: c.id,
-        name: c.name,
-        description: c.description,
-        weight: c.weight,
-        scoringScale: {
-          min: c.scoringScale.min,
-          max: c.scoringScale.max,
-          ...(c.scoringScale.labels && {
-            labels: c.scoringScale.labels as Record<number, string>,
-          }),
-        },
-        isHardConstraint: c.isHardConstraint,
+    questions: input.questions.map(
+      (q): EvaluationQuestion => ({
+        id: q.id,
+        title: q.title,
+        content: q.content,
+        expectedAnswer: q.expectedAnswer,
+        weight: q.weight,
       })
     ),
     totalWeight: input.totalWeight,
@@ -114,8 +96,8 @@ export const graphSessionResolver = {
           sessionId: state.sessionId,
           status: mapStatusToGraphQL(state.status),
           threadId: state.threadId,
-          rubricDraft: state.rubricDraft,
-          rubricFinal: state.rubricFinal,
+          questionSetDraft: state.questionSetDraft,
+          questionSetFinal: state.questionSetFinal,
           agentEvaluation: state.agentEvaluation,
           humanEvaluation: state.humanEvaluation,
           finalReport: state.finalReport,
@@ -128,24 +110,20 @@ export const graphSessionResolver = {
   },
 
   Mutation: {
-    /**
-     * Submit rubric review and resume the graph.
-     * Called after startGraphSession when status is AWAITING_RUBRIC_REVIEW.
-     */
     submitRubricReview: async (
       _: unknown,
       args: {
         sessionId: number;
         threadId: string;
         approved: boolean;
-        modifiedRubric?: RubricInput | null;
-        criteriaPatches?: RubricCriterionPatchInput[] | null;
+        modifiedQuestionSet?: QuestionSetInput | null;
+        questionPatches?: QuestionPatchInput[] | null;
         feedback?: string | null;
         reviewerAccountId: string;
       }
     ) => {
       try {
-        logger.info('Submitting rubric review', {
+        logger.info('Submitting question set review', {
           sessionId: args.sessionId,
           approved: args.approved,
         });
@@ -154,8 +132,8 @@ export const graphSessionResolver = {
           args.sessionId,
           args.threadId,
           args.approved,
-          transformRubricInput(args.modifiedRubric),
-          args.criteriaPatches ?? undefined,
+          transformQuestionSetInput(args.modifiedQuestionSet),
+          args.questionPatches ?? undefined,
           args.feedback ?? undefined,
           args.reviewerAccountId
         );
@@ -164,30 +142,26 @@ export const graphSessionResolver = {
           sessionId: result.sessionId,
           threadId: result.threadId,
           status: mapStatusToGraphQL(result.status),
-          rubricFinal: result.rubricFinal,
+          questionSetFinal: result.questionSetFinal,
           message: result.message,
         };
       } catch (error) {
-        logger.error('Error submitting rubric review:', error);
+        logger.error('Error submitting question set review:', error);
         throw new Error(
-          `Failed to submit rubric review: ${
+          `Failed to submit question set review: ${
             error instanceof Error ? error.message : 'Unknown error'
           }`
         );
       }
     },
 
-    /**
-     * Submit human evaluation and complete the graph.
-     * Called after submitRubricReview when status is AWAITING_HUMAN_EVALUATION.
-     */
     submitHumanEvaluation: async (
       _: unknown,
       args: {
         sessionId: number;
         threadId: string;
-        scores?: EvaluationScoreInput[] | null;
-        scorePatches?: EvaluationScorePatchInput[] | null;
+        answers?: QuestionAnswerInput[] | null;
+        answerPatches?: QuestionAnswerPatchInput[] | null;
         overallAssessment: string;
         evaluatorAccountId: string;
       }
@@ -195,14 +169,14 @@ export const graphSessionResolver = {
       try {
         logger.info('Submitting human evaluation', {
           sessionId: args.sessionId,
-          scoresCount: args.scores?.length ?? args.scorePatches?.length ?? 0,
+          answersCount: args.answers?.length ?? args.answerPatches?.length ?? 0,
         });
 
         const result = await graphExecutionService.submitHumanEvaluation(
           args.sessionId,
           args.threadId,
-          args.scores ?? undefined,
-          args.scorePatches ?? undefined,
+          args.answers ?? undefined,
+          args.answerPatches ?? undefined,
           args.overallAssessment,
           args.evaluatorAccountId
         );

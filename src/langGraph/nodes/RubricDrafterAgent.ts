@@ -2,58 +2,38 @@ import { type RunnableConfig } from '@langchain/core/runnables';
 import { HumanMessage } from '@langchain/core/messages';
 import {
   rubricAnnotation,
-  type Rubric,
-  type RubricCriterion,
+  type QuestionSet,
+  type EvaluationQuestion,
 } from '../state/index.ts';
 import { getLLM, invokeWithRetry } from '../llm/index.ts';
 import * as z from 'zod';
+import { evaluationPersistenceService } from '../../services/EvaluationPersistenceService.ts';
 
-const rubricCriterionSchema = z.object({
-  name: z.string().describe('Name of the evaluation criterion'),
-  description: z
+const questionSchema = z.object({
+  title: z.string().describe('Short title for this evaluation question'),
+  content: z
     .string()
-    .describe('Detailed description of what this criterion evaluates'),
+    .describe('The yes/no question to evaluate the candidate output'),
+  expectedAnswer: z
+    .boolean()
+    .describe('Expected answer (true for yes, false for no)'),
   weight: z
     .number()
     .min(0)
     .max(100)
-    .describe('Weight of this criterion (0-100)'),
-  minScore: z.number().describe('Minimum score for this criterion'),
-  maxScore: z.number().describe('Maximum score for this criterion'),
-  isHardConstraint: z
-    .boolean()
-    .describe(
-      'Whether this is a hard constraint (must pass) or soft constraint'
-    ),
+    .describe('Weight of this question (0-100)'),
 });
 
-const rubricDraftSchema = z.object({
-  criteria: z
-    .array(rubricCriterionSchema)
-    .describe('List of evaluation criteria'),
+const questionSetDraftSchema = z.object({
+  questions: z
+    .array(questionSchema)
+    .describe('List of yes/no evaluation questions'),
   rationale: z
     .string()
-    .describe('Explanation of why these criteria were chosen'),
+    .describe('Explanation of why these questions were chosen'),
 });
 
-/**
- * Generate a unique ID using crypto.randomUUID if available, otherwise fallback
- */
-function generateId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  // Fallback for environments without crypto.randomUUID
-  return `${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2, 11)}-${Math.random().toString(36).substring(2, 11)}`;
-}
-
-/**
- * Rubric Drafter Node
- * Produces rubric draft with criteria and scoring scales
- */
-export async function rubricDrafterNode(
+export async function questionDrafterNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
 ): Promise<Partial<typeof rubricAnnotation.State>> {
@@ -64,10 +44,12 @@ export async function rubricDrafterNode(
     (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
 
   const llm = getLLM({ provider, model: modelName });
-  const llmWithStructuredOutput = llm.withStructuredOutput(rubricDraftSchema);
+  const llmWithStructuredOutput = llm.withStructuredOutput(
+    questionSetDraftSchema
+  );
 
   const prompt = `
-You are an evaluation rubric expert. Based on the query, context, and schema information, create a comprehensive evaluation rubric.
+You are an evaluation expert. Based on the query, context, and schema information, create yes/no evaluation questions.
 
 Query: """${state.query}"""
 
@@ -81,73 +63,73 @@ Schema Expression: """${
     state.schemaExpression || 'No schema information available.'
   }"""
 
-Create evaluation criteria that:
+Create 3-7 yes/no questions that:
 1. Cover all important aspects of the expected output
-2. Include both hard constraints (must pass) and soft constraints (quality indicators)
-3. Have clear scoring scales
-4. Are weighted by importance
+2. Can be answered with a clear YES or NO
+3. Have clear expected answers (what the correct answer should be)
+4. Are weighted by importance (weights should sum to 100)
 
-Hard constraints examples: correctness, completeness, safety
-Soft constraints examples: clarity, efficiency, best practices
+Example questions:
+- "Does the output correctly implement the requested feature?" (expected: yes)
+- "Are there any syntax errors in the code?" (expected: no)
+- "Does the output follow the specified schema?" (expected: yes)
 
-Generate 3-7 criteria with appropriate weights that sum to 100.
+Generate questions with appropriate weights that sum to 100.
 `;
 
   const response = await invokeWithRetry(
     () => llmWithStructuredOutput.invoke([new HumanMessage(prompt)], config),
     provider,
-    { operationName: 'RubricDrafter.invoke' }
+    { operationName: 'QuestionDrafter.invoke' }
   );
 
-  // Transform LLM response into Rubric format
-  const criteria: RubricCriterion[] = response.criteria.map((c) => ({
-    id: generateId(),
-    name: c.name,
-    description: c.description,
-    weight: c.weight,
-    scoringScale: {
-      min: c.minScore,
-      max: c.maxScore,
-    },
-    isHardConstraint: c.isHardConstraint,
-  }));
-
-  // Normalize weights to sum to 100 if necessary
-  let totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+  let totalWeight = response.questions.reduce((sum, q) => sum + q.weight, 0);
   if (Math.abs(totalWeight - 100) > 0.01 && totalWeight > 0) {
     const factor = 100 / totalWeight;
-    criteria.forEach((c) => (c.weight = c.weight * factor));
-    totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+    response.questions.forEach((q) => (q.weight = q.weight * factor));
+    totalWeight = response.questions.reduce((sum, q) => sum + q.weight, 0);
   }
+
+  const questions: EvaluationQuestion[] = response.questions.map((q) => ({
+    id: -1, // overwritten when saved
+    title: q.title,
+    content: q.content,
+    expectedAnswer: q.expectedAnswer,
+    weight: q.weight,
+  }));
+
   const now = new Date().toISOString();
 
-  const rubricDraft: Rubric = {
-    id: generateId(),
+  const questionSetDraft: QuestionSet = {
     version: '1.0.0',
-    criteria,
+    questions: questions,
     totalWeight,
     createdAt: now,
     updatedAt: now,
   };
 
-  // Extract hard and soft constraints for backward compatibility
-  const hardConstraints = criteria
-    .filter((c) => c.isHardConstraint)
-    .map((c) => `${c.name}: ${c.description}`);
+  const {ids: questionIds} = await evaluationPersistenceService.saveQuestions(
+    config?.configurable?.['sessionId'] as number,
+    questionSetDraft
+  );
 
-  const softConstraints = criteria
-    .filter((c) => !c.isHardConstraint)
-    .map((c) => `${c.name}: ${c.description}`);
+  questionSetDraft.questions.forEach((q, idx) => {
+    const id = questionIds[idx];
+    if (id === undefined) {
+      throw new Error(`Question ID at index ${idx} is undefined`);
+    }
+    q.id = id;
+  });
 
   const timestamp = new Date().toISOString();
-  const auditEntry = `[${timestamp}] RubricDrafter: Created rubric with ${criteria.length} criteria (${hardConstraints.length} hard, ${softConstraints.length} soft). Rationale: ${response.rationale}`;
+  const auditEntry = `[${timestamp}] QuestionDrafter: Created ${questionSetDraft.questions.length} evaluation questions. Rationale: ${response.rationale}`;
 
   return {
-    rubricDraft,
-    hardConstraints,
-    softConstraints,
-    rubricApproved: false,
-    rubricDraftAttempts: (state.rubricDraftAttempts || 0) + 1,
+    questionSetDraft,
+    questionsApproved: false,
+    questionDraftAttempts: (state.questionDraftAttempts || 0) + 1,
     auditTrace: [auditEntry],
   };
 }
+
+export { questionDrafterNode as rubricDrafterNode };

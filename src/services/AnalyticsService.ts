@@ -68,7 +68,7 @@ export class AnalyticsService {
         status,
         metadata
       );
-      const session = goldenSet.evaluationSessions.at(-1);
+      const session = goldenSet.evaluationSessions?.at(-1);
       if (!session) {
         throw new Error('Failed to create evaluation session');
       }

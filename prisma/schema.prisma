@@ -36,11 +36,6 @@ enum RubricReviewStatus {
   modified
 }
 
-enum ExpectedAnswer {
-  yes
-  no
-}
-
 model goldenSet {
   id                 Int                 @id @default(autoincrement())
   projectExId        String              @map("project_ex_id")
@@ -103,55 +98,56 @@ model evaluationSession {
 
   // Relations
   goldenSet goldenSet         @relation(fields: [goldenSetId], references: [id])
-  rubric    adaptiveRubric?
+  rubrics   adaptiveRubric[]
   result    evaluationResult?
 
   @@index([id], map: "idx_evaluation_session_schema")
 }
 
-// Adaptive Rubrics (AI-generated evaluation questions)
+// Adaptive Rubrics (AI-generated evaluation questions - one question per row)
 model adaptiveRubric {
   id        Int @id @default(autoincrement())
-  sessionId Int @unique @map("session_id")
+  sessionId Int @map("session_id")
 
-  // Rubric Content (structured to match LangGraph Rubric interface)
-  rubricId      String  @map("rubric_id") // Rubric.id from LangGraph
-  version       String  @default("1.0")
-  criteria      Json    @map("criteria") // Array of RubricCriterion objects
-  totalWeight   Decimal @map("total_weight") @db.Decimal(10, 2)
+  // Rubric Content (one question per row)
+  version         String  @default("1.0")
+  title           String  @map("title")
+  content         String  @map("content") @db.Text
+  expectedAnswer  Boolean @map("expected_answer")
+  weight          Decimal @map("weight") @db.Decimal(5, 2)
 
   // Status
   reviewStatus RubricReviewStatus @default(pending) @map("review_status")
   isActive     Boolean            @default(true) @map("is_active")
 
-  // Timestamps (matching LangGraph Rubric interface)
+  // Timestamps
   createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
   reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(6)
-  reviewedBy String?   @map("reviewed_by") // account ID of the reviewer
+  reviewedBy String?   @map("reviewed_by")
 
   // Relations
-  session      evaluationSession           @relation(fields: [sessionId], references: [id])
-  judgeRecords adaptiveRubricJudgeRecord[]
+  session     evaluationSession          @relation(fields: [sessionId], references: [id])
+  judgeRecord adaptiveRubricJudgeRecord?
 
   @@index([sessionId], map: "idx_adaptive_rubric_session")
 }
 
-// Rubric Judgments (human and agent evaluations)
+// Rubric Judgments (human and agent evaluations - one answer per rubric question)
 model adaptiveRubricJudgeRecord {
   id               Int      @id @default(autoincrement())
-  adaptiveRubricId Int      @map("adaptive_rubric_id")
-  evaluatorType    String   @map("evaluator_type") // 'agent' or 'human' to match LangGraph Evaluation.evaluatorType
+  adaptiveRubricId Int      @unique @map("adaptive_rubric_id")
+  evaluatorType    String   @map("evaluator_type") // 'agent' or 'human'
   accountId        String?  @map("account_id") // ID of the human judge (null for agent evaluations)
-  scores           Json     @map("scores") // Array of EvaluationScore objects (criterionId, score, reasoning, evidence)
+  answer           Boolean  // yes/no answer to the rubric question
+  comment          String?  @db.Text
   overallScore     Decimal  @map("overall_score") @db.Decimal(5, 2)
-  summary          String   @db.Text
   timestamp        DateTime @default(now()) @map("timestamp") @db.Timestamptz(6)
 
   // Relations
   rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
 
-  @@index([adaptiveRubricId], map: "idx_rubric_judge_rubric")
+  @@index([id], map: "idx_rubric_judge_rubric")
 }
 
 // Evaluation Results Summary (matching LangGraph FinalReport interface)

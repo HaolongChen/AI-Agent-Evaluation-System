@@ -16,12 +16,12 @@ import { RubricGenerationJobRunner } from '../src/jobs/RubricGenerationJobRunner
 import { graphExecutionService } from '../src/services/GraphExecutionService.ts';
 import { goldenSetService } from '../src/services/GoldenSetService.ts';
 import { WS_URL } from '../src/config/env.ts';
-import type { Rubric, FinalReport } from '../src/langGraph/state/state.ts';
+import type { QuestionSet, FinalReport } from '../src/langGraph/state/state.ts';
 
 config();
 
 const TEST_CONFIG = {
-  useExistingGoldenSet: true,
+  useExistingGoldenSet: false,
   goldenSetId: 1,
   projectExId: process.env['projectExId'] || 'X57jbwZzB76',
   schemaExId: 'e2e-test-schema',
@@ -30,7 +30,9 @@ const TEST_CONFIG = {
   testDescription: 'E2E test: User table creation',
   modelName: process.env['AZURE_OPENAI_DEPLOYMENT'] || 'gpt-4o',
   copilotTimeoutMs: 120000,
-  rubricTimeoutMs: 300000,
+  questionSetTimeoutMs: 300000,
+  statusPollIntervalMs: 10000,
+  statusPollTimeoutMs: 180000,
 };
 
 interface TestResult {
@@ -174,7 +176,7 @@ async function step3_runLangGraphWithHITL(
 ): Promise<{
   sessionId: number;
   threadId: string;
-  rubricDraft: Rubric | null;
+  questionSetDraft: QuestionSet | null;
 }> {
   const start = Date.now();
 
@@ -198,10 +200,10 @@ async function step3_runLangGraphWithHITL(
     );
 
     jobRunner.startJob();
-    const result = await jobRunner.waitForCompletion(TEST_CONFIG.rubricTimeoutMs);
+    const result = await jobRunner.waitForCompletion(TEST_CONFIG.questionSetTimeoutMs);
 
     if (result.status !== 'succeeded') {
-      throw new Error(result.error || 'Rubric generation failed');
+      throw new Error(result.error || 'Question set generation failed');
     }
 
     if (
@@ -217,21 +219,20 @@ async function step3_runLangGraphWithHITL(
     const threadId = result.threadId;
 
     if (!sessionId || !threadId) {
-      throw new Error('Missing sessionId or threadId from rubric generation');
+      throw new Error('Missing sessionId or threadId from question set generation');
     }
 
     recordResult('Step 3: Run LangGraph (HITL)', true, Date.now() - start, {
       sessionId,
       threadId,
       graphStatus: result.graphStatus,
-      rubricId: result.rubric?.id,
-      criteriaCount: result.rubric?.criteria?.length,
+      questionsCount: result.questionSet?.questions?.length,
     });
 
     return {
       sessionId,
       threadId,
-      rubricDraft: result.rubric || null,
+      questionSetDraft: result.questionSet || null,
     };
   } catch (error) {
     recordResult(
@@ -245,62 +246,59 @@ async function step3_runLangGraphWithHITL(
   }
 }
 
-async function step4_submitRubricReview(
+async function step4_submitQuestionSetReview(
   sessionId: number,
   threadId: string,
-  rubricDraft: Rubric | null
-): Promise<Rubric | null> {
+  _questionSetDraft: QuestionSet | null
+): Promise<QuestionSet | null> {
+  void _questionSetDraft;
   const start = Date.now();
 
   try {
-    logger.info('Submitting rubric review...');
+    logger.info('Submitting question set review...');
 
     const state = await graphExecutionService.getSessionState(sessionId);
     logger.info(`  Current status: ${state.status}`);
 
     if (state.status === 'completed') {
-      logger.info('  Session already completed, skipping rubric review');
-      recordResult('Step 4: Submit Rubric Review', true, Date.now() - start, {
+      logger.info('  Session already completed, skipping question set review');
+      recordResult('Step 4: Submit Question Set Review', true, Date.now() - start, {
         skipped: true,
         reason: 'Session already completed',
       });
-      return state.rubricFinal;
+      return state.questionSetFinal;
     }
 
     if (state.status !== 'awaiting_rubric_review') {
-      throw new Error(`Cannot submit rubric review in status: ${state.status}`);
+      throw new Error(`Cannot submit question set review in status: ${state.status}`);
     }
 
-    const criteriaPatches = rubricDraft?.criteria?.slice(0, 1).map((c) => ({
-      criterionId: c.id,
-      weight: Math.min(c.weight * 1.1, 100),
-    }));
-
     const approved = true;
-    const modifiedRubric = undefined;
-    const feedback = 'E2E test: Approved rubric with minor weight adjustment';
+    const feedback = 'E2E test: Approved question set';
     const reviewerAccountId = 'e2e-test-reviewer';
 
-    const result = await graphExecutionService.submitRubricReview(
+    const submitResult = await graphExecutionService.submitRubricReview(
       sessionId,
       threadId,
       approved,
-      modifiedRubric,
-      criteriaPatches,
+      undefined,
+      undefined,
       feedback,
       reviewerAccountId
     );
+    
+    if(submitResult.status === 'failed') {
+      throw new Error(`Question set review submission failed: ${submitResult.message}`);
+    }
 
-    recordResult('Step 4: Submit Rubric Review', true, Date.now() - start, {
-      status: result.status,
-      rubricFinalId: result.rubricFinal?.id,
-      rubricVersion: result.rubricFinal?.version,
+    recordResult('Step 4: Submit Question Set Review', true, Date.now() - start, {
+      submitStatus: submitResult.status,
     });
 
-    return result.rubricFinal || null;
+    return submitResult.questionSetFinal || null;
   } catch (error) {
     recordResult(
-      'Step 4: Submit Rubric Review',
+      'Step 4: Submit Question Set Review',
       false,
       Date.now() - start,
       undefined,
@@ -313,7 +311,7 @@ async function step4_submitRubricReview(
 async function step5_submitHumanEvaluation(
   sessionId: number,
   threadId: string,
-  rubricFinal: Rubric | null
+  questionSetFinal: QuestionSet | null
 ): Promise<FinalReport | null> {
   const start = Date.now();
 
@@ -336,56 +334,43 @@ async function step5_submitHumanEvaluation(
       throw new Error(`Cannot submit human evaluation in status: ${state.status}`);
     }
 
-    const rubric = rubricFinal || state.rubricFinal;
-    if (!rubric) {
-      throw new Error('No rubric available for evaluation');
+    const questionSet = questionSetFinal || state.questionSetFinal;
+    if (!questionSet) {
+      throw new Error('No question set available for evaluation');
     }
 
     const hasAgentEvaluation = !!state.agentEvaluation;
     logger.info(`  Has agent evaluation: ${hasAgentEvaluation}`);
 
-    let scores: Array<{ criterionId: string; score: number; reasoning: string }> | undefined;
-    let scorePatches: Array<{ criterionId: string; score: number; reasoning: string }> | undefined;
-
-    if (hasAgentEvaluation) {
-      scorePatches = rubric.criteria.slice(0, 2).map((c, index) => ({
-        criterionId: c.id,
-        score: Math.min(
-          c.scoringScale.max,
-          c.scoringScale.min + (c.scoringScale.max - c.scoringScale.min) * (0.8 + index * 0.05)
-        ),
-        reasoning: `E2E test: Human evaluation for criterion "${c.name}"`,
-      }));
-    } else {
-      scores = rubric.criteria.map((c, index) => ({
-        criterionId: c.id,
-        score: Math.min(
-          c.scoringScale.max,
-          c.scoringScale.min + (c.scoringScale.max - c.scoringScale.min) * (0.75 + index * 0.03)
-        ),
-        reasoning: `E2E test: Full human evaluation for criterion "${c.name}"`,
-      }));
-    }
+    const answers = questionSet.questions.map((q) => ({
+      questionId: q.id,
+      answer: q.expectedAnswer,
+      explanation: `E2E test: Human evaluation for question "${q.title}"`,
+    }));
 
     const overallAssessment = 'E2E test: Overall assessment - The copilot output meets requirements';
     const evaluatorAccountId = 'e2e-test-evaluator';
 
-    const result = await graphExecutionService.submitHumanEvaluation(
+    const submitResult = await graphExecutionService.submitHumanEvaluation(
       sessionId,
       threadId,
-      scores,
-      scorePatches,
+      answers,
+      undefined,
       overallAssessment,
       evaluatorAccountId
     );
+    
+    if (submitResult.status === 'failed') {
+      throw new Error(`Human evaluation submission failed: ${submitResult.message}`);
+    }
 
     recordResult('Step 5: Submit Human Evaluation', true, Date.now() - start, {
-      status: result.status,
-      verdict: result.finalReport?.verdict,
-      overallScore: result.finalReport?.overallScore,
+      submitStatus: submitResult.status,
+      verdict: submitResult.finalReport?.verdict,
+      overallScore: submitResult.finalReport?.overallScore,
     });
 
-    return result.finalReport || null;
+    return submitResult.finalReport || null;
   } catch (error) {
     recordResult(
       'Step 5: Submit Human Evaluation',
@@ -466,7 +451,7 @@ async function runFullE2ETest(): Promise<void> {
     );
     logger.info(`\nCopilot Output (${copilotOutput.length} chars)\n`);
 
-    const { sessionId, threadId, rubricDraft } = await step3_runLangGraphWithHITL(
+    const { sessionId, threadId, questionSetDraft } = await step3_runLangGraphWithHITL(
       goldenSetInfo.goldenSetId,
       goldenSetInfo.projectExId,
       goldenSetInfo.schemaExId,
@@ -476,9 +461,9 @@ async function runFullE2ETest(): Promise<void> {
     );
     logger.info(`\nSession: ${sessionId}, Thread: ${threadId}\n`);
 
-    const rubricFinal = await step4_submitRubricReview(sessionId, threadId, rubricDraft);
+    const questionSetFinal = await step4_submitQuestionSetReview(sessionId, threadId, questionSetDraft);
 
-    await step5_submitHumanEvaluation(sessionId, threadId, rubricFinal);
+    await step5_submitHumanEvaluation(sessionId, threadId, questionSetFinal);
 
     const finalReport = await step6_verifyFinalReport(sessionId);
 

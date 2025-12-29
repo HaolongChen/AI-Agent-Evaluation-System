@@ -49,14 +49,7 @@ export async function mergerNode(
       throw new Error('No evaluation available');
     }
 
-    if (!state.rubricFinal) {
-      throw new Error('No rubric available for verdict determination');
-    }
-    const verdict = determineVerdict(
-      singleEval.overallScore,
-      state.rubricFinal.criteria,
-      singleEval.scores
-    );
+    const verdict = determineVerdict(singleEval.overallScore);
 
     const report: FinalReport = {
       verdict,
@@ -84,16 +77,15 @@ export async function mergerNode(
   const llmWithStructuredOutput =
     llm.withStructuredOutput(reconciliationSchema);
 
-  // Build comparison for prompt
-  const agentScoresText = agentEval.scores
+  const agentAnswersText = agentEval.answers
     .map(
-      (s) => `- ${s.criterionId}: Score ${s.score}, Reasoning: ${s.reasoning}`
+      (a) => `- ${a.questionId}: ${a.answer ? 'YES' : 'NO'}, Explanation: ${a.explanation}`
     )
     .join('\n');
 
-  const humanScoresText = humanEval.scores
+  const humanAnswersText = humanEval.answers
     .map(
-      (s) => `- ${s.criterionId}: Score ${s.score}, Reasoning: ${s.reasoning}`
+      (a) => `- ${a.questionId}: ${a.answer ? 'YES' : 'NO'}, Explanation: ${a.explanation}`
     )
     .join('\n');
 
@@ -103,24 +95,24 @@ You are an evaluation reconciliation expert. Compare and reconcile the following
 AGENT EVALUATION:
 Overall Score: ${agentEval.overallScore}%
 Summary: ${agentEval.summary}
-Scores:
-${agentScoresText}
+Answers:
+${agentAnswersText}
 
 HUMAN EVALUATION:
 Overall Score: ${humanEval.overallScore}%
 Summary: ${humanEval.summary}
-Scores:
-${humanScoresText}
+Answers:
+${humanAnswersText}
 
 Tasks:
-1. Identify any significant discrepancies between the evaluations
+1. Identify any significant discrepancies between the evaluations (e.g., where agent and human gave different answers)
 2. Determine a final reconciled overall score
 3. Explain how discrepancies were resolved
 4. Provide a final verdict (pass, fail, or needs_review)
 
 Consider:
-- Hard constraint violations should heavily influence the verdict
-- Significant discrepancies (>20% difference) should be flagged
+- Conflicting answers (YES vs NO) on the same question are critical discrepancies
+- Significant score differences (>20%) should be flagged
 - The verdict should be "needs_review" if there are unresolvable discrepancies
 `;
 
@@ -151,38 +143,7 @@ Consider:
   };
 }
 
-/**
- * Determine verdict based on score and criteria
- */
-/**
- * Determine verdict based on score, criteria, and individual criterion scores
- */
-type EvaluationScore = { criterionId: string; score: number };
-
-function determineVerdict(
-  score: number,
-  criteria: Array<{
-    id: string;
-    isHardConstraint: boolean;
-    scoringScale: { min: number; max: number };
-  }>,
-  scores: EvaluationScore[]
-): 'pass' | 'fail' | 'needs_review' {
-  // Check for hard constraint failures
-  const hardConstraintFailures = criteria
-    .filter((c) => c.isHardConstraint)
-    .filter((c) => {
-      const evalScore = scores.find((s) => s.criterionId === c.id);
-      if (!evalScore) return true; // Missing score is a failure
-      const threshold =
-        (c.scoringScale.max - c.scoringScale.min) * 0.7 + c.scoringScale.min;
-      return evalScore.score < threshold;
-    });
-
-  if (hardConstraintFailures.length > 0) {
-    return 'fail';
-  }
-
+function determineVerdict(score: number): 'pass' | 'fail' | 'needs_review' {
   if (score >= PASS_THRESHOLD) {
     return 'pass';
   } else if (score < FAIL_THRESHOLD) {

@@ -6,14 +6,10 @@ import { prisma } from '../config/prisma.ts';
 import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
-import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
-import type { Prisma } from '../../build/generated/prisma/client.ts';
+import type { QuestionSet, FinalReport } from '../langGraph/state/state.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
-/**
- * Metadata stored in session for HITL tracking
- */
 interface SessionMetadata {
   threadId: string;
   goldenSetId?: number;
@@ -21,24 +17,18 @@ interface SessionMetadata {
   skipHumanEvaluation?: boolean;
 }
 
-/**
- * Interrupt payload structure from LangGraph
- */
 interface InterruptInfo {
   value: {
     message?: string;
-    rubricDraft?: Rubric;
-    rubricFinal?: Rubric;
+    questionSetDraft?: QuestionSet;
+    questionSetFinal?: QuestionSet;
   };
   resumable: boolean;
   ns: string[];
 }
 
-/**
- * Result from graph.invoke() with potential interrupt info
- */
 interface GraphResult {
-  rubricFinal?: Rubric | null;
+  questionSetFinal?: QuestionSet | null;
   finalReport?: FinalReport | null;
   __interrupt__?: InterruptInfo[];
 }
@@ -49,7 +39,7 @@ export interface RubricReviewJobResult {
   threadId?: string;
   graphStatus?: 'completed' | 'awaiting_human_evaluation';
   message?: string;
-  rubricFinal?: Rubric | null;
+  questionSetFinal?: QuestionSet | null;
   finalReport?: FinalReport | null;
   error?: string;
 }
@@ -72,7 +62,7 @@ export class RubricReviewJobRunner {
     private readonly threadId: string,
     private readonly approved: boolean,
     private readonly reviewerAccountId: string,
-    private readonly modifiedRubric?: Rubric,
+    private readonly modifiedQuestionSet?: QuestionSet,
     private readonly feedback?: string
   ) {
     this.completionPromise = new Promise<RubricReviewJobResult>(
@@ -100,7 +90,7 @@ export class RubricReviewJobRunner {
     // Get the session to retrieve metadata
     const session = await prisma.evaluationSession.findUnique({
       where: { id: this.sessionId },
-      include: { rubric: true },
+      include: { rubrics: true },
     });
 
     if (!session) {
@@ -112,34 +102,22 @@ export class RubricReviewJobRunner {
       throw new Error('Thread ID mismatch');
     }
 
-    // Update rubric in database with review status
-    if (session.rubric) {
-      const updateData: Prisma.adaptiveRubricUpdateInput = {
-        reviewStatus: this.approved
-          ? REVIEW_STATUS.APPROVED
-          : REVIEW_STATUS.REJECTED,
-        reviewedAt: new Date(),
-        reviewedBy: this.reviewerAccountId,
-      };
-
-      if (this.modifiedRubric) {
-        updateData.criteria = JSON.parse(
-          JSON.stringify(this.modifiedRubric.criteria)
-        );
-        updateData.totalWeight = this.modifiedRubric.totalWeight;
-        updateData.version = this.modifiedRubric.version;
-      }
-
-      await prisma.adaptiveRubric.update({
-        where: { id: session.rubric.id },
-        data: updateData,
+    if (session.rubrics.length > 0) {
+      await prisma.adaptiveRubric.updateMany({
+        where: { sessionId: this.sessionId },
+        data: {
+          reviewStatus: this.approved
+            ? REVIEW_STATUS.APPROVED
+            : REVIEW_STATUS.REJECTED,
+          reviewedAt: new Date(),
+          reviewedBy: this.reviewerAccountId,
+        },
       });
     }
 
-    // Prepare human review input for graph resumption
     const humanReviewInput = {
       approved: this.approved,
-      ...(this.modifiedRubric && { modifiedRubric: this.modifiedRubric }),
+      ...(this.modifiedQuestionSet && { modifiedQuestionSet: this.modifiedQuestionSet }),
       ...(this.feedback && { feedback: this.feedback }),
     };
 
@@ -149,6 +127,7 @@ export class RubricReviewJobRunner {
       : 'azure';
 
     const resumeConfigurable: GraphConfigurable = {
+      sessionId: this.sessionId,
       thread_id: this.threadId,
       provider,
       model: session.modelName,
@@ -163,19 +142,18 @@ export class RubricReviewJobRunner {
       }
     )) as GraphResult;
 
-    // Determine the new status based on interrupt state
     let graphStatus: RubricReviewJobResult['graphStatus'] = 'completed';
     let message = 'Evaluation completed successfully';
-    let rubricFinalForResponse: Rubric | null | undefined = result.rubricFinal;
+    let questionSetFinalForResponse: QuestionSet | null | undefined = result.questionSetFinal;
 
     if (result.__interrupt__ && result.__interrupt__.length > 0) {
       const interruptValue = result.__interrupt__[0]?.value;
-      if (interruptValue?.rubricFinal) {
+      if (interruptValue?.questionSetFinal) {
         graphStatus = 'awaiting_human_evaluation';
         message =
           'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
-        rubricFinalForResponse =
-          interruptValue.rubricFinal || rubricFinalForResponse;
+        questionSetFinalForResponse =
+          interruptValue.questionSetFinal || questionSetFinalForResponse;
       }
     }
 
@@ -200,10 +178,9 @@ export class RubricReviewJobRunner {
         result.finalReport
       );
 
-      // Save judge records (agent and human evaluations) if rubric exists
-      if (session.rubric) {
+      if (session.rubrics.length > 0) {
         await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-          session.rubric.id,
+          this.sessionId,
           result.finalReport
         );
       }
@@ -215,19 +192,16 @@ export class RubricReviewJobRunner {
       threadId: this.threadId,
       graphStatus,
       message,
-      rubricFinal: rubricFinalForResponse ?? null,
+      questionSetFinal: questionSetFinalForResponse ?? null,
       finalReport: result.finalReport ?? null,
     };
   }
 
-  /**
-   * Start the job (wraps submitRubricReview)
-   */
   async startJob(): Promise<void> {
-    logger.info('Submitting rubric review', {
+    logger.info('Submitting question set review', {
       sessionId: this.sessionId,
       approved: this.approved,
-      hasModifiedRubric: Boolean(this.modifiedRubric),
+      hasModifiedQuestionSet: Boolean(this.modifiedQuestionSet),
     });
 
     try {
@@ -321,10 +295,10 @@ if (
       feedback: process.argv[7],
     });
 
-  const modifiedRubric = args.modifiedRubricJson
+  const modifiedQuestionSet = args.modifiedRubricJson
     ? args.modifiedRubricJson === 'null'
       ? undefined
-      : (JSON.parse(args.modifiedRubricJson) as Rubric)
+      : (JSON.parse(args.modifiedRubricJson) as QuestionSet)
     : undefined;
 
   const runner = new RubricReviewJobRunner(
@@ -332,7 +306,7 @@ if (
     args.threadId,
     args.approved,
     args.reviewerAccountId,
-    modifiedRubric,
+    modifiedQuestionSet,
     args.feedback
   );
 

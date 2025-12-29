@@ -1,16 +1,13 @@
 import * as k8s from '@kubernetes/client-node';
 import yaml from 'js-yaml';
 import { logger } from '../../utils/logger.ts';
-import type { FinalReport, Rubric } from '../../langGraph/index.ts';
+import type { FinalReport, QuestionSet } from '../../langGraph/index.ts';
 
 export interface EvalJobResult {
   jobName: string;
   namespace: string;
   status: 'succeeded' | 'failed' | 'running';
   completionTime?: Date;
-  // failureReason?: string;
-  // response?: string | undefined;
-  // tasks?: TaskMessage[] | null | undefined;
   editableText?: string;
   reason?: string;
 }
@@ -23,7 +20,7 @@ export interface GenJobResult {
   threadId?: string;
   graphStatus?: string;
   message?: string;
-  rubric?: Rubric | null;
+  questionSet?: QuestionSet | null;
   hardConstraints?: string[];
   softConstraints?: string[];
   hardConstraintsAnswers?: boolean[];
@@ -44,7 +41,7 @@ export interface RubricReviewK8sJobResult {
   threadId?: string;
   graphStatus?: string;
   message?: string;
-  rubricFinal?: Rubric | null;
+  questionSetFinal?: QuestionSet | null;
   finalReport?: FinalReport | null;
   error?: string;
   completionTime?: Date;
@@ -261,7 +258,7 @@ async function extractJobResultFromLogs(
               threadId: result.threadId,
               graphStatus: result.graphStatus,
               message: result.message,
-              rubric: result.rubric,
+              questionSet: result.questionSet,
               hardConstraints: result.hardConstraints,
               softConstraints: result.softConstraints,
               hardConstraintsAnswers: result.hardConstraintsAnswers,
@@ -286,7 +283,7 @@ async function extractJobResultFromLogs(
               threadId: result.threadId,
               graphStatus: result.graphStatus,
               message: result.message,
-              rubricFinal: result.rubricFinal,
+              questionSetFinal: result.questionSetFinal,
               finalReport: result.finalReport,
               error: result.error,
             };
@@ -417,7 +414,7 @@ async function watchJobStatus(
               threadId: genResult.threadId,
               graphStatus: genResult.graphStatus,
               message: genResult.message,
-              rubric: genResult.rubric,
+              questionSet: genResult.questionSet,
               hardConstraints: genResult.hardConstraints,
               softConstraints: genResult.softConstraints,
               hardConstraintsAnswers: genResult.hardConstraintsAnswers,
@@ -441,7 +438,7 @@ async function watchJobStatus(
               threadId: reviewResult.threadId,
               graphStatus: reviewResult.graphStatus,
               message: reviewResult.message,
-              rubricFinal: reviewResult.rubricFinal,
+              questionSetFinal: reviewResult.questionSetFinal,
               finalReport: reviewResult.finalReport,
               error: reviewResult.error,
             });

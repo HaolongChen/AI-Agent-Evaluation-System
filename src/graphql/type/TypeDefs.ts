@@ -111,7 +111,47 @@ export const typeDefs = `#graphql
     judgeRecord: JudgeRecord
   }
   
-  type RubricCriterion {
+  # ============================================================================
+  # NEW TYPES - Question-based evaluation (matches new Prisma schema)
+  # ============================================================================
+  
+  type EvaluationQuestion {
+    id: String!
+    title: String!
+    content: String!
+    expectedAnswer: Boolean!
+    weight: Float!
+  }
+  
+  type QuestionSet {
+    id: String!
+    version: String!
+    questions: [EvaluationQuestion!]!
+    totalWeight: Float!
+    createdAt: String!
+    updatedAt: String!
+  }
+  
+  type QuestionAnswer {
+    questionId: String!
+    answer: Boolean!
+    explanation: String!
+    evidence: [String!]
+  }
+  
+  type QuestionEvaluation {
+    evaluatorType: String!
+    answers: [QuestionAnswer!]!
+    overallScore: Float!
+    summary: String!
+    timestamp: String!
+  }
+  
+  # ============================================================================
+  # LEGACY TYPES - Kept for backward compatibility during migration
+  # ============================================================================
+  
+  type RubricCriterion @deprecated(reason: "Use EvaluationQuestion instead") {
     id: String!
     name: String!
     description: String!
@@ -120,7 +160,7 @@ export const typeDefs = `#graphql
     isHardConstraint: Boolean!
   }
   
-  type ScoringScale {
+  type ScoringScale @deprecated(reason: "No longer used with question-based evaluation") {
     min: Int!
     max: Int!
     labels: JSON
@@ -218,13 +258,13 @@ export const typeDefs = `#graphql
       skipHumanEvaluation: Boolean
     ): Boolean!
     
-    # HITL Graph Execution - Submit Rubric Review (resumes graph)
+    # HITL Graph Execution - Submit Question Set Review (resumes graph)
     submitRubricReview(
       sessionId: Int!
       threadId: String!
       approved: Boolean!
-      modifiedRubric: RubricInput @deprecated(reason: "Use criteriaPatches for partial updates")
-      criteriaPatches: [RubricCriterionPatchInput!]
+      modifiedQuestionSet: QuestionSetInput
+      questionPatches: [QuestionPatchInput!]
       feedback: String
       reviewerAccountId: String!
     ): RubricReviewResult!
@@ -233,23 +273,66 @@ export const typeDefs = `#graphql
     submitHumanEvaluation(
       sessionId: Int!
       threadId: String!
-      scores: [EvaluationScoreInput!] @deprecated(reason: "Use scorePatches for partial updates")
-      scorePatches: [EvaluationScorePatchInput!]
+      answers: [QuestionAnswerInput!]
+      answerPatches: [QuestionAnswerPatchInput!]
       overallAssessment: String!
       evaluatorAccountId: String!
     ): HumanEvaluationResult!
   }
   
-  # Input type for EvaluationScore
-  input EvaluationScoreInput {
+  # ============================================================================
+  # NEW INPUT TYPES - Question-based evaluation
+  # ============================================================================
+  
+  input EvaluationQuestionInput {
+    id: String!
+    title: String!
+    content: String!
+    expectedAnswer: Boolean!
+    weight: Float!
+  }
+  
+  input QuestionSetInput {
+    id: String!
+    version: String!
+    questions: [EvaluationQuestionInput!]!
+    totalWeight: Float!
+  }
+  
+  input QuestionPatchInput {
+    questionId: String!
+    title: String
+    content: String
+    expectedAnswer: Boolean
+    weight: Float
+  }
+  
+  input QuestionAnswerInput {
+    questionId: String!
+    answer: Boolean!
+    explanation: String!
+    evidence: [String!]
+  }
+  
+  input QuestionAnswerPatchInput {
+    questionId: String!
+    answer: Boolean
+    explanation: String
+    evidence: [String!]
+  }
+  
+  # ============================================================================
+  # LEGACY INPUT TYPES - Kept for backward compatibility
+  # ============================================================================
+  
+  input EvaluationScoreInput @deprecated(reason: "Use QuestionAnswerInput instead") {
     criterionId: String!
     score: Float!
     reasoning: String!
     evidence: [String!]
   }
   
-  # Input type for RubricCriterion (for modifying rubrics)
-  input RubricCriterionInput {
+  input RubricCriterionInput @deprecated(reason: "Use EvaluationQuestionInput instead") {
     id: String!
     name: String!
     description: String!
@@ -258,22 +341,20 @@ export const typeDefs = `#graphql
     isHardConstraint: Boolean!
   }
   
-  input ScoringScaleInput {
+  input ScoringScaleInput @deprecated(reason: "No longer used with question-based evaluation") {
     min: Int!
     max: Int!
     labels: JSON
   }
   
-  # Input type for modified rubric
-  input RubricInput {
+  input RubricInput @deprecated(reason: "Use QuestionSetInput instead") {
     id: String!
     version: String!
     criteria: [RubricCriterionInput!]!
     totalWeight: Float!
   }
   
-  # Partial update for single criterion (NEW)
-  input RubricCriterionPatchInput {
+  input RubricCriterionPatchInput @deprecated(reason: "Use QuestionPatchInput instead") {
     criterionId: String!
     name: String
     description: String
@@ -282,8 +363,7 @@ export const typeDefs = `#graphql
     isHardConstraint: Boolean
   }
   
-  # Partial update for single evaluation score (NEW)
-  input EvaluationScorePatchInput {
+  input EvaluationScorePatchInput @deprecated(reason: "Use QuestionAnswerPatchInput instead") {
     criterionId: String!
     score: Float
     reasoning: String
@@ -303,7 +383,7 @@ export const typeDefs = `#graphql
     sessionId: Int!
     threadId: String!
     status: GraphSessionStatus!
-    rubricFinal: RubricOutput
+    questionSetFinal: QuestionSet
     message: String!
   }
 
@@ -315,30 +395,17 @@ export const typeDefs = `#graphql
     message: String!
   }
   
-  type RubricOutput {
-    id: String!
-    version: String!
-    criteria: [RubricCriterion!]!
-    totalWeight: Float!
-    createdAt: String!
-    updatedAt: String!
-  }
-  
-  type EvaluationOutput {
-    evaluatorType: String!
-    scores: [EvaluationScore!]!
-    overallScore: Float!
-    summary: String!
-    timestamp: String!
-  }
+  # ============================================================================
+  # NEW OUTPUT TYPES - Question-based evaluation
+  # ============================================================================
   
   type FinalReportOutput {
     verdict: String!
     overallScore: Float!
     summary: String!
     detailedAnalysis: String!
-    agentEvaluation: EvaluationOutput
-    humanEvaluation: EvaluationOutput
+    agentEvaluation: QuestionEvaluation
+    humanEvaluation: QuestionEvaluation
     discrepancies: [String!]!
     auditTrace: [String!]!
     generatedAt: String!
@@ -348,11 +415,32 @@ export const typeDefs = `#graphql
     sessionId: Int!
     status: GraphSessionStatus!
     threadId: String
-    rubricDraft: RubricOutput
-    rubricFinal: RubricOutput
-    agentEvaluation: EvaluationOutput
-    humanEvaluation: EvaluationOutput
+    questionSetDraft: QuestionSet
+    questionSetFinal: QuestionSet
+    agentEvaluation: QuestionEvaluation
+    humanEvaluation: QuestionEvaluation
     finalReport: FinalReportOutput
+  }
+  
+  # ============================================================================
+  # LEGACY OUTPUT TYPES - Kept for backward compatibility
+  # ============================================================================
+  
+  type RubricOutput @deprecated(reason: "Use QuestionSet instead") {
+    id: String!
+    version: String!
+    criteria: [RubricCriterion!]!
+    totalWeight: Float!
+    createdAt: String!
+    updatedAt: String!
+  }
+  
+  type EvaluationOutput @deprecated(reason: "Use QuestionEvaluation instead") {
+    evaluatorType: String!
+    scores: [EvaluationScore!]!
+    overallScore: Float!
+    summary: String!
+    timestamp: String!
   }
 
   # Custom Types for Analytics

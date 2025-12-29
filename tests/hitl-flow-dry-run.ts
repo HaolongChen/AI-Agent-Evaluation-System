@@ -14,61 +14,54 @@ import type {
   HumanEvaluationResult,
 } from '../src/services/GraphExecutionService.ts';
 import type {
-  Rubric,
-  Evaluation,
+  QuestionSet,
+  EvaluationQuestion,
+  QuestionEvaluation,
+  QuestionAnswer,
   FinalReport,
-  EvaluationScore,
-  RubricCriterion,
 } from '../src/langGraph/state/state.ts';
 
-// Mock rubric for testing
-function createMockRubric(): Rubric {
-  const criterion: RubricCriterion = {
-    id: 'criterion-1',
-    name: 'Correctness',
-    description: 'The output should be correct',
+function createMockQuestionSet(): QuestionSet {
+  const question: EvaluationQuestion = {
+    id: 'question-1',
+    title: 'Correctness Check',
+    content: 'Does the output correctly implement the requested functionality?',
+    expectedAnswer: true,
     weight: 50,
-    scoringScale: {
-      min: 0,
-      max: 10,
-    },
-    isHardConstraint: true,
   };
 
   return {
-    id: 'rubric-001',
+    id: 'question-set-001',
     version: '1.0.0',
-    criteria: [criterion],
+    questions: [question],
     totalWeight: 50,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 }
 
-// Mock evaluation for testing
-function createMockEvaluation(
-  rubric: Rubric,
+function createMockQuestionEvaluation(
+  questionSet: QuestionSet,
   type: 'agent' | 'human'
-): Evaluation {
-  const scores: EvaluationScore[] = rubric.criteria.map((c) => ({
-    criterionId: c.id,
-    score: 8,
-    reasoning: `${type} evaluation for ${c.name}`,
+): QuestionEvaluation {
+  const answers: QuestionAnswer[] = questionSet.questions.map((q) => ({
+    questionId: q.id,
+    answer: true,
+    explanation: `${type} evaluation for ${q.title}`,
   }));
 
   return {
     evaluatorType: type,
-    scores,
+    answers,
     overallScore: 80,
     summary: `${type} evaluation completed`,
     timestamp: new Date().toISOString(),
   };
 }
 
-// Mock final report
 function createMockFinalReport(
-  agentEval: Evaluation | null,
-  humanEval: Evaluation | null
+  agentEval: QuestionEvaluation | null,
+  humanEval: QuestionEvaluation | null
 ): FinalReport {
   return {
     verdict: 'pass',
@@ -83,53 +76,49 @@ function createMockFinalReport(
   };
 }
 
-// Simulate the HITL flow states
 function simulateHITLFlowStates(): void {
   console.log('=== Simulating HITL Flow States ===\n');
 
-  // Step 1: Start session - should return awaiting_rubric_review
-  const mockRubric = createMockRubric();
+  const mockQuestionSet = createMockQuestionSet();
 
   const startResult: StartSessionResult = {
     sessionId: 1,
     threadId: 'test-thread-001',
     status: 'awaiting_rubric_review',
-    rubricDraft: mockRubric,
+    questionSetDraft: mockQuestionSet,
     message:
-      'Graph paused for rubric review. Call submitRubricReview to continue.',
+      'Graph paused for question set review. Call submitRubricReview to continue.',
   };
 
   console.log('Step 1: startGraphSession');
   console.log(`  Status: ${startResult.status}`);
-  console.log(`  Has rubricDraft: ${startResult.rubricDraft !== null}`);
+  console.log(`  Has questionSetDraft: ${startResult.questionSetDraft !== null}`);
   console.log(`  Expected status: awaiting_rubric_review`);
   console.log(
     `  ✅ Status matches: ${startResult.status === 'awaiting_rubric_review'}\n`
   );
 
-  // Step 2: Submit rubric review - should return awaiting_human_evaluation
-  const rubricReviewResult: RubricReviewResult = {
+  const reviewResult: RubricReviewResult = {
     sessionId: 1,
     threadId: 'test-thread-001',
     status: 'awaiting_human_evaluation',
-    rubricFinal: { ...mockRubric, version: '1.0.1' },
+    questionSetFinal: { ...mockQuestionSet, version: '1.0.1' },
     message:
       'Graph paused for human evaluation. Call submitHumanEvaluation to continue.',
   };
 
   console.log('Step 2: submitRubricReview');
-  console.log(`  Status: ${rubricReviewResult.status}`);
-  console.log(`  Has rubricFinal: ${rubricReviewResult.rubricFinal !== null}`);
+  console.log(`  Status: ${reviewResult.status}`);
+  console.log(`  Has questionSetFinal: ${reviewResult.questionSetFinal !== null}`);
   console.log(`  Expected status: awaiting_human_evaluation`);
   console.log(
     `  ✅ Status matches: ${
-      rubricReviewResult.status === 'awaiting_human_evaluation'
+      reviewResult.status === 'awaiting_human_evaluation'
     }\n`
   );
 
-  // Step 3: Submit human evaluation - should return completed
-  const agentEval = createMockEvaluation(mockRubric, 'agent');
-  const humanEval = createMockEvaluation(mockRubric, 'human');
+  const agentEval = createMockQuestionEvaluation(mockQuestionSet, 'agent');
+  const humanEval = createMockQuestionEvaluation(mockQuestionSet, 'human');
   const finalReport = createMockFinalReport(agentEval, humanEval);
 
   const humanEvalResult: HumanEvaluationResult = {
@@ -148,7 +137,6 @@ function simulateHITLFlowStates(): void {
     `  ✅ Status matches: ${humanEvalResult.status === 'completed'}\n`
   );
 
-  // Verify final report structure
   console.log('Final Report Verification:');
   console.log(`  Verdict: ${humanEvalResult.finalReport?.verdict}`);
   console.log(`  Overall Score: ${humanEvalResult.finalReport?.overallScore}`);
@@ -165,21 +153,18 @@ function simulateHITLFlowStates(): void {
   console.log('');
 }
 
-// Simulate automated flow states
 function simulateAutomatedFlowStates(): void {
   console.log('=== Simulating Automated Flow States ===\n');
 
-  const mockRubric = createMockRubric();
-  const agentEval = createMockEvaluation(mockRubric, 'agent');
-  // In automated mode, only agent evaluation is performed
+  const mockQuestionSet = createMockQuestionSet();
+  const agentEval = createMockQuestionEvaluation(mockQuestionSet, 'agent');
   void createMockFinalReport(agentEval, null);
 
-  // In automated mode, startSession should complete immediately
   const startResult: StartSessionResult = {
     sessionId: 2,
     threadId: 'test-thread-002',
     status: 'completed',
-    rubricDraft: mockRubric,
+    questionSetDraft: mockQuestionSet,
     message: 'Evaluation completed successfully',
   };
 
@@ -189,11 +174,9 @@ function simulateAutomatedFlowStates(): void {
   console.log(`  ✅ Status matches: ${startResult.status === 'completed'}\n`);
 }
 
-// Verify type compatibility
 function verifyTypeCompatibility(): void {
   console.log('=== Verifying Type Compatibility ===\n');
 
-  // Test all status values
   const statuses: GraphSessionStatus[] = [
     'pending',
     'awaiting_rubric_review',
@@ -206,31 +189,26 @@ function verifyTypeCompatibility(): void {
   statuses.forEach((s) => console.log(`  - ${s}`));
   console.log('');
 
-  // Verify rubric structure
-  const mockRubric = createMockRubric();
-  console.log('Rubric Structure:');
-  console.log(`  id: ${mockRubric.id}`);
-  console.log(`  version: ${mockRubric.version}`);
-  console.log(`  criteria count: ${mockRubric.criteria.length}`);
-  console.log(`  totalWeight: ${mockRubric.totalWeight}`);
+  const mockQuestionSet = createMockQuestionSet();
+  console.log('QuestionSet Structure:');
+  console.log(`  id: ${mockQuestionSet.id}`);
+  console.log(`  version: ${mockQuestionSet.version}`);
+  console.log(`  questions count: ${mockQuestionSet.questions.length}`);
+  console.log(`  totalWeight: ${mockQuestionSet.totalWeight}`);
   console.log('');
 
-  // Verify criterion structure
-  const criterion = mockRubric.criteria[0];
-  if (criterion) {
-    console.log('Criterion Structure:');
-    console.log(`  id: ${criterion.id}`);
-    console.log(`  name: ${criterion.name}`);
-    console.log(`  weight: ${criterion.weight}`);
-    console.log(
-      `  scoringScale: [${criterion.scoringScale.min}, ${criterion.scoringScale.max}]`
-    );
-    console.log(`  isHardConstraint: ${criterion.isHardConstraint}`);
+  const question = mockQuestionSet.questions[0];
+  if (question) {
+    console.log('EvaluationQuestion Structure:');
+    console.log(`  id: ${question.id}`);
+    console.log(`  title: ${question.title}`);
+    console.log(`  weight: ${question.weight}`);
+    console.log(`  expectedAnswer: ${question.expectedAnswer}`);
+    console.log(`  content: ${question.content.substring(0, 50)}...`);
   }
   console.log('');
 }
 
-// Main
 console.log('HITL Flow Dry Run Test\n');
 console.log(
   'This test validates the interface types and expected state transitions.\n'

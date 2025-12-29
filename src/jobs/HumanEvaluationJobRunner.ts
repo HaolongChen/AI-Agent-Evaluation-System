@@ -6,13 +6,10 @@ import { prisma } from '../config/prisma.ts';
 import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
-import type { FinalReport } from '../langGraph/state/state.ts';
+import type { FinalReport, QuestionEvaluation } from '../langGraph/state/state.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
-/**
- * Metadata stored in session for HITL tracking
- */
 interface SessionMetadata {
   threadId: string;
   goldenSetId?: number;
@@ -20,17 +17,8 @@ interface SessionMetadata {
   skipHumanEvaluation?: boolean;
 }
 
-/**
- * Minimal evaluation structures needed for persistence
- */
-type HumanEvaluation = {
-  scores: Array<{ criterionId: string; score: number; reasoning: string }>;
-  overallScore: number;
-  summary: string;
-};
-
 interface GraphResult {
-  humanEvaluation?: HumanEvaluation | null;
+  humanEvaluation?: QuestionEvaluation | null;
   finalReport?: FinalReport | null;
 }
 
@@ -44,11 +32,6 @@ export interface HumanEvaluationJobResult {
   error?: string;
 }
 
-/**
- * Job runner for submitting human evaluation and resuming the LangGraph workflow to completion.
- *
- * Mirrors GraphExecutionService.submitHumanEvaluation, wrapped in a JobRunner lifecycle.
- */
 export class HumanEvaluationJobRunner {
   private completionPromise: Promise<HumanEvaluationJobResult>;
   private resolveCompletion?: (value: HumanEvaluationJobResult) => void;
@@ -59,14 +42,16 @@ export class HumanEvaluationJobRunner {
   constructor(
     private readonly sessionId: number,
     private readonly threadId: string,
-    private readonly scores: Array<{
-      criterionId: string;
-      score: number;
-      reasoning: string;
+    private readonly answers: Array<{
+      questionId: number;
+      answer: boolean;
+      explanation: string;
+      evidence?: string[] | undefined;
     }>,
     private readonly overallAssessment: string,
-    private readonly evaluatorAccountId: string
+    _evaluatorAccountId: string
   ) {
+    void _evaluatorAccountId;
     this.completionPromise = new Promise<HumanEvaluationJobResult>(
       (resolve, reject) => {
         this.resolveCompletion = resolve;
@@ -88,7 +73,7 @@ export class HumanEvaluationJobRunner {
   async submitHumanEvaluation(): Promise<HumanEvaluationJobResult> {
     const session = await prisma.evaluationSession.findUnique({
       where: { id: this.sessionId },
-      include: { rubric: true },
+      include: { rubrics: true },
     });
 
     if (!session) {
@@ -101,7 +86,7 @@ export class HumanEvaluationJobRunner {
     }
 
     const humanEvaluationInput = {
-      scores: this.scores,
+      answers: this.answers,
       overallAssessment: this.overallAssessment,
     };
 
@@ -110,6 +95,7 @@ export class HumanEvaluationJobRunner {
       : 'azure';
 
     const evalConfigurable: GraphConfigurable = {
+      sessionId: this.sessionId,
       thread_id: this.threadId,
       provider,
       model: session.modelName,
@@ -124,19 +110,6 @@ export class HumanEvaluationJobRunner {
       }
     )) as GraphResult;
 
-    // Store the human evaluation in database
-    if (session.rubric && result.humanEvaluation) {
-      await evaluationPersistenceService.saveJudgeRecord(
-        session.rubric.id,
-        'human',
-        result.humanEvaluation.scores,
-        result.humanEvaluation.overallScore,
-        result.humanEvaluation.summary,
-        this.evaluatorAccountId
-      );
-    }
-
-    // Store the final report
     if (result.finalReport) {
       await evaluationPersistenceService.saveFinalReport(
         this.sessionId,
@@ -145,10 +118,9 @@ export class HumanEvaluationJobRunner {
         result.finalReport
       );
 
-      // Save judge records (including agent evaluation if present in final report)
-      if (session.rubric) {
+      if (session.rubrics.length > 0) {
         await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-          session.rubric.id,
+          this.sessionId,
           result.finalReport
         );
       }
@@ -175,7 +147,7 @@ export class HumanEvaluationJobRunner {
   async startJob(): Promise<void> {
     logger.info('Submitting human evaluation', {
       sessionId: this.sessionId,
-      scoresCount: this.scores.length,
+      answersCount: this.answers.length,
     });
 
     try {
@@ -246,28 +218,29 @@ if (
     .object({
       sessionId: z.coerce.number().int().positive('sessionId is required'),
       threadId: z.string().min(1, 'threadId is required'),
-      scoresJson: z.string().min(1, 'scoresJson is required'),
+      answersJson: z.string().min(1, 'answersJson is required'),
       overallAssessment: z.string().min(1, 'overallAssessment is required'),
       evaluatorAccountId: z.string().min(1, 'evaluatorAccountId is required'),
     })
     .parse({
       sessionId: process.argv[2],
       threadId: process.argv[3],
-      scoresJson: process.argv[4],
+      answersJson: process.argv[4],
       overallAssessment: process.argv[5] || '',
       evaluatorAccountId: process.argv[6] || '',
     });
 
-  const scores = JSON.parse(args.scoresJson) as Array<{
-    criterionId: string;
-    score: number;
-    reasoning: string;
+  const answers = JSON.parse(args.answersJson) as Array<{
+    questionId: number;
+    answer: boolean;
+    explanation: string;
+    evidence?: string[];
   }>;
 
   const runner = new HumanEvaluationJobRunner(
     args.sessionId,
     args.threadId,
-    scores,
+    answers,
     args.overallAssessment,
     args.evaluatorAccountId
   );

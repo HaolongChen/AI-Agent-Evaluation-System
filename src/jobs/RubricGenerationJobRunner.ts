@@ -7,7 +7,7 @@ import {
   automatedGraph,
   type GraphConfigurable,
 } from '../langGraph/agent.ts';
-import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
+import type { QuestionSet, FinalReport } from '../langGraph/state/state.ts';
 import { prisma } from '../config/prisma.ts';
 import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { analyticsService } from '../services/AnalyticsService.ts';
@@ -26,7 +26,7 @@ export interface RubricGenerationResult {
     | 'awaiting_rubric_review'
     | 'awaiting_human_evaluation';
   message?: string;
-  rubric?: Rubric | null;
+  questionSet?: QuestionSet | null;
   hardConstraints?: string[];
   softConstraints?: string[];
   hardConstraintsAnswers?: boolean[];
@@ -37,9 +37,6 @@ export interface RubricGenerationResult {
   error?: string;
 }
 
-/**
- * Metadata stored in session for HITL tracking (kept aligned with GraphExecutionService)
- */
 interface SessionMetadata {
   threadId: string;
   goldenSetId?: number;
@@ -47,14 +44,11 @@ interface SessionMetadata {
   skipHumanEvaluation?: boolean;
 }
 
-/**
- * Interrupt payload structure from LangGraph
- */
 interface InterruptInfo {
   value: {
     message?: string;
-    rubricDraft?: Rubric;
-    rubricFinal?: Rubric;
+    questionSetDraft?: QuestionSet;
+    questionSetFinal?: QuestionSet;
     query?: string;
     context?: string | null;
     candidateOutput?: string;
@@ -63,16 +57,13 @@ interface InterruptInfo {
   ns: string[];
 }
 
-/**
- * Result from graph.invoke() with potential interrupt info
- */
 interface GraphResult {
   query: string;
   context: string;
   candidateOutput: string;
-  rubricDraft?: Rubric | null;
-  rubricApproved?: boolean;
-  rubricFinal?: Rubric | null;
+  questionSetDraft?: QuestionSet | null;
+  questionsApproved?: boolean;
+  questionSetFinal?: QuestionSet | null;
   finalReport?: FinalReport | null;
   hardConstraints?: string[];
   softConstraints?: string[];
@@ -168,6 +159,7 @@ export class RubricGenerationJobRunner {
         : 'azure';
 
       const configurable: GraphConfigurable = {
+        sessionId: session.id,
         thread_id: threadId,
         provider,
         model: this.modelName,
@@ -185,28 +177,26 @@ export class RubricGenerationJobRunner {
         configurable: { ...configurable, projectExId: this.projectExId },
       })) as GraphResult;
 
-      // Determine graph pause/completion status based on interrupts
       let graphStatus: RubricGenerationResult['graphStatus'] = 'completed';
       let message = 'Evaluation completed successfully';
-      let rubricForResponse: Rubric | null | undefined =
-        result.rubricFinal || result.rubricDraft;
+      let questionSetForResponse: QuestionSet | null | undefined =
+        result.questionSetFinal || result.questionSetDraft;
 
       if (result.__interrupt__ && result.__interrupt__.length > 0) {
         const interruptValue = result.__interrupt__[0]?.value;
-        if (interruptValue?.rubricDraft && !interruptValue?.rubricFinal) {
+        if (interruptValue?.questionSetDraft && !interruptValue?.questionSetFinal) {
           graphStatus = 'awaiting_rubric_review';
           message =
-            'Graph paused for rubric review. Call submitRubricReview to continue.';
-          rubricForResponse = interruptValue.rubricDraft || rubricForResponse;
-        } else if (interruptValue?.rubricFinal) {
+            'Graph paused for question set review. Call submitRubricReview to continue.';
+          questionSetForResponse = interruptValue.questionSetDraft || questionSetForResponse;
+        } else if (interruptValue?.questionSetFinal) {
           graphStatus = 'awaiting_human_evaluation';
           message =
             'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
-          rubricForResponse = interruptValue.rubricFinal || rubricForResponse;
+          questionSetForResponse = interruptValue.questionSetFinal || questionSetForResponse;
         }
       }
 
-      // Update session status
       await prisma.evaluationSession.update({
         where: { id: session.id },
         data: {
@@ -218,15 +208,6 @@ export class RubricGenerationJobRunner {
         },
       });
 
-      // Save rubric to database for review/evaluation
-      if (rubricForResponse) {
-        await evaluationPersistenceService.saveRubric(
-          session.id,
-          rubricForResponse
-        );
-      }
-
-      // Save final report if completed
       if (graphStatus === 'completed' && result.finalReport) {
         await evaluationPersistenceService.saveFinalReport(
           session.id,
@@ -235,8 +216,7 @@ export class RubricGenerationJobRunner {
           result.finalReport
         );
 
-        // Save judge records (agent and human evaluations) if rubric exists
-        if (rubricForResponse) {
+        if (questionSetForResponse) {
           const rubricId =
             await evaluationPersistenceService.getRubricIdBySessionId(
               session.id
@@ -250,13 +230,13 @@ export class RubricGenerationJobRunner {
         }
       }
 
-      const rubricResult: RubricGenerationResult = {
+      const generationResult: RubricGenerationResult = {
         status: 'succeeded',
         sessionId: session.id,
         threadId,
         graphStatus,
         message,
-        rubric: rubricForResponse ?? null,
+        questionSet: questionSetForResponse ?? null,
         hardConstraints: result.hardConstraints || [],
         softConstraints: result.softConstraints || [],
         hardConstraintsAnswers: result.hardConstraintsAnswers || [],
@@ -268,14 +248,14 @@ export class RubricGenerationJobRunner {
 
       // Log constraints and evaluation info for visibility
       if (
-        rubricResult.hardConstraints &&
-        rubricResult.hardConstraints.length > 0
+        generationResult.hardConstraints &&
+        generationResult.hardConstraints.length > 0
       ) {
         logger.info(
-          `Hard Constraints (${rubricResult.hardConstraints.length}):`
+          `Hard Constraints (${generationResult.hardConstraints.length}):`
         );
-        rubricResult.hardConstraints.forEach((constraint, index) => {
-          const answer = rubricResult.hardConstraintsAnswers?.[index];
+        generationResult.hardConstraints.forEach((constraint, index) => {
+          const answer = generationResult.hardConstraintsAnswers?.[index];
           logger.info(
             `  ${index + 1}. ${constraint} ${
               answer !== undefined ? `[${answer ? 'PASS' : 'FAIL'}]` : ''
@@ -285,14 +265,14 @@ export class RubricGenerationJobRunner {
       }
 
       if (
-        rubricResult.softConstraints &&
-        rubricResult.softConstraints.length > 0
+        generationResult.softConstraints &&
+        generationResult.softConstraints.length > 0
       ) {
         logger.info(
-          `Soft Constraints (${rubricResult.softConstraints.length}):`
+          `Soft Constraints (${generationResult.softConstraints.length}):`
         );
-        rubricResult.softConstraints.forEach((constraint, index) => {
-          const answer = rubricResult.softConstraintsAnswers?.[index];
+        generationResult.softConstraints.forEach((constraint, index) => {
+          const answer = generationResult.softConstraintsAnswers?.[index];
           logger.info(
             `  ${index + 1}. ${constraint} ${
               answer !== undefined ? `[${answer}]` : ''
@@ -301,44 +281,44 @@ export class RubricGenerationJobRunner {
         });
       }
 
-      if (rubricResult.evaluationScore !== undefined) {
+      if (generationResult.evaluationScore !== undefined) {
         logger.info(
-          `Overall Evaluation Score: ${rubricResult.evaluationScore}`
+          `Overall Evaluation Score: ${generationResult.evaluationScore}`
         );
       }
 
-      if (rubricResult.analysis) {
+      if (generationResult.analysis) {
         logger.info(
-          `Analysis: ${rubricResult.analysis.substring(0, 200)}${
-            rubricResult.analysis.length > 200 ? '...' : ''
+          `Analysis: ${generationResult.analysis.substring(0, 200)}${
+            generationResult.analysis.length > 200 ? '...' : ''
           }`
         );
       }
 
-      if (rubricResult.finalReport) {
+      if (generationResult.finalReport) {
         logger.info(
-          `Final Report Verdict: ${rubricResult.finalReport.verdict}`
+          `Final Report Verdict: ${generationResult.finalReport.verdict}`
         );
         logger.info(
-          `Final Report Summary: ${rubricResult.finalReport.summary.substring(
+          `Final Report Summary: ${generationResult.finalReport.summary.substring(
             0,
             200
-          )}${rubricResult.finalReport.summary.length > 200 ? '...' : ''}`
+          )}${generationResult.finalReport.summary.length > 200 ? '...' : ''}`
         );
       }
 
-      if (rubricResult.rubric) {
+      if (generationResult.questionSet) {
         logger.info(
-          `Generated Rubric: ${rubricResult.rubric.id} (v${rubricResult.rubric.version})`
+          `Generated QuestionSet: (v${generationResult.questionSet.version})`
         );
-        logger.info(`  Criteria count: ${rubricResult.rubric.criteria.length}`);
-        logger.info(`  Total weight: ${rubricResult.rubric.totalWeight}`);
+        logger.info(`  Questions count: ${generationResult.questionSet.questions.length}`);
+        logger.info(`  Total weight: ${generationResult.questionSet.totalWeight}`);
       }
 
       if (!this.isCompleted && this.resolveCompletion) {
         this.clearTimeout();
         this.isCompleted = true;
-        this.resolveCompletion(rubricResult);
+        this.resolveCompletion(generationResult);
       }
     } catch (error) {
       logger.error(

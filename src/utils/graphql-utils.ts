@@ -63,11 +63,6 @@ class GraphQLUtils {
           headers: this.getAuthHeaders(),
         }
       );
-      logger.debug('request: ', {
-        endpoint,
-        query,
-        headers: this.getAuthHeaders(),
-      });
       return response.data;
     } catch (error) {
       logger.error('Error accessing GraphQL endpoint:', error);

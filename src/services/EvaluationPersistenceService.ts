@@ -1,142 +1,150 @@
 import { prisma } from '../config/prisma.ts';
 import { REVIEW_STATUS } from '../config/constants.ts';
-import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
+import type {
+  QuestionSet,
+  QuestionEvaluation,
+  FinalReport,
+} from '../langGraph/state/state.ts';
 import { CopilotType } from '../../build/generated/prisma/enums.ts';
 import { logger } from '../utils/logger.ts';
 
-/**
- * EvaluationPersistenceService
- *
- * Centralized service for persisting LangGraph evaluation results to the database.
- * Handles saving rubrics, judge records, and final reports from the LangGraph workflow.
- */
 export class EvaluationPersistenceService {
-  /**
-   * Save or update a rubric to the database
-   */
-  async saveRubric(
+  async saveQuestions(
     sessionId: number,
-    rubric: Rubric,
-  ): Promise<{ id: number }> {
+    questionSet: QuestionSet
+  ): Promise<{ ids: number[] }> {
     try {
-      // Check if rubric already exists for this session (upsert by sessionId)
-      const existing = await prisma.adaptiveRubric.findFirst({
-        where: { sessionId },
-        select: { id: true },
-      });
+      const createdIds: number[] = [];
 
-      if (existing) {
-        await prisma.adaptiveRubric.update({
-          where: { id: existing.id },
+      for (const question of questionSet.questions) {
+        const created = await prisma.adaptiveRubric.create({
           data: {
-            rubricId: rubric.id,
-            version: rubric.version,
-            criteria: JSON.parse(JSON.stringify(rubric.criteria)),
-            totalWeight: rubric.totalWeight,
+            sessionId,
+            version: questionSet.version,
+            title: question.title,
+            content: question.content,
+            expectedAnswer: question.expectedAnswer,
+            weight: question.weight,
             reviewStatus: REVIEW_STATUS.PENDING,
           },
         });
-        return { id: existing.id };
+        createdIds.push(created.id);
       }
 
-      const created = await prisma.adaptiveRubric.create({
-        data: {
-          sessionId,
-          rubricId: rubric.id,
-          version: rubric.version,
-          criteria: JSON.parse(JSON.stringify(rubric.criteria)),
-          totalWeight: rubric.totalWeight,
-          reviewStatus: REVIEW_STATUS.PENDING,
-        },
-      });
-      return { id: created.id };
+      return { ids: createdIds };
     } catch (error) {
-      logger.error('Error saving rubric to database:', error);
-      throw new Error('Failed to save rubric');
+      logger.error('Error saving questions to database:', error);
+      throw new Error('Failed to save questions');
     }
   }
 
-  /**
-   * Save judge records (agent and human evaluations) from the final report
-   */
   async saveJudgeRecordsFromFinalReport(
-    adaptiveRubricId: number,
+    sessionId: number,
     finalReport: FinalReport
   ): Promise<void> {
     try {
-      // Save agent evaluation as judge record if present
-      if (finalReport.agentEvaluation) {
-        await prisma.adaptiveRubricJudgeRecord.create({
-          data: {
-            adaptiveRubricId,
-            evaluatorType: finalReport.agentEvaluation.evaluatorType,
-            accountId: null, // null for agent evaluations
-            scores: JSON.parse(
-              JSON.stringify(finalReport.agentEvaluation.scores)
-            ),
-            overallScore: finalReport.agentEvaluation.overallScore,
-            summary: finalReport.agentEvaluation.summary,
-          },
-        });
+      const rubrics = await prisma.adaptiveRubric.findMany({
+        where: { sessionId },
+        select: { id: true, title: true },
+      });
+
+      if (rubrics.length === 0) {
+        logger.warn(`No rubrics found for session ${sessionId}`);
+        return;
       }
 
-      // Save human evaluation as judge record if present
-      if (finalReport.humanEvaluation) {
-        await prisma.adaptiveRubricJudgeRecord.create({
-          data: {
-            adaptiveRubricId,
-            evaluatorType: finalReport.humanEvaluation.evaluatorType,
-            accountId: null, // would be set by human evaluator in submitHumanEvaluation
-            scores: JSON.parse(
-              JSON.stringify(finalReport.humanEvaluation.scores)
-            ),
-            overallScore: finalReport.humanEvaluation.overallScore,
-            summary: finalReport.humanEvaluation.summary,
-          },
-        });
-      }
+      const saveAnswers = async (
+        evaluation: QuestionEvaluation | null,
+        accountId: string | null
+      ) => {
+        if (!evaluation) return;
+
+        for (const answer of evaluation.answers) {
+          const rubric = rubrics.find((r) => r.id === answer.questionId);
+
+          if (rubric) {
+            const existing = await prisma.adaptiveRubricJudgeRecord.findUnique({
+              where: { adaptiveRubricId: rubric.id },
+            });
+
+            if (existing) {
+              await prisma.adaptiveRubricJudgeRecord.update({
+                where: { id: existing.id },
+                data: {
+                  evaluatorType: evaluation.evaluatorType,
+                  answer: answer.answer,
+                  comment: answer.explanation,
+                  overallScore: evaluation.overallScore,
+                  accountId,
+                },
+              });
+            } else {
+              await prisma.adaptiveRubricJudgeRecord.create({
+                data: {
+                  adaptiveRubricId: rubric.id,
+                  evaluatorType: evaluation.evaluatorType,
+                  answer: answer.answer,
+                  comment: answer.explanation,
+                  overallScore: evaluation.overallScore,
+                  accountId,
+                },
+              });
+            }
+          }
+        }
+      };
+
+      await saveAnswers(finalReport.agentEvaluation, null);
+      await saveAnswers(finalReport.humanEvaluation, null);
     } catch (error) {
       logger.error('Error saving judge records from final report:', error);
       throw new Error('Failed to save judge records');
     }
   }
 
-  /**
-   * Save a single judge record (typically for human evaluations submitted via HITL)
-   */
-  async saveJudgeRecord(
-    adaptiveRubricId: number,
+  async saveQuestionAnswer(
+    rubricId: number,
     evaluatorType: 'agent' | 'human',
-    scores: Array<{
-      criterionId: string;
-      score: number;
-      reasoning: string;
+    answer: {
+      answer: boolean;
+      explanation: string;
       evidence?: string[];
-    }>,
-    overallScore: number,
-    summary: string,
+    },
     accountId?: string | null
   ): Promise<void> {
     try {
-      await prisma.adaptiveRubricJudgeRecord.create({
-        data: {
-          adaptiveRubricId,
-          evaluatorType,
-          accountId: accountId ?? null,
-          scores: JSON.parse(JSON.stringify(scores)),
-          overallScore,
-          summary,
-        },
+      const existing = await prisma.adaptiveRubricJudgeRecord.findUnique({
+        where: { adaptiveRubricId: rubricId },
       });
+
+      if (existing) {
+        await prisma.adaptiveRubricJudgeRecord.update({
+          where: { id: existing.id },
+          data: {
+            evaluatorType,
+            answer: answer.answer,
+            comment: answer.explanation,
+            accountId: accountId ?? null,
+          },
+        });
+      } else {
+        await prisma.adaptiveRubricJudgeRecord.create({
+          data: {
+            adaptiveRubricId: rubricId,
+            evaluatorType,
+            answer: answer.answer,
+            comment: answer.explanation,
+            overallScore: 0,
+            accountId: accountId ?? null,
+          },
+        });
+      }
     } catch (error) {
-      logger.error('Error saving judge record:', error);
-      throw new Error('Failed to save judge record');
+      logger.error('Error saving question answer:', error);
+      throw new Error('Failed to save question answer');
     }
   }
 
-  /**
-   * Save final report to the database
-   */
   async saveFinalReport(
     sessionId: number,
     copilotType: CopilotType | undefined,
@@ -165,20 +173,71 @@ export class EvaluationPersistenceService {
     }
   }
 
-  /**
-   * Get the adaptive rubric ID for a session
-   */
-  async getRubricIdBySessionId(sessionId: number): Promise<number | null> {
+  async getQuestionsBySessionId(sessionId: number): Promise<
+    | {
+        id: number;
+        title: string;
+        content: string;
+        expectedAnswer: boolean;
+        weight: number;
+        reviewStatus: string;
+      }[]
+    | null
+  > {
     try {
-      const rubric = await prisma.adaptiveRubric.findFirst({
+      const rubrics = await prisma.adaptiveRubric.findMany({
         where: { sessionId },
-        select: { id: true },
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          expectedAnswer: true,
+          weight: true,
+          reviewStatus: true,
+        },
       });
-      return rubric?.id ?? null;
+
+      if (rubrics.length === 0) return null;
+
+      return rubrics.map((r) => ({
+        id: r.id,
+        title: r.title,
+        content: r.content,
+        expectedAnswer: r.expectedAnswer,
+        weight: Number(r.weight),
+        reviewStatus: r.reviewStatus,
+      }));
     } catch (error) {
-      logger.error('Error getting rubric ID by session ID:', error);
+      logger.error('Error getting questions by session ID:', error);
       return null;
     }
+  }
+
+  /** @deprecated Use saveQuestions instead */
+  async saveRubric(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _sessionId: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _rubric: {
+      id: string;
+      version: string;
+      criteria: unknown[];
+      totalWeight: number;
+    }
+  ): Promise<{ id: number }> {
+    logger.warn('saveRubric is deprecated - use saveQuestions instead');
+    return { id: 0 };
+  }
+
+  /** @deprecated Use getQuestionsBySessionId instead */
+  async getRubricIdBySessionId(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _sessionId: number
+  ): Promise<number | null> {
+    logger.warn(
+      'getRubricIdBySessionId is deprecated - use getQuestionsBySessionId instead'
+    );
+    return null;
   }
 }
 

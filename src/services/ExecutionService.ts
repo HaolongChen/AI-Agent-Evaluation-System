@@ -220,7 +220,7 @@ export class ExecutionService {
       return prisma.evaluationSession.findUnique({
         where: { id: parseInt(id) },
         include: {
-          rubric: true,
+          rubrics: true,
           result: true,
         },
       });
@@ -245,7 +245,7 @@ export class ExecutionService {
           ...(filters.status && { status: filters.status }),
         },
         include: {
-          rubric: true,
+          rubrics: true,
           result: true,
         },
         orderBy: { startedAt: 'desc' },

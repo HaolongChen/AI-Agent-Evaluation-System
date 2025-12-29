@@ -12,6 +12,7 @@
     "test:tools": "tsx ./tests/tools-test.ts",
     "test:lg": "tsx ./tests/langgraph-test.ts",
     "test:partial-update": "tsx ./tests/partial-update-test.ts",
+    "test:e2e": "tsx ./tests/e2e-full-flow.ts",
     "start": "node dist/index.js",
     "dev": "nodemon --exec tsx src/index.ts",
     "build": "tsx --tsconfig tsconfig.build.json src/index.ts",

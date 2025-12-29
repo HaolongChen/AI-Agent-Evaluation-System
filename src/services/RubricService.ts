@@ -142,6 +142,26 @@ export class RubricService {
       throw new Error('Failed to update total weight');
     }
   }
+
+  async updateRubricsReviewStatus(
+    sessionId: number,
+    reviewStatus: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS],
+    reviewedBy: string
+  ) {
+    try {
+      return prisma.adaptiveRubric.updateMany({
+        where: { sessionId },
+        data: {
+          reviewStatus,
+          reviewedAt: new Date(),
+          reviewedBy,
+        },
+      });
+    } catch (error) {
+      logger.error('Error updating rubrics review status:', error);
+      throw new Error('Failed to update rubrics review status');
+    }
+  }
 }
 
 export const rubricService = new RubricService();

@@ -1,6 +1,5 @@
 import { rubricService } from '../../services/RubricService.ts';
-import type { REVIEW_STATUS } from '../../config/constants.ts';
-import { REVERSE_REVIEW_STATUS } from '../../config/constants.ts';
+import { REVERSE_REVIEW_STATUS, REVIEW_STATUS } from '../../config/constants.ts';
 import { logger } from '../../utils/logger.ts';
 
 interface RubricRecord {
@@ -8,43 +7,33 @@ interface RubricRecord {
   [key: string]: unknown;
 }
 
+const graphqlToDbReviewStatus: Record<string, (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS]> = {
+  PENDING: REVIEW_STATUS.PENDING,
+  APPROVED: REVIEW_STATUS.APPROVED,
+  REJECTED: REVIEW_STATUS.REJECTED,
+  MODIFIED: REVIEW_STATUS.MODIFIED,
+};
+
 function transformRubric(rubric: RubricRecord) {
   return {
     ...rubric,
     reviewStatus:
-      REVERSE_REVIEW_STATUS[rubric.reviewStatus] || rubric.reviewStatus,
+      REVERSE_REVIEW_STATUS[rubric.reviewStatus] ?? rubric.reviewStatus,
   };
 }
 
 export const rubricResolver = {
   Query: {
-    getAdaptiveRubricsBySessionId: async (
+    getRubricsBySessionId: async (
       _: unknown,
-      args: { sessionId: string }
+      args: { sessionId: number }
     ) => {
       try {
-        const rubrics = await rubricService.getQuestionsBySession(
-          parseInt(args.sessionId)
-        );
+        const rubrics = await rubricService.getQuestionsBySession(args.sessionId);
         return rubrics.map((r) => transformRubric(r as RubricRecord));
       } catch (error) {
-        logger.error('Error fetching adaptive rubrics by sessionId:', error);
-        throw new Error('Failed to fetch adaptive rubrics by sessionId');
-      }
-    },
-
-    getAdaptiveRubricsBySession: async (
-      _: unknown,
-      args: { sessionId: string }
-    ) => {
-      try {
-        const rubrics = await rubricService.getQuestionsBySession(
-          parseInt(args.sessionId)
-        );
-        return rubrics.map((r) => transformRubric(r as RubricRecord));
-      } catch (error) {
-        logger.error('Error fetching adaptive rubrics by sessionId:', error);
-        throw new Error('Failed to fetch adaptive rubrics by sessionId');
+        logger.error('Error fetching rubrics by sessionId:', error);
+        throw new Error('Failed to fetch rubrics by sessionId');
       }
     },
 
@@ -52,13 +41,17 @@ export const rubricResolver = {
       _: unknown,
       args: {
         sessionId?: number;
-        reviewStatus?: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS];
+        reviewStatus?: string;
       }
     ) => {
       try {
+        const dbStatus = args.reviewStatus
+          ? graphqlToDbReviewStatus[args.reviewStatus]
+          : undefined;
+
         const rubrics = await rubricService.getQuestionsForReview(
           args.sessionId,
-          args.reviewStatus ?? 'pending'
+          dbStatus ?? REVIEW_STATUS.PENDING
         );
         return rubrics.map((r) => transformRubric(r as RubricRecord));
       } catch (error) {

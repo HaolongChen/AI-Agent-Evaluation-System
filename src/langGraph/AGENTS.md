@@ -8,7 +8,7 @@ Question-based evaluation pipeline: AI drafts questions → human reviews → ag
 
 ## Structure
 
-```
+```text
 langGraph/
 ├── agent.ts           # Graph builder, compiles workflow
 ├── nodes/             # 11 workflow nodes (pure functions)
@@ -29,7 +29,7 @@ langGraph/
 
 ## Workflow Flow
 
-```
+```text
 START → RubricDrafter → HumanReviewer(INTERRUPT) 
       → AgentEvaluator → HumanEvaluator(INTERRUPT) 
       → Merger → ReportGenerator → END

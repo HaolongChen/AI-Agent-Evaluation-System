@@ -8,10 +8,10 @@ import {
   type GraphConfigurable,
 } from '../langGraph/agent.ts';
 import type { QuestionSet, FinalReport } from '../langGraph/state/state.ts';
-import { prisma } from '../config/prisma.ts';
 import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { analyticsService } from '../services/AnalyticsService.ts';
 import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
+import { executionService } from '../services/ExecutionService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 
@@ -197,16 +197,11 @@ export class RubricGenerationJobRunner {
         }
       }
 
-      await prisma.evaluationSession.update({
-        where: { id: session.id },
-        data: {
-          status:
-            graphStatus === 'completed'
-              ? SESSION_STATUS.COMPLETED
-              : SESSION_STATUS.RUNNING,
-          ...(graphStatus === 'completed' && { completedAt: new Date() }),
-        },
-      });
+      await executionService.updateSessionStatus(
+        session.id,
+        graphStatus === 'completed' ? SESSION_STATUS.COMPLETED : SESSION_STATUS.RUNNING,
+        graphStatus === 'completed' ? new Date() : undefined
+      );
 
       if (graphStatus === 'completed' && result.finalReport) {
         await evaluationPersistenceService.saveFinalReport(

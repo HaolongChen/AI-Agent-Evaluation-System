@@ -2,8 +2,9 @@ import * as z from 'zod';
 import { Command } from '@langchain/langgraph';
 import { logger } from '../utils/logger.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
-import { prisma } from '../config/prisma.ts';
 import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
+import { executionService } from '../services/ExecutionService.ts';
+import { rubricService } from '../services/RubricService.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
 import type { QuestionSet, FinalReport } from '../langGraph/state/state.ts';
@@ -88,10 +89,7 @@ export class RubricReviewJobRunner {
    */
   async submitRubricReview(): Promise<RubricReviewJobResult> {
     // Get the session to retrieve metadata
-    const session = await prisma.evaluationSession.findUnique({
-      where: { id: this.sessionId },
-      include: { rubrics: true },
-    });
+    const session = await executionService.getSessionWithRubrics(this.sessionId);
 
     if (!session) {
       throw new Error('Session not found');
@@ -103,16 +101,11 @@ export class RubricReviewJobRunner {
     }
 
     if (session.rubrics.length > 0) {
-      await prisma.adaptiveRubric.updateMany({
-        where: { sessionId: this.sessionId },
-        data: {
-          reviewStatus: this.approved
-            ? REVIEW_STATUS.APPROVED
-            : REVIEW_STATUS.REJECTED,
-          reviewedAt: new Date(),
-          reviewedBy: this.reviewerAccountId,
-        },
-      });
+      await rubricService.updateRubricsReviewStatus(
+        this.sessionId,
+        this.approved ? REVIEW_STATUS.APPROVED : REVIEW_STATUS.REJECTED,
+        this.reviewerAccountId
+      );
     }
 
     const humanReviewInput = {
@@ -158,16 +151,11 @@ export class RubricReviewJobRunner {
     }
 
     // Update session status
-    await prisma.evaluationSession.update({
-      where: { id: this.sessionId },
-      data: {
-        status:
-          graphStatus === 'completed'
-            ? SESSION_STATUS.COMPLETED
-            : SESSION_STATUS.RUNNING,
-        ...(graphStatus === 'completed' && { completedAt: new Date() }),
-      },
-    });
+    await executionService.updateSessionStatus(
+      this.sessionId,
+      graphStatus === 'completed' ? SESSION_STATUS.COMPLETED : SESSION_STATUS.RUNNING,
+      graphStatus === 'completed' ? new Date() : undefined
+    );
 
     // If completed, persist final report when present
     if (graphStatus === 'completed' && result.finalReport) {

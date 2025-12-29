@@ -1,29 +1,47 @@
 import { executionService } from '../../services/ExecutionService.ts';
+import { analyticsService } from '../../services/AnalyticsService.ts';
 import { logger } from '../../utils/logger.ts';
+
+const graphStatusMapping: Record<string, string> = {
+  completed: 'COMPLETED',
+  awaiting_rubric_review: 'AWAITING_RUBRIC_REVIEW',
+  awaiting_human_evaluation: 'AWAITING_HUMAN_EVALUATION',
+  pending: 'PENDING',
+  failed: 'FAILED',
+};
 
 export const analyticResolver = {
   Query: {
-    getEvaluationResult: async (
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _: unknown,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      _args: { sessionId: string }
-    ) => {
-      // TODO: Implement analytics service method
-      return null;
+    getEvaluationResult: async (_: unknown, args: { sessionId: number }) => {
+      try {
+        const result = await analyticsService.getEvaluationResult(
+          String(args.sessionId)
+        );
+        return result;
+      } catch (error) {
+        logger.error('Error fetching evaluation result:', error);
+        throw new Error('Failed to fetch evaluation result');
+      }
     },
 
     compareModels: async (
       _: unknown,
       args: { schemaExId: string; modelNames: string[] }
     ) => {
-      // TODO: Implement model comparison
+      void args.modelNames;
       return { schemaExId: args.schemaExId, models: [] };
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getDashboardMetrics: async (_: unknown, _args: Record<string, unknown>) => {
-      // TODO: Implement dashboard metrics
+    getDashboardMetrics: async (
+      _: unknown,
+      args: {
+        copilotType?: string;
+        modelName?: string;
+        startDate?: string;
+        endDate?: string;
+      }
+    ) => {
+      void args;
       return {
         totalSessions: 0,
         avgOverallScore: 0,
@@ -36,47 +54,63 @@ export const analyticResolver = {
   },
 
   Mutation: {
-    // execAiCopilotByTypeAndModel: async (
-    //   _: unknown,
-    //   args: {
-    //     goldenSetId: number;
-    //     skipHumanReview?: boolean;
-    //     skipHumanEvaluation?: boolean;
-    //   }
-    // ) => {
-    //   try {
-    //     const result = await executionService.createEvaluationSessions(
-    //       args.goldenSetId,
-    //       {
-    //         ...(args.skipHumanReview !== undefined && {
-    //           skipHumanReview: args.skipHumanReview,
-    //         }),
-    //         ...(args.skipHumanEvaluation !== undefined && {
-    //           skipHumanEvaluation: args.skipHumanEvaluation,
-    //         }),
-    //       }
-    //     );
-    //     // TODO: implement actual execution logic
-    //     return result;
-    //   } catch (error) {
-    //     logger.error('Error executing AI copilot:', error);
-    //     throw new Error('Failed to execute AI copilot');
-    //   }
-    // },
-    execAiCopilot: async (
+    startEvaluationSession: async (
       _: unknown,
-      args: { goldenSetId: number; skipHumanReview?: boolean; skipHumanEvaluation?: boolean }
+      args: {
+        goldenSetId: number;
+        modelName?: string;
+        skipHumanReview?: boolean;
+        skipHumanEvaluation?: boolean;
+      }
     ) => {
       try {
-        // Bulk execution currently defaults to automated; keep signature for forward compatibility
-        await executionService.createEvaluationSessions(args.goldenSetId, {
-          ...(args.skipHumanReview !== undefined && {
-            skipHumanReview: args.skipHumanReview,
-          }),
-          ...(args.skipHumanEvaluation !== undefined && {
-            skipHumanEvaluation: args.skipHumanEvaluation,
-          }),
-        });
+        const options: { skipHumanReview?: boolean; skipHumanEvaluation?: boolean } = {};
+        if (args.skipHumanReview !== undefined) {
+          options.skipHumanReview = args.skipHumanReview;
+        }
+        if (args.skipHumanEvaluation !== undefined) {
+          options.skipHumanEvaluation = args.skipHumanEvaluation;
+        }
+
+        const result = await executionService.startEvaluationSession(
+          args.goldenSetId,
+          args.modelName,
+          Object.keys(options).length > 0 ? options : undefined
+        );
+        return {
+          sessionId: result.sessionId,
+          threadId: result.threadId,
+          status: graphStatusMapping[result.status] ?? result.status,
+          questionSetDraft: result.questionSetDraft,
+          message: result.message,
+        };
+      } catch (error) {
+        logger.error('Error starting evaluation session:', error);
+        throw new Error('Failed to start evaluation session');
+      }
+    },
+
+    execAiCopilot: async (
+      _: unknown,
+      args: {
+        goldenSetId: number;
+        skipHumanReview?: boolean;
+        skipHumanEvaluation?: boolean;
+      }
+    ) => {
+      try {
+        const options: { skipHumanReview?: boolean; skipHumanEvaluation?: boolean } = {};
+        if (args.skipHumanReview !== undefined) {
+          options.skipHumanReview = args.skipHumanReview;
+        }
+        if (args.skipHumanEvaluation !== undefined) {
+          options.skipHumanEvaluation = args.skipHumanEvaluation;
+        }
+
+        await executionService.createEvaluationSessions(
+          args.goldenSetId,
+          Object.keys(options).length > 0 ? options : undefined
+        );
         return true;
       } catch (error) {
         logger.error('Error executing AI copilot:', error);

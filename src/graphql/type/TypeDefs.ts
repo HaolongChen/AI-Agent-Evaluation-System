@@ -3,37 +3,9 @@ export const typeDefs = `#graphql
   scalar DateTime
   scalar JSON
 
-  # Types
-  type GoldenSet {
-    id: ID!
-    projectExId: String!
-    schemaExId: String!
-    copilotType: CopilotType!
-    createdAt: DateTime!
-    createdBy: String
-    isActive: Boolean!
-    
-    # Relations
-    userInput: [UserInput!]!
-    copilotOutput: [CopilotOutput!]!
-    evaluationSessions: [CopilotSimulation!]!
-  }
-  
-  type UserInput {
-    id: ID!
-    description: String
-    content: String!
-    createdAt: DateTime!
-    createdBy: String
-  }
-  
-  type CopilotOutput {
-    id: ID!
-    description: String
-    content: String!
-    createdAt: DateTime!
-    createdBy: String
-  }
+  # =============================================================================
+  # ENUMS - Match Prisma schema exactly
+  # =============================================================================
 
   enum CopilotType {
     DATA_MODEL_BUILDER
@@ -41,27 +13,6 @@ export const typeDefs = `#graphql
     ACTIONFLOW_BUILDER
     LOG_ANALYZER
     AGENT_BUILDER
-  }
-
-  type CopilotSimulation {
-    id: ID!
-    goldenSetId: Int!
-    modelName: String!
-    startedAt: DateTime!
-    completedAt: DateTime
-    status: SessionStatus!
-
-    # Performance metrics
-    totalLatencyMs: Int
-    roundtripCount: Int
-    inputTokens: Int
-    outputTokens: Int
-    totalTokens: Int
-    contextPercentage: Float
-
-    # Relations
-    rubric: [AdaptiveRubric!]!
-    result: EvaluationResult
   }
 
   enum SessionStatus {
@@ -85,23 +36,88 @@ export const typeDefs = `#graphql
     FAILED
   }
 
-  type AdaptiveRubric {
-    id: ID!
-    simulationId: Int!
+  enum GraphSessionStatus {
+    PENDING
+    AWAITING_RUBRIC_REVIEW
+    AWAITING_HUMAN_EVALUATION
+    COMPLETED
+    FAILED
+  }
+
+  # =============================================================================
+  # CORE TYPES - Match Prisma schema
+  # =============================================================================
+
+  type GoldenSet {
+    id: Int!
+    projectExId: String!
+    schemaExId: String!
+    copilotType: CopilotType!
+    createdAt: DateTime!
+    createdBy: String
+    isActive: Boolean!
     
-    # Structured Rubric (matching LangGraph Rubric interface)
+    # Relations
+    userInputs: [UserInput!]!
+    copilotOutputs: [CopilotOutput!]!
+    evaluationSessions: [EvaluationSession!]!
+  }
+  
+  type UserInput {
+    id: Int!
+    goldenSetId: Int!
+    description: String
+    content: String!
+    createdAt: DateTime!
+    createdBy: String
+  }
+  
+  type CopilotOutput {
+    id: Int!
+    goldenSetId: Int!
+    content: String!
+    createdAt: DateTime!
+    
+    # Performance Metrics
+    totalLatencyMs: Int
+    roundtripCount: Int
+    inputTokens: Int
+    outputTokens: Int
+    totalTokens: Int
+    contextPercentage: Float
+  }
+
+  type EvaluationSession {
+    id: Int!
+    goldenSetId: Int!
+    modelName: String!
+    sessionIdRef: Int
+    startedAt: DateTime!
+    completedAt: DateTime
+    status: SessionStatus!
+    metadata: JSON
+
+    # Relations
+    rubrics: [AdaptiveRubric!]!
+    result: EvaluationResult
+  }
+
+  type AdaptiveRubric {
+    id: Int!
+    sessionId: Int!
+    
+    # Question content (one question per row)
     version: String!
     title: String!
     content: String!
-    expectedAnswers: Boolean!
-    weights: Float!
-    totalWeight: Float!
+    expectedAnswer: Boolean!
+    weight: Float!
     
-    modelProvider: String
+    # Status
     reviewStatus: RubricReviewStatus!
     isActive: Boolean!
     
-    # Timestamps (matching LangGraph Rubric interface)
+    # Timestamps
     createdAt: DateTime!
     updatedAt: DateTime!
     reviewedAt: DateTime
@@ -110,13 +126,43 @@ export const typeDefs = `#graphql
     # Relations
     judgeRecord: JudgeRecord
   }
-  
-  # ============================================================================
-  # NEW TYPES - Question-based evaluation (matches new Prisma schema)
-  # ============================================================================
+
+  type JudgeRecord {
+    id: Int!
+    adaptiveRubricId: Int!
+    evaluatorType: String!
+    accountId: String
+    answer: Boolean!
+    comment: String
+    overallScore: Float!
+    timestamp: DateTime!
+  }
+
+  type EvaluationResult {
+    id: Int!
+    sessionId: Int!
+    copilotType: CopilotType!
+    modelName: String!
+    evaluationStatus: EvaluationStatus!
+    
+    # FinalReport fields
+    verdict: String!
+    overallScore: Float!
+    summary: String!
+    detailedAnalysis: String!
+    discrepancies: [String!]!
+    auditTrace: [String!]!
+    generatedAt: DateTime!
+    
+    createdAt: DateTime!
+  }
+
+  # =============================================================================
+  # QUESTION-BASED EVALUATION TYPES (LangGraph state types)
+  # =============================================================================
   
   type EvaluationQuestion {
-    id: String!
+    id: Int!
     title: String!
     content: String!
     expectedAnswer: Boolean!
@@ -124,7 +170,6 @@ export const typeDefs = `#graphql
   }
   
   type QuestionSet {
-    id: String!
     version: String!
     questions: [EvaluationQuestion!]!
     totalWeight: Float!
@@ -133,7 +178,7 @@ export const typeDefs = `#graphql
   }
   
   type QuestionAnswer {
-    questionId: String!
+    questionId: Int!
     answer: Boolean!
     explanation: String!
     evidence: [String!]
@@ -146,237 +191,32 @@ export const typeDefs = `#graphql
     summary: String!
     timestamp: String!
   }
-  
-  # ============================================================================
-  # LEGACY TYPES - Kept for backward compatibility during migration
-  # ============================================================================
-  
-  type RubricCriterion @deprecated(reason: "Use EvaluationQuestion instead") {
-    id: String!
-    name: String!
-    description: String!
-    weight: Float!
-    scoringScale: ScoringScale!
-    isHardConstraint: Boolean!
-  }
-  
-  type ScoringScale @deprecated(reason: "No longer used with question-based evaluation") {
-    min: Int!
-    max: Int!
-    labels: JSON
-  }
 
-  type JudgeRecord {
-    id: ID!
-    adaptiveRubricId: Int!
-    evaluatorType: String!
-    accountId: String
-    
-    # Structured Evaluation (matching LangGraph Evaluation interface)
-    answer: String!
-    comment: String
-    overallScore: Float!
-    timestamp: DateTime!
-  }
-  
-  type EvaluationScore {
-    criterionId: String!
-    score: Float!
-    reasoning: String!
-    evidence: [String!]
-  }
-
-  type EvaluationResult {
-    id: ID!
-    simulationId: Int!
-    evaluationStatus: EvaluationStatus!
-    
-    # FinalReport fields (matching LangGraph FinalReport interface)
+  type FinalReportOutput {
     verdict: String!
     overallScore: Float!
     summary: String!
+    detailedAnalysis: String!
+    agentEvaluation: QuestionEvaluation
+    humanEvaluation: QuestionEvaluation
     discrepancies: [String!]!
-    generatedAt: DateTime!
-    
-    createdAt: DateTime!
+    auditTrace: [String!]!
+    generatedAt: String!
   }
 
-  # Queries
-  type Query {
-    # Golden Set
-    getGoldenSets(goldenSetId: Int!): GoldenSet
+  # =============================================================================
+  # HITL SESSION TYPES
+  # =============================================================================
 
-    # Evaluation Sessions
-    getSession(id: String!): CopilotSimulation
-    getSessions(
-      schemaExId: String
-      copilotType: CopilotType
-      modelName: String
-    ): [CopilotSimulation!]!
-    
-    # HITL Session State
-    getGraphSessionState(sessionId: Int!): SessionStateResult!
-
-    # Adaptive Rubrics
-    getAdaptiveRubricsBySessionId(sessionId: String!): [AdaptiveRubric!]!
-    getAdaptiveRubricsBySession(sessionId: String!): [AdaptiveRubric!]!
-    getRubricsForReview(
-      sessionId: Int,
-      projectExId: String,
-      schemaExId: String,
-      reviewStatus: RubricReviewStatus
-    ): [AdaptiveRubric!]!
-
-    # Results & Analytics
-    getEvaluationResult(sessionId: String!): EvaluationResult
-    compareModels(schemaExId: String!, modelNames: [String!]!): ModelComparison!
-
-    # Dashboard Metrics
-    getDashboardMetrics(
-      copilotType: CopilotType
-      modelName: String
-      startDate: DateTime
-      endDate: DateTime
-    ): DashboardMetrics!
-  }
-
-  # Mutations
-  type Mutation {
-    # Golden Set Management
-    updateGoldenSetInput(
-      projectExId: String!
-      schemaExId: String!
-      copilotType: CopilotType!
-      description: String
-      query: String!
-    ): GoldenSet!
-
-    # Execution (Legacy - uses JobRunners)
-    execAiCopilot(
-      goldenSetId: Int!
-      skipHumanReview: Boolean
-      skipHumanEvaluation: Boolean
-    ): Boolean!
-    
-    # HITL Graph Execution - Submit Question Set Review (resumes graph)
-    submitRubricReview(
-      sessionId: Int!
-      threadId: String!
-      approved: Boolean!
-      modifiedQuestionSet: QuestionSetInput
-      questionPatches: [QuestionPatchInput!]
-      feedback: String
-      reviewerAccountId: String!
-    ): RubricReviewResult!
-    
-    # HITL Graph Execution - Submit Human Evaluation (resumes graph to completion)
-    submitHumanEvaluation(
-      sessionId: Int!
-      threadId: String!
-      answers: [QuestionAnswerInput!]
-      answerPatches: [QuestionAnswerPatchInput!]
-      overallAssessment: String!
-      evaluatorAccountId: String!
-    ): HumanEvaluationResult!
-  }
-  
-  # ============================================================================
-  # NEW INPUT TYPES - Question-based evaluation
-  # ============================================================================
-  
-  input EvaluationQuestionInput {
-    id: String!
-    title: String!
-    content: String!
-    expectedAnswer: Boolean!
-    weight: Float!
-  }
-  
-  input QuestionSetInput {
-    id: String!
-    version: String!
-    questions: [EvaluationQuestionInput!]!
-    totalWeight: Float!
-  }
-  
-  input QuestionPatchInput {
-    questionId: String!
-    title: String
-    content: String
-    expectedAnswer: Boolean
-    weight: Float
-  }
-  
-  input QuestionAnswerInput {
-    questionId: String!
-    answer: Boolean!
-    explanation: String!
-    evidence: [String!]
-  }
-  
-  input QuestionAnswerPatchInput {
-    questionId: String!
-    answer: Boolean
-    explanation: String
-    evidence: [String!]
-  }
-  
-  # ============================================================================
-  # LEGACY INPUT TYPES - Kept for backward compatibility
-  # ============================================================================
-  
-  input EvaluationScoreInput @deprecated(reason: "Use QuestionAnswerInput instead") {
-    criterionId: String!
-    score: Float!
-    reasoning: String!
-    evidence: [String!]
-  }
-  
-  input RubricCriterionInput @deprecated(reason: "Use EvaluationQuestionInput instead") {
-    id: String!
-    name: String!
-    description: String!
-    weight: Float!
-    scoringScale: ScoringScaleInput!
-    isHardConstraint: Boolean!
-  }
-  
-  input ScoringScaleInput @deprecated(reason: "No longer used with question-based evaluation") {
-    min: Int!
-    max: Int!
-    labels: JSON
-  }
-  
-  input RubricInput @deprecated(reason: "Use QuestionSetInput instead") {
-    id: String!
-    version: String!
-    criteria: [RubricCriterionInput!]!
-    totalWeight: Float!
-  }
-  
-  input RubricCriterionPatchInput @deprecated(reason: "Use QuestionPatchInput instead") {
-    criterionId: String!
-    name: String
-    description: String
-    weight: Float
-    scoringScale: ScoringScaleInput
-    isHardConstraint: Boolean
-  }
-  
-  input EvaluationScorePatchInput @deprecated(reason: "Use QuestionAnswerPatchInput instead") {
-    criterionId: String!
-    score: Float
-    reasoning: String
-    evidence: [String!]
-  }
-
-  # HITL Session Types
-  enum GraphSessionStatus {
-    PENDING
-    AWAITING_RUBRIC_REVIEW
-    AWAITING_HUMAN_EVALUATION
-    COMPLETED
-    FAILED
+  type SessionStateResult {
+    sessionId: Int!
+    status: GraphSessionStatus!
+    threadId: String
+    questionSetDraft: QuestionSet
+    questionSetFinal: QuestionSet
+    agentEvaluation: QuestionEvaluation
+    humanEvaluation: QuestionEvaluation
+    finalReport: FinalReportOutput
   }
 
   type RubricReviewResult {
@@ -394,64 +234,22 @@ export const typeDefs = `#graphql
     finalReport: FinalReportOutput
     message: String!
   }
-  
-  # ============================================================================
-  # NEW OUTPUT TYPES - Question-based evaluation
-  # ============================================================================
-  
-  type FinalReportOutput {
-    verdict: String!
-    overallScore: Float!
-    summary: String!
-    detailedAnalysis: String!
-    agentEvaluation: QuestionEvaluation
-    humanEvaluation: QuestionEvaluation
-    discrepancies: [String!]!
-    auditTrace: [String!]!
-    generatedAt: String!
-  }
-  
-  type SessionStateResult {
+
+  type StartSessionResult {
     sessionId: Int!
+    threadId: String!
     status: GraphSessionStatus!
-    threadId: String
     questionSetDraft: QuestionSet
-    questionSetFinal: QuestionSet
-    agentEvaluation: QuestionEvaluation
-    humanEvaluation: QuestionEvaluation
-    finalReport: FinalReportOutput
-  }
-  
-  # ============================================================================
-  # LEGACY OUTPUT TYPES - Kept for backward compatibility
-  # ============================================================================
-  
-  type RubricOutput @deprecated(reason: "Use QuestionSet instead") {
-    id: String!
-    version: String!
-    criteria: [RubricCriterion!]!
-    totalWeight: Float!
-    createdAt: String!
-    updatedAt: String!
-  }
-  
-  type EvaluationOutput @deprecated(reason: "Use QuestionEvaluation instead") {
-    evaluatorType: String!
-    scores: [EvaluationScore!]!
-    overallScore: Float!
-    summary: String!
-    timestamp: String!
+    message: String!
   }
 
-  # Custom Types for Analytics
+  # =============================================================================
+  # ANALYTICS TYPES
+  # =============================================================================
+
   type ModelComparison {
     schemaExId: String!
     models: [ModelPerformance!]!
-  }
-
-  type JudgeResult {
-    finalRecord: JudgeRecord!
-    finalResult: EvaluationResult!
   }
 
   type ModelPerformance {
@@ -482,5 +280,158 @@ export const typeDefs = `#graphql
     date: DateTime!
     score: Float!
     sessionCount: Int!
+  }
+
+  # =============================================================================
+  # INPUT TYPES
+  # =============================================================================
+  
+  input EvaluationQuestionInput {
+    id: Int!
+    title: String!
+    content: String!
+    expectedAnswer: Boolean!
+    weight: Float!
+  }
+  
+  input QuestionSetInput {
+    version: String!
+    questions: [EvaluationQuestionInput!]!
+    totalWeight: Float!
+  }
+  
+  input QuestionPatchInput {
+    questionId: Int!
+    title: String
+    content: String
+    expectedAnswer: Boolean
+    weight: Float
+  }
+  
+  input QuestionAnswerInput {
+    questionId: Int!
+    answer: Boolean!
+    explanation: String!
+    evidence: [String!]
+  }
+  
+  input QuestionAnswerPatchInput {
+    questionId: Int!
+    answer: Boolean
+    explanation: String
+    evidence: [String!]
+  }
+
+  input GoldenSetFilters {
+    projectExId: String
+    schemaExId: String
+    copilotType: CopilotType
+    isActive: Boolean
+  }
+
+  input SessionFilters {
+    goldenSetId: Int
+    schemaExId: String
+    copilotType: CopilotType
+    modelName: String
+    status: SessionStatus
+  }
+
+  # =============================================================================
+  # QUERIES
+  # =============================================================================
+
+  type Query {
+    # Golden Set Queries
+    getGoldenSet(id: Int!): GoldenSet
+    getGoldenSets(filters: GoldenSetFilters): [GoldenSet!]!
+
+    # Evaluation Session Queries
+    getSession(id: Int!): EvaluationSession
+    getSessions(filters: SessionFilters): [EvaluationSession!]!
+    
+    # HITL Session State
+    getGraphSessionState(sessionId: Int!): SessionStateResult!
+
+    # Rubric/Question Queries
+    getRubricsBySessionId(sessionId: Int!): [AdaptiveRubric!]!
+    getRubricsForReview(
+      sessionId: Int
+      reviewStatus: RubricReviewStatus
+    ): [AdaptiveRubric!]!
+
+    # Results & Analytics
+    getEvaluationResult(sessionId: Int!): EvaluationResult
+    compareModels(schemaExId: String!, modelNames: [String!]!): ModelComparison!
+    getDashboardMetrics(
+      copilotType: CopilotType
+      modelName: String
+      startDate: DateTime
+      endDate: DateTime
+    ): DashboardMetrics!
+  }
+
+  # =============================================================================
+  # MUTATIONS
+  # =============================================================================
+
+  type Mutation {
+    # Golden Set Management
+    createGoldenSet(
+      projectExId: String!
+      schemaExId: String!
+      copilotType: CopilotType!
+      createdBy: String
+    ): GoldenSet!
+
+    addUserInput(
+      goldenSetId: Int!
+      content: String!
+      description: String
+      createdBy: String
+    ): UserInput!
+
+    updateGoldenSetInput(
+      projectExId: String!
+      schemaExId: String!
+      copilotType: CopilotType!
+      description: String
+      query: String!
+    ): GoldenSet!
+
+    # Evaluation Execution
+    startEvaluationSession(
+      goldenSetId: Int!
+      modelName: String
+      skipHumanReview: Boolean
+      skipHumanEvaluation: Boolean
+    ): StartSessionResult!
+
+    execAiCopilot(
+      goldenSetId: Int!
+      skipHumanReview: Boolean
+      skipHumanEvaluation: Boolean
+    ): Boolean!
+    
+    # HITL Graph Execution - Submit Question Set Review
+    submitRubricReview(
+      sessionId: Int!
+      threadId: String!
+      approved: Boolean!
+      modifiedQuestionSet: QuestionSetInput
+      questionPatches: [QuestionPatchInput!]
+      feedback: String
+      reviewerAccountId: String!
+    ): RubricReviewResult!
+    
+    # HITL Graph Execution - Submit Human Evaluation
+    submitHumanEvaluation(
+      sessionId: Int!
+      threadId: String!
+      answers: [QuestionAnswerInput!]
+      answerPatches: [QuestionAnswerPatchInput!]
+      overallAssessment: String!
+      evaluatorAccountId: String!
+    ): HumanEvaluationResult!
   }
 `;

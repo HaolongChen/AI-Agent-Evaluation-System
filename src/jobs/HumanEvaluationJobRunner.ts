@@ -2,8 +2,8 @@ import * as z from 'zod';
 import { Command } from '@langchain/langgraph';
 import { logger } from '../utils/logger.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
-import { prisma } from '../config/prisma.ts';
 import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
+import { executionService } from '../services/ExecutionService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
 import type { FinalReport, QuestionEvaluation } from '../langGraph/state/state.ts';
@@ -71,10 +71,7 @@ export class HumanEvaluationJobRunner {
    * Core logic for human evaluation submission (public as requested).
    */
   async submitHumanEvaluation(): Promise<HumanEvaluationJobResult> {
-    const session = await prisma.evaluationSession.findUnique({
-      where: { id: this.sessionId },
-      include: { rubrics: true },
-    });
+    const session = await executionService.getSessionWithRubrics(this.sessionId);
 
     if (!session) {
       throw new Error('Session not found');
@@ -126,13 +123,11 @@ export class HumanEvaluationJobRunner {
       }
     }
 
-    await prisma.evaluationSession.update({
-      where: { id: this.sessionId },
-      data: {
-        status: SESSION_STATUS.COMPLETED,
-        completedAt: new Date(),
-      },
-    });
+    await executionService.updateSessionStatus(
+      this.sessionId,
+      SESSION_STATUS.COMPLETED,
+      new Date()
+    );
 
     return {
       status: 'succeeded',

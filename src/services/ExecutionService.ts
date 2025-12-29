@@ -60,10 +60,7 @@ export class ExecutionService {
       );
 
       if (USE_KUBERNETES_JOBS) {
-        await prisma.goldenSet.update({
-          where: { id: goldenSetId },
-          data: { isActive: true },
-        });
+        await this.setGoldenSetActive(goldenSetId, true);
         const results = await Promise.allSettled(
           goldenSet.userInput.map(async (userInput, index) => {
             const evalJobResult = (await applyAndWatchJob(
@@ -127,21 +124,6 @@ export class ExecutionService {
             }
           });
         }
-
-        // return {
-        //   successful: successful.map((r) =>
-        //     r.status === 'fulfilled' ? r.value : null
-        //   ),
-        //   failed: failed.map((r, index) => ({
-        //     goldenSet: goldenSets[successful.length + index],
-        //     error: r.status === 'rejected' ? r.reason : null,
-        //   })),
-        //   summary: {
-        //     total: goldenSets.length,
-        //     successCount: successful.length,
-        //     failureCount: failed.length,
-        //   },
-        // };
       } else {
         const results = await Promise.allSettled(
           goldenSet.userInput.map(async (userInput) => {
@@ -193,21 +175,6 @@ export class ExecutionService {
             }
           });
         }
-
-        // return {
-        //   successful: successful.map((r) =>
-        //     r.status === "fulfilled" ? r.value : null
-        //   ),
-        //   failed: failed.map((r, index) => ({
-        //     goldenSet: goldenSets[successful.length + index],
-        //     error: r.status === "rejected" ? r.reason : null,
-        //   })),
-        //   summary: {
-        //     total: goldenSets.length,
-        //     successCount: successful.length,
-        //     failureCount: failed.length,
-        //   },
-        // };
       }
     } catch (error) {
       logger.error('Error creating evaluation sessions:', error);
@@ -253,6 +220,120 @@ export class ExecutionService {
     } catch (error) {
       logger.error('Error fetching evaluation sessions:', error);
       throw new Error('Failed to fetch evaluation sessions');
+    }
+  }
+
+  async startEvaluationSession(
+    goldenSetId: number,
+    modelName?: string,
+    options?: {
+      skipHumanReview?: boolean;
+      skipHumanEvaluation?: boolean;
+    }
+  ): Promise<{
+    sessionId: number;
+    threadId: string;
+    status: string;
+    questionSetDraft?: unknown;
+    message: string;
+  }> {
+    try {
+      const skipHumanReview = options?.skipHumanReview ?? false;
+      const skipHumanEvaluation = options?.skipHumanEvaluation ?? false;
+      const resolvedModelName = normalizeRequestedModelName(modelName);
+
+      const goldenSet = await goldenSetService.getGoldenSet(goldenSetId);
+      if (!goldenSet) {
+        throw new Error('Golden set not found');
+      }
+
+      const firstUserInput = goldenSet.userInput[0];
+      if (!firstUserInput) {
+        throw new Error('Golden set has no user inputs');
+      }
+
+      logger.info(`Starting evaluation session for golden set ${goldenSetId}`);
+
+      const evalJobRunner = new EvaluationJobRunner(
+        goldenSet.projectExId,
+        WS_URL,
+        firstUserInput.content
+      );
+      evalJobRunner.startJob();
+      const { editableText } = await evalJobRunner.waitForCompletion();
+
+      const rubricJobRunner = new RubricGenerationJobRunner(
+        goldenSet.id,
+        goldenSet.projectExId,
+        goldenSet.schemaExId,
+        goldenSet.copilotType,
+        firstUserInput.content,
+        '',
+        editableText,
+        resolvedModelName,
+        skipHumanReview,
+        skipHumanEvaluation
+      );
+      rubricJobRunner.startJob();
+      const result = await rubricJobRunner.waitForCompletion();
+
+      if (result.status !== 'succeeded') {
+        throw new Error(result.error ?? 'Evaluation session failed');
+      }
+
+      return {
+        sessionId: result.sessionId ?? 0,
+        threadId: result.threadId ?? '',
+        status: result.graphStatus ?? 'PENDING',
+        questionSetDraft: result.questionSet,
+        message: result.message ?? 'Evaluation session started',
+      };
+    } catch (error) {
+      logger.error('Error starting evaluation session:', error);
+      throw new Error('Failed to start evaluation session');
+    }
+  }
+
+  async getSessionWithRubrics(sessionId: number) {
+    try {
+      return prisma.evaluationSession.findUnique({
+        where: { id: sessionId },
+        include: { rubrics: true },
+      });
+    } catch (error) {
+      logger.error('Error fetching session with rubrics:', error);
+      throw new Error('Failed to fetch session with rubrics');
+    }
+  }
+
+  async updateSessionStatus(
+    sessionId: number,
+    status: (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS],
+    completedAt?: Date
+  ) {
+    try {
+      return prisma.evaluationSession.update({
+        where: { id: sessionId },
+        data: {
+          status,
+          ...(completedAt && { completedAt }),
+        },
+      });
+    } catch (error) {
+      logger.error('Error updating session status:', error);
+      throw new Error('Failed to update session status');
+    }
+  }
+
+  async setGoldenSetActive(goldenSetId: number, isActive: boolean) {
+    try {
+      return prisma.goldenSet.update({
+        where: { id: goldenSetId },
+        data: { isActive },
+      });
+    } catch (error) {
+      logger.error('Error setting golden set active status:', error);
+      throw new Error('Failed to set golden set active status');
     }
   }
 }

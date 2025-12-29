@@ -1,5 +1,7 @@
 # AGENTS.md - AI Agent Evaluation System
 
+> **Generated:** 2025-12-29 | **Commit:** d18422b | **Branch:** refactor-prisma-schema
+
 Guidelines for agentic coding systems operating in this repository.
 
 ## Project Overview
@@ -7,6 +9,22 @@ Guidelines for agentic coding systems operating in this repository.
 AI Agent Evaluation System - An end-to-end evaluation framework for Copilot-style agents. It orchestrates Human-in-the-Loop (HITL) workflows with LangGraph, stores structured results in PostgreSQL via Prisma, and exposes a GraphQL API for golden set management, evaluations, and analytics.
 
 **Tech Stack**: TypeScript (ESM), Node.js 18+, GraphQL (Apollo Server), LangGraph + LangChain, Prisma, PostgreSQL, Kubernetes (optional)
+
+## Where to Look
+
+| Task | Location | Notes |
+|------|----------|-------|
+| Add evaluation workflow node | `src/langGraph/nodes/` | Pure functions, see `RubricDrafterAgent.ts` |
+| Add GraphQL mutation/query | `src/graphql/resolvers/` | Thin resolvers → delegate to services |
+| Add business logic | `src/services/` | Singleton pattern, handles DB operations |
+| Modify evaluation state | `src/langGraph/state/state.ts` | Uses LangGraph Annotation system |
+| Add CLI job runner | `src/jobs/` | Embedded CLI parsing, start/wait/stop pattern |
+| Change database schema | `prisma/schema.prisma` | Run `pnpm db:generate` after |
+| Add utility function | `src/utils/` | Pure functions, no side effects |
+| Run evaluations | `src/jobs/EvaluationJobRunner.ts` | Entry point for eval jobs |
+| Configure LLM providers | `src/langGraph/llm/` | Azure OpenAI, Gemini support |
+
+**See also**: `src/langGraph/AGENTS.md` for HITL workflow architecture details.
 
 ## Build, Test, and Lint Commands
 

@@ -130,7 +130,7 @@ model adaptiveRubric {
   session     evaluationSession          @relation(fields: [sessionId], references: [id])
   judgeRecord adaptiveRubricJudgeRecord?
 
-  @@index([id], map: "idx_adaptive_rubric_session")
+  @@index([sessionId], map: "idx_adaptive_rubric_session")
 }
 
 // Rubric Judgments (human and agent evaluations - one answer per rubric question)
@@ -160,11 +160,13 @@ model evaluationResult {
   evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
 
   // FinalReport fields (matching LangGraph FinalReport interface)
-  verdict       String   @default("needs_review") // 'pass', 'fail', 'needs_review'
-  overallScore  Decimal  @map("overall_score") @db.Decimal(5, 2)
-  summary       String   @db.Text
-  discrepancies String[] @default([]) // Array of discrepancy descriptions
-  generatedAt   DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
+  verdict          String   @default("needs_review") // 'pass', 'fail', 'needs_review'
+  overallScore     Decimal  @map("overall_score") @db.Decimal(5, 2)
+  summary          String   @db.Text
+  detailedAnalysis String   @map("detailed_analysis") @db.Text
+  discrepancies    String[] @default([]) // Array of discrepancy descriptions
+  auditTrace       String[] @default([]) @map("audit_trace") // Array of audit log entries
+  generatedAt      DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

@@ -28,7 +28,7 @@ function transformRubric(rubric: Record<string, unknown> | null | undefined) {
   };
 }
 
-function transformEvaluationResult(
+export function transformEvaluationResult(
   result: Record<string, unknown> | null | undefined
 ) {
   if (!result) return null;
@@ -42,7 +42,7 @@ function transformEvaluationResult(
   };
 }
 
-function transformSession(session: Record<string, unknown>) {
+export function transformSession(session: Record<string, unknown>) {
   const statusKey = session['status'] as SessionStatus;
   const rubrics = session['rubrics'] as Record<string, unknown>[] | undefined;
 

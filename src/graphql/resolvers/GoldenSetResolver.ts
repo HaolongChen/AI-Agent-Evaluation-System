@@ -2,6 +2,7 @@ import { goldenSetService } from '../../services/GoldenSetService.ts';
 import { COPILOT_TYPES, REVERSE_COPILOT_TYPES } from '../../config/constants.ts';
 import { logger } from '../../utils/logger.ts';
 import type { CopilotType } from '../../../build/generated/prisma/enums.ts';
+import { transformSession } from './SessionResolver.ts';
 
 export interface GoldenSetFilters {
   projectExId?: string;
@@ -20,14 +21,14 @@ function transformGoldenSet(goldenSet: {
   isActive: boolean;
   userInput?: unknown[];
   copilotOutput?: unknown[];
-  evaluationSessions?: unknown[];
+  evaluationSessions?: Array<Record<string, unknown>>;
 }) {
   return {
     ...goldenSet,
     copilotType: REVERSE_COPILOT_TYPES[goldenSet.copilotType],
     userInputs: goldenSet.userInput ?? [],
     copilotOutputs: goldenSet.copilotOutput ?? [],
-    evaluationSessions: goldenSet.evaluationSessions ?? [],
+    evaluationSessions: goldenSet.evaluationSessions?.map(transformSession) ?? [],
   };
 }
 

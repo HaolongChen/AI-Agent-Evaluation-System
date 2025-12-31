@@ -1,6 +1,7 @@
 import { executionService } from '../../services/ExecutionService.ts';
 import { analyticsService } from '../../services/AnalyticsService.ts';
 import { logger } from '../../utils/logger.ts';
+import { transformEvaluationResult } from './SessionResolver.ts';
 
 const graphStatusMapping: Record<string, string> = {
   completed: 'COMPLETED',
@@ -17,7 +18,9 @@ export const analyticResolver = {
         const result = await analyticsService.getEvaluationResult(
           String(args.sessionId)
         );
-        return result;
+        return transformEvaluationResult(
+          result as Record<string, unknown> | null | undefined
+        );
       } catch (error) {
         logger.error('Error fetching evaluation result:', error);
         throw new Error('Failed to fetch evaluation result');
@@ -64,7 +67,10 @@ export const analyticResolver = {
       }
     ) => {
       try {
-        const options: { skipHumanReview?: boolean; skipHumanEvaluation?: boolean } = {};
+        const options: {
+          skipHumanReview?: boolean;
+          skipHumanEvaluation?: boolean;
+        } = {};
         if (args.skipHumanReview !== undefined) {
           options.skipHumanReview = args.skipHumanReview;
         }
@@ -99,7 +105,10 @@ export const analyticResolver = {
       }
     ) => {
       try {
-        const options: { skipHumanReview?: boolean; skipHumanEvaluation?: boolean } = {};
+        const options: {
+          skipHumanReview?: boolean;
+          skipHumanEvaluation?: boolean;
+        } = {};
         if (args.skipHumanReview !== undefined) {
           options.skipHumanReview = args.skipHumanReview;
         }

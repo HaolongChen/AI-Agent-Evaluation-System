@@ -20,6 +20,14 @@ interface SessionMetadata {
 interface GraphResult {
   humanEvaluation?: QuestionEvaluation | null;
   finalReport?: FinalReport | null;
+  __interrupt__?: Array<{
+    value: {
+      message?: string;
+      questionSetFinal?: unknown;
+    };
+    resumable: boolean;
+    ns: string[];
+  }>;
 }
 
 export interface HumanEvaluationJobResult {
@@ -49,9 +57,8 @@ export class HumanEvaluationJobRunner {
       evidence?: string[] | undefined;
     }>,
     private readonly overallAssessment: string,
-    _evaluatorAccountId: string
+    private readonly evaluatorAccountId: string
   ) {
-    void _evaluatorAccountId;
     this.completionPromise = new Promise<HumanEvaluationJobResult>(
       (resolve, reject) => {
         this.resolveCompletion = resolve;
@@ -68,7 +75,15 @@ export class HumanEvaluationJobRunner {
   }
 
   /**
-   * Core logic for human evaluation submission (public as requested).
+   * Core logic for human evaluation submission.
+   * 
+   * RESPONSIBILITIES:
+   * - Saves human answers to DB BEFORE resuming graph (for persistence)
+   * - Resumes LangGraph workflow with human evaluation input
+   * - Detects unexpected interrupts (defensive programming)
+   * - Persists final report and updates session status
+   * 
+   * POSITION IN WORKFLOW: Final HITL checkpoint before report generation
    */
   async submitHumanEvaluation(): Promise<HumanEvaluationJobResult> {
     const session = await executionService.getSessionWithRubrics(this.sessionId);
@@ -80,6 +95,26 @@ export class HumanEvaluationJobRunner {
     const metadata = session.metadata as SessionMetadata | null;
     if (!metadata || metadata.threadId !== this.threadId) {
       throw new Error('Thread ID mismatch');
+    }
+
+    if (session.rubrics.length > 0) {
+      logger.info('Saving human answers to database before resuming graph', {
+        sessionId: this.sessionId,
+        answerCount: this.answers.length,
+      });
+
+      for (const answer of this.answers) {
+        await evaluationPersistenceService.saveQuestionAnswer(
+          answer.questionId,
+          'human',
+          {
+            answer: answer.answer,
+            explanation: answer.explanation,
+            ...(answer.evidence && { evidence: answer.evidence }),
+          },
+          this.evaluatorAccountId
+        );
+      }
     }
 
     const humanEvaluationInput = {
@@ -107,6 +142,19 @@ export class HumanEvaluationJobRunner {
       }
     )) as GraphResult;
 
+    const graphStatus: HumanEvaluationJobResult['graphStatus'] = 'completed';
+    const message = 'Evaluation completed successfully';
+
+    if (result.__interrupt__ && result.__interrupt__.length > 0) {
+      logger.warn('Unexpected interrupt after human evaluation', {
+        sessionId: this.sessionId,
+        interrupts: result.__interrupt__,
+      });
+      throw new Error(
+        'Unexpected workflow interrupt after human evaluation. Graph should complete after this checkpoint.'
+      );
+    }
+
     if (result.finalReport) {
       await evaluationPersistenceService.saveFinalReport(
         this.sessionId,
@@ -133,8 +181,8 @@ export class HumanEvaluationJobRunner {
       status: 'succeeded',
       sessionId: this.sessionId,
       threadId: this.threadId,
-      graphStatus: 'completed',
-      message: 'Evaluation completed successfully',
+      graphStatus,
+      message,
       finalReport: result.finalReport ?? null,
     };
   }

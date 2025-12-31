@@ -165,6 +165,7 @@ export class GoldenSetService {
         orderBy: { createdAt: 'desc' },
       });
 
+      logger.debug('Fetched golden sets:', goldenSets);
       return goldenSets;
     } catch (error) {
       logger.error('Error fetching golden sets:', error);

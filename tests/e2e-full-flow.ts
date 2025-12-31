@@ -255,7 +255,7 @@ async function step4_submitQuestionSetReview(
   const start = Date.now();
 
   try {
-    logger.info('Submitting question set review...');
+    logger.info('Submitting question set review with patches...');
 
     const state = await graphExecutionService.getSessionState(sessionId);
     logger.info(`  Current status: ${state.status}`);
@@ -273,8 +273,24 @@ async function step4_submitQuestionSetReview(
       throw new Error(`Cannot submit question set review in status: ${state.status}`);
     }
 
+    if (!state.questionSetDraft || state.questionSetDraft.questions.length === 0) {
+      throw new Error('No question set draft available');
+    }
+
+    const firstQuestion = state.questionSetDraft.questions[0];
+    const questionPatches = [
+      {
+        questionId: firstQuestion.id,
+        weight: firstQuestion.weight * 1.1,
+        title: `[E2E Modified] ${firstQuestion.title}`,
+      },
+    ];
+
+    logger.info(`  Patching question ${firstQuestion.id}: weight ${firstQuestion.weight} -> ${firstQuestion.weight * 1.1}`);
+
+    // Use approved=true with patches: patches represent approved modifications, not rejection
     const approved = true;
-    const feedback = 'E2E test: Approved question set';
+    const feedback = 'E2E test: Modified first question weight and title using patches';
     const reviewerAccountId = 'e2e-test-reviewer';
 
     const submitResult = await graphExecutionService.submitRubricReview(
@@ -282,7 +298,7 @@ async function step4_submitQuestionSetReview(
       threadId,
       approved,
       undefined,
-      undefined,
+      questionPatches,
       feedback,
       reviewerAccountId
     );
@@ -291,8 +307,9 @@ async function step4_submitQuestionSetReview(
       throw new Error(`Question set review submission failed: ${submitResult.message}`);
     }
 
-    recordResult('Step 4: Submit Question Set Review', true, Date.now() - start, {
+    recordResult('Step 4: Submit Question Set Review (with patches)', true, Date.now() - start, {
       submitStatus: submitResult.status,
+      patchedQuestions: questionPatches.length,
     });
 
     return submitResult.questionSetFinal || null;
@@ -316,7 +333,7 @@ async function step5_submitHumanEvaluation(
   const start = Date.now();
 
   try {
-    logger.info('Submitting human evaluation...');
+    logger.info('Submitting human evaluation with patches...');
 
     const state = await graphExecutionService.getSessionState(sessionId);
     logger.info(`  Current status: ${state.status}`);
@@ -335,27 +352,42 @@ async function step5_submitHumanEvaluation(
     }
 
     const questionSet = questionSetFinal || state.questionSetFinal;
-    if (!questionSet) {
+    if (!questionSet || questionSet.questions.length === 0) {
       throw new Error('No question set available for evaluation');
     }
 
     const hasAgentEvaluation = !!state.agentEvaluation;
     logger.info(`  Has agent evaluation: ${hasAgentEvaluation}`);
 
-    const answers = questionSet.questions.map((q) => ({
-      questionId: q.id,
-      answer: q.expectedAnswer,
-      explanation: `E2E test: Human evaluation for question "${q.title}"`,
-    }));
+    if (!state.agentEvaluation || !state.agentEvaluation.answers) {
+      throw new Error('No agent evaluation available to patch against');
+    }
 
-    const overallAssessment = 'E2E test: Overall assessment - The copilot output meets requirements';
+    const firstAnswer = state.agentEvaluation.answers[0];
+    const lastAnswer = state.agentEvaluation.answers[state.agentEvaluation.answers.length - 1];
+
+    const answerPatches = [
+      {
+        questionId: firstAnswer.questionId,
+        answer: !firstAnswer.answer,
+        explanation: `E2E test: Human override - flipped agent's answer from ${firstAnswer.answer} to ${!firstAnswer.answer}`,
+      },
+      {
+        questionId: lastAnswer.questionId,
+        explanation: `E2E test: Human explanation for question ${lastAnswer.questionId}`,
+      },
+    ];
+
+    logger.info(`  Patching ${answerPatches.length} answers (overriding agent evaluation)`);
+
+    const overallAssessment = 'E2E test: Overall assessment - Modified agent evaluation with human patches';
     const evaluatorAccountId = 'e2e-test-evaluator';
 
     const submitResult = await graphExecutionService.submitHumanEvaluation(
       sessionId,
       threadId,
-      answers,
       undefined,
+      answerPatches,
       overallAssessment,
       evaluatorAccountId
     );
@@ -364,8 +396,9 @@ async function step5_submitHumanEvaluation(
       throw new Error(`Human evaluation submission failed: ${submitResult.message}`);
     }
 
-    recordResult('Step 5: Submit Human Evaluation', true, Date.now() - start, {
+    recordResult('Step 5: Submit Human Evaluation (with patches)', true, Date.now() - start, {
       submitStatus: submitResult.status,
+      patchedAnswers: answerPatches.length,
       verdict: submitResult.finalReport?.verdict,
       overallScore: submitResult.finalReport?.overallScore,
     });
@@ -440,6 +473,49 @@ async function runFullE2ETest(): Promise<void> {
   const totalStart = Date.now();
 
   try {
+    logger.info('Cleaning up old test sessions...');
+    await prisma.adaptiveRubricJudgeRecord.deleteMany({
+      where: {
+        rubric: {
+          session: {
+            goldenSet: {
+              projectExId: TEST_CONFIG.projectExId,
+              schemaExId: TEST_CONFIG.schemaExId,
+            },
+          },
+        },
+      },
+    });
+    await prisma.adaptiveRubric.deleteMany({
+      where: {
+        session: {
+          goldenSet: {
+            projectExId: TEST_CONFIG.projectExId,
+            schemaExId: TEST_CONFIG.schemaExId,
+          },
+        },
+      },
+    });
+    await prisma.evaluationResult.deleteMany({
+      where: {
+        session: {
+          goldenSet: {
+            projectExId: TEST_CONFIG.projectExId,
+            schemaExId: TEST_CONFIG.schemaExId,
+          },
+        },
+      },
+    });
+    await prisma.evaluationSession.deleteMany({
+      where: {
+        goldenSet: {
+          projectExId: TEST_CONFIG.projectExId,
+          schemaExId: TEST_CONFIG.schemaExId,
+        },
+      },
+    });
+    logger.info('Cleanup complete\n');
+
     const goldenSetInfo = await step1_fetchOrCreateGoldenSet();
     logger.info(
       `\nGolden Set: ${goldenSetInfo.goldenSetId} (${goldenSetInfo.projectExId}/${goldenSetInfo.schemaExId})\n`

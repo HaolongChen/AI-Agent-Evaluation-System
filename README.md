@@ -138,7 +138,7 @@ mutation Eval {
 
 #### Partial Update Approach (Recommended)
 
-**Submit only modified criteria** instead of the entire rubric:
+**Submit only modified questions** instead of the entire rubric:
 
 ```graphql
 mutation ReviewWithPatches {
@@ -147,26 +147,26 @@ mutation ReviewWithPatches {
     threadId: "thread-xyz"
     approved: false
     reviewerAccountId: "user-456"
-    criteriaPatches: [
+    questionPatches: [
       {
-        criterionId: "crit-1"
-        weight: 0.6  # Increase weight
-        name: "Correctness - Enhanced"
+        questionId: 123
+        weight: 0.6
+        title: "Correctness - Enhanced"
       }
       {
-        criterionId: "crit-2"
-        isHardConstraint: true  # Make it a hard constraint
+        questionId: 124
+        expectedAnswer: false
       }
     ]
     feedback: "Adjusted weights based on project priorities"
   ) {
     status
-    rubricFinal {
-      criteria {
+    questionSetFinal {
+      questions {
         id
-        name
+        title
         weight
-        isHardConstraint
+        expectedAnswer
       }
       totalWeight
     }
@@ -175,7 +175,7 @@ mutation ReviewWithPatches {
 }
 ```
 
-**Submit only adjusted scores** instead of all evaluation scores:
+**Submit only adjusted answers** instead of all evaluation answers:
 
 ```graphql
 mutation EvalWithPatches {
@@ -184,16 +184,16 @@ mutation EvalWithPatches {
     threadId: "thread-xyz"
     overallAssessment: "Minor corrections needed"
     evaluatorAccountId: "user-456"
-    scorePatches: [
+    answerPatches: [
       {
-        criterionId: "crit-1"
-        score: 0.95  # Adjust from agent's 0.8
-        reasoning: "Nearly perfect, minor edge case"
+        questionId: 123
+        answer: true
+        explanation: "Nearly perfect, minor edge case"
       }
       {
-        criterionId: "crit-3"
-        score: 0.6  # Adjust from agent's 0.7
-        reasoning: "Code quality needs improvement"
+        questionId: 125
+        answer: false
+        explanation: "Code quality needs improvement"
       }
     ]
   ) {
@@ -202,10 +202,10 @@ mutation EvalWithPatches {
       verdict
       overallScore
       humanEvaluation {
-        scores {
-          criterionId
-          score
-          reasoning
+        answers {
+          questionId
+          answer
+          explanation
         }
         overallScore
       }

@@ -30,6 +30,7 @@ interface InterruptInfo {
 
 interface GraphResult {
   questionSetFinal?: QuestionSet | null;
+  agentEvaluation?: import('../langGraph/state/state.ts').QuestionEvaluation | null;
   finalReport?: FinalReport | null;
   __interrupt__?: InterruptInfo[];
 }
@@ -85,7 +86,16 @@ export class RubricReviewJobRunner {
   }
 
   /**
-   * Core logic for rubric review submission (public as requested).
+   * Core logic for rubric review submission.
+   * 
+   * RESPONSIBILITIES:
+   * - Updates reviewStatus in DB BEFORE resuming graph (audit trail)
+   * - Resumes LangGraph workflow with human review input
+   * - Detects NEXT interrupt (may pause at human evaluation checkpoint)
+   * - Conditionally persists results (only if workflow completed)
+   * - Returns appropriate status for cascading HITL workflow
+   * 
+   * POSITION IN WORKFLOW: First HITL checkpoint (may cascade to second)
    */
   async submitRubricReview(): Promise<RubricReviewJobResult> {
     // Get the session to retrieve metadata
@@ -97,6 +107,11 @@ export class RubricReviewJobRunner {
 
     const metadata = session.metadata as SessionMetadata | null;
     if (!metadata || metadata.threadId !== this.threadId) {
+      logger.error('Thread ID mismatch detected', {
+        metadataThreadId: metadata?.threadId,
+        providedThreadId: this.threadId,
+        sessionId: this.sessionId,
+      });
       throw new Error('Thread ID mismatch');
     }
 
@@ -105,6 +120,20 @@ export class RubricReviewJobRunner {
         this.sessionId,
         this.approved ? REVIEW_STATUS.APPROVED : REVIEW_STATUS.REJECTED,
         this.reviewerAccountId
+      );
+    }
+
+    // If we have a modified question set (from patches or full replacement),
+    // persist it to the database before resuming the graph
+    if (this.modifiedQuestionSet) {
+      logger.info('Persisting modified question set to database', {
+        sessionId: this.sessionId,
+        questionCount: this.modifiedQuestionSet.questions.length,
+      });
+
+      await evaluationPersistenceService.updateRubricQuestions(
+        this.sessionId,
+        this.modifiedQuestionSet
       );
     }
 
@@ -147,6 +176,13 @@ export class RubricReviewJobRunner {
           'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
         questionSetFinalForResponse =
           interruptValue.questionSetFinal || questionSetFinalForResponse;
+        
+        if (result.agentEvaluation) {
+          await evaluationPersistenceService.saveAgentEvaluationAnswers(
+            this.sessionId,
+            result.agentEvaluation
+          );
+        }
       }
     }
 

@@ -8,10 +8,7 @@ export class AnalyticsService {
   async getEvaluationResult(sessionId: string) {
     try {
       return prisma.evaluationResult.findUnique({
-        where: { sessionId: parseInt(sessionId) },
-        include: {
-          session: true,
-        },
+        where: { sessionId: parseInt(sessionId) }
       });
     } catch (error) {
       logger.error('Error fetching evaluation result:', error);

@@ -84,14 +84,76 @@ export class GraphExecutionService {
     try {
       let finalQuestionSet: QuestionSet | undefined;
 
+      // Handle partial updates via questionPatches
       if (questionPatches && questionPatches.length > 0) {
-        logger.warn(
-          'questionPatches is not yet implemented. Patches will be ignored.',
-          { patchCount: questionPatches.length }
-        );
-      }
+        logger.info('Applying question patches', { 
+          sessionId, 
+          patchCount: questionPatches.length 
+        });
 
-      if (modifiedQuestionSet) {
+        // Fetch existing questions from database
+        const session = await prisma.evaluationSession.findUnique({
+          where: { id: sessionId },
+          include: {
+            rubrics: {
+              where: { isActive: true },
+              orderBy: { id: 'asc' },
+            },
+          },
+        });
+
+        if (!session || session.rubrics.length === 0) {
+          throw new Error('No questions found for session');
+        }
+
+        // Build question map for efficient lookup
+        const questionMap = new Map(
+          session.rubrics.map((r) => [
+            r.id,
+            {
+              id: r.id,
+              title: r.title,
+              content: r.content,
+              expectedAnswer: r.expectedAnswer,
+              weight: Number(r.weight),
+            },
+          ])
+        );
+
+        // Apply patches
+        for (const patch of questionPatches) {
+          const question = questionMap.get(patch.questionId);
+          if (!question) {
+            throw new Error(`Question ID ${patch.questionId} not found`);
+          }
+
+          // Merge patch fields into existing question
+          if (patch.title !== undefined) question.title = patch.title;
+          if (patch.content !== undefined) question.content = patch.content;
+          if (patch.expectedAnswer !== undefined) {
+            question.expectedAnswer = patch.expectedAnswer;
+          }
+          if (patch.weight !== undefined) question.weight = patch.weight;
+        }
+
+        // Reconstruct full QuestionSet with patches applied
+        const questions = Array.from(questionMap.values());
+        const totalWeight = questions.reduce((sum, q) => sum + q.weight, 0);
+
+        finalQuestionSet = {
+          version: session.rubrics[0]!.version,
+          questions,
+          totalWeight,
+          createdAt: session.rubrics[0]!.createdAt.toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        logger.info('Question patches applied successfully', {
+          sessionId,
+          totalQuestions: questions.length,
+          totalWeight,
+        });
+      } else if (modifiedQuestionSet) {
         finalQuestionSet = modifiedQuestionSet;
       } else if (!approved) {
         finalQuestionSet = undefined;
@@ -189,16 +251,87 @@ export class GraphExecutionService {
       }>;
 
       if (answerPatches && answerPatches.length > 0) {
-        logger.warn(
-          'answerPatches is not yet implemented. Patches will be ignored.',
-          { patchCount: answerPatches.length }
-        );
-      }
+        logger.info('Applying answer patches', {
+          sessionId,
+          patchCount: answerPatches.length,
+        });
 
-      if (answers) {
+        const state = await this.getSessionState(sessionId);
+
+        if (!state.agentEvaluation || !state.questionSetFinal) {
+          throw new Error(
+            'Cannot apply answer patches: no agent evaluation or question set found'
+          );
+        }
+
+        const answerMap = new Map(
+          state.agentEvaluation.answers.map((a) => [
+            a.questionId,
+            {
+              questionId: a.questionId,
+              answer: a.answer,
+              explanation: a.explanation,
+              evidence: a.evidence,
+            },
+          ])
+        );
+
+        for (const patch of answerPatches) {
+          let answer = answerMap.get(patch.questionId);
+
+          if (!answer) {
+            const question = state.questionSetFinal.questions.find(
+              (q) => q.id === patch.questionId
+            );
+            if (!question) {
+              throw new Error(`Question ID ${patch.questionId} not found`);
+            }
+
+            answer = {
+              questionId: patch.questionId,
+              answer: patch.answer ?? question.expectedAnswer,
+              explanation: patch.explanation ?? '',
+              evidence: patch.evidence,
+            };
+            answerMap.set(patch.questionId, answer);
+          } else {
+            if (patch.answer !== undefined) answer.answer = patch.answer;
+            if (patch.explanation !== undefined) {
+              answer.explanation = patch.explanation;
+            }
+            if (patch.evidence !== undefined) answer.evidence = patch.evidence;
+          }
+        }
+
+        const allQuestionIds = new Set(
+          state.questionSetFinal.questions.map((q) => q.id)
+        );
+        for (const qid of allQuestionIds) {
+          if (!answerMap.has(qid)) {
+            const agentAnswer = state.agentEvaluation.answers.find(
+              (a) => a.questionId === qid
+            );
+            if (agentAnswer) {
+              answerMap.set(qid, {
+                questionId: agentAnswer.questionId,
+                answer: agentAnswer.answer,
+                explanation: agentAnswer.explanation,
+                evidence: agentAnswer.evidence,
+              });
+            }
+          }
+        }
+
+        finalAnswers = Array.from(answerMap.values());
+
+        logger.info('Answer patches applied successfully', {
+          sessionId,
+          totalAnswers: finalAnswers.length,
+        });
+      } else if (answers) {
         finalAnswers = answers;
       } else {
-        throw new Error('answers must be provided');
+        throw new Error('Either answers or answerPatches must be provided');
       }
 
       if (RUN_KUBERNETES_JOBS) {

@@ -102,6 +102,89 @@ export class EvaluationPersistenceService {
     }
   }
 
+  async saveAgentEvaluationAnswers(
+    sessionId: number,
+    agentEvaluation: QuestionEvaluation
+  ): Promise<void> {
+    try {
+      const rubrics = await prisma.adaptiveRubric.findMany({
+        where: { sessionId },
+        select: { id: true },
+      });
+
+      if (rubrics.length === 0) {
+        logger.warn(`No rubrics found for session ${sessionId}`);
+        return;
+      }
+
+      for (const answer of agentEvaluation.answers) {
+        const rubric = rubrics.find((r) => r.id === answer.questionId);
+
+        if (rubric) {
+          const existing = await prisma.adaptiveRubricJudgeRecord.findUnique({
+            where: { adaptiveRubricId: rubric.id },
+          });
+
+          if (existing) {
+            await prisma.adaptiveRubricJudgeRecord.update({
+              where: { id: existing.id },
+              data: {
+                evaluatorType: agentEvaluation.evaluatorType,
+                answer: answer.answer,
+                comment: answer.explanation,
+                overallScore: agentEvaluation.overallScore,
+                accountId: null,
+              },
+            });
+          } else {
+            await prisma.adaptiveRubricJudgeRecord.create({
+              data: {
+                adaptiveRubricId: rubric.id,
+                evaluatorType: agentEvaluation.evaluatorType,
+                answer: answer.answer,
+                comment: answer.explanation,
+                overallScore: agentEvaluation.overallScore,
+                accountId: null,
+              },
+            });
+          }
+        }
+      }
+    } catch (error) {
+      logger.error('Error saving agent evaluation answers:', error);
+      throw new Error('Failed to save agent evaluation answers');
+    }
+  }
+
+  async updateRubricQuestions(
+    sessionId: number,
+    questionSet: QuestionSet
+  ): Promise<void> {
+    try {
+      for (const question of questionSet.questions) {
+        await prisma.adaptiveRubric.update({
+          where: { id: question.id },
+          data: {
+            title: question.title,
+            content: question.content,
+            expectedAnswer: question.expectedAnswer,
+            weight: question.weight,
+            version: questionSet.version,
+            updatedAt: new Date(),
+          },
+        });
+      }
+
+      logger.info('Rubric questions updated successfully', {
+        sessionId,
+        questionCount: questionSet.questions.length,
+      });
+    } catch (error) {
+      logger.error('Error updating rubric questions:', error);
+      throw new Error('Failed to update rubric questions');
+    }
+  }
+
   async saveQuestionAnswer(
     rubricId: number,
     evaluatorType: 'agent' | 'human',

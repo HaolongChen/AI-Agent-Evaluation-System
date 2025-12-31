@@ -341,7 +341,7 @@ export const resolver = {
 
 **Problem**: Users shouldn't need to copy and resubmit entire objects when reviewing rubrics or evaluations.
 
-**Solution**: Use `criteriaPatches` for rubric reviews and `scorePatches` for evaluations.
+**Solution**: Use `questionPatches` for rubric reviews and `answerPatches` for evaluations.
 
 #### Rubric Review with Patches
 ```typescript
@@ -351,15 +351,15 @@ await graphExecutionService.submitRubricReview(
   false, // Not fully approved - has modifications
   undefined, // No full rubric replacement
   [
-    // Only specify criteria that need changes
+    // Only specify questions that need changes
     {
-      criterionId: 'crit-1',
+      questionId: 123,
       weight: 0.6, // Update weight
-      name: 'Correctness - Enhanced', // Update name
+      title: 'Correctness - Enhanced', // Update title
     },
     {
-      criterionId: 'crit-2',
-      isHardConstraint: true, // Make it a hard constraint
+      questionId: 124,
+      expectedAnswer: false, // Change expected answer
     },
   ],
   'Adjusted based on project priorities',
@@ -372,18 +372,18 @@ await graphExecutionService.submitRubricReview(
 await graphExecutionService.submitHumanEvaluation(
   sessionId,
   threadId,
-  undefined, // No full score array
+  undefined, // No full answers array
   [
-    // Only specify scores that differ from agent evaluation
+    // Only specify answers that differ from agent evaluation
     {
-      criterionId: 'crit-1',
-      score: 0.95, // Override agent's 0.8
-      reasoning: 'Nearly perfect, minor edge case',
+      questionId: 123,
+      answer: true, // Override agent's answer
+      explanation: 'Nearly perfect, minor edge case',
     },
     {
-      criterionId: 'crit-3',
-      score: 0.6, // Override agent's 0.7
-      reasoning: 'Code quality needs improvement',
+      questionId: 125,
+      answer: false, // Override agent's answer
+      explanation: 'Code quality needs improvement',
     },
   ],
   'Minor corrections to agent evaluation',
@@ -394,13 +394,14 @@ await graphExecutionService.submitHumanEvaluation(
 **Benefits**:
 - Less data transfer (only changed fields)
 - Clearer intent (explicit about what's changing)
-- Automatic recalculation (totalWeight, overallScore)
-- Validation (prevents invalid criterion IDs or out-of-range scores)
+- Automatic merging with existing data from database
+- Validation (prevents invalid question IDs or values)
 
-**Implementation Notes**:
-- Service layer handles merge logic before passing to job runners
-- Old parameters (`modifiedRubric`, `scores`) still work but are deprecated
-- Patches are validated against base rubric/evaluation before merging
+**Implementation Details**:
+- **Questions**: Service layer fetches from `adaptiveRubric` table, applies patches, reconstructs full QuestionSet
+- **Answers**: Service layer fetches agent evaluation from state/DB, applies patches to create full answers array
+- Old parameters (`modifiedQuestionSet`, `answers`) still work for full replacement
+- Patches are validated against existing questions before merging
 
 ## Testing Guidelines
 

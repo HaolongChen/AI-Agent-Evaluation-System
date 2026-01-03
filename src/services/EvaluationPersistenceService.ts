@@ -7,6 +7,7 @@ import type {
 } from '../langGraph/state/state.ts';
 import { CopilotType } from '../../build/generated/prisma/enums.ts';
 import { logger } from '../utils/logger.ts';
+import type { adaptiveRubricJudgeRecord } from '../../build/generated/prisma/client.ts';
 
 export class EvaluationPersistenceService {
   async saveQuestions(
@@ -264,6 +265,7 @@ export class EvaluationPersistenceService {
         expectedAnswer: boolean;
         weight: number;
         reviewStatus: string;
+        judgeRecord?: adaptiveRubricJudgeRecord | null;
       }[]
     | null
   > {
@@ -277,6 +279,7 @@ export class EvaluationPersistenceService {
           expectedAnswer: true,
           weight: true,
           reviewStatus: true,
+          judgeRecord: true,
         },
       });
 
@@ -294,33 +297,6 @@ export class EvaluationPersistenceService {
       logger.error('Error getting questions by session ID:', error);
       return null;
     }
-  }
-
-  /** @deprecated Use saveQuestions instead */
-  async saveRubric(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _sessionId: number,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _rubric: {
-      id: string;
-      version: string;
-      criteria: unknown[];
-      totalWeight: number;
-    }
-  ): Promise<{ id: number }> {
-    logger.warn('saveRubric is deprecated - use saveQuestions instead');
-    return { id: 0 };
-  }
-
-  /** @deprecated Use getQuestionsBySessionId instead */
-  async getRubricIdBySessionId(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _sessionId: number
-  ): Promise<number | null> {
-    logger.warn(
-      'getRubricIdBySessionId is deprecated - use getQuestionsBySessionId instead'
-    );
-    return null;
   }
 }
 

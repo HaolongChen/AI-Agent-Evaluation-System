@@ -211,18 +211,11 @@ export class RubricGenerationJobRunner {
           result.finalReport
         );
 
-        if (questionSetForResponse) {
-          const rubricId =
-            await evaluationPersistenceService.getRubricIdBySessionId(
-              session.id
-            );
-          if (rubricId) {
-            await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-              rubricId,
-              result.finalReport
-            );
-          }
-        }
+
+        await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
+          session.id,
+          result.finalReport
+        );
       }
 
       const generationResult: RubricGenerationResult = {

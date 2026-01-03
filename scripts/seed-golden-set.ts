@@ -11,9 +11,9 @@ async function seedGoldenSet() {
         projectExId: 'X57jbwZzB76',
         schemaExId: 'example-schema-1',
         copilotType: 'dataModel' as const,
-        description: 'Example data model for e-commerce',
+        description: 'Example data model for testing',
         query:
-          'create a table called like_table which contains post_id and user_id, etc. create anything else when needed', // TODO: implement meaningful prompt templates
+          'Model a many-to-many relationship between users and teams where a user can have exactly one role per team, but roles are extensible. create anything else when needed. trigger your tools immediately. do not ask me for further info', // TODO: implement meaningful prompt templates
       },
       // {
       //   projectExId: 'example-project-2',

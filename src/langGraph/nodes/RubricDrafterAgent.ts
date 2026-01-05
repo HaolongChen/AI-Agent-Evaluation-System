@@ -63,11 +63,12 @@ Schema Expression: """${
     state.schemaExpression || 'No schema information available.'
   }"""
 
-Create 3-7 yes/no questions that:
+Create 3-10 yes/no questions that:
 1. Cover all important aspects of the expected output
 2. Can be answered with a clear YES or NO
 3. Have clear expected answers (what the correct answer should be)
 4. Are weighted by importance (weights should sum to 100)
+5. Cannot be answered if solely based on common sense; they must relate to the query, context, or schema information
 
 Example questions:
 - "Does the output correctly implement the requested feature?" (expected: yes)

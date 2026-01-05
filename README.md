@@ -88,7 +88,7 @@ mutation UpsertGoldenSetInput {
 
 ```graphql
 mutation RunEval {
-  execAiCopilot(
+  runEvaluation(
     goldenSetId: 1
     skipHumanReview: true
     skipHumanEvaluation: true

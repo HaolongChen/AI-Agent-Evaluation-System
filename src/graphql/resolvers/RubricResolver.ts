@@ -2,10 +2,22 @@ import { rubricService } from '../../services/RubricService.ts';
 import { REVERSE_REVIEW_STATUS, REVIEW_STATUS } from '../../config/constants.ts';
 import { logger } from '../../utils/logger.ts';
 
-interface RubricRecord {
+type RubricRecord = {
   reviewStatus: string;
+  judgeRecord?: JudgeRecordDB | null;
   [key: string]: unknown;
-}
+};
+
+type JudgeRecordDB = {
+  id: number;
+  adaptiveRubricId: number;
+  evaluatorType: string;
+  accountId: string | null;
+  answer: boolean;
+  comment: string | null;
+  overallScore: unknown;
+  timestamp: Date;
+};
 
 const graphqlToDbReviewStatus: Record<string, (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS]> = {
   PENDING: REVIEW_STATUS.PENDING,
@@ -30,7 +42,7 @@ export const rubricResolver = {
     ) => {
       try {
         const rubrics = await rubricService.getQuestionsBySession(args.sessionId);
-        return rubrics.map((r) => transformRubric(r as RubricRecord));
+        return rubrics.map((r) => transformRubric(r as unknown as RubricRecord));
       } catch (error) {
         logger.error('Error fetching rubrics by sessionId:', error);
         throw new Error('Failed to fetch rubrics by sessionId');
@@ -53,11 +65,29 @@ export const rubricResolver = {
           args.sessionId,
           dbStatus ?? REVIEW_STATUS.PENDING
         );
-        return rubrics.map((r) => transformRubric(r as RubricRecord));
+        return rubrics.map((r) => transformRubric(r as unknown as RubricRecord));
       } catch (error) {
         logger.error('Error fetching rubrics for review:', error);
         throw new Error('Failed to fetch rubrics for review');
       }
+    },
+  },
+
+  RubricCriterion: {
+    evaluation: (parent: Record<string, unknown>) => {
+      const judgeRecord = parent['judgeRecord'] as JudgeRecordDB | null | undefined;
+      if (!judgeRecord) return null;
+      
+      return {
+        id: judgeRecord.id,
+        rubricCriterionId: judgeRecord.adaptiveRubricId,
+        evaluatorType: judgeRecord.evaluatorType,
+        accountId: judgeRecord.accountId,
+        answer: judgeRecord.answer,
+        comment: judgeRecord.comment,
+        overallScore: Number(judgeRecord.overallScore),
+        timestamp: judgeRecord.timestamp,
+      };
     },
   },
 

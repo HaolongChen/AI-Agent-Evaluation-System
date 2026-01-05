@@ -22,6 +22,7 @@ const resolvers = {
     ...sessionResolver.Mutation,
     ...graphSessionResolver.Mutation,
   },
+  RubricCriterion: rubricResolver.RubricCriterion,
   JSON: GraphQLJSON,
   DateTime: DateTimeResolver,
 };

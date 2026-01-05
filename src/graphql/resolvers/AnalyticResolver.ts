@@ -26,34 +26,6 @@ export const analyticResolver = {
         throw new Error('Failed to fetch evaluation result');
       }
     },
-
-    compareModels: async (
-      _: unknown,
-      args: { schemaExId: string; modelNames: string[] }
-    ) => {
-      void args.modelNames;
-      return { schemaExId: args.schemaExId, models: [] };
-    },
-
-    getDashboardMetrics: async (
-      _: unknown,
-      args: {
-        copilotType?: string;
-        modelName?: string;
-        startDate?: string;
-        endDate?: string;
-      }
-    ) => {
-      void args;
-      return {
-        totalSessions: 0,
-        avgOverallScore: 0,
-        avgLatencyMs: 0,
-        avgTokenUsage: 0,
-        passRateByCategory: [],
-        modelPerformanceTrend: [],
-      };
-    },
   },
 
   Mutation: {
@@ -96,7 +68,7 @@ export const analyticResolver = {
       }
     },
 
-    execAiCopilot: async (
+    runEvaluation: async (
       _: unknown,
       args: {
         goldenSetId: number;
@@ -122,8 +94,8 @@ export const analyticResolver = {
         );
         return true;
       } catch (error) {
-        logger.error('Error executing AI copilot:', error);
-        throw new Error('Failed to execute AI copilot');
+        logger.error('Error running evaluation:', error);
+        throw new Error('Failed to run evaluation');
       }
     },
   },

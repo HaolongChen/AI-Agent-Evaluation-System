@@ -27,10 +27,6 @@ export interface RubricGenerationResult {
     | 'awaiting_human_evaluation';
   message?: string;
   questionSet?: QuestionSet | null;
-  hardConstraints?: string[];
-  softConstraints?: string[];
-  hardConstraintsAnswers?: boolean[];
-  softConstraintsAnswers?: string[];
   evaluationScore?: number | undefined;
   finalReport?: FinalReport | null;
   analysis?: string;
@@ -49,30 +45,14 @@ interface InterruptInfo {
     message?: string;
     questionSetDraft?: QuestionSet;
     questionSetFinal?: QuestionSet;
-    query?: string;
-    context?: string | null;
-    candidateOutput?: string;
   };
   resumable: boolean;
   ns: string[];
 }
 
-interface GraphResult {
-  query: string;
-  context: string;
-  candidateOutput: string;
-  questionSetDraft?: QuestionSet | null;
-  questionsApproved?: boolean;
-  questionSetFinal?: QuestionSet | null;
-  finalReport?: FinalReport | null;
-  hardConstraints?: string[];
-  softConstraints?: string[];
-  hardConstraintsAnswers?: boolean[];
-  softConstraintsAnswers?: string[];
-  agentEvaluation?: { overallScore?: number } | null;
-  analysis?: string;
+type GraphResult = typeof import('../langGraph/state/state.ts').rubricAnnotation.State & {
   __interrupt__?: InterruptInfo[];
-}
+};
 
 /**
  * Job runner for rubric generation using LangGraph workflow.
@@ -173,33 +153,47 @@ export class RubricGenerationJobRunner {
         candidateOutput: this.candidateOutput,
       };
 
-      const result = (await graphToUse.invoke(initialState, {
+      const result = await graphToUse.invoke(initialState, {
         configurable: { ...configurable, projectExId: this.projectExId },
-      })) as GraphResult;
+      }) as GraphResult;
 
       let graphStatus: RubricGenerationResult['graphStatus'] = 'completed';
       let message = 'Evaluation completed successfully';
       let questionSetForResponse: QuestionSet | null | undefined =
-        result.questionSetFinal || result.questionSetDraft;
+        result.questionSetFinal ?? result.questionSetDraft;
 
       if (result.__interrupt__ && result.__interrupt__.length > 0) {
         const interruptValue = result.__interrupt__[0]?.value;
-        if (interruptValue?.questionSetDraft && !interruptValue?.questionSetFinal) {
+        if (
+          interruptValue?.questionSetDraft &&
+          !interruptValue?.questionSetFinal
+        ) {
           graphStatus = 'awaiting_rubric_review';
           message =
             'Graph paused for question set review. Call submitRubricReview to continue.';
-          questionSetForResponse = interruptValue.questionSetDraft || questionSetForResponse;
+          questionSetForResponse =
+            interruptValue.questionSetDraft ?? questionSetForResponse;
         } else if (interruptValue?.questionSetFinal) {
           graphStatus = 'awaiting_human_evaluation';
           message =
             'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
-          questionSetForResponse = interruptValue.questionSetFinal || questionSetForResponse;
+          questionSetForResponse =
+            interruptValue.questionSetFinal ?? questionSetForResponse;
+
+          if (result.agentEvaluation) {
+            await evaluationPersistenceService.saveAgentEvaluationAnswers(
+              session.id,
+              result.agentEvaluation
+            );
+          }
         }
       }
 
       await executionService.updateSessionStatus(
         session.id,
-        graphStatus === 'completed' ? SESSION_STATUS.COMPLETED : SESSION_STATUS.RUNNING,
+        graphStatus === 'completed'
+          ? SESSION_STATUS.COMPLETED
+          : SESSION_STATUS.RUNNING,
         graphStatus === 'completed' ? new Date() : undefined
       );
 
@@ -210,7 +204,6 @@ export class RubricGenerationJobRunner {
           this.modelName,
           result.finalReport
         );
-
 
         await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
           session.id,
@@ -225,49 +218,10 @@ export class RubricGenerationJobRunner {
         graphStatus,
         message,
         questionSet: questionSetForResponse ?? null,
-        hardConstraints: result.hardConstraints || [],
-        softConstraints: result.softConstraints || [],
-        hardConstraintsAnswers: result.hardConstraintsAnswers || [],
-        softConstraintsAnswers: result.softConstraintsAnswers || [],
         evaluationScore: result.agentEvaluation?.overallScore,
         finalReport: result.finalReport ?? null,
-        ...(result.analysis !== undefined && { analysis: result.analysis }),
+        ...(result.analysis && { analysis: result.analysis }),
       };
-
-      // Log constraints and evaluation info for visibility
-      if (
-        generationResult.hardConstraints &&
-        generationResult.hardConstraints.length > 0
-      ) {
-        logger.info(
-          `Hard Constraints (${generationResult.hardConstraints.length}):`
-        );
-        generationResult.hardConstraints.forEach((constraint, index) => {
-          const answer = generationResult.hardConstraintsAnswers?.[index];
-          logger.info(
-            `  ${index + 1}. ${constraint} ${
-              answer !== undefined ? `[${answer ? 'PASS' : 'FAIL'}]` : ''
-            }`
-          );
-        });
-      }
-
-      if (
-        generationResult.softConstraints &&
-        generationResult.softConstraints.length > 0
-      ) {
-        logger.info(
-          `Soft Constraints (${generationResult.softConstraints.length}):`
-        );
-        generationResult.softConstraints.forEach((constraint, index) => {
-          const answer = generationResult.softConstraintsAnswers?.[index];
-          logger.info(
-            `  ${index + 1}. ${constraint} ${
-              answer !== undefined ? `[${answer}]` : ''
-            }`
-          );
-        });
-      }
 
       if (generationResult.evaluationScore !== undefined) {
         logger.info(
@@ -299,8 +253,12 @@ export class RubricGenerationJobRunner {
         logger.info(
           `Generated QuestionSet: (v${generationResult.questionSet.version})`
         );
-        logger.info(`  Questions count: ${generationResult.questionSet.questions.length}`);
-        logger.info(`  Total weight: ${generationResult.questionSet.totalWeight}`);
+        logger.info(
+          `  Questions count: ${generationResult.questionSet.questions.length}`
+        );
+        logger.info(
+          `  Total weight: ${generationResult.questionSet.totalWeight}`
+        );
       }
 
       if (!this.isCompleted && this.resolveCompletion) {

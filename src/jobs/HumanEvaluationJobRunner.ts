@@ -6,7 +6,7 @@ import { evaluationPersistenceService } from '../services/EvaluationPersistenceS
 import { executionService } from '../services/ExecutionService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
-import type { FinalReport, QuestionEvaluation } from '../langGraph/state/state.ts';
+import type { FinalReport } from '../langGraph/state/state.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
@@ -17,9 +17,7 @@ interface SessionMetadata {
   skipHumanEvaluation?: boolean;
 }
 
-interface GraphResult {
-  humanEvaluation?: QuestionEvaluation | null;
-  finalReport?: FinalReport | null;
+type GraphResult = typeof import('../langGraph/state/state.ts').rubricAnnotation.State & {
   __interrupt__?: Array<{
     value: {
       message?: string;
@@ -28,7 +26,7 @@ interface GraphResult {
     resumable: boolean;
     ns: string[];
   }>;
-}
+};
 
 export interface HumanEvaluationJobResult {
   status: 'succeeded' | 'failed';
@@ -135,12 +133,12 @@ export class HumanEvaluationJobRunner {
       skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
     };
 
-    const result = (await graph.invoke(
+    const result = await graph.invoke(
       new Command({ resume: humanEvaluationInput }),
       {
         configurable: { ...evalConfigurable, projectExId: '' },
       }
-    )) as GraphResult;
+    ) as GraphResult;
 
     const graphStatus: HumanEvaluationJobResult['graphStatus'] = 'completed';
     const message = 'Evaluation completed successfully';

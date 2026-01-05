@@ -21,19 +21,15 @@ interface SessionMetadata {
 interface InterruptInfo {
   value: {
     message?: string;
-    questionSetDraft?: QuestionSet;
     questionSetFinal?: QuestionSet;
   };
   resumable: boolean;
   ns: string[];
 }
 
-interface GraphResult {
-  questionSetFinal?: QuestionSet | null;
-  agentEvaluation?: import('../langGraph/state/state.ts').QuestionEvaluation | null;
-  finalReport?: FinalReport | null;
+type GraphResult = typeof import('../langGraph/state/state.ts').rubricAnnotation.State & {
   __interrupt__?: InterruptInfo[];
-}
+};
 
 export interface RubricReviewJobResult {
   status: 'succeeded' | 'failed';
@@ -157,12 +153,12 @@ export class RubricReviewJobRunner {
       skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
     };
 
-    const result = (await graph.invoke(
+    const result = await graph.invoke(
       new Command({ resume: humanReviewInput }),
       {
         configurable: { ...resumeConfigurable, projectExId: '' },
       }
-    )) as GraphResult;
+    ) as GraphResult;
 
     let graphStatus: RubricReviewJobResult['graphStatus'] = 'completed';
     let message = 'Evaluation completed successfully';
@@ -175,7 +171,7 @@ export class RubricReviewJobRunner {
         message =
           'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
         questionSetFinalForResponse =
-          interruptValue.questionSetFinal || questionSetFinalForResponse;
+          interruptValue.questionSetFinal ?? questionSetFinalForResponse;
         
         if (result.agentEvaluation) {
           await evaluationPersistenceService.saveAgentEvaluationAnswers(

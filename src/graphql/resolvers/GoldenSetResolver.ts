@@ -6,7 +6,6 @@ import { transformSession } from './SessionResolver.ts';
 
 export interface GoldenSetFilters {
   projectExId?: string;
-  schemaExId?: string;
   copilotType?: keyof typeof COPILOT_TYPES;
   isActive?: boolean;
 }
@@ -14,7 +13,6 @@ export interface GoldenSetFilters {
 function transformGoldenSet(goldenSet: {
   id: number;
   projectExId: string;
-  schemaExId: string;
   copilotType: CopilotType;
   createdAt: Date;
   createdBy: string | null;
@@ -63,7 +61,6 @@ export const goldenSetResolver = {
       _: unknown,
       args: {
         projectExId: string;
-        schemaExId: string;
         copilotType: keyof typeof COPILOT_TYPES;
         createdBy?: string;
       }
@@ -71,7 +68,6 @@ export const goldenSetResolver = {
       try {
         const result = await goldenSetService.createGoldenSet(
           args.projectExId,
-          args.schemaExId,
           args.copilotType,
           args.createdBy
         );
@@ -109,7 +105,6 @@ export const goldenSetResolver = {
       _: unknown,
       args: {
         projectExId: string;
-        schemaExId: string;
         copilotType: keyof typeof COPILOT_TYPES;
         description?: string;
         query: string;
@@ -118,7 +113,6 @@ export const goldenSetResolver = {
       try {
         const result = await goldenSetService.updateGoldenSetInput(
           args.projectExId,
-          args.schemaExId,
           args.copilotType,
           args.description ?? '',
           args.query

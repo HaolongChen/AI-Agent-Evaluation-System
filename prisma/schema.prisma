@@ -39,7 +39,6 @@ enum RubricReviewStatus {
 model goldenSet {
   id                 Int                 @id @default(autoincrement())
   projectExId        String              @map("project_ex_id")
-  schemaExId         String              @map("schema_ex_id")
   copilotType        CopilotType         @map("copilot_type")
   userInput          userInput[]         @relation()
   copilotOutput      copilotOutput[]     @relation()
@@ -48,8 +47,8 @@ model goldenSet {
   createdBy          String?             @map("created_by")
   isActive           Boolean           @default(false) @map("is_active") // Is goldenSet in progress
 
-  @@unique([projectExId, schemaExId, copilotType])
-  @@index([id], map: "idx_golden_set_schema")
+  @@unique([projectExId])
+  @@index([id], map: "idx_golden_set")
 }
 
 model userInput {

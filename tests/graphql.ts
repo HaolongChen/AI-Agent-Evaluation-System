@@ -9,7 +9,6 @@ const query = new QueryBuilder(operationName)
   .select(
     'id',
     'projectExId',
-    'schemaExId',
     'copilotType',
     'description',
     'query',

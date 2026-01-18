@@ -42,14 +42,12 @@ async function testFallbackRubricGeneration() {
   try {
     unsetLLMEnv();
 
-    const module = await import(
-      '../../src/langchain/chains/copilotRubricChain.ts'
-    );
+    const module =
+      await import('../../src/langchain/chains/copilotRubricChain.ts');
     const { generateAdaptiveRubric } = module;
 
     const result = await generateAdaptiveRubric({
       projectExId: 'proj-test',
-      schemaExId: 'schema-test',
       copilotType: 'dataModel',
       copilotInput: 'Design a schema for posts and likes',
       copilotOutput: 'Generated schema with tables post and like_table',
@@ -62,7 +60,7 @@ async function testFallbackRubricGeneration() {
     if (result.metadata.reason) {
       assert.ok(
         result.metadata.reason.includes('No LLM API key configured'),
-        'missing fallback reason'
+        'missing fallback reason',
       );
     }
 

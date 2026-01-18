@@ -12,7 +12,6 @@ export interface GoldenSetWithRelations extends goldenSet {
 export class GoldenSetService {
   async updateGoldenSetInput(
     projectExId: string,
-    schemaExId: string,
     copilotType: keyof typeof COPILOT_TYPES,
     description: string,
     query: string
@@ -20,34 +19,12 @@ export class GoldenSetService {
     try {
       const copilotTypeValue = COPILOT_TYPES[copilotType];
 
-      // Check if golden set exists and is active
-      const existingGoldenSet = await prisma.goldenSet.findUnique({
-        where: {
-          projectExId_schemaExId_copilotType: {
-            projectExId,
-            schemaExId,
-            copilotType: copilotTypeValue,
-          },
-        },
-      });
-
-      // If exists and is active, don't modify
-      if (existingGoldenSet && existingGoldenSet.isActive) {
-        logger.warn('Cannot update active golden set:', existingGoldenSet.id);
-        throw new Error('Cannot modify an active golden set');
-      }
-
       const goldenSet = await prisma.goldenSet.upsert({
         where: {
-          projectExId_schemaExId_copilotType: {
-            projectExId,
-            schemaExId,
-            copilotType: copilotTypeValue,
-          },
+          projectExId
         },
         create: {
           projectExId,
-          schemaExId,
           copilotType: copilotTypeValue,
           userInput: {
             create: {
@@ -145,7 +122,6 @@ export class GoldenSetService {
 
   async getGoldenSets(filters?: {
     projectExId?: string;
-    schemaExId?: string;
     copilotType?: keyof typeof COPILOT_TYPES;
     isActive?: boolean;
   }): Promise<GoldenSetWithRelations[]> {
@@ -153,7 +129,6 @@ export class GoldenSetService {
       const goldenSets = await prisma.goldenSet.findMany({
         where: {
           ...(filters?.projectExId && { projectExId: filters.projectExId }),
-          ...(filters?.schemaExId && { schemaExId: filters.schemaExId }),
           ...(filters?.copilotType && { copilotType: COPILOT_TYPES[filters.copilotType] }),
           ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
         },
@@ -175,18 +150,14 @@ export class GoldenSetService {
 
   async createGoldenSet(
     projectExId: string,
-    schemaExId: string,
     copilotType: keyof typeof COPILOT_TYPES,
     createdBy?: string
   ): Promise<GoldenSetWithRelations> {
     try {
-      const copilotTypeValue = COPILOT_TYPES[copilotType];
-
       const goldenSet = await prisma.goldenSet.create({
         data: {
           projectExId,
-          schemaExId,
-          copilotType: copilotTypeValue,
+          copilotType: COPILOT_TYPES[copilotType],
           createdBy: createdBy ?? null,
         },
         include: {

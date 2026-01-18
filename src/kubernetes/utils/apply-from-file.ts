@@ -9,6 +9,7 @@ export interface EvalJobResult {
   status: 'succeeded' | 'failed' | 'running';
   completionTime?: Date;
   editableText?: string;
+  schema?: string;
   reason?: string;
 }
 
@@ -242,6 +243,7 @@ async function extractJobResultFromLogs(
             );
             return {
               editableText: result.editableText,
+              schema: result.schema,
             };
           } else if (jobType === 'generation') {
             const jsonStr = line
@@ -388,6 +390,7 @@ async function watchJobStatus(
                   ? new Date(job.status.completionTime)
                   : new Date(),
                 editableText: evalResult.editableText,
+                schema: evalResult.schema,
               });
             } else {
               resolve({

@@ -9,7 +9,6 @@ async function seedGoldenSet() {
     const goldenSetData = [
       {
         projectExId: 'X57jbwZzB76',
-        schemaExId: 'example-schema-1',
         copilotType: 'dataModel' as const,
         description: 'Example data model for testing',
         query:
@@ -27,16 +26,19 @@ async function seedGoldenSet() {
     for (const data of goldenSetData) {
       await prisma.goldenSet.upsert({
         where: {
-          projectExId_schemaExId_copilotType: {
-            projectExId: data.projectExId,
-            schemaExId: data.schemaExId,
-            copilotType: data.copilotType,
+          projectExId: data.projectExId,
+          copilotType: data.copilotType,
+        },
+        update: {
+          userInput: {
+            create: {
+              description: data.description,
+              content: data.query,
+            },
           },
         },
-        update: {},
         create: {
           projectExId: data.projectExId,
-          schemaExId: data.schemaExId,
           copilotType: data.copilotType,
           userInput: {
             create: {

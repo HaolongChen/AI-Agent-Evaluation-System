@@ -41,7 +41,7 @@ export class ExecutionService {
     options?: {
       skipHumanReview?: boolean;
       skipHumanEvaluation?: boolean;
-    }
+    },
   ) {
     try {
       const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
@@ -56,65 +56,69 @@ export class ExecutionService {
       }
 
       logger.info(
-        `Creating ${goldenSet.userInput.length - goldenSet.copilotOutput.length} evaluation sessions concurrently`
+        `Creating ${goldenSet.userInput.length - goldenSet.copilotOutput.length} evaluation sessions concurrently`,
       );
 
       if (USE_KUBERNETES_JOBS) {
         await this.setGoldenSetActive(goldenSetId, true);
-        const results = await Promise.allSettled(
-          goldenSet.userInput.map(async (userInput, index) => {
-            const evalJobResult = (await applyAndWatchJob(
-              `evaluation-job-${goldenSet.projectExId}-${
-                goldenSet.schemaExId
-              }-${index}-${Date.now()}`,
-              'default',
-              './src/jobs/EvaluationJobRunner.ts',
-              300000,
-              'evaluation',
-              goldenSet.projectExId,
-              WS_URL,
-              userInput.content
-            )) as unknown as EvalJobResult;
-            logger.info(
-              `Evaluation job for golden set ${goldenSet.id} completed with status:`,
-              evalJobResult.status
+        const copilotResponse: Array<[string, string, string]> = [];
+        goldenSet.userInput.forEach(async (userInput, index) => {
+          const evalJobResult = (await applyAndWatchJob(
+            `evaluation-job-${goldenSet.projectExId}-${index}-${Date.now()}`,
+            'default',
+            './src/jobs/EvaluationJobRunner.ts',
+            300000,
+            'evaluation',
+            goldenSet.projectExId,
+            WS_URL,
+            userInput.content,
+          )) as unknown as EvalJobResult;
+          copilotResponse.push([
+            evalJobResult.editableText || '',
+            evalJobResult.schema || '',
+            userInput.content,
+          ]);
+          logger.info(
+            `Evaluation job for golden set ${goldenSet.id} completed with status:`,
+            evalJobResult.status,
+          );
+          if (evalJobResult.status !== 'succeeded') {
+            throw new Error(
+              `Evaluation job for golden set ${goldenSet.id} failed`,
             );
-            if (evalJobResult.status !== 'succeeded') {
-              throw new Error(
-                `Evaluation job for golden set ${goldenSet.id} failed`
-              );
-            }
+          }
+        });
+        const results = await Promise.allSettled(
+          copilotResponse.map(async ([editableText, schema, userInputContent], index) => {
             const genJobResult = (await applyAndWatchJob(
-              `rubric-job-${goldenSet.projectExId}-${
-                goldenSet.schemaExId
-              }-${index}-${Date.now()}`,
+              `rubric-job-${goldenSet.projectExId}-${index}-${Date.now()}`,
               'default',
               './src/jobs/RubricGenerationJobRunner.ts',
               300000,
               'generation',
               String(goldenSet.id),
               goldenSet.projectExId,
-              goldenSet.schemaExId,
               goldenSet.copilotType,
-              userInput.content,
-              evalJobResult.editableText || '',
+              userInputContent,
+              editableText,
+              schema,
               resolvedModelName,
               String(skipHumanReview),
-              String(skipHumanEvaluation)
+              String(skipHumanEvaluation),
             )) as unknown as GenJobResult;
             logger.info(
               `Rubric generation job for golden set ${goldenSet.id} completed with status:`,
-              genJobResult.status
+              genJobResult.status,
             );
             return genJobResult;
-          })
+          }),
         );
 
         const successful = results.filter((r) => r.status === 'fulfilled');
         const failed = results.filter((r) => r.status === 'rejected');
 
         logger.info(
-          `Kubernetes jobs created: ${successful.length} successful, ${failed.length} failed`
+          `Kubernetes jobs created: ${successful.length} successful, ${failed.length} failed`,
         );
 
         if (failed.length > 0) {
@@ -125,47 +129,50 @@ export class ExecutionService {
           });
         }
       } else {
-        const results = await Promise.allSettled(
-          goldenSet.userInput.map(async (userInput) => {
-            const evalJobRunner = new EvaluationJobRunner(
-              goldenSet.projectExId,
-              WS_URL,
-              userInput.content
-            );
-            evalJobRunner.startJob();
-            const { editableText } = await evalJobRunner.waitForCompletion();
-            logger.info(
-              `Evaluation job for golden set ${goldenSet.id} completed with response:`,
-              editableText
-            );
+        const copilotResponse: Array<[string, string, string]> = [];
 
-            const rubricJobRunner = new RubricGenerationJobRunner(
-              goldenSet.id,
-              goldenSet.projectExId,
-              goldenSet.schemaExId,
-              goldenSet.copilotType,
-              userInput.content,
-              '',
-              editableText,
-              resolvedModelName,
-              skipHumanReview,
-              skipHumanEvaluation
-            );
-            rubricJobRunner.startJob();
-            const rubricResult = await rubricJobRunner.waitForCompletion();
-            logger.info(
-              `Rubric generation job for golden set ${goldenSet.id} completed with response:`,
-              rubricResult
-            );
-            return rubricResult;
-          })
+        goldenSet.userInput.forEach(async (userInput) => {
+          const evalJobRunner = new EvaluationJobRunner(
+            goldenSet.projectExId,
+            WS_URL,
+            userInput.content,
+          );
+          evalJobRunner.startJob();
+          const { editableText, schema } =
+            await evalJobRunner.waitForCompletion();
+          copilotResponse.push([editableText, schema, userInput.content]);
+        });
+        const results = await Promise.allSettled(
+          copilotResponse.map(
+            async ([editableText, schema, userInputContent]) => {
+              const rubricJobRunner = new RubricGenerationJobRunner(
+                goldenSet.id,
+                goldenSet.projectExId,
+                goldenSet.copilotType,
+                userInputContent,
+                '',
+                editableText,
+                schema,
+                resolvedModelName,
+                skipHumanReview,
+                skipHumanEvaluation,
+              );
+              rubricJobRunner.startJob();
+              const rubricResult = await rubricJobRunner.waitForCompletion();
+              logger.info(
+                `Rubric generation job for golden set ${goldenSet.id} completed with response:`,
+                rubricResult,
+              );
+              return rubricResult;
+            },
+          ),
         );
 
         const successful = results.filter((r) => r.status === 'fulfilled');
         const failed = results.filter((r) => r.status === 'rejected');
 
         logger.info(
-          `Local evaluation jobs completed: ${successful.length} successful, ${failed.length} failed`
+          `Local evaluation jobs completed: ${successful.length} successful, ${failed.length} failed`,
         );
 
         if (failed.length > 0) {
@@ -198,7 +205,6 @@ export class ExecutionService {
   }
 
   async getSessions(filters: {
-    schemaExId?: string;
     copilotType?: CopilotType;
     modelName?: string;
     status?: (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS];
@@ -206,7 +212,6 @@ export class ExecutionService {
     try {
       return prisma.evaluationSession.findMany({
         where: {
-          ...(filters.schemaExId && { schemaExId: filters.schemaExId }),
           ...(filters.copilotType && { copilotType: filters.copilotType }),
           ...(filters.modelName && { modelName: filters.modelName }),
           ...(filters.status && { status: filters.status }),
@@ -220,77 +225,6 @@ export class ExecutionService {
     } catch (error) {
       logger.error('Error fetching evaluation sessions:', error);
       throw new Error('Failed to fetch evaluation sessions');
-    }
-  }
-
-  async startEvaluationSession(
-    goldenSetId: number,
-    modelName?: string,
-    options?: {
-      skipHumanReview?: boolean;
-      skipHumanEvaluation?: boolean;
-    }
-  ): Promise<{
-    sessionId: number;
-    threadId: string;
-    status: string;
-    questionSetDraft?: unknown;
-    message: string;
-  }> {
-    try {
-      const skipHumanReview = options?.skipHumanReview ?? false;
-      const skipHumanEvaluation = options?.skipHumanEvaluation ?? false;
-      const resolvedModelName = normalizeRequestedModelName(modelName);
-
-      const goldenSet = await goldenSetService.getGoldenSet(goldenSetId);
-      if (!goldenSet) {
-        throw new Error('Golden set not found');
-      }
-
-      const firstUserInput = goldenSet.userInput[0];
-      if (!firstUserInput) {
-        throw new Error('Golden set has no user inputs');
-      }
-
-      logger.info(`Starting evaluation session for golden set ${goldenSetId}`);
-
-      const evalJobRunner = new EvaluationJobRunner(
-        goldenSet.projectExId,
-        WS_URL,
-        firstUserInput.content
-      );
-      evalJobRunner.startJob();
-      const { editableText } = await evalJobRunner.waitForCompletion();
-
-      const rubricJobRunner = new RubricGenerationJobRunner(
-        goldenSet.id,
-        goldenSet.projectExId,
-        goldenSet.schemaExId,
-        goldenSet.copilotType,
-        firstUserInput.content,
-        '',
-        editableText,
-        resolvedModelName,
-        skipHumanReview,
-        skipHumanEvaluation
-      );
-      rubricJobRunner.startJob();
-      const result = await rubricJobRunner.waitForCompletion();
-
-      if (result.status !== 'succeeded') {
-        throw new Error(result.error ?? 'Evaluation session failed');
-      }
-
-      return {
-        sessionId: result.sessionId ?? 0,
-        threadId: result.threadId ?? '',
-        status: result.graphStatus ?? 'PENDING',
-        questionSetDraft: result.questionSet,
-        message: result.message ?? 'Evaluation session started',
-      };
-    } catch (error) {
-      logger.error('Error starting evaluation session:', error);
-      throw new Error('Failed to start evaluation session');
     }
   }
 
@@ -309,7 +243,7 @@ export class ExecutionService {
   async updateSessionStatus(
     sessionId: number,
     status: (typeof SESSION_STATUS)[keyof typeof SESSION_STATUS],
-    completedAt?: Date
+    completedAt?: Date,
   ) {
     try {
       return prisma.evaluationSession.update({

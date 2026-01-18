@@ -6,7 +6,7 @@ import { TypeSystemStore } from '../../utils/zed/TypeSystemStore.ts';
 /**
  * Safely stringify an object with circular references
  */
-function safeStringify(obj: unknown): string {
+export function safeStringify(obj: unknown): string {
   const seen = new WeakSet();
   return JSON.stringify(
     obj,

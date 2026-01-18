@@ -29,6 +29,7 @@ import { isNil, get } from 'lodash-es';
 import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
 import { assertNotNull, getError } from '../utils/zed/helpers.ts';
 import type { ToolResult } from '../utils/graph-states.ts';
+import { SchemaDownloaderForTest } from '../langGraph/tools/SchemaDownloader.ts';
 
 const DISCONNECT = false;
 const TERMINATE = false;
@@ -45,16 +46,18 @@ export class EvaluationJobRunner {
     // response: string;
     // tasks: TaskMessage[] | null;
     editableText: string;
+    schema: string;
   }>;
   // private resolveCompletion:
   //   | ((value: { response: string; tasks: TaskMessage[] | null }) => void)
   //   | null = null;
   private resolveCompletion:
-    | ((editableText: { editableText: string }) => void)
+    | ((result: { editableText: string; schema: string }) => void)
     | null = null;
   private rejectCompletion: ((reason: Error) => void) | null = null;
   private isCompleted: boolean = false;
   private timeoutId: NodeJS.Timeout | null = null;
+  private isSchemaSaving: boolean = false;
 
   constructor(projectExId: string, wsUrl: string, query: string) {
     this.projectExId = projectExId;
@@ -65,6 +68,7 @@ export class EvaluationJobRunner {
       // response: string;
       // tasks: TaskMessage[] | null;
       editableText: string;
+      schema: string;
     }>((resolve, reject) => {
       this.resolveCompletion = resolve;
       this.rejectCompletion = reject;
@@ -178,14 +182,14 @@ export class EvaluationJobRunner {
           logger.info(
             `Job for project ${this.projectExId} has stopped running.`
           );
-          if (!this.isCompleted && this.rejectCompletion) {
+          if (!this.isCompleted && this.rejectCompletion && !this.isSchemaSaving) {
             this.clearTimeout();
             this.isCompleted = true;
             this.rejectCompletion(
               new Error('Job has stopped running unexpectedly')
             );
+            this.stopJob();
           }
-          this.stopJob();
         }
         break;
       default:
@@ -195,12 +199,14 @@ export class EvaluationJobRunner {
     }
   }
 
-  handleEditableTextMessage(message: EditableTextMessage): void {
+  async handleEditableTextMessage(message: EditableTextMessage): Promise<void> {
     this.editableText = message.content;
+    this.isSchemaSaving = true;
+    const schema = await SchemaDownloaderForTest(this.projectExId);
     if (!this.isCompleted && this.resolveCompletion) {
       this.clearTimeout();
       this.isCompleted = true;
-      this.resolveCompletion({ editableText: this.editableText });
+      this.resolveCompletion({ editableText: this.editableText, schema });
     }
     this.stopJob();
   }
@@ -359,7 +365,7 @@ export class EvaluationJobRunner {
    */
   async waitForCompletion(
     timeoutMs: number = DEFAULT_TIMEOUT_MS
-  ): Promise<{ editableText: string }> {
+  ): Promise<{ editableText: string, schema: string }> {
     // Clear any existing timeout before setting a new one (for multiple calls)
     this.clearTimeout();
 

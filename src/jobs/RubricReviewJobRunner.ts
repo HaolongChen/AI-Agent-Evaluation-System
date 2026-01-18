@@ -156,7 +156,7 @@ export class RubricReviewJobRunner {
     const result = await graph.invoke(
       new Command({ resume: humanReviewInput }),
       {
-        configurable: { ...resumeConfigurable, projectExId: '' },
+        configurable: resumeConfigurable,
       }
     ) as GraphResult;
 

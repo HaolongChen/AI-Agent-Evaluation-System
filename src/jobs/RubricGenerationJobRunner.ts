@@ -69,11 +69,11 @@ export class RubricGenerationJobRunner {
   constructor(
     private readonly goldenSetId: number,
     private readonly projectExId: string,
-    private readonly schemaExId: string,
     private readonly copilotType: CopilotType,
     private readonly query: string,
     private readonly context: string,
     private readonly candidateOutput: string,
+    private readonly schema: string,
     private readonly modelName: string,
     private readonly skipHumanReview: boolean = true,
     private readonly skipHumanEvaluation: boolean = true
@@ -104,7 +104,7 @@ export class RubricGenerationJobRunner {
    */
   async startJob(): Promise<void> {
     logger.info(
-      `Starting rubric generation job for goldenSet ${this.goldenSetId} (${this.projectExId}/${this.schemaExId}) with model ${this.modelName}`
+      `Starting rubric generation job for goldenSet ${this.goldenSetId} (${this.projectExId}) with model ${this.modelName}`
     );
 
     try {
@@ -147,15 +147,17 @@ export class RubricGenerationJobRunner {
         skipHumanEvaluation: this.skipHumanEvaluation,
       };
 
+      const schemaData = JSON.parse(this.schema) as object;
+
+
       const initialState = {
         query: this.query,
         context: this.context,
         candidateOutput: this.candidateOutput,
+        schema: schemaData,
       };
 
-      const result = await graphToUse.invoke(initialState, {
-        configurable: { ...configurable, projectExId: this.projectExId },
-      }) as GraphResult;
+      const result = await graphToUse.invoke(initialState, { configurable }) as GraphResult;
 
       let graphStatus: RubricGenerationResult['graphStatus'] = 'completed';
       let message = 'Evaluation completed successfully';
@@ -340,11 +342,11 @@ if (
     .object({
       goldenSetId: z.int(),
       projectExId: z.string().min(1, 'projectExId is required'),
-      schemaExId: z.string().min(1, 'schemaExId is required'),
       copilotType: z.string().min(1, 'copilotType is required'),
       query: z.string().min(1, 'query is required'),
       context: z.string(),
       candidateOutput: z.string(),
+      schema: z.string(),
       modelName: z.string().min(1, 'modelName is required'),
       skipHumanReview: z
         .string()
@@ -358,11 +360,11 @@ if (
     .parse({
       goldenSetId: process.argv[2] || '',
       projectExId: process.argv[3] || '',
-      schemaExId: process.argv[4] || '',
-      copilotType: process.argv[5] || '',
-      query: process.argv[6] || '',
-      context: process.argv[7] || '',
-      candidateOutput: process.argv[8] || '',
+      copilotType: process.argv[4] || '',
+      query: process.argv[5] || '',
+      context: process.argv[6] || '',
+      candidateOutput: process.argv[7] || '',
+      schema: process.argv[8] || '',
       modelName: process.argv[9] || 'gpt-4o',
       skipHumanReview: process.argv[10],
       skipHumanEvaluation: process.argv[11],
@@ -371,11 +373,11 @@ if (
   const jobRunner = new RubricGenerationJobRunner(
     args.goldenSetId,
     args.projectExId,
-    args.schemaExId,
     args.copilotType as CopilotType,
     args.query,
     args.context,
     args.candidateOutput,
+    args.schema,
     args.modelName,
     args.skipHumanReview ?? true,
     args.skipHumanEvaluation ?? true

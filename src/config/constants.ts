@@ -81,6 +81,12 @@ export const METRIC_CATEGORIES = {
     'root_cause_correctness',
     'summary_completeness',
   ],
+  AGENT_BUILDER: [
+    'agent_strategy_effectiveness',
+    'tool_utilization_efficiency',
+    'response_relevance',
+    'error_handling_robustness',
+  ],
 } as const;
 
 export const CALL_GRAPHQL = {
@@ -95,7 +101,6 @@ export const CALL_GRAPHQL = {
       getGoldenSets(projectExId: $projectExId, copilotType: $copilotType) {
         id
         projectExId
-        schemaExId
         copilotType
         description
         query
@@ -110,7 +115,6 @@ export const CALL_GRAPHQL = {
       getSession(id: $id) {
         id
         projectExId
-        schemaExId
         copilotType
         modelName
         sessionIdRef
@@ -128,10 +132,9 @@ export const CALL_GRAPHQL = {
     `,
     GET_SESSIONS: `
     query GetSessions {
-      getSessions(schemaExId: $schemaExId, copilotType: $copilotType, modelName: $modelName) {
+      getSessions(projectExId: $projectExId, copilotType: $copilotType, modelName: $modelName) {
         id
         projectExId
-        schemaExId
         copilotType
         modelName
         sessionIdRef

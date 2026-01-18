@@ -8,7 +8,6 @@ async function testPatchPersistence() {
   const goldenSet = await prisma.goldenSet.create({
     data: {
       projectExId: 'test-proj',
-      schemaExId: 'test-schema',
       copilotType: 'dataModel',
     },
   });
@@ -50,7 +49,10 @@ async function testPatchPersistence() {
     }),
   ]);
 
-  console.log('Created rubrics:', rubrics.map((r) => ({ id: r.id, title: r.title, weight: r.weight })));
+  console.log(
+    'Created rubrics:',
+    rubrics.map((r) => ({ id: r.id, title: r.title, weight: r.weight })),
+  );
 
   const patchedQuestionSet: QuestionSet = {
     version: '1.0.1',
@@ -76,23 +78,29 @@ async function testPatchPersistence() {
   };
 
   console.log('\nApplying patches...');
-  await evaluationPersistenceService.updateRubricQuestions(session.id, patchedQuestionSet);
+  await evaluationPersistenceService.updateRubricQuestions(
+    session.id,
+    patchedQuestionSet,
+  );
 
   const updatedRubrics = await prisma.adaptiveRubric.findMany({
     where: { sessionId: session.id, isActive: true },
     orderBy: { id: 'asc' },
   });
 
-  console.log('\nUpdated rubrics:', updatedRubrics.map((r) => ({ 
-    id: r.id, 
-    title: r.title, 
-    content: r.content,
-    expectedAnswer: r.expectedAnswer,
-    weight: Number(r.weight),
-    version: r.version 
-  })));
+  console.log(
+    '\nUpdated rubrics:',
+    updatedRubrics.map((r) => ({
+      id: r.id,
+      title: r.title,
+      content: r.content,
+      expectedAnswer: r.expectedAnswer,
+      weight: Number(r.weight),
+      version: r.version,
+    })),
+  );
 
-  const allCorrect = 
+  const allCorrect =
     updatedRubrics[0].title === '[PATCHED] Original Question 1' &&
     Number(updatedRubrics[0].weight) === 15 &&
     updatedRubrics[1].content === '[PATCHED] Content 2' &&
@@ -112,7 +120,9 @@ async function testPatchPersistence() {
   }
 }
 
-testPatchPersistence().then(() => process.exit(0)).catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+testPatchPersistence()
+  .then(() => process.exit(0))
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });

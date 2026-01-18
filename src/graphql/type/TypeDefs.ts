@@ -76,15 +76,13 @@ export const typeDefs = `#graphql
   """
   A golden set represents a collection of test cases (user inputs) 
   and expected copilot outputs for evaluating agent performance.
-  Identified uniquely by (projectExId, schemaExId, copilotType).
+  Identified uniquely by (projectExId, copilotType).
   """
   type GoldenSet {
     "Unique database identifier"
     id: Int!
     "External project identifier from Functorz"
     projectExId: String!
-    "External schema identifier from Functorz"
-    schemaExId: String!
     "Type of copilot being evaluated"
     copilotType: CopilotType!
     "Timestamp when golden set was created"
@@ -532,8 +530,6 @@ export const typeDefs = `#graphql
   input GoldenSetFilters {
     "Filter by project external ID"
     projectExId: String
-    "Filter by schema external ID"
-    schemaExId: String
     "Filter by copilot type"
     copilotType: CopilotType
     "Filter by active status"
@@ -546,8 +542,6 @@ export const typeDefs = `#graphql
   input SessionFilters {
     "Filter by golden set ID"
     goldenSetId: Int
-    "Filter by schema external ID"
-    schemaExId: String
     "Filter by copilot type"
     copilotType: CopilotType
     "Filter by model name"
@@ -634,12 +628,11 @@ export const typeDefs = `#graphql
     
     """
     Create a new golden set or return existing active one.
-    A golden set is identified uniquely by (projectExId, schemaExId, copilotType).
+    A golden set is identified uniquely by (projectExId, copilotType).
     Only one active golden set can exist per triplet.
     """
     createGoldenSet(
       projectExId: String!
-      schemaExId: String!
       copilotType: CopilotType!
       createdBy: String
     ): GoldenSet!
@@ -661,7 +654,6 @@ export const typeDefs = `#graphql
     """
     updateGoldenSetInput(
       projectExId: String!
-      schemaExId: String!
       copilotType: CopilotType!
       description: String
       query: String!
@@ -671,19 +663,19 @@ export const typeDefs = `#graphql
     # Evaluation Execution
     # -------------------------------------------------------------------------
     
-    """
-    Start a new evaluation session with HITL workflow.
-    Returns immediately with session state and thread ID for tracking.
+    # """
+    # Start a new evaluation session with HITL workflow.
+    # Returns immediately with session state and thread ID for tracking.
     
-    Use this when you want interactive control over the evaluation process
-    with human review checkpoints.
-    """
-    startEvaluationSession(
-      goldenSetId: Int!
-      modelName: String
-      skipHumanReview: Boolean
-      skipHumanEvaluation: Boolean
-    ): StartSessionResult!
+    # Use this when you want interactive control over the evaluation process
+    # with human review checkpoints.
+    # """
+    # startEvaluationSession(
+    #   goldenSetId: Int!
+    #   modelName: String
+    #   skipHumanReview: Boolean
+    #   skipHumanEvaluation: Boolean
+    # ): StartSessionResult!
 
     """
     Run complete evaluation workflow (background execution).

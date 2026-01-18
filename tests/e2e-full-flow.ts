@@ -24,9 +24,9 @@ const TEST_CONFIG = {
   useExistingGoldenSet: false,
   goldenSetId: 1,
   projectExId: process.env['projectExId'] || 'X57jbwZzB76',
-  schemaExId: 'e2e-test-schema',
   copilotType: 'DATA_MODEL_BUILDER' as const,
-  testQuery: 'Create a simple user table with id, name, email, and created_at fields',
+  testQuery:
+    'Create a simple user table with id, name, email, and created_at fields',
   testDescription: 'E2E test: User table creation',
   modelName: process.env['AZURE_OPENAI_DEPLOYMENT'] || 'gpt-4o',
   copilotTimeoutMs: 120000,
@@ -50,7 +50,7 @@ function recordResult(
   success: boolean,
   duration: number,
   data?: unknown,
-  error?: string
+  error?: string,
 ): void {
   results.push({ step, success, duration, data, error });
   const status = success ? '\x1b[32mPASS\x1b[0m' : '\x1b[31mFAIL\x1b[0m';
@@ -63,7 +63,6 @@ function recordResult(
 async function step1_fetchOrCreateGoldenSet(): Promise<{
   goldenSetId: number;
   projectExId: string;
-  schemaExId: string;
   copilotType: string;
   query: string;
 }> {
@@ -71,11 +70,13 @@ async function step1_fetchOrCreateGoldenSet(): Promise<{
 
   try {
     if (TEST_CONFIG.useExistingGoldenSet) {
-      const goldenSet = await goldenSetService.getGoldenSet(TEST_CONFIG.goldenSetId);
+      const goldenSet = await goldenSetService.getGoldenSet(
+        TEST_CONFIG.goldenSetId,
+      );
 
       if (!goldenSet || goldenSet.userInput.length === 0) {
         throw new Error(
-          `Golden set ${TEST_CONFIG.goldenSetId} not found or has no user input. Run 'pnpm db:seed' first.`
+          `Golden set ${TEST_CONFIG.goldenSetId} not found or has no user input. Run 'pnpm db:seed' first.`,
         );
       }
 
@@ -87,20 +88,23 @@ async function step1_fetchOrCreateGoldenSet(): Promise<{
       const result = {
         goldenSetId: goldenSet.id,
         projectExId: goldenSet.projectExId,
-        schemaExId: goldenSet.schemaExId,
         copilotType: goldenSet.copilotType,
         query: firstInput.content,
       };
 
-      recordResult('Step 1: Fetch Golden Set', true, Date.now() - start, result);
+      recordResult(
+        'Step 1: Fetch Golden Set',
+        true,
+        Date.now() - start,
+        result,
+      );
       return result;
     } else {
       const goldenSet = await goldenSetService.updateGoldenSetInput(
         TEST_CONFIG.projectExId,
-        TEST_CONFIG.schemaExId,
         TEST_CONFIG.copilotType,
         TEST_CONFIG.testDescription,
-        TEST_CONFIG.testQuery
+        TEST_CONFIG.testQuery,
       );
 
       const firstInput = goldenSet.userInput[0];
@@ -111,12 +115,16 @@ async function step1_fetchOrCreateGoldenSet(): Promise<{
       const result = {
         goldenSetId: goldenSet.id,
         projectExId: goldenSet.projectExId,
-        schemaExId: goldenSet.schemaExId,
         copilotType: goldenSet.copilotType,
         query: firstInput.content,
       };
 
-      recordResult('Step 1: Create Golden Set', true, Date.now() - start, result);
+      recordResult(
+        'Step 1: Create Golden Set',
+        true,
+        Date.now() - start,
+        result,
+      );
       return result;
     }
   } catch (error) {
@@ -125,13 +133,16 @@ async function step1_fetchOrCreateGoldenSet(): Promise<{
       false,
       Date.now() - start,
       undefined,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     throw error;
   }
 }
 
-async function step2_executeCopilot(projectExId: string, query: string): Promise<string> {
+async function step2_executeCopilot(
+  projectExId: string,
+  query: string,
+): Promise<{ editableText: string; schema: string }> {
   const start = Date.now();
 
   try {
@@ -142,7 +153,9 @@ async function step2_executeCopilot(projectExId: string, query: string): Promise
     const jobRunner = new EvaluationJobRunner(projectExId, WS_URL, query);
 
     jobRunner.startJob();
-    const { editableText } = await jobRunner.waitForCompletion(TEST_CONFIG.copilotTimeoutMs);
+    const { editableText, schema } = await jobRunner.waitForCompletion(
+      TEST_CONFIG.copilotTimeoutMs,
+    );
 
     if (!editableText || editableText.trim().length === 0) {
       throw new Error('Copilot returned empty response');
@@ -153,14 +166,14 @@ async function step2_executeCopilot(projectExId: string, query: string): Promise
       preview: editableText.substring(0, 200),
     });
 
-    return editableText;
+    return { editableText, schema };
   } catch (error) {
     recordResult(
       'Step 2: Execute Copilot',
       false,
       Date.now() - start,
       undefined,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     throw error;
   }
@@ -169,10 +182,10 @@ async function step2_executeCopilot(projectExId: string, query: string): Promise
 async function step3_runLangGraphWithHITL(
   goldenSetId: number,
   projectExId: string,
-  schemaExId: string,
   copilotType: string,
   query: string,
-  candidateOutput: string
+  candidateOutput: string,
+  schema: string,
 ): Promise<{
   sessionId: number;
   threadId: string;
@@ -189,18 +202,25 @@ async function step3_runLangGraphWithHITL(
     const jobRunner = new RubricGenerationJobRunner(
       goldenSetId,
       projectExId,
-      schemaExId,
-      copilotType as 'dataModel' | 'uiBuilder' | 'actionflow' | 'logAnalyzer' | 'agentBuilder',
+      copilotType as
+        | 'dataModel'
+        | 'uiBuilder'
+        | 'actionflow'
+        | 'logAnalyzer'
+        | 'agentBuilder',
       query,
       '',
       candidateOutput,
+      schema,
       TEST_CONFIG.modelName,
       skipHumanReview,
-      skipHumanEvaluation
+      skipHumanEvaluation,
     );
 
     jobRunner.startJob();
-    const result = await jobRunner.waitForCompletion(TEST_CONFIG.questionSetTimeoutMs);
+    const result = await jobRunner.waitForCompletion(
+      TEST_CONFIG.questionSetTimeoutMs,
+    );
 
     if (result.status !== 'succeeded') {
       throw new Error(result.error || 'Question set generation failed');
@@ -211,7 +231,7 @@ async function step3_runLangGraphWithHITL(
       result.graphStatus !== 'completed'
     ) {
       throw new Error(
-        `Unexpected graph status: ${result.graphStatus}. Expected 'awaiting_rubric_review' or 'completed'`
+        `Unexpected graph status: ${result.graphStatus}. Expected 'awaiting_rubric_review' or 'completed'`,
       );
     }
 
@@ -219,7 +239,9 @@ async function step3_runLangGraphWithHITL(
     const threadId = result.threadId;
 
     if (!sessionId || !threadId) {
-      throw new Error('Missing sessionId or threadId from question set generation');
+      throw new Error(
+        'Missing sessionId or threadId from question set generation',
+      );
     }
 
     recordResult('Step 3: Run LangGraph (HITL)', true, Date.now() - start, {
@@ -240,7 +262,7 @@ async function step3_runLangGraphWithHITL(
       false,
       Date.now() - start,
       undefined,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     throw error;
   }
@@ -249,7 +271,7 @@ async function step3_runLangGraphWithHITL(
 async function step4_submitQuestionSetReview(
   sessionId: number,
   threadId: string,
-  _questionSetDraft: QuestionSet | null
+  _questionSetDraft: QuestionSet | null,
 ): Promise<QuestionSet | null> {
   void _questionSetDraft;
   const start = Date.now();
@@ -262,18 +284,28 @@ async function step4_submitQuestionSetReview(
 
     if (state.status === 'completed') {
       logger.info('  Session already completed, skipping question set review');
-      recordResult('Step 4: Submit Question Set Review', true, Date.now() - start, {
-        skipped: true,
-        reason: 'Session already completed',
-      });
+      recordResult(
+        'Step 4: Submit Question Set Review',
+        true,
+        Date.now() - start,
+        {
+          skipped: true,
+          reason: 'Session already completed',
+        },
+      );
       return state.questionSetFinal;
     }
 
     if (state.status !== 'awaiting_rubric_review') {
-      throw new Error(`Cannot submit question set review in status: ${state.status}`);
+      throw new Error(
+        `Cannot submit question set review in status: ${state.status}`,
+      );
     }
 
-    if (!state.questionSetDraft || state.questionSetDraft.questions.length === 0) {
+    if (
+      !state.questionSetDraft ||
+      state.questionSetDraft.questions.length === 0
+    ) {
       throw new Error('No question set draft available');
     }
 
@@ -286,11 +318,14 @@ async function step4_submitQuestionSetReview(
       },
     ];
 
-    logger.info(`  Patching question ${firstQuestion.id}: weight ${firstQuestion.weight} -> ${firstQuestion.weight * 1.1}`);
+    logger.info(
+      `  Patching question ${firstQuestion.id}: weight ${firstQuestion.weight} -> ${firstQuestion.weight * 1.1}`,
+    );
 
     // Use approved=true with patches: patches represent approved modifications, not rejection
     const approved = true;
-    const feedback = 'E2E test: Modified first question weight and title using patches';
+    const feedback =
+      'E2E test: Modified first question weight and title using patches';
     const reviewerAccountId = 'e2e-test-reviewer';
 
     const submitResult = await graphExecutionService.submitRubricReview(
@@ -300,17 +335,24 @@ async function step4_submitQuestionSetReview(
       undefined,
       questionPatches,
       feedback,
-      reviewerAccountId
+      reviewerAccountId,
     );
-    
-    if(submitResult.status === 'failed') {
-      throw new Error(`Question set review submission failed: ${submitResult.message}`);
+
+    if (submitResult.status === 'failed') {
+      throw new Error(
+        `Question set review submission failed: ${submitResult.message}`,
+      );
     }
 
-    recordResult('Step 4: Submit Question Set Review (with patches)', true, Date.now() - start, {
-      submitStatus: submitResult.status,
-      patchedQuestions: questionPatches.length,
-    });
+    recordResult(
+      'Step 4: Submit Question Set Review (with patches)',
+      true,
+      Date.now() - start,
+      {
+        submitStatus: submitResult.status,
+        patchedQuestions: questionPatches.length,
+      },
+    );
 
     return submitResult.questionSetFinal || null;
   } catch (error) {
@@ -319,7 +361,7 @@ async function step4_submitQuestionSetReview(
       false,
       Date.now() - start,
       undefined,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     throw error;
   }
@@ -328,7 +370,7 @@ async function step4_submitQuestionSetReview(
 async function step5_submitHumanEvaluation(
   sessionId: number,
   threadId: string,
-  questionSetFinal: QuestionSet | null
+  questionSetFinal: QuestionSet | null,
 ): Promise<FinalReport | null> {
   const start = Date.now();
 
@@ -340,15 +382,22 @@ async function step5_submitHumanEvaluation(
 
     if (state.status === 'completed') {
       logger.info('  Session already completed, returning final report');
-      recordResult('Step 5: Submit Human Evaluation', true, Date.now() - start, {
-        skipped: true,
-        reason: 'Session already completed',
-      });
+      recordResult(
+        'Step 5: Submit Human Evaluation',
+        true,
+        Date.now() - start,
+        {
+          skipped: true,
+          reason: 'Session already completed',
+        },
+      );
       return state.finalReport;
     }
 
     if (state.status !== 'awaiting_human_evaluation') {
-      throw new Error(`Cannot submit human evaluation in status: ${state.status}`);
+      throw new Error(
+        `Cannot submit human evaluation in status: ${state.status}`,
+      );
     }
 
     const questionSet = questionSetFinal || state.questionSetFinal;
@@ -364,7 +413,8 @@ async function step5_submitHumanEvaluation(
     }
 
     const firstAnswer = state.agentEvaluation.answers[0];
-    const lastAnswer = state.agentEvaluation.answers[state.agentEvaluation.answers.length - 1];
+    const lastAnswer =
+      state.agentEvaluation.answers[state.agentEvaluation.answers.length - 1];
 
     const answerPatches = [
       {
@@ -378,9 +428,12 @@ async function step5_submitHumanEvaluation(
       },
     ];
 
-    logger.info(`  Patching ${answerPatches.length} answers (overriding agent evaluation)`);
+    logger.info(
+      `  Patching ${answerPatches.length} answers (overriding agent evaluation)`,
+    );
 
-    const overallAssessment = 'E2E test: Overall assessment - Modified agent evaluation with human patches';
+    const overallAssessment =
+      'E2E test: Overall assessment - Modified agent evaluation with human patches';
     const evaluatorAccountId = 'e2e-test-evaluator';
 
     const submitResult = await graphExecutionService.submitHumanEvaluation(
@@ -389,19 +442,26 @@ async function step5_submitHumanEvaluation(
       undefined,
       answerPatches,
       overallAssessment,
-      evaluatorAccountId
+      evaluatorAccountId,
     );
-    
+
     if (submitResult.status === 'failed') {
-      throw new Error(`Human evaluation submission failed: ${submitResult.message}`);
+      throw new Error(
+        `Human evaluation submission failed: ${submitResult.message}`,
+      );
     }
 
-    recordResult('Step 5: Submit Human Evaluation (with patches)', true, Date.now() - start, {
-      submitStatus: submitResult.status,
-      patchedAnswers: answerPatches.length,
-      verdict: submitResult.finalReport?.verdict,
-      overallScore: submitResult.finalReport?.overallScore,
-    });
+    recordResult(
+      'Step 5: Submit Human Evaluation (with patches)',
+      true,
+      Date.now() - start,
+      {
+        submitStatus: submitResult.status,
+        patchedAnswers: answerPatches.length,
+        verdict: submitResult.finalReport?.verdict,
+        overallScore: submitResult.finalReport?.overallScore,
+      },
+    );
 
     return submitResult.finalReport || null;
   } catch (error) {
@@ -410,13 +470,15 @@ async function step5_submitHumanEvaluation(
       false,
       Date.now() - start,
       undefined,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     throw error;
   }
 }
 
-async function step6_verifyFinalReport(sessionId: number): Promise<FinalReport | null> {
+async function step6_verifyFinalReport(
+  sessionId: number,
+): Promise<FinalReport | null> {
   const start = Date.now();
 
   try {
@@ -459,7 +521,7 @@ async function step6_verifyFinalReport(sessionId: number): Promise<FinalReport |
       false,
       Date.now() - start,
       undefined,
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     throw error;
   }
@@ -480,7 +542,6 @@ async function runFullE2ETest(): Promise<void> {
           session: {
             goldenSet: {
               projectExId: TEST_CONFIG.projectExId,
-              schemaExId: TEST_CONFIG.schemaExId,
             },
           },
         },
@@ -491,7 +552,6 @@ async function runFullE2ETest(): Promise<void> {
         session: {
           goldenSet: {
             projectExId: TEST_CONFIG.projectExId,
-            schemaExId: TEST_CONFIG.schemaExId,
           },
         },
       },
@@ -501,7 +561,6 @@ async function runFullE2ETest(): Promise<void> {
         session: {
           goldenSet: {
             projectExId: TEST_CONFIG.projectExId,
-            schemaExId: TEST_CONFIG.schemaExId,
           },
         },
       },
@@ -510,7 +569,6 @@ async function runFullE2ETest(): Promise<void> {
       where: {
         goldenSet: {
           projectExId: TEST_CONFIG.projectExId,
-          schemaExId: TEST_CONFIG.schemaExId,
         },
       },
     });
@@ -518,26 +576,33 @@ async function runFullE2ETest(): Promise<void> {
 
     const goldenSetInfo = await step1_fetchOrCreateGoldenSet();
     logger.info(
-      `\nGolden Set: ${goldenSetInfo.goldenSetId} (${goldenSetInfo.projectExId}/${goldenSetInfo.schemaExId})\n`
+      `\nGolden Set: ${goldenSetInfo.goldenSetId} (${goldenSetInfo.projectExId})\n`,
     );
 
     const copilotOutput = await step2_executeCopilot(
       goldenSetInfo.projectExId,
-      goldenSetInfo.query
-    );
-    logger.info(`\nCopilot Output (${copilotOutput.length} chars)\n`);
-
-    const { sessionId, threadId, questionSetDraft } = await step3_runLangGraphWithHITL(
-      goldenSetInfo.goldenSetId,
-      goldenSetInfo.projectExId,
-      goldenSetInfo.schemaExId,
-      goldenSetInfo.copilotType,
       goldenSetInfo.query,
-      copilotOutput
     );
+    logger.info(
+      `\nCopilot Output (${copilotOutput.editableText.length} chars)\n`,
+    );
+
+    const { sessionId, threadId, questionSetDraft } =
+      await step3_runLangGraphWithHITL(
+        goldenSetInfo.goldenSetId,
+        goldenSetInfo.projectExId,
+        goldenSetInfo.copilotType,
+        goldenSetInfo.query,
+        copilotOutput.editableText,
+        copilotOutput.schema,
+      );
     logger.info(`\nSession: ${sessionId}, Thread: ${threadId}\n`);
 
-    const questionSetFinal = await step4_submitQuestionSetReview(sessionId, threadId, questionSetDraft);
+    const questionSetFinal = await step4_submitQuestionSetReview(
+      sessionId,
+      threadId,
+      questionSetDraft,
+    );
 
     await step5_submitHumanEvaluation(sessionId, threadId, questionSetFinal);
 

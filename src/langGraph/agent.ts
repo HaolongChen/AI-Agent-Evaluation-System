@@ -15,7 +15,6 @@ import { schemaLoaderNode } from './nodes/SchemaLoader.ts';
 const ContextSchema = z.object({
   provider: z.string().optional(),
   model: z.string().optional(),
-  projectExId: z.string().optional(),
   skipHumanReview: z.boolean().optional(),
   skipHumanEvaluation: z.boolean().optional(),
 });

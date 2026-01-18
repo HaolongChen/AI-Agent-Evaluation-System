@@ -15,7 +15,6 @@ Return only the data structure described in the format instructions.
   [
     'human',
     `Project: {projectExId}
-Schema: {schemaExId}
 Copilot type: {copilotType}
 
 Reference metrics to emphasize: {metricHints}

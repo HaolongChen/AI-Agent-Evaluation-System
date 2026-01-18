@@ -20,7 +20,6 @@ import { logger } from '../../utils/logger.ts';
 
 export interface CopilotRubricInput {
   projectExId: string;
-  schemaExId: string;
   copilotType: copilotType;
   copilotInput: string;
   copilotOutput: string;
@@ -54,7 +53,7 @@ const METRIC_HINT_MAP: Record<copilotType, readonly string[]> = {
   uiBuilder: METRIC_CATEGORIES.UI_BUILDER,
   actionflow: METRIC_CATEGORIES.ACTIONFLOW,
   logAnalyzer: METRIC_CATEGORIES.LOG_ANALYZER,
-  agentBuilder: METRIC_CATEGORIES.ACTIONFLOW,
+  agentBuilder: METRIC_CATEGORIES.AGENT_BUILDER,
 };
 
 const COPILOT_LABEL: Record<copilotType, string> = {
@@ -261,7 +260,6 @@ export async function generateAdaptiveRubric(
 ): Promise<RubricGenerationResult> {
   const promptVariables: Record<string, string> = {
     projectExId: input.projectExId,
-    schemaExId: input.schemaExId,
     copilotType: COPILOT_LABEL[input.copilotType] || input.copilotType,
     copilotInput: sanitizeSnippet(input.copilotInput),
     copilotOutput: sanitizeSnippet(input.copilotOutput),

@@ -1,7 +1,11 @@
 import { config } from 'dotenv';
 import { logger } from '../src/utils/logger.ts';
 import { prisma } from '../src/config/prisma.ts';
-import { CopilotType, SessionStatus, RubricReviewStatus } from '../build/generated/prisma/enums.ts';
+import {
+  CopilotType,
+  SessionStatus,
+  RubricReviewStatus,
+} from '../build/generated/prisma/enums.ts';
 
 config();
 
@@ -11,7 +15,6 @@ async function testQuestionPatchMergeLogic(): Promise<void> {
   const goldenSet = await prisma.goldenSet.create({
     data: {
       projectExId: process.env.projectExId || 'test-project',
-      schemaExId: `test-schema-${Date.now()}`,
       copilotType: CopilotType.dataModel,
       isActive: true,
       createdBy: 'partial-update-test',
@@ -136,7 +139,7 @@ async function testQuestionPatchMergeLogic(): Promise<void> {
         expectedAnswer: r.expectedAnswer,
         weight: Number(r.weight),
       },
-    ])
+    ]),
   );
 
   for (const patch of patches) {
@@ -214,7 +217,9 @@ async function testAnswerPatchMergeLogic(): Promise<void> {
   for (const patch of answerPatches) {
     const answer = answerMap.get(patch.questionId);
     if (!answer) {
-      throw new Error(`Question ID ${patch.questionId} not found in agent answers`);
+      throw new Error(
+        `Question ID ${patch.questionId} not found in agent answers`,
+      );
     }
 
     if (patch.answer !== undefined) answer.answer = patch.answer;
@@ -233,7 +238,10 @@ async function testAnswerPatchMergeLogic(): Promise<void> {
     throw new Error('Answer 1 not patched correctly');
   }
 
-  if (a2?.answer !== false || !a2?.explanation.includes('Agent explanation 2')) {
+  if (
+    a2?.answer !== false ||
+    !a2?.explanation.includes('Agent explanation 2')
+  ) {
     throw new Error('Answer 2 should remain unchanged');
   }
 
@@ -248,8 +256,14 @@ async function testInvalidPatchHandling(): Promise<void> {
   logger.info('\n=== Test: Invalid Patch Handling ===');
 
   const questionMap = new Map([
-    [1, { id: 1, title: 'Q1', content: 'C1', expectedAnswer: true, weight: 0.5 }],
-    [2, { id: 2, title: 'Q2', content: 'C2', expectedAnswer: false, weight: 0.5 }],
+    [
+      1,
+      { id: 1, title: 'Q1', content: 'C1', expectedAnswer: true, weight: 0.5 },
+    ],
+    [
+      2,
+      { id: 2, title: 'Q2', content: 'C2', expectedAnswer: false, weight: 0.5 },
+    ],
   ]);
 
   const invalidPatch = { questionId: 999, weight: 0.3 };
@@ -297,7 +311,9 @@ async function testWeightRecalculation(): Promise<void> {
 
   const expectedTotal = 0.25 * questions.length;
   if (Math.abs(totalWeight - expectedTotal) > 0.001) {
-    throw new Error(`Weight recalc failed: expected ${expectedTotal}, got ${totalWeight}`);
+    throw new Error(
+      `Weight recalc failed: expected ${expectedTotal}, got ${totalWeight}`,
+    );
   }
 
   logger.info('✅ Weight recalculation test PASSED', {

@@ -14,10 +14,7 @@ import { type RunnableConfig } from '@langchain/core/runnables';
 import { HumanMessage } from '@langchain/core/messages';
 import { rubricAnnotation } from '../state/index.ts';
 import { getLLM, invokeWithRetry } from '../llm/index.ts';
-import {
-  schemaDownloader,
-  SchemaDownloaderForTest,
-} from '../tools/SchemaDownloader.ts';
+import { SchemaDownloaderForTest } from '../tools/SchemaDownloader.ts';
 import * as z from 'zod';
 
 const analysisSchema = z.object({
@@ -31,7 +28,7 @@ const analysisSchema = z.object({
 
 export async function analysisAgentNode(
   state: typeof rubricAnnotation.State,
-  config?: RunnableConfig
+  config?: RunnableConfig,
 ): Promise<Partial<typeof rubricAnnotation.State>> {
   // You can pass the model configuration via config.configurable
   const provider =
@@ -48,11 +45,9 @@ export async function analysisAgentNode(
   // Step 1: Use tool calling to determine if schema is needed
   if (!llm.bindTools) {
     throw new Error(
-      `Model ${provider}:${modelName} does not support tool binding`
+      `Model ${provider}:${modelName} does not support tool binding`,
     );
   }
-
-  const llmWithTools = llm.bindTools([schemaDownloader]);
 
   const toolCallPrompt = `
   You are an analysis agent. Analyze the user's query and context to determine if you need to download the schema graph.
@@ -74,9 +69,9 @@ export async function analysisAgentNode(
   `;
 
   const toolCallResponse = await invokeWithRetry(
-    () => llmWithTools.invoke([new HumanMessage(toolCallPrompt)], config),
+    () => llm.invoke([new HumanMessage(toolCallPrompt)], config),
     provider,
-    { operationName: 'AnalysisAgent.toolInvoke' }
+    { operationName: 'AnalysisAgent.toolInvoke' },
   );
 
   // Process tool calls if any
@@ -125,10 +120,10 @@ export async function analysisAgentNode(
     () =>
       llmWithStructuredOutput.invoke(
         [new HumanMessage(analysisPrompt)],
-        config
+        config,
       ),
     provider,
-    { operationName: 'AnalysisAgent.invoke' }
+    { operationName: 'AnalysisAgent.invoke' },
   );
 
   return {

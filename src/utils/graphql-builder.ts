@@ -196,7 +196,6 @@ export const GoldenSetQueries = {
     const builder = query('getGoldenSets').select(
       'id',
       'projectExId',
-      'schemaExId',
       'copilotType',
       'description',
       'query',

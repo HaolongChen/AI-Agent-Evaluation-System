@@ -12,7 +12,6 @@ import type { CopilotType, SessionStatus } from '../../../build/generated/prisma
 
 export interface SessionFilters {
   goldenSetId?: number;
-  schemaExId?: string;
   copilotType?: keyof typeof COPILOT_TYPES;
   modelName?: string;
   status?: string;
@@ -83,7 +82,6 @@ export const sessionResolver = {
         const dbStatus = filters?.status ? graphqlToDbStatus[filters.status] : undefined;
 
         const sessions = await executionService.getSessions({
-          ...(filters?.schemaExId && { schemaExId: filters.schemaExId }),
           ...(filters?.copilotType && { copilotType: COPILOT_TYPES[filters.copilotType] as CopilotType }),
           ...(filters?.modelName && { modelName: filters.modelName }),
           ...(dbStatus && { status: dbStatus }),

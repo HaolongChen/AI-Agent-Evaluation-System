@@ -641,20 +641,6 @@ export const typeDefs = `#graphql
     # -------------------------------------------------------------------------
     # Evaluation Execution
     # -------------------------------------------------------------------------
-    
-    # """
-    # Start a new evaluation session with HITL workflow.
-    # Returns immediately with session state and thread ID for tracking.
-    
-    # Use this when you want interactive control over the evaluation process
-    # with human review checkpoints.
-    # """
-    # startEvaluationSession(
-    #   goldenSetId: Int!
-    #   modelName: String
-    #   skipHumanReview: Boolean
-    #   skipHumanEvaluation: Boolean
-    # ): StartSessionResult!
 
     """
     Run complete evaluation workflow (background execution).

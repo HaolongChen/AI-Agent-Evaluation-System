@@ -2,6 +2,16 @@ import * as k8s from '@kubernetes/client-node';
 import yaml from 'js-yaml';
 import { logger } from '../../utils/logger.ts';
 import type { FinalReport, QuestionSet } from '../../langGraph/index.ts';
+import {
+  KUBERNETES_NAMESPACE,
+  KUBERNETES_JOB_IMAGE,
+  KUBERNETES_JOB_CPU_REQUEST,
+  KUBERNETES_JOB_MEMORY_REQUEST,
+  KUBERNETES_JOB_CPU_LIMIT,
+  KUBERNETES_JOB_MEMORY_LIMIT,
+  KUBERNETES_JOB_BACKOFF_LIMIT,
+  KUBERNETES_JOB_ACTIVE_DEADLINE_SECONDS,
+} from '../../config/env.ts';
 
 export interface EvalJobResult {
   jobName: string;
@@ -22,10 +32,6 @@ export interface GenJobResult {
   graphStatus?: string;
   message?: string;
   questionSet?: QuestionSet | null;
-  hardConstraints?: string[];
-  softConstraints?: string[];
-  hardConstraintsAnswers?: boolean[];
-  softConstraintsAnswers?: string[];
   evaluationScore?: number | undefined;
   finalReport?: FinalReport | null;
   analysis?: string;
@@ -77,7 +83,7 @@ export type JobTypes =
  */
 export async function applyAndWatchJob(
   name: string,
-  namespace: string,
+  namespace: string = KUBERNETES_NAMESPACE,
   path: string,
   timeoutMs: number = 300000,
   jobType: JobTypes,
@@ -94,7 +100,34 @@ export async function applyAndWatchJob(
     .replace(/[^a-z0-9-]/g, '-')
     .substring(0, 63);
 
-  // Kubernetes Job YAML configuration
+  // Forward necessary environment variables to the Kubernetes Job
+  const envVarsToForward = [
+    'DATABASE_URL',
+    'WS_URL',
+    'userToken',
+    'projectExId',
+    'NODE_ENV',
+    'OPENAI_API_KEY',
+    'AZURE_API_KEY',
+    'GEMINI_API_KEY',
+    'AZURE_OPENAI_ENDPOINT',
+    'AZURE_OPENAI_DEPLOYMENT',
+    'AZURE_OPENAI_API_VERSION',
+    'LLM_PROVIDER',
+    'OPENAI_MODEL',
+    'GEMINI_MODEL',
+    'LLM_TEMPERATURE',
+    'LLM_MAX_OUTPUT_TOKENS',
+    'BACKEND_GRAPHQL_URL',
+  ];
+
+  const envSpec = envVarsToForward
+    .filter((key) => process.env[key] !== undefined)
+    .map((key) => ({
+      name: key,
+      value: process.env[key],
+    }));
+
   const serializedArgs = scriptArgs
     .map((arg) => JSON.stringify(arg))
     .join(', ');
@@ -110,15 +143,22 @@ export async function applyAndWatchJob(
       spec:
         containers:
         - name: evaluator
-          image: evaluation
+          image: ${KUBERNETES_JOB_IMAGE}
           command: ["tsx", "${path}"${
     serializedArgs ? `, ${serializedArgs}` : ''
   }]
           env:
-          - name: NODE_ENV
-            value: "production"
+${envSpec.map((e) => `          - name: ${e.name}\n            value: ${JSON.stringify(e.value)}`).join('\n')}
+          resources:
+            requests:
+              cpu: ${KUBERNETES_JOB_CPU_REQUEST}
+              memory: ${KUBERNETES_JOB_MEMORY_REQUEST}
+            limits:
+              cpu: ${KUBERNETES_JOB_CPU_LIMIT}
+              memory: ${KUBERNETES_JOB_MEMORY_LIMIT}
         restartPolicy: OnFailure
-    backoffLimit: 3
+    backoffLimit: ${KUBERNETES_JOB_BACKOFF_LIMIT}
+    activeDeadlineSeconds: ${KUBERNETES_JOB_ACTIVE_DEADLINE_SECONDS}
   `;
 
   logger.debug('Applying Job with spec:', JOB_YAML);
@@ -188,14 +228,8 @@ export async function applyAndWatchJob(
 async function extractJobResultFromLogs(
   coreV1Api: k8s.CoreV1Api,
   jobName: string,
-  namespace: string,
-  jobType: JobTypes
-): Promise<
-  | Partial<EvalJobResult>
-  | Partial<GenJobResult>
-  | Partial<RubricReviewK8sJobResult>
-  | Partial<HumanEvaluationK8sJobResult>
-> {
+  namespace: string
+): Promise<object> {
   try {
     // List pods for this job
     const podsResponse = await coreV1Api.listNamespacedPod({
@@ -231,83 +265,16 @@ async function extractJobResultFromLogs(
     for (const line of lines) {
       if (line.includes('JOB_RESULT_JSON:')) {
         try {
-          if (jobType === 'evaluation') {
-            const jsonStr = line
-              .substring(
-                line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
-              )
-              .trim();
-            const result = JSON.parse(jsonStr);
-            logger.info(
-              `Extracted job result from logs: ${JSON.stringify(result)}`
-            );
-            return {
-              editableText: result.editableText,
-              schema: result.schema,
-            };
-          } else if (jobType === 'generation') {
-            const jsonStr = line
-              .substring(
-                line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
-              )
-              .trim();
-            const result = JSON.parse(jsonStr);
-            logger.info(
-              `Extracted job result from logs: ${JSON.stringify(result)}`
-            );
-            return {
-              sessionId: result.sessionId,
-              threadId: result.threadId,
-              graphStatus: result.graphStatus,
-              message: result.message,
-              questionSet: result.questionSet,
-              hardConstraints: result.hardConstraints,
-              softConstraints: result.softConstraints,
-              hardConstraintsAnswers: result.hardConstraintsAnswers,
-              softConstraintsAnswers: result.softConstraintsAnswers,
-              evaluationScore: result.evaluationScore,
-              finalReport: result.finalReport,
-              analysis: result.analysis,
-              error: result.error,
-            };
-          } else if (jobType === 'rubric-review') {
-            const jsonStr = line
-              .substring(
-                line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
-              )
-              .trim();
-            const result = JSON.parse(jsonStr);
-            logger.info(
-              `Extracted job result from logs: ${JSON.stringify(result)}`
-            );
-            return {
-              sessionId: result.sessionId,
-              threadId: result.threadId,
-              graphStatus: result.graphStatus,
-              message: result.message,
-              questionSetFinal: result.questionSetFinal,
-              finalReport: result.finalReport,
-              error: result.error,
-            };
-          } else if (jobType === 'human-evaluation') {
-            const jsonStr = line
-              .substring(
-                line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
-              )
-              .trim();
-            const result = JSON.parse(jsonStr);
-            logger.info(
-              `Extracted job result from logs: ${JSON.stringify(result)}`
-            );
-            return {
-              sessionId: result.sessionId,
-              threadId: result.threadId,
-              graphStatus: result.graphStatus,
-              message: result.message,
-              finalReport: result.finalReport,
-              error: result.error,
-            };
-          }
+          const jsonStr = line
+            .substring(
+              line.indexOf('JOB_RESULT_JSON:') + 'JOB_RESULT_JSON:'.length
+            )
+            .trim();
+          const result = JSON.parse(jsonStr) as object;
+          logger.info(
+            `Extracted job result from logs: ${JSON.stringify(result)}`
+          );
+          return result;
         } catch (parseErr) {
           logger.error('Failed to parse job result JSON from logs:', parseErr);
         }
@@ -375,8 +342,7 @@ async function watchJobStatus(
           const jobResult = await extractJobResultFromLogs(
             coreV1Api,
             jobName,
-            namespace,
-            jobType
+            namespace
           );
 
           if (jobType === 'evaluation') {
@@ -418,10 +384,6 @@ async function watchJobStatus(
               graphStatus: genResult.graphStatus,
               message: genResult.message,
               questionSet: genResult.questionSet,
-              hardConstraints: genResult.hardConstraints,
-              softConstraints: genResult.softConstraints,
-              hardConstraintsAnswers: genResult.hardConstraintsAnswers,
-              softConstraintsAnswers: genResult.softConstraintsAnswers,
               evaluationScore: genResult.evaluationScore,
               finalReport: genResult.finalReport,
               analysis: genResult.analysis,

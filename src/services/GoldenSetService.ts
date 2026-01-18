@@ -147,69 +147,6 @@ export class GoldenSetService {
       throw new Error('Failed to fetch golden sets');
     }
   }
-
-  async createGoldenSet(
-    projectExId: string,
-    copilotType: keyof typeof COPILOT_TYPES,
-    createdBy?: string
-  ): Promise<GoldenSetWithRelations> {
-    try {
-      const goldenSet = await prisma.goldenSet.create({
-        data: {
-          projectExId,
-          copilotType: COPILOT_TYPES[copilotType],
-          createdBy: createdBy ?? null,
-        },
-        include: {
-          userInput: true,
-          copilotOutput: true,
-          evaluationSessions: true,
-        },
-      });
-
-      logger.debug('Created golden set:', goldenSet.id);
-      return goldenSet;
-    } catch (error) {
-      logger.error('Error creating golden set:', error);
-      throw new Error('Failed to create golden set');
-    }
-  }
-
-  async addUserInput(
-    goldenSetId: number,
-    content: string,
-    description?: string,
-    createdBy?: string
-  ): Promise<userInput> {
-    try {
-      const goldenSet = await prisma.goldenSet.findUnique({
-        where: { id: goldenSetId },
-      });
-
-      if (!goldenSet) {
-        throw new Error('Golden set not found');
-      }
-
-      if (goldenSet.isActive) {
-        throw new Error('Cannot add input to an active golden set');
-      }
-
-      const userInput = await prisma.userInput.create({
-        data: {
-          goldenSetId,
-          content,
-          description: description ?? null,
-          createdBy: createdBy ?? null,
-        },
-      });
-
-      logger.debug('Added user input to golden set:', goldenSetId);
-      return userInput;
-    } catch (error) {
-      logger.error('Error adding user input:', error);
-      throw new Error('Failed to add user input');
-    }
-  }
 }
 
 export const goldenSetService = new GoldenSetService();

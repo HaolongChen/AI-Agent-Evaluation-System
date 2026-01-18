@@ -625,27 +625,6 @@ export const typeDefs = `#graphql
     # -------------------------------------------------------------------------
     # Golden Set Management
     # -------------------------------------------------------------------------
-    
-    """
-    Create a new golden set or return existing active one.
-    A golden set is identified uniquely by (projectExId, copilotType).
-    Only one active golden set can exist per triplet.
-    """
-    createGoldenSet(
-      projectExId: String!
-      copilotType: CopilotType!
-      createdBy: String
-    ): GoldenSet!
-
-    """
-    Add a user input test case to an existing golden set.
-    """
-    addUserInput(
-      goldenSetId: Int!
-      content: String!
-      description: String
-      createdBy: String
-    ): UserInput!
 
     """
     Upsert golden set with a new user input (atomic operation).

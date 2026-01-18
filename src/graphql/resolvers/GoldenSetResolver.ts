@@ -57,50 +57,6 @@ export const goldenSetResolver = {
   },
 
   Mutation: {
-    createGoldenSet: async (
-      _: unknown,
-      args: {
-        projectExId: string;
-        copilotType: keyof typeof COPILOT_TYPES;
-        createdBy?: string;
-      }
-    ) => {
-      try {
-        const result = await goldenSetService.createGoldenSet(
-          args.projectExId,
-          args.copilotType,
-          args.createdBy
-        );
-        return transformGoldenSet(result);
-      } catch (error) {
-        logger.error('Error creating golden set:', error);
-        throw new Error('Failed to create golden set');
-      }
-    },
-
-    addUserInput: async (
-      _: unknown,
-      args: {
-        goldenSetId: number;
-        content: string;
-        description?: string;
-        createdBy?: string;
-      }
-    ) => {
-      try {
-        const result = await goldenSetService.addUserInput(
-          args.goldenSetId,
-          args.content,
-          args.description,
-          args.createdBy
-        );
-        return result;
-      } catch (error) {
-        logger.error('Error adding user input:', error);
-        throw new Error('Failed to add user input');
-      }
-    },
-
     updateGoldenSetInput: async (
       _: unknown,
       args: {

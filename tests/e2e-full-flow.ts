@@ -80,7 +80,10 @@ function recordResult(
   data?: unknown,
   error?: string,
 ): void {
-  results.push({ step, success, duration, data, error });
+  const result: TestResult = { step, success, duration };
+  if (data !== undefined) result.data = data;
+  if (error !== undefined) result.error = error;
+  results.push(result);
   const status = success ? '\x1b[32mPASS\x1b[0m' : '\x1b[31mFAIL\x1b[0m';
   logger.info(`[${status}] ${step} (${duration}ms)`);
   if (error) {
@@ -338,6 +341,9 @@ async function step4_submitQuestionSetReview(
     }
 
     const firstQuestion = state.questionSetDraft.questions[0];
+    if (!firstQuestion) {
+      throw new Error('No questions in draft');
+    }
     const questionPatches = [
       {
         questionId: firstQuestion.id,
@@ -441,8 +447,14 @@ async function step5_submitHumanEvaluation(
     }
 
     const firstAnswer = state.agentEvaluation.answers[0];
+    if (!firstAnswer) {
+      throw new Error('No agent answers found');
+    }
     const lastAnswer =
       state.agentEvaluation.answers[state.agentEvaluation.answers.length - 1];
+    if (!lastAnswer) {
+      throw new Error('No last answer found');
+    }
 
     const answerPatches = [
       {

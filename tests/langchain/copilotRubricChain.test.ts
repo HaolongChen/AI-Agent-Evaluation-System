@@ -88,7 +88,7 @@ async function main(): Promise<void> {
     await testFallbackRubricGeneration();
   } catch (error) {
     logger.error('❌ LangChain tests failed');
-    logger.error(error);
+    logger.error(String(error));
     exitCode = 1;
   }
   process.exit(exitCode);

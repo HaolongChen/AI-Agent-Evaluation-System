@@ -30,7 +30,7 @@ async function main() {
         configurable: {
           "thread_id": "session111",
           provider: 'azure',
-          model: process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o',
+          model: process.env['AZURE_OPENAI_DEPLOYMENT'] || 'gpt-4o',
           projectExId: undefined,
           skipHumanReview: true,
           skipHumanEvaluation: true,
@@ -44,7 +44,7 @@ async function main() {
     const analysis = result.analysis || 'No analysis available';
     logger.info('Analysis (Azure):', analysis);
     // Test Gemini (optional)
-    if (process.env.GOOGLE_API_KEY && process.env.TEST_GEMINI === 'true') {
+    if (process.env['GOOGLE_API_KEY'] && process.env['TEST_GEMINI'] === 'true') {
       logger.info('Testing Gemini Provider...');
       const geminiResult = await automatedGraph.invoke(
         {
@@ -55,7 +55,7 @@ async function main() {
           configurable: {
             thread_id: 'session222',
             provider: 'gemini',
-            model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+            model: process.env['GEMINI_MODEL'] || 'gemini-2.0-flash',
             projectExId: undefined,
             skipHumanReview: true,
             skipHumanEvaluation: true,

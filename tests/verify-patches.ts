@@ -59,7 +59,7 @@ async function main(): Promise<void> {
   try {
     await verify();
   } catch (error) {
-    logger.error(error);
+    logger.error(String(error));
     exitCode = 1;
   } finally {
     await prisma.$disconnect();

@@ -25,7 +25,7 @@ async function testQuestionPatchMergeLogic(): Promise<void> {
 
   const goldenSet = await prisma.goldenSet.create({
     data: {
-      projectExId: process.env.projectExId || 'test-project',
+      projectExId: process.env['projectExId'] || 'test-project',
       copilotType: CopilotType.dataModel,
       isActive: true,
       createdBy: 'partial-update-test',
@@ -109,8 +109,13 @@ async function testQuestionPatchMergeLogic(): Promise<void> {
     questionIds: createdQuestions.map((q) => q.id),
   });
 
-  const firstQuestionId = createdQuestions[0].id;
-  const thirdQuestionId = createdQuestions[2].id;
+  const firstQuestion = createdQuestions[0];
+  const thirdQuestion = createdQuestions[2];
+  if (!firstQuestion || !thirdQuestion) {
+    throw new Error('Expected at least 3 questions');
+  }
+  const firstQuestionId = firstQuestion.id;
+  const thirdQuestionId = thirdQuestion.id;
 
   const patches = [
     {

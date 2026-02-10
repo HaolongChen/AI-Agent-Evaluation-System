@@ -113,20 +113,20 @@ async function testPatchPersistence() {
      })),
    );
 
-   assert.strictEqual(updatedRubrics[0].title, '[PATCHED] Original Question 1', 'Question 1 title should be patched');
-   assert.strictEqual(Number(updatedRubrics[0].weight), 15, 'Question 1 weight should be 15');
-   assert.strictEqual(updatedRubrics[1].content, '[PATCHED] Content 2', 'Question 2 content should be patched');
-   assert.strictEqual(updatedRubrics[1].expectedAnswer, true, 'Question 2 expectedAnswer should be true');
-   assert.strictEqual(Number(updatedRubrics[1].weight), 25, 'Question 2 weight should be 25');
-   assert.strictEqual(updatedRubrics[0].version, '1.0.1', 'Version should be updated to 1.0.1');
+   assert.strictEqual(updatedRubrics[0]?.title, '[PATCHED] Original Question 1', 'Question 1 title should be patched');
+   assert.strictEqual(Number(updatedRubrics[0]?.weight), 15, 'Question 1 weight should be 15');
+   assert.strictEqual(updatedRubrics[1]?.content, '[PATCHED] Content 2', 'Question 2 content should be patched');
+   assert.strictEqual(updatedRubrics[1]?.expectedAnswer, true, 'Question 2 expectedAnswer should be true');
+   assert.strictEqual(Number(updatedRubrics[1]?.weight), 25, 'Question 2 weight should be 25');
+   assert.strictEqual(updatedRubrics[0]?.version, '1.0.1', 'Version should be updated to 1.0.1');
 
    const allCorrect =
-     updatedRubrics[0].title === '[PATCHED] Original Question 1' &&
-     Number(updatedRubrics[0].weight) === 15 &&
-     updatedRubrics[1].content === '[PATCHED] Content 2' &&
-     updatedRubrics[1].expectedAnswer === true &&
-     Number(updatedRubrics[1].weight) === 25 &&
-     updatedRubrics[0].version === '1.0.1';
+     updatedRubrics[0]?.title === '[PATCHED] Original Question 1' &&
+     Number(updatedRubrics[0]?.weight) === 15 &&
+     updatedRubrics[1]?.content === '[PATCHED] Content 2' &&
+     updatedRubrics[1]?.expectedAnswer === true &&
+     Number(updatedRubrics[1]?.weight) === 25 &&
+     updatedRubrics[0]?.version === '1.0.1';
 
   await prisma.adaptiveRubric.deleteMany({ where: { sessionId: session.id } });
   await prisma.evaluationSession.delete({ where: { id: session.id } });
@@ -145,7 +145,7 @@ async function main(): Promise<void> {
   try {
     await testPatchPersistence();
   } catch (error) {
-    logger.error(error);
+    logger.error(String(error));
     exitCode = 1;
   } finally {
     await prisma.$disconnect();

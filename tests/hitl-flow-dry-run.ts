@@ -35,7 +35,7 @@ process.on('uncaughtException', (error) => {
 
 function createMockQuestionSet(): QuestionSet {
   const question: EvaluationQuestion = {
-    id: 'question-1',
+    id: 1,
     title: 'Correctness Check',
     content: 'Does the output correctly implement the requested functionality?',
     expectedAnswer: true,
@@ -43,7 +43,6 @@ function createMockQuestionSet(): QuestionSet {
   };
 
   return {
-    id: 'question-set-001',
     version: '1.0.0',
     questions: [question],
     totalWeight: 50,

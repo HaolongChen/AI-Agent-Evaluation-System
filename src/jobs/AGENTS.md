@@ -1,5 +1,7 @@
 # AGENTS.md - Job Runners
 
+> **Scope:** src/jobs/ | **Generated:** 2026-02-10
+
 ## OVERVIEW
 CLI job runners wrapping LangGraph workflows for batch and Kubernetes-orchestrated execution.
 

@@ -1,6 +1,8 @@
 # LangGraph HITL Workflow
 
-> Core evaluation workflow with Human-in-the-Loop (HITL) interrupts.
+> **Scope:** src/langGraph/ | **Generated:** 2026-02-10
+
+Core evaluation workflow with Human-in-the-Loop (HITL) interrupts.
 
 ## Overview
 
@@ -21,7 +23,7 @@ langGraph/
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Add workflow node | `nodes/` | Pure function, returns partial state |
+| Add workflow node | `nodes/` | Pure function, returns partial state (see nodes/AGENTS.md) |
 | Modify state shape | `state/state.ts` | Use Annotation system |
 | Add LLM provider | `llm/index.ts` | Implement `getLLM()` pattern |
 | Change graph flow | `agent.ts` | Conditional edges, interrupts |

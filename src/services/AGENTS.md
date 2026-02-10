@@ -1,6 +1,8 @@
 # Services - Business Logic Layer
 
+> **Scope:** src/services/ | **Generated:** 2026-02-10
 ## OVERVIEW
+
 Core business logic and database orchestration layer, delegating from GraphQL resolvers to Prisma DB operations.
 
 ## WHERE TO LOOK

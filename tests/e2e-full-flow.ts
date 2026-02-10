@@ -20,6 +20,34 @@ import type { QuestionSet, FinalReport } from '../src/langGraph/state/state.ts';
 
 config();
 
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+const TEST_DB_URL = process.env['TEST_DB_URL'];
+if (!TEST_DB_URL) {
+  logger.error('⚠️  SAFETY: TEST_DB_URL environment variable must be set to run E2E tests');
+  logger.error('This prevents accidental execution against production databases');
+  logger.error('Example: TEST_DB_URL=postgresql://user:pass@localhost:5432/testdb');
+  process.exit(2);
+}
+
+if (!TEST_DB_URL.includes('test') && !TEST_DB_URL.includes('dev')) {
+  logger.error('⚠️  SAFETY: TEST_DB_URL must contain "test" or "dev" in the connection string');
+  logger.error(`Current value: ${TEST_DB_URL}`);
+  logger.error('This is a safety check to prevent running against production');
+  process.exit(2);
+}
+
+logger.info(`✓ Using test database: ${TEST_DB_URL.replace(/:[^:@]+@/, ':***@')}`);
+
 const TEST_CONFIG = {
   useExistingGoldenSet: false,
   goldenSetId: 1,
@@ -535,6 +563,13 @@ async function runFullE2ETest(): Promise<void> {
   const totalStart = Date.now();
 
   try {
+    logger.warn('\n⚠️  WARNING: This test will DELETE data for project:');
+    logger.warn(`    Project ExID: ${TEST_CONFIG.projectExId}`);
+    logger.warn(`    Database: ${(TEST_DB_URL || '').replace(/:[^:@]+@/, ':***@')}`);
+    logger.warn('\n📢 Press Ctrl+C NOW if this is not a test database!');
+    logger.warn('Proceeding in 3 seconds...\n');
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
     logger.info('Cleaning up old test sessions...');
     await prisma.adaptiveRubricJudgeRecord.deleteMany({
       where: {

@@ -6,30 +6,42 @@ import {
   SchemaDownloaderForTest,
   schemaDownloader,
 } from "../src/langGraph/tools/SchemaDownloader.ts";
-import { getLLM } from "../src/langGraph/llm/index.ts";
+import { getLLM, invokeWithRetry } from "../src/langGraph/llm/index.ts";
+import { logger } from "../src/utils/logger.ts";
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
 
 const TEST_PROJECT_ID = "X57jbwZzB76";
 
 async function testSchemaDownloader() {
-  console.log("=== Testing Schema Downloader Tool ===\n");
+  logger.info("=== Testing Schema Downloader Tool ===\n");
 
   try {
-    console.log(`Downloading schema for projectExId: ${TEST_PROJECT_ID}...`);
+    logger.info(`Downloading schema for projectExId: ${TEST_PROJECT_ID}...`);
     const result = await SchemaDownloaderForTest(TEST_PROJECT_ID);
-    console.log("Schema download successful!");
-    console.log(
+    logger.info("Schema download successful!");
+    logger.info(
       "Result preview (first 500 chars):",
       result.substring(0, 500) + "...\n"
     );
     return true;
   } catch (error) {
-    console.error("Schema download failed:", error);
+    logger.error("Schema download failed:", error);
     return false;
   }
 }
 
 async function testAzureBindTools() {
-  console.log("=== Testing Azure OpenAI bindTools ===\n");
+  logger.info("=== Testing Azure OpenAI bindTools ===\n");
 
   try {
     const llm = getLLM({
@@ -39,73 +51,81 @@ async function testAzureBindTools() {
 
     // Check if bindTools method exists
     if (typeof llm.bindTools !== "function") {
-      console.error("Azure LLM does not have bindTools method");
+      logger.error("Azure LLM does not have bindTools method");
       return false;
     }
 
     const llmWithTools = llm.bindTools([schemaDownloader]);
-    console.log("Azure bindTools successful!");
+    logger.info("Azure bindTools successful!");
 
     // Test invoking with tools
-    const response = await llmWithTools.invoke([
-      new HumanMessage(
-        `Please use the schema_downloader tool to retrieve the database schema for project ID: ${TEST_PROJECT_ID}`
-      ),
-    ]);
+    const response = await invokeWithRetry(
+      () => llmWithTools.invoke([
+        new HumanMessage(
+          `Please use the schema_downloader tool to retrieve the database schema for project ID: ${TEST_PROJECT_ID}`
+        ),
+      ]),
+      'azure',
+      { operationName: 'tools-test.azureBindTools' }
+    );
 
-    console.log("Azure response with tools:");
-    console.log("Content:", response.content);
-    console.log("Tool calls:", JSON.stringify(response.tool_calls, null, 2));
+    logger.info("Azure response with tools:");
+    logger.info("Content:", response.content);
+    logger.info("Tool calls:", JSON.stringify(response.tool_calls, null, 2));
     return true;
   } catch (error) {
-    console.error("Azure bindTools test failed:", error);
+    logger.error("Azure bindTools test failed:", error);
     return false;
   }
 }
 
 async function testGeminiBindTools() {
-  console.log("\n=== Testing Gemini bindTools ===\n");
+  logger.info("\n=== Testing Gemini bindTools ===\n");
 
   try {
     const llm = getLLM({ provider: "gemini", model: "gemini-2.0-flash" });
 
     // Check if bindTools method exists
     if (typeof llm.bindTools !== "function") {
-      console.error("Gemini LLM does not have bindTools method");
+      logger.error("Gemini LLM does not have bindTools method");
       return false;
     }
 
     const llmWithTools = llm.bindTools([schemaDownloader]);
-    console.log("Gemini bindTools successful!");
+    logger.info("Gemini bindTools successful!");
 
     // Test invoking with tools
-    const response = await llmWithTools.invoke([
-      new HumanMessage(
-        `Please use the schema_downloader tool to retrieve the database schema for project ID: ${TEST_PROJECT_ID}`
-      ),
-    ]);
+    const response = await invokeWithRetry(
+      () => llmWithTools.invoke([
+        new HumanMessage(
+          `Please use the schema_downloader tool to retrieve the database schema for project ID: ${TEST_PROJECT_ID}`
+        ),
+      ]),
+      'gemini',
+      { operationName: 'tools-test.geminiBindTools' }
+    );
 
-    console.log("Gemini response with tools:");
-    console.log("Content:", response.content);
-    console.log("Tool calls:", JSON.stringify(response.tool_calls, null, 2));
+    logger.info("Gemini response with tools:");
+    logger.info("Content:", response.content);
+    logger.info("Tool calls:", JSON.stringify(response.tool_calls, null, 2));
     return true;
   } catch (error) {
-    console.error("Gemini bindTools test failed:", error);
+    logger.error("Gemini bindTools test failed:", error);
     return false;
   }
 }
 
 async function main() {
-  console.log("Starting Tools Tests...\n");
+  logger.info("Starting Tools Tests...\n");
 
   const schemaResult = await testSchemaDownloader();
   const azureResult = await testAzureBindTools();
   const geminiResult = await testGeminiBindTools();
 
-  console.log("\n=== Test Summary ===");
-  console.log(`Schema Downloader: ${schemaResult ? "✅ PASS" : "❌ FAIL"}`);
-  console.log(`Azure bindTools: ${azureResult ? "✅ PASS" : "❌ FAIL"}`);
-  console.log(`Gemini bindTools: ${geminiResult ? "✅ PASS" : "❌ FAIL"}`);
+  logger.info("\n=== Test Summary ===");
+  logger.info(`Schema Downloader: ${schemaResult ? "✅ PASS" : "❌ FAIL"}`);
+  logger.info(`Azure bindTools: ${azureResult ? "✅ PASS" : "❌ FAIL"}`);
+  logger.info(`Gemini bindTools: ${geminiResult ? "✅ PASS" : "❌ FAIL"}`);
 }
 
 main();

@@ -1,4 +1,17 @@
 import { prisma } from '../src/config/prisma.ts';
+import { logger } from '../src/utils/logger.ts';
+import assert from 'node:assert/strict';
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
 
 async function verify() {
   const latestSession = await prisma.evaluationSession.findFirst({
@@ -7,30 +20,51 @@ async function verify() {
   });
 
   if (!latestSession) {
-    console.log('No session found');
+    logger.info('No session found');
     return;
   }
 
-  console.log('Session ID:', latestSession.id);
+  assert.ok(latestSession, 'Session should exist');
+  logger.info('Session ID:', latestSession.id);
 
   const questions = await prisma.adaptiveRubric.findMany({
     where: { sessionId: latestSession.id, isActive: true },
     orderBy: { id: 'asc' }
   });
 
-  console.log('\n=== Questions (should see [E2E Modified] and weight 33) ===');
+  assert.ok(Array.isArray(questions), 'Questions should be an array');
+  assert.ok(questions.length > 0, 'Should have at least one question');
+
+  logger.info('\n=== Questions (should see [E2E Modified] and weight 33) ===');
   questions.forEach(q => {
-    console.log(`ID: ${q.id}, Weight: ${q.weight}, Title: ${q.title}`);
+    logger.info(`ID: ${q.id}, Weight: ${q.weight}, Title: ${q.title}`);
   });
 
   const finalReport = await prisma.evaluationResult.findFirst({
     where: { sessionId: latestSession.id }
   });
 
-  console.log('\n=== Final Report ===');
-  console.log('Verdict:', finalReport?.verdict);
-  console.log('Overall Score:', finalReport?.overallScore);
-  console.log('Discrepancies:', finalReport?.discrepancies ? 'Yes' : 'No');
+  assert.ok(finalReport, 'Final report should exist');
+  assert.ok(['pass', 'fail'].includes(finalReport.verdict), `Invalid verdict: ${finalReport.verdict}`);
+  assert.strictEqual(typeof finalReport.overallScore, 'number', 'Overall score should be a number');
+
+  logger.info('\n=== Final Report ===');
+  logger.info('Verdict:', finalReport?.verdict);
+  logger.info('Overall Score:', finalReport?.overallScore);
+  logger.info('Discrepancies:', finalReport?.discrepancies ? 'Yes' : 'No');
 }
 
-verify().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
+async function main(): Promise<void> {
+  let exitCode = 0;
+  try {
+    await verify();
+  } catch (error) {
+    logger.error(error);
+    exitCode = 1;
+  } finally {
+    await prisma.$disconnect();
+  }
+  process.exit(exitCode);
+}
+
+main();

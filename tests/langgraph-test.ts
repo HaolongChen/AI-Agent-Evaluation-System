@@ -1,8 +1,19 @@
-import { automatedGraph } from '../src/langGraph/agent.ts';
 import { config } from 'dotenv';
+import { automatedGraph } from '../src/langGraph/agent.ts';
 import { logger } from '../src/utils/logger.ts';
 
 config();
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
 
 async function main() {
   logger.info('Starting LangGraph test...');

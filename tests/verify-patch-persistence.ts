@@ -1,9 +1,22 @@
 import { prisma } from '../src/config/prisma.ts';
 import { evaluationPersistenceService } from '../src/services/EvaluationPersistenceService.ts';
 import type { QuestionSet } from '../src/langGraph/state/state.ts';
+import { logger } from '../src/utils/logger.ts';
+import assert from 'node:assert/strict';
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
 
 async function testPatchPersistence() {
-  console.log('=== Testing Patch Persistence ===\n');
+  logger.info('=== Testing Patch Persistence ===\n');
 
   const goldenSet = await prisma.goldenSet.create({
     data: {
@@ -49,7 +62,7 @@ async function testPatchPersistence() {
     }),
   ]);
 
-  console.log(
+  logger.info(
     'Created rubrics:',
     rubrics.map((r) => ({ id: r.id, title: r.title, weight: r.weight })),
   );
@@ -77,7 +90,7 @@ async function testPatchPersistence() {
     updatedAt: new Date().toISOString(),
   };
 
-  console.log('\nApplying patches...');
+  logger.info('\nApplying patches...');
   await evaluationPersistenceService.updateRubricQuestions(
     session.id,
     patchedQuestionSet,
@@ -88,41 +101,56 @@ async function testPatchPersistence() {
     orderBy: { id: 'asc' },
   });
 
-  console.log(
-    '\nUpdated rubrics:',
-    updatedRubrics.map((r) => ({
-      id: r.id,
-      title: r.title,
-      content: r.content,
-      expectedAnswer: r.expectedAnswer,
-      weight: Number(r.weight),
-      version: r.version,
-    })),
-  );
+   logger.info(
+     '\nUpdated rubrics:',
+     updatedRubrics.map((r) => ({
+       id: r.id,
+       title: r.title,
+       content: r.content,
+       expectedAnswer: r.expectedAnswer,
+       weight: Number(r.weight),
+       version: r.version,
+     })),
+   );
 
-  const allCorrect =
-    updatedRubrics[0].title === '[PATCHED] Original Question 1' &&
-    Number(updatedRubrics[0].weight) === 15 &&
-    updatedRubrics[1].content === '[PATCHED] Content 2' &&
-    updatedRubrics[1].expectedAnswer === true &&
-    Number(updatedRubrics[1].weight) === 25 &&
-    updatedRubrics[0].version === '1.0.1';
+   assert.strictEqual(updatedRubrics[0].title, '[PATCHED] Original Question 1', 'Question 1 title should be patched');
+   assert.strictEqual(Number(updatedRubrics[0].weight), 15, 'Question 1 weight should be 15');
+   assert.strictEqual(updatedRubrics[1].content, '[PATCHED] Content 2', 'Question 2 content should be patched');
+   assert.strictEqual(updatedRubrics[1].expectedAnswer, true, 'Question 2 expectedAnswer should be true');
+   assert.strictEqual(Number(updatedRubrics[1].weight), 25, 'Question 2 weight should be 25');
+   assert.strictEqual(updatedRubrics[0].version, '1.0.1', 'Version should be updated to 1.0.1');
+
+   const allCorrect =
+     updatedRubrics[0].title === '[PATCHED] Original Question 1' &&
+     Number(updatedRubrics[0].weight) === 15 &&
+     updatedRubrics[1].content === '[PATCHED] Content 2' &&
+     updatedRubrics[1].expectedAnswer === true &&
+     Number(updatedRubrics[1].weight) === 25 &&
+     updatedRubrics[0].version === '1.0.1';
 
   await prisma.adaptiveRubric.deleteMany({ where: { sessionId: session.id } });
   await prisma.evaluationSession.delete({ where: { id: session.id } });
   await prisma.goldenSet.delete({ where: { id: goldenSet.id } });
 
   if (allCorrect) {
-    console.log('\n✅ Patch persistence test PASSED');
+    logger.info('\n✅ Patch persistence test PASSED');
   } else {
-    console.log('\n❌ Patch persistence test FAILED');
-    console.log('Expected values did not match');
+    logger.info('\n❌ Patch persistence test FAILED');
+    logger.info('Expected values did not match');
   }
 }
 
-testPatchPersistence()
-  .then(() => process.exit(0))
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+async function main(): Promise<void> {
+  let exitCode = 0;
+  try {
+    await testPatchPersistence();
+  } catch (error) {
+    logger.error(error);
+    exitCode = 1;
+  } finally {
+    await prisma.$disconnect();
+  }
+  process.exit(exitCode);
+}
+
+main();

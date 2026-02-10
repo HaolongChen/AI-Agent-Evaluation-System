@@ -1,4 +1,16 @@
 import { strict as assert } from 'node:assert';
+import { logger } from '../../src/utils/logger.ts';
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
 
 const ENV_KEYS = [
   'OPENAI_API_KEY',
@@ -64,18 +76,22 @@ async function testFallbackRubricGeneration() {
       );
     }
 
-    console.log('✅ LangChain fallback rubric test passed');
+     logger.info('✅ LangChain fallback rubric test passed');
   } finally {
     restoreEnv(envSnapshot);
   }
 }
 
-async function run() {
-  await testFallbackRubricGeneration();
+async function main(): Promise<void> {
+  let exitCode = 0;
+  try {
+    await testFallbackRubricGeneration();
+  } catch (error) {
+    logger.error('❌ LangChain tests failed');
+    logger.error(error);
+    exitCode = 1;
+  }
+  process.exit(exitCode);
 }
 
-run().catch((error) => {
-  console.error('❌ LangChain tests failed');
-  console.error(error);
-  process.exit(1);
-});
+main();

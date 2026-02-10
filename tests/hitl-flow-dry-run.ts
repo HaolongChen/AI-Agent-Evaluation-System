@@ -7,6 +7,7 @@
  * Run: npx tsx tests/hitl-flow-dry-run.ts
  */
 
+import { logger } from '../src/utils/logger.ts';
 import type {
   GraphSessionStatus,
   StartSessionResult,
@@ -20,6 +21,17 @@ import type {
   QuestionAnswer,
   FinalReport,
 } from '../src/langGraph/state/state.ts';
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
 
 function createMockQuestionSet(): QuestionSet {
   const question: EvaluationQuestion = {
@@ -77,7 +89,7 @@ function createMockFinalReport(
 }
 
 function simulateHITLFlowStates(): void {
-  console.log('=== Simulating HITL Flow States ===\n');
+  logger.info('=== Simulating HITL Flow States ===\n');
 
   const mockQuestionSet = createMockQuestionSet();
 
@@ -90,11 +102,11 @@ function simulateHITLFlowStates(): void {
       'Graph paused for question set review. Call submitRubricReview to continue.',
   };
 
-  console.log('Step 1: startGraphSession');
-  console.log(`  Status: ${startResult.status}`);
-  console.log(`  Has questionSetDraft: ${startResult.questionSetDraft !== null}`);
-  console.log(`  Expected status: awaiting_rubric_review`);
-  console.log(
+  logger.info('Step 1: startGraphSession');
+  logger.info(`  Status: ${startResult.status}`);
+  logger.info(`  Has questionSetDraft: ${startResult.questionSetDraft !== null}`);
+  logger.info(`  Expected status: awaiting_rubric_review`);
+  logger.info(
     `  ✅ Status matches: ${startResult.status === 'awaiting_rubric_review'}\n`
   );
 
@@ -107,11 +119,11 @@ function simulateHITLFlowStates(): void {
       'Graph paused for human evaluation. Call submitHumanEvaluation to continue.',
   };
 
-  console.log('Step 2: submitRubricReview');
-  console.log(`  Status: ${reviewResult.status}`);
-  console.log(`  Has questionSetFinal: ${reviewResult.questionSetFinal !== null}`);
-  console.log(`  Expected status: awaiting_human_evaluation`);
-  console.log(
+  logger.info('Step 2: submitRubricReview');
+  logger.info(`  Status: ${reviewResult.status}`);
+  logger.info(`  Has questionSetFinal: ${reviewResult.questionSetFinal !== null}`);
+  logger.info(`  Expected status: awaiting_human_evaluation`);
+  logger.info(
     `  ✅ Status matches: ${
       reviewResult.status === 'awaiting_human_evaluation'
     }\n`
@@ -129,32 +141,32 @@ function simulateHITLFlowStates(): void {
     message: 'Evaluation completed successfully',
   };
 
-  console.log('Step 3: submitHumanEvaluation');
-  console.log(`  Status: ${humanEvalResult.status}`);
-  console.log(`  Has finalReport: ${humanEvalResult.finalReport !== null}`);
-  console.log(`  Expected status: completed`);
-  console.log(
+  logger.info('Step 3: submitHumanEvaluation');
+  logger.info(`  Status: ${humanEvalResult.status}`);
+  logger.info(`  Has finalReport: ${humanEvalResult.finalReport !== null}`);
+  logger.info(`  Expected status: completed`);
+  logger.info(
     `  ✅ Status matches: ${humanEvalResult.status === 'completed'}\n`
   );
 
-  console.log('Final Report Verification:');
-  console.log(`  Verdict: ${humanEvalResult.finalReport?.verdict}`);
-  console.log(`  Overall Score: ${humanEvalResult.finalReport?.overallScore}`);
-  console.log(
+  logger.info('Final Report Verification:');
+  logger.info(`  Verdict: ${humanEvalResult.finalReport?.verdict}`);
+  logger.info(`  Overall Score: ${humanEvalResult.finalReport?.overallScore}`);
+  logger.info(
     `  Has Agent Evaluation: ${
       humanEvalResult.finalReport?.agentEvaluation !== null
     }`
   );
-  console.log(
+  logger.info(
     `  Has Human Evaluation: ${
       humanEvalResult.finalReport?.humanEvaluation !== null
     }`
   );
-  console.log('');
+  logger.info('');
 }
 
 function simulateAutomatedFlowStates(): void {
-  console.log('=== Simulating Automated Flow States ===\n');
+  logger.info('=== Simulating Automated Flow States ===\n');
 
   const mockQuestionSet = createMockQuestionSet();
   const agentEval = createMockQuestionEvaluation(mockQuestionSet, 'agent');
@@ -168,14 +180,14 @@ function simulateAutomatedFlowStates(): void {
     message: 'Evaluation completed successfully',
   };
 
-  console.log('Automated Flow Result:');
-  console.log(`  Status: ${startResult.status}`);
-  console.log(`  Expected status: completed`);
-  console.log(`  ✅ Status matches: ${startResult.status === 'completed'}\n`);
+  logger.info('Automated Flow Result:');
+  logger.info(`  Status: ${startResult.status}`);
+  logger.info(`  Expected status: completed`);
+  logger.info(`  ✅ Status matches: ${startResult.status === 'completed'}\n`);
 }
 
 function verifyTypeCompatibility(): void {
-  console.log('=== Verifying Type Compatibility ===\n');
+  logger.info('=== Verifying Type Compatibility ===\n');
 
   const statuses: GraphSessionStatus[] = [
     'pending',
@@ -185,32 +197,31 @@ function verifyTypeCompatibility(): void {
     'failed',
   ];
 
-  console.log('Valid GraphSessionStatus values:');
-  statuses.forEach((s) => console.log(`  - ${s}`));
-  console.log('');
+  logger.info('Valid GraphSessionStatus values:');
+  statuses.forEach((s) => logger.info(`  - ${s}`));
+  logger.info('');
 
   const mockQuestionSet = createMockQuestionSet();
-  console.log('QuestionSet Structure:');
-  console.log(`  id: ${mockQuestionSet.id}`);
-  console.log(`  version: ${mockQuestionSet.version}`);
-  console.log(`  questions count: ${mockQuestionSet.questions.length}`);
-  console.log(`  totalWeight: ${mockQuestionSet.totalWeight}`);
-  console.log('');
+  logger.info('QuestionSet Structure:');
+  logger.info(`  version: ${mockQuestionSet.version}`);
+  logger.info(`  questions count: ${mockQuestionSet.questions.length}`);
+  logger.info(`  totalWeight: ${mockQuestionSet.totalWeight}`);
+  logger.info('');
 
   const question = mockQuestionSet.questions[0];
   if (question) {
-    console.log('EvaluationQuestion Structure:');
-    console.log(`  id: ${question.id}`);
-    console.log(`  title: ${question.title}`);
-    console.log(`  weight: ${question.weight}`);
-    console.log(`  expectedAnswer: ${question.expectedAnswer}`);
-    console.log(`  content: ${question.content.substring(0, 50)}...`);
+    logger.info('EvaluationQuestion Structure:');
+    logger.info(`  id: ${question.id}`);
+    logger.info(`  title: ${question.title}`);
+    logger.info(`  weight: ${question.weight}`);
+    logger.info(`  expectedAnswer: ${question.expectedAnswer}`);
+    logger.info(`  content: ${question.content.substring(0, 50)}...`);
   }
-  console.log('');
+  logger.info('');
 }
 
-console.log('HITL Flow Dry Run Test\n');
-console.log(
+logger.info('HITL Flow Dry Run Test\n');
+logger.info(
   'This test validates the interface types and expected state transitions.\n'
 );
 
@@ -218,4 +229,4 @@ simulateHITLFlowStates();
 simulateAutomatedFlowStates();
 verifyTypeCompatibility();
 
-console.log('=== All Dry Run Tests Completed ===');
+logger.info('=== All Dry Run Tests Completed ===');

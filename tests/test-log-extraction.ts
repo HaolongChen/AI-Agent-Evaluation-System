@@ -3,6 +3,20 @@
  * This simulates how the extractJobResultFromLogs function works
  */
 
+import { logger } from '../src/utils/logger.ts';
+import assert from 'node:assert/strict';
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 interface TaskMessage {
   type: string;
   taskId: string;
@@ -29,7 +43,10 @@ function extractResultFromMockLogs(logs: string): {
           )
           .trim();
         const result = JSON.parse(jsonStr);
-        console.log(
+        assert.ok(result, 'Extracted data should exist');
+        assert.strictEqual(typeof result, 'object', 'Extracted data should be an object');
+        assert.ok(result.response, 'Response field should be present');
+        logger.info(
           `✓ Extracted job result from logs: ${JSON.stringify(result, null, 2)}`
         );
         return {
@@ -37,17 +54,17 @@ function extractResultFromMockLogs(logs: string): {
           tasks: result.tasks,
         };
       } catch (parseErr) {
-        console.error('✗ Failed to parse job result JSON from logs:', parseErr);
+        logger.error('✗ Failed to parse job result JSON from logs:', parseErr);
       }
     }
   }
 
-  console.warn('✗ No job result found in logs');
+  logger.warn('✗ No job result found in logs');
   return {};
 }
 
 // Test case 1: Valid logs with response and tasks
-console.log('\n=== Test Case 1: Valid logs with response and tasks ===');
+logger.info('\n=== Test Case 1: Valid logs with response and tasks ===');
 const validLogs = `
 2024-01-01T00:00:00.000Z - WebSocket connection established.
 2024-01-01T00:00:01.000Z - Received initial state for project test-123.
@@ -57,7 +74,7 @@ JOB_RESULT_JSON: {"response":"AI created the data model successfully","tasks":[{
 extractResultFromMockLogs(validLogs);
 
 // Test case 2: Valid logs with response only (no tasks)
-console.log('\n=== Test Case 2: Valid logs with response only ===');
+logger.info('\n=== Test Case 2: Valid logs with response only ===');
 const logsWithoutTasks = `
 2024-01-01T00:00:00.000Z - WebSocket connection established.
 JOB_RESULT_JSON: {"response":"AI completed the task","tasks":null}
@@ -65,7 +82,7 @@ JOB_RESULT_JSON: {"response":"AI completed the task","tasks":null}
 extractResultFromMockLogs(logsWithoutTasks);
 
 // Test case 3: Logs without job result
-console.log('\n=== Test Case 3: Logs without job result ===');
+logger.info('\n=== Test Case 3: Logs without job result ===');
 const logsWithoutResult = `
 2024-01-01T00:00:00.000Z - WebSocket connection established.
 2024-01-01T00:00:01.000Z - Some other log message
@@ -73,11 +90,11 @@ const logsWithoutResult = `
 extractResultFromMockLogs(logsWithoutResult);
 
 // Test case 4: Invalid JSON in logs
-console.log('\n=== Test Case 4: Invalid JSON in logs ===');
+logger.info('\n=== Test Case 4: Invalid JSON in logs ===');
 const logsWithInvalidJson = `
 2024-01-01T00:00:00.000Z - WebSocket connection established.
 JOB_RESULT_JSON: {invalid json}
 `;
 extractResultFromMockLogs(logsWithInvalidJson);
 
-console.log('\n=== All test cases completed ===\n');
+logger.info('\n=== All test cases completed ===\n');

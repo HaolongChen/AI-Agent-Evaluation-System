@@ -9,6 +9,17 @@ import {
 
 config();
 
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 async function testQuestionPatchMergeLogic(): Promise<void> {
   logger.info('=== Test: Question Patch Merge Logic ===');
 

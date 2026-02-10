@@ -7,6 +7,17 @@ import type {
   IntrospectionTypeRef,
 } from 'graphql';
 
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  logger.error('Promise:', promise);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 // GraphQL introspection query to discover available queries and types
 const introspectionQuery = `
   query IntrospectionQuery {

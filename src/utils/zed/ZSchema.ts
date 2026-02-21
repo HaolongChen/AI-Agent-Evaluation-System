@@ -30,3 +30,52 @@ export const DEFAULT_DATA_MODEL: DataModel = {
   tableMetadata: [],
   relationMetadata: [],
 };
+
+/* tslint:disable */
+/* eslint-disable */
+// @generated
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL query operation: SupportedCustomModelDescriptor
+// ====================================================
+
+export interface SupportedCustomModelDescriptor_supportedCustomModelDescriptor {
+  __typename: 'SupportedCustomModelDescriptor';
+  chatModelDescriptors: (any | null)[] | null;
+  embeddingModelDescriptors: (any | null)[] | null;
+}
+
+export interface SupportedCustomModelDescriptor {
+  supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null;
+}
+
+export enum ColumnType {
+  BIGINT = 'BIGINT',
+  BIGSERIAL = 'BIGSERIAL',
+  BITMAP = 'BITMAP',
+  BOOLEAN = 'BOOLEAN',
+  DATE = 'DATE',
+  DECIMAL = 'DECIMAL',
+  FILE = 'FILE',
+  FLOAT8 = 'FLOAT8',
+  GEO_POINT = 'GEO_POINT',
+  IMAGE = 'IMAGE',
+  IMAGE_LIST = 'IMAGE_LIST',
+  INTEGER = 'INTEGER',
+  INTERVAL = 'INTERVAL',
+  JSONB = 'JSONB',
+  LOCATION_INFO = 'LOCATION_INFO',
+  TEXT = 'TEXT',
+  TIMESTAMPTZ = 'TIMESTAMPTZ',
+  TIMETZ = 'TIMETZ',
+  UNKNOWN = 'UNKNOWN',
+  VIDEO = 'VIDEO',
+}
+
+export enum AfCodeTemplateStatus {
+  CREATED = 'CREATED',
+  PUBLISHED = 'PUBLISHED',
+}
+
+export const SYSTEM_MODEL_PROVIDER = 'Functorz';

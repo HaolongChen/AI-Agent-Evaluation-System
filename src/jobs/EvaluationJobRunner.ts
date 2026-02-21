@@ -27,7 +27,7 @@ import { NODE_ENV } from '../config/env.ts';
 
 import { isNil, get } from 'lodash-es';
 import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
-import { assertNotNull, getError } from '../utils/zed/helpers.ts';
+import { assertNotNull, genExtraContext, getError } from '../utils/zed/helpers.ts';
 import type { ToolResult } from '../utils/graph-states.ts';
 import { SchemaDownloaderForTest } from '../langGraph/tools/SchemaDownloader.ts';
 
@@ -39,6 +39,7 @@ export class EvaluationJobRunner {
   private projectExId: string;
   private wsUrl: string;
   private query: string;
+  private typeSystemStore: TypeSystemStore;
   response: string = '';
   editableText: string = '';
   tasks: TaskMessage[] | null = null;
@@ -63,6 +64,7 @@ export class EvaluationJobRunner {
     this.projectExId = projectExId;
     this.wsUrl = wsUrl;
     this.query = query;
+    this.typeSystemStore = new TypeSystemStore();
     // Create the completion promise in the constructor
     this.completionPromise = new Promise<{
       // response: string;
@@ -183,6 +185,7 @@ export class EvaluationJobRunner {
             `Job for project ${this.projectExId} has stopped running.`
           );
           if (!this.isCompleted && this.rejectCompletion && !this.isSchemaSaving) {
+            logger.error('Job has stopped running unexpectedly');
             this.clearTimeout();
             this.isCompleted = true;
             this.rejectCompletion(
@@ -299,12 +302,24 @@ export class EvaluationJobRunner {
       : Locale.EN;
 
     try {
-      const typeSystemStore = new TypeSystemStore();
-      await typeSystemStore.rehydrate(this.projectExId);
+      const res = await Promise.allSettled([
+        this.typeSystemStore.getAFCustomCodeTemplates(),
+        this.typeSystemStore.getSupportedCustomModelDescriptor(),
+        this.typeSystemStore.rehydrate(this.projectExId)
+      ]);
+      if (res.some(r => r.status === 'rejected')) {
+        throw new Error('Failed to initialize type system store');
+      }
       const result: CopilotApiResult = Copilot.toolCalls(
-        assertNotNull(typeSystemStore.schemaGraph),
+        assertNotNull(this.typeSystemStore.schemaGraph),
+        genExtraContext(
+          this.typeSystemStore.supportedCustomModelDescriptor,
+          this.typeSystemStore.afCustomCodeTemplates
+        ),
+        null,
         product,
         clientType,
+        "WEB", // clientExId: wechat mini program, web, etc.
         locale,
         toolCalls
       );

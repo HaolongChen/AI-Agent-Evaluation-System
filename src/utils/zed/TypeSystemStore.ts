@@ -5,9 +5,15 @@ import { Crdt } from '@functorz/crdt-helper';
 import { login } from '../login.ts';
 import { FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD } from '../../config/env.ts';
 import { fromUint8Array } from 'js-base64';
+import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from './AfCustomCodeTemplates.ts';
+import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from './ZSchema.ts';
 
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
+  public afCustomCodeTemplates:
+    | AfCustomCodeTemplates_visibleAfCustomCodeTemplates[] = [];
+  public supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null =
+    null;
 
   get schemaGraph(): OpaqueSchemaGraph | null {
     return this.currSchemaGraph;
@@ -23,7 +29,7 @@ export class TypeSystemStore {
 
     if (!FUNCTORZ_PHONE_NUMBER || !FUNCTORZ_PASSWORD) {
       throw new Error(
-        'Missing FUNCTORZ_PHONE_NUMBER or FUNCTORZ_PASSWORD in environment variables'
+        'Missing FUNCTORZ_PHONE_NUMBER or FUNCTORZ_PASSWORD in environment variables',
       );
     }
 
@@ -116,6 +122,77 @@ export class TypeSystemStore {
     }
   }
 
+  async getAFCustomCodeTemplates(): Promise<
+    AfCustomCodeTemplates_visibleAfCustomCodeTemplates[]
+  > {
+    const query = `
+      query AfCustomCodeTemplates {
+        visibleAfCustomCodeTemplates {
+          async
+          exId
+          author
+          displayName
+          inputType {
+            ... on NodeTemplateVariable {
+              name
+              type
+              defaultValue
+              required
+              description
+            }
+          }
+          logoUrl
+          outputType {
+            ... on NodeTemplateVariable {
+              name
+              type
+              defaultValue
+              required
+              description
+            }
+          }
+          status
+          templateGroup
+          updatedAt
+          version
+        }
+      }
+    `;
+    try {
+      if (this.afCustomCodeTemplates) return this.afCustomCodeTemplates;
+      await this.ensureAuthenticated();
+      const result = await graphqlUtils.accessEndpointWithQuery(query, true);
+      return (this.afCustomCodeTemplates =
+        result as AfCustomCodeTemplates_visibleAfCustomCodeTemplates[]);
+    } catch (error) {
+      logger.error('Error fetching AF custom code templates:', error);
+      throw error;
+    }
+  }
+
+  async getSupportedCustomModelDescriptor(): Promise<SupportedCustomModelDescriptor_supportedCustomModelDescriptor> {
+    const query = `
+      query SupportedCustomModelDescriptor {
+        supportedCustomModelDescriptor {
+          chatModelDescriptors
+          embeddingModelDescriptors
+        }
+      }
+    `;
+    try {
+      if (this.supportedCustomModelDescriptor)
+        return this.supportedCustomModelDescriptor;
+      await this.ensureAuthenticated();
+      const result = await graphqlUtils.accessEndpointWithQuery(query, true);
+      this.supportedCustomModelDescriptor =
+        result as SupportedCustomModelDescriptor_supportedCustomModelDescriptor;
+      return this.supportedCustomModelDescriptor;
+    } catch (error) {
+      logger.error('Error fetching supported custom model descriptor:', error);
+      throw error;
+    }
+  }
+
   async rehydrate(projectExId: string): Promise<OpaqueSchemaGraph> {
     const lastUploadedSchema = await this.fetchAppDetailByExId(projectExId);
 
@@ -134,7 +211,7 @@ export class TypeSystemStore {
 
     // Get patch base64 strings
     const patchBase64Strings = lastUploadedSchema.crdtPatches?.patches?.map(
-      (patch) => patch.patchBase64
+      (patch) => patch.patchBase64,
     );
 
     // Use Crdt.initModel which handles base64 conversion internally
@@ -142,7 +219,7 @@ export class TypeSystemStore {
       binaryBase64,
       patchBase64Strings && patchBase64Strings.length > 0
         ? patchBase64Strings
-        : undefined
+        : undefined,
     );
 
     // 4. Get the schema JSON

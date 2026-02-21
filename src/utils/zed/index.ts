@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-use-before-define */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 export enum BackendOnlyActionFlowNodeType {
   CUSTOM_CODE = 'CUSTOM_CODE',
   TEMPLATE_CODE = 'TEMPLATE_CODE',
@@ -23,6 +26,9 @@ export enum GeneralActionFlowNodeType {
   BRANCH_MERGE = 'BRANCH_MERGE',
   FOR_EACH_START = 'FOR_EACH_START',
   FOR_EACH_END = 'FOR_EACH_END',
+  WHILE_START = 'WHILE_START',
+  WHILE_END = 'WHILE_END',
+  BREAK = 'BREAK',
 }
 export enum FrontendOnlyActionFlowNodeType {
   CONCURRENT_BRANCH_SEPARATION = 'CONCURRENT_BRANCH_SEPARATION',
@@ -60,6 +66,7 @@ export interface UploadFileEventBinding {
   successActions?: EventBinding[];
   type: EventType.UPLOAD_FILE;
 }
+export interface AlwaysTrueExp {}
 export interface BlankContainerAttributes {
   backgroundColor: DataBinding;
   backgroundImage?: BackgroundImage;
@@ -168,6 +175,7 @@ export interface ConditionalContainerChildAttributes {
   boxShadowOffsetY?: DataBinding;
   boxShadowSpreadRadius?: DataBinding;
   clickActions: EventBinding[];
+  cursor?: string;
   individualBorderRadius?: IndividualBorderRadius;
   individualBorderWidth?: IndividualBorderWidth;
 }
@@ -202,7 +210,7 @@ export interface CountDownAttributes {
   opacity: DataBinding;
   prefixTitle: DataBinding;
   rowNumberLimit: DataBinding;
-  step: LiteralOrDataBinding;
+  step: IntOrDataBinding;
   suffixTitle: DataBinding;
   textAlign: DataBinding;
   textDecorationColor: DataBinding;
@@ -636,7 +644,7 @@ export interface NumberInputAttributes {
   inputDisabled: DataBinding;
   max: DataBinding;
   min: DataBinding;
-  step: LiteralOrDataBinding;
+  step: IntOrDataBinding;
 }
 export interface OverrideAttributes {
   addContainerMRef?: string;
@@ -832,7 +840,7 @@ export interface OverrideAttributes {
   sortable?: DataBinding;
   sourceType?: SelectViewSourceType;
   start?: DataBinding;
-  step?: LiteralOrDataBinding;
+  step?: IntOrDataBinding;
   styleType?: SwitchStyleType;
   suffixTitle?: DataBinding;
   tabHeight?: number;
@@ -850,7 +858,7 @@ export interface OverrideAttributes {
   titleFontSize?: DataBinding;
   titleFontStyle?: DataBinding;
   titleFontWeight?: DataBinding;
-  totalProgress?: LiteralOrDataBinding;
+  totalProgress?: IntOrDataBinding;
   treatEmptyAsAll?: boolean;
   uploadLoadingEnabled?: boolean;
   uploadSizeType?: UploadSizeType;
@@ -1327,6 +1335,16 @@ export interface SuccessFailMerge {
   type: FrontendOnlyActionFlowNodeType.SUCCESS_FAIL_MERGE;
   uniqueId: string;
 }
+export interface WhileEnd {
+  andThenNodeId: string;
+  displayName?: string;
+  editable?: boolean;
+  previousNodeId: string;
+  removable?: boolean;
+  type: GeneralActionFlowNodeType.WHILE_END;
+  uniqueId: string;
+  whileStartNodeId: string;
+}
 export interface AICreateConversation {
   andThenNodeId: string;
   displayName?: string;
@@ -1386,6 +1404,16 @@ export interface BranchItem {
   editable?: boolean;
   removable?: boolean;
   type: GeneralActionFlowNodeType.BRANCH_ITEM;
+  uniqueId: string;
+}
+export interface Break {
+  andThenNodeId: string;
+  displayName?: string;
+  editable?: boolean;
+  loopEndNodeId: string;
+  previousNodeId: string;
+  removable?: boolean;
+  type: GeneralActionFlowNodeType.BREAK;
   uniqueId: string;
 }
 export interface CallActionFlow {
@@ -1514,6 +1542,17 @@ export interface UpdateRecord {
   type: BackendOnlyActionFlowNodeType.UPDATE_RECORD;
   uniqueId: string;
 }
+export interface WhileStart {
+  andThenNodeId: string;
+  condition: BoolExp<ConditionBoolExp>;
+  displayName?: string;
+  editable?: boolean;
+  previousNodeId: string;
+  removable?: boolean;
+  type: GeneralActionFlowNodeType.WHILE_START;
+  uniqueId: string;
+  whileEndNodeId: string;
+}
 export interface DraggableScreenAttributes {
   autoScaleChildComponentSizeByScreenWidthForLegacyProject?: boolean;
   backgroundColor: DataBinding;
@@ -1543,7 +1582,7 @@ export interface SimpleProgressBarAttributes {
   mode: string;
   onProgressChangeActions: EventBinding[];
   progress: DataBinding;
-  totalProgress: LiteralOrDataBinding;
+  totalProgress: IntOrDataBinding;
 }
 export interface TabViewAttributes {
   backgroundColor: DataBinding;
@@ -1582,12 +1621,12 @@ export interface ConcurrentBranchSeparation {
 export interface DataSelectorProperties {
   clearable?: boolean;
   dataSource?: DataSource;
-  defaultValue: DataBinding;
+  defaultValue?: DataBinding;
   displayDataField?: DataField;
   placeholder: DataBinding;
 }
 export interface DateTimePickerProperties {
-  defaultValue: DataBinding;
+  defaultValue?: DataBinding;
   end: DataBinding;
   mode: DateTimePickerMode;
   placeholder: DataBinding;
@@ -1595,7 +1634,7 @@ export interface DateTimePickerProperties {
   timeInterval: DataBinding;
 }
 export interface MixImagePickerProperties {
-  defaultValue: DataBinding;
+  defaultValue?: DataBinding;
   maxFileSize?: FileSize;
   maxImageCount: number;
   original: boolean;
@@ -1615,7 +1654,7 @@ export interface NumberInputProperties {
 export interface SelectViewProperties {
   cellKeyDataField?: DataField;
   dataSource?: DataSource;
-  defaultValue: DataBinding;
+  defaultValue?: DataBinding;
   deselectable: boolean;
   displayDataField?: DataField;
   isShowMultiLine: boolean;
@@ -1625,17 +1664,24 @@ export interface SelectViewProperties {
   treatEmptyAsAll: boolean;
 }
 export interface SwitchProperties {
-  defaultValue: DataBinding;
+  defaultValue?: DataBinding;
   styleType: SwitchStyleType;
 }
 export interface TextInputProperties {
   cursorSpacing: number;
-  defaultValue: DataBinding;
+  defaultValue?: DataBinding;
   focus: boolean;
   inputValueType: InputValueType;
   onChangeDebounceDuration: number;
   password: boolean;
   placeholder: DataBinding;
+}
+export interface VideoPickerProperties {
+  defaultValue?: DataBinding;
+  disablePreview: boolean;
+  maxFileSize?: FileSize;
+  uploadLoadingEnabled: boolean;
+  uploadSizeType?: UploadSizeType;
 }
 export interface ArrayElementMapping {
   arrayElementFieldMapping?: PathComponent;
@@ -1771,6 +1817,7 @@ export enum FormulaOperator {
   LOG = 'log',
   DECIMAL_FORMAT = 'decimal_format',
   NUMBER_FORMATTING = 'numberFormatting',
+  DURATION_FORMATTING = 'durationFormatting',
   EQUAL = 'equal',
   NOT_EQUAL = 'not_equal',
   STRING_CONCAT = 'stringConcat',
@@ -1824,7 +1871,9 @@ export enum FormulaOperator {
   TIMESTAMP_GET_DATE = 'timestampGetDate',
   TIMESTAMP_GET_TIME = 'timestampGetTime',
   DATE_TIME_FORMATTING = 'dateTimeFormatting',
+  RELATIVE_TIME_FORMATTING = 'relativeTimeFormatting',
   DISTANCE = 'distance',
+  CREATE_GEO_POINT = 'createGeoPoint',
   GET_VALUE_FROM_GEO_POINT = 'get_value_from_geo_point',
   ENUM_ENTRIES = 'enumEntries',
 }
@@ -1845,6 +1894,7 @@ export enum PrimitiveType {
 export enum SystemDefinedType {
   NULL = 'null',
   LOCATION_INFO = 'SYSTEM_DEFINED:OBJECT:location_info',
+  BITMAP = 'SYSTEM_DEFINED:PRIMITIVE:bitmap',
   BIGSERIAL = 'SYSTEM_DEFINED:PRIMITIVE:bigserial',
 }
 export interface ListViewProperties {
@@ -1869,6 +1919,27 @@ export interface FunctionBinding {
   pageMRef?: string;
   pathArgs?: Record<string, DataBinding>;
   value: BuiltInFunction;
+}
+export interface SendCustomVerificationCodeEventBinding {
+  contactType: SendVerificationCodeMethod.CUSTOM_CONFIG;
+  displayName?: string;
+  failedActions?: EventBinding[];
+  id: string;
+  sendVerificationCodeConfigId?: string;
+  successActions?: EventBinding[];
+  target?: DataBinding;
+  type: EventType.SEND_VERIFICATION_CODE;
+  verificationCodeType?: SendVerificationCodeType;
+}
+export interface SendSystemVerificationCodeEventBinding {
+  contactType: SendVerificationCodeMethod.SYSTEM_EMAIL | SendVerificationCodeMethod.SYSTEM_PHONE;
+  displayName?: string;
+  failedActions?: EventBinding[];
+  id: string;
+  successActions?: EventBinding[];
+  target?: DataBinding;
+  type: EventType.SEND_VERIFICATION_CODE;
+  verificationCodeType?: SendVerificationCodeType;
 }
 export interface AICreateConversationEventBinding {
   configId: string;
@@ -1911,6 +1982,7 @@ export interface AISendMessageEventBinding {
   conversationId: DataBinding;
   displayName?: string;
   failedActions?: EventBinding[];
+  file?: DataBinding;
   id: string;
   images?: DataBinding;
   reasoningContentAssignTo?: PathComponent[];
@@ -2281,16 +2353,6 @@ export interface ScanQRCodeEventBinding {
   successActions?: EventBinding[];
   type: EventType.SCAN_QR_CODE;
 }
-export interface SendVerificationCodeEventBinding {
-  contactType: SendVerificationCodeContactType;
-  displayName?: string;
-  failedActions?: EventBinding[];
-  id: string;
-  successActions?: EventBinding[];
-  target?: DataBinding;
-  type: EventType.SEND_VERIFICATION_CODE;
-  verificationCodeType?: SendVerificationCodeType;
-}
 export interface StripePaymentEventBinding {
   amount: DataBinding;
   currency: DataBinding;
@@ -2513,14 +2575,8 @@ export interface ColorTheme {
   displayName: string;
   id: string;
 }
-export interface VideoPickerProperties {
-  disablePreview: boolean;
-  maxFileSize?: FileSize;
-  uploadLoadingEnabled: boolean;
-  uploadSizeType?: UploadSizeType;
-  video?: DataBinding;
-}
 export interface HasBodyParameters {
+  bodyEncoders?: TypeCodec[];
   bodyParameters?: TypeAssignment;
   headerParameters?: PropertyEntry<TypeAssignment>[];
   pathParameters?: PropertyEntry<TypeAssignment>[];
@@ -2563,27 +2619,29 @@ export interface SetDataEventBinding {
   pathComponents?: PathComponent[];
   type: EventType.SET_GLOBAL_DATA | EventType.SET_PAGE_DATA;
 }
-export interface ImagePickerDeleteImageEventBinding {
+export interface MobileNavigationGotoEventBinding {
   displayName?: string;
   id: string;
-  index?: DataBinding;
-  targetMRef?: string;
-  type: EventType.IMAGE_PICKER_DELETE_IMAGE;
+  inputs?: Record<string, DataBinding>;
+  pageId: string;
+  transition: MobileNavigationTransitionType;
+  type: EventType.NAVIGATION_GO_TO_MOBILE;
 }
-export interface ImagePickerReplaceImageEventBinding {
+export interface WebNavigationGoToEventBinding {
   displayName?: string;
   id: string;
-  image?: DataBinding;
-  index?: DataBinding;
-  targetMRef?: string;
-  type: EventType.IMAGE_PICKER_REPLACE_IMAGE;
+  inputs?: Record<string, DataBinding>;
+  pageId: string;
+  transition: WebNavigationTransitionType;
+  type: EventType.NAVIGATION_GO_TO_WEB;
 }
-export interface RefreshCellEventBinding {
-  cellIndex?: DataBinding;
+export interface WechatNavigationGotoEventBinding {
   displayName?: string;
   id: string;
-  listMRef?: string;
-  type: EventType.REFRESH_CELL;
+  inputs?: Record<string, DataBinding>;
+  pageId: string;
+  transition: WechatNavigationTransitionType;
+  type: EventType.NAVIGATION_GO_TO_WECHAT;
 }
 export interface NavigationActionEventBinding {
   args?: Record<string, DataBinding>;
@@ -2647,30 +2705,6 @@ export interface ShowModalWithCallbackEventsEventBinding {
   showModalActionId: string;
   type: EventType.SHOW_MODAL_WITH_CALLBACK_EVENTS;
 }
-export interface MobileNavigationGotoEventBinding {
-  displayName?: string;
-  id: string;
-  inputs?: Record<string, DataBinding>;
-  pageId: string;
-  transition: MobileNavigationTransitionType;
-  type: EventType.NAVIGATION_GO_TO_MOBILE;
-}
-export interface WebNavigationGoToEventBinding {
-  displayName?: string;
-  id: string;
-  inputs?: Record<string, DataBinding>;
-  pageId: string;
-  transition: WebNavigationTransitionType;
-  type: EventType.NAVIGATION_GO_TO_WEB;
-}
-export interface WechatNavigationGotoEventBinding {
-  displayName?: string;
-  id: string;
-  inputs?: Record<string, DataBinding>;
-  pageId: string;
-  transition: WechatNavigationTransitionType;
-  type: EventType.NAVIGATION_GO_TO_WECHAT;
-}
 export interface ConfigureCameraEventBinding {
   devicePosition?: string;
   displayName?: string;
@@ -2704,6 +2738,21 @@ export interface ImagePickerAddImageEventBinding {
   targetMRef?: string;
   type: EventType.IMAGE_PICKER_ADD_IMAGE;
 }
+export interface ImagePickerDeleteImageEventBinding {
+  displayName?: string;
+  id: string;
+  index?: DataBinding;
+  targetMRef?: string;
+  type: EventType.IMAGE_PICKER_DELETE_IMAGE;
+}
+export interface ImagePickerReplaceImageEventBinding {
+  displayName?: string;
+  id: string;
+  image?: DataBinding;
+  index?: DataBinding;
+  targetMRef?: string;
+  type: EventType.IMAGE_PICKER_REPLACE_IMAGE;
+}
 export interface ListLoadMoreEventBinding {
   displayName?: string;
   id: string;
@@ -2725,6 +2774,13 @@ export interface PrintComponentEventBinding {
   displayName?: string;
   id: string;
   type: EventType.PRINT_COMPONENT;
+}
+export interface RefreshCellEventBinding {
+  cellIndex?: DataBinding;
+  displayName?: string;
+  id: string;
+  listMRef?: string;
+  type: EventType.REFRESH_CELL;
 }
 export interface RerunConditionEventBinding {
   displayName?: string;
@@ -2768,10 +2824,11 @@ export interface SetFoldModeEventBinding {
   type: EventType.SET_FOLD_MODE;
 }
 export interface SetVariableDataEventBinding {
+  action: SetDataOp;
   displayName?: string;
   id: string;
   targetComponentId: string;
-  targetVariable: string;
+  targetVariable?: string;
   type: EventType.SET_VARIABLE_DATA;
   value?: DataBinding;
 }
@@ -3064,12 +3121,14 @@ export interface SingleValueDataBinding {
 }
 export interface ArrayAverageFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.ARRAY_AVERAGE;
   resultType: string;
 }
 export interface ArrayConcatFormulaBinding {
+  displayName?: string;
   firstArray: DataBinding;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3078,6 +3137,7 @@ export interface ArrayConcatFormulaBinding {
   secondArray: DataBinding;
 }
 export interface ArrayFilterFormulaBinding {
+  displayName?: string;
   filter: BoolExp<ConditionBoolExp>;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3087,6 +3147,7 @@ export interface ArrayFilterFormulaBinding {
 }
 export interface ArrayFirstItemFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.ARRAY_FIRST_ITEM;
@@ -3094,6 +3155,7 @@ export interface ArrayFirstItemFormulaBinding {
 }
 export interface ArrayGetItemFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   index: DataBinding;
   kind: ValueBindingKind.FORMULA;
@@ -3102,6 +3164,7 @@ export interface ArrayGetItemFormulaBinding {
 }
 export interface ArrayIndexOfFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.INDEX_OF;
@@ -3110,12 +3173,14 @@ export interface ArrayIndexOfFormulaBinding {
 }
 export interface ArrayLastItemFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.ARRAY_LAST_ITEM;
   resultType: string;
 }
 export interface ArrayMappingFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   mappedItem: DataBinding;
@@ -3125,6 +3190,7 @@ export interface ArrayMappingFormulaBinding {
 }
 export interface ArrayMaxFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.ARRAY_MAX;
@@ -3132,6 +3198,7 @@ export interface ArrayMaxFormulaBinding {
 }
 export interface ArrayMinFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.ARRAY_MIN;
@@ -3139,6 +3206,7 @@ export interface ArrayMinFormulaBinding {
 }
 export interface ArrayRandomItemFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.RANDOM_ITEM;
@@ -3146,6 +3214,7 @@ export interface ArrayRandomItemFormulaBinding {
 }
 export interface ArraySliceFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.SLICE;
@@ -3155,12 +3224,14 @@ export interface ArraySliceFormulaBinding {
 }
 export interface ArraySumFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.ARRAY_SUM;
   resultType: string;
 }
 export interface BasicFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator;
@@ -3169,6 +3240,7 @@ export interface BasicFormulaBinding {
 }
 export interface CoalesceFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.COALESCE;
@@ -3177,6 +3249,7 @@ export interface CoalesceFormulaBinding {
 export interface CombineDateAndTimeFormulaBinding {
   date: DataBinding;
   dateFormat?: DateFormat;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.DATE_TIME_COMBINE;
@@ -3186,6 +3259,7 @@ export interface CombineDateAndTimeFormulaBinding {
 export interface CreateTimeFormulaBinding {
   dateFormat?: DateFormat;
   definedDateTime: TemporalData;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.CREATE_TIME;
@@ -3194,13 +3268,16 @@ export interface CreateTimeFormulaBinding {
 }
 export interface DateTimeFormattingFormulaBinding {
   dateTime: DataBinding;
-  format: DateFormat;
+  displayName?: string;
+  format: DataBinding;
   id: string;
   kind: ValueBindingKind.FORMULA;
+  language: Language;
   op?: FormulaOperator.DATE_TIME_FORMATTING;
   resultType: string;
 }
 export interface DateTimeFormulaBinding {
+  displayName?: string;
   durations: TimestampItem[];
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3211,6 +3288,7 @@ export interface DateTimeFormulaBinding {
 export interface DecimalFormulaBinding {
   clearTrailingZeros: boolean;
   decimal: DataBinding;
+  displayName?: string;
   fractionDigits: DataBinding;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3220,14 +3298,26 @@ export interface DecimalFormulaBinding {
   valueRecord: Record<string, DataBinding>;
 }
 export interface DecodeUrlFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.DECODE_URL;
   resultType: string;
   text: DataBinding;
 }
+export interface DurationFormattingFormulaBinding {
+  displayName?: string;
+  duration: DataBinding;
+  format: DataBinding;
+  id: string;
+  kind: ValueBindingKind.FORMULA;
+  op?: FormulaOperator.DURATION_FORMATTING;
+  resultType: string;
+  timeUnit: TimeUnit;
+}
 export interface DurationFormulaBinding {
   dateTimeUnit: DateTimeUnit;
+  displayName?: string;
   fromDateTime: DataBinding;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3236,6 +3326,7 @@ export interface DurationFormulaBinding {
   toDateTime: DataBinding;
 }
 export interface EncodeUrlFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.ENCODE_URL;
@@ -3243,6 +3334,7 @@ export interface EncodeUrlFormulaBinding {
   text: DataBinding;
 }
 export interface EnumEntriesFormulaBinding {
+  displayName?: string;
   enumId?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3250,6 +3342,7 @@ export interface EnumEntriesFormulaBinding {
   resultType: string;
 }
 export interface GeoDistanceFormulaBinding {
+  displayName?: string;
   end: DataBinding;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3258,7 +3351,17 @@ export interface GeoDistanceFormulaBinding {
   start: DataBinding;
   unit: DistanceMeasurement;
 }
+export interface GeoPointFormulaBinding {
+  displayName?: string;
+  id: string;
+  kind: ValueBindingKind.FORMULA;
+  latitude: DataBinding;
+  longitude: DataBinding;
+  op?: FormulaOperator.CREATE_GEO_POINT;
+  resultType: string;
+}
 export interface GeoPointGetValueFormulaBinding {
+  displayName?: string;
   geoPoint: DataBinding;
   getValueType: GeoPointGetValueType;
   id: string;
@@ -3268,6 +3371,7 @@ export interface GeoPointGetValueFormulaBinding {
 }
 export interface GetCurrentTimeFormulaBinding {
   dateFormat?: DateFormat;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.GET_CURRENT_TIME;
@@ -3277,6 +3381,7 @@ export interface GetCurrentTimeFormulaBinding {
 export interface JsonFormulaBinding {
   arrayElementFieldMapping?: PathComponent;
   arrayElementObjectMapping?: string[];
+  displayName?: string;
   id: string;
   json: DataBinding;
   keyPath?: string;
@@ -3290,12 +3395,14 @@ export interface JsonFormulaBinding {
 export interface LogFormulaBinding {
   argument: DataBinding;
   base: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.LOG;
   resultType: string;
 }
 export interface MathAbsFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.ABS;
@@ -3304,6 +3411,7 @@ export interface MathAbsFormulaBinding {
 }
 export interface MathPowerFormulaBinding {
   base: DataBinding;
+  displayName?: string;
   exponent: DataBinding;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3311,6 +3419,7 @@ export interface MathPowerFormulaBinding {
   resultType: string;
 }
 export interface MathRandomNumberFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   max: DataBinding;
@@ -3319,6 +3428,8 @@ export interface MathRandomNumberFormulaBinding {
   resultType: string;
 }
 export interface NumberFormattingFormulaBinding {
+  decimalPlaces?: number;
+  displayName?: string;
   format: NumberFormatEnum;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3327,6 +3438,7 @@ export interface NumberFormattingFormulaBinding {
   resultType: string;
 }
 export interface RandomStringFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   maxLength: DataBinding;
@@ -3338,6 +3450,7 @@ export interface RandomStringFormulaBinding {
   withUpperCaseLetter: DataBinding;
 }
 export interface RegexExtractFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.REGEX_EXTRACT | FormulaOperator.REGEX_EXTRACT_ALL;
@@ -3346,6 +3459,7 @@ export interface RegexExtractFormulaBinding {
   text: DataBinding;
 }
 export interface RegexMatchFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.REGEX_MATCH;
@@ -3354,6 +3468,7 @@ export interface RegexMatchFormulaBinding {
   text: DataBinding;
 }
 export interface RegexReplaceFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.REGEX_REPLACE;
@@ -3362,7 +3477,18 @@ export interface RegexReplaceFormulaBinding {
   resultType: string;
   text: DataBinding;
 }
+export interface RelativeTimeFormulaBinding {
+  dateTime: DataBinding;
+  displayName?: string;
+  hideSuffix?: boolean;
+  id: string;
+  kind: ValueBindingKind.FORMULA;
+  language: Language;
+  op?: FormulaOperator.RELATIVE_TIME_FORMATTING;
+  resultType: string;
+}
 export interface SequenceFormulaBinding {
+  displayName?: string;
   end: DataBinding;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3372,6 +3498,7 @@ export interface SequenceFormulaBinding {
   step: DataBinding;
 }
 export interface SubstringFromStartFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   numOfChar: DataBinding;
@@ -3380,6 +3507,7 @@ export interface SubstringFromStartFormulaBinding {
   text: DataBinding;
 }
 export interface SubstringToEndFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   numOfChar: DataBinding;
@@ -3388,6 +3516,7 @@ export interface SubstringToEndFormulaBinding {
   text: DataBinding;
 }
 export interface TextConcatFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op: FormulaOperator.STRING_CONCAT;
@@ -3396,6 +3525,7 @@ export interface TextConcatFormulaBinding {
   target: DataBinding;
 }
 export interface TextContainFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.STRING_CONTAIN;
@@ -3404,6 +3534,7 @@ export interface TextContainFormulaBinding {
   text: DataBinding;
 }
 export interface TextFindFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.STRING_FIND;
@@ -3412,6 +3543,7 @@ export interface TextFindFormulaBinding {
   text: DataBinding;
 }
 export interface TextRepeatFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.TEXT_REPEAT;
@@ -3420,6 +3552,7 @@ export interface TextRepeatFormulaBinding {
   times: DataBinding;
 }
 export interface TextReplaceFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   lengthToReplace: DataBinding;
@@ -3431,6 +3564,7 @@ export interface TextReplaceFormulaBinding {
 }
 export interface TextSplitFormulaBinding {
   delimiter: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.SPLIT;
@@ -3438,6 +3572,7 @@ export interface TextSplitFormulaBinding {
   text: DataBinding;
 }
 export interface TextSubstituteFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.SUBSTITUTE;
@@ -3450,6 +3585,7 @@ export interface TextSubstituteFormulaBinding {
 export interface TimeGetPartFormulaBinding {
   dateTime: DataBinding;
   dateTimeUnit: DateTimeUnit;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.DATE_PART;
@@ -3459,6 +3595,7 @@ export interface TimeOperationFormulaBinding {
   dateFormat?: DateFormat;
   dateTime: DataBinding;
   direction: TimeDirection;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.TIME_OPERATION;
@@ -3468,6 +3605,7 @@ export interface TimeOperationFormulaBinding {
 export interface TimestampGetDateOrTimeFormulaBinding {
   dateFormat?: DateFormat;
   dateTime: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.TIMESTAMP_GET_TIME | FormulaOperator.TIMESTAMP_GET_DATE;
@@ -3475,6 +3613,7 @@ export interface TimestampGetDateOrTimeFormulaBinding {
 }
 export interface ToDateTimeFormulaBinding {
   dateFormat?: DateFormat;
+  displayName?: string;
   format: DataBinding;
   id: string;
   kind: ValueBindingKind.FORMULA;
@@ -3483,6 +3622,7 @@ export interface ToDateTimeFormulaBinding {
   source: DataBinding;
 }
 export interface ToDecimalFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op: FormulaOperator.TO_DECIMAL;
@@ -3490,6 +3630,7 @@ export interface ToDecimalFormulaBinding {
   source: DataBinding;
 }
 export interface ToIntegerFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op: FormulaOperator.TO_INTEGER;
@@ -3497,6 +3638,7 @@ export interface ToIntegerFormulaBinding {
   source: DataBinding;
 }
 export interface ToStringFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op: FormulaOperator.TO_STRING;
@@ -3504,6 +3646,7 @@ export interface ToStringFormulaBinding {
   source: DataBinding;
 }
 export interface TrimFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.TRIM;
@@ -3511,6 +3654,7 @@ export interface TrimFormulaBinding {
   text: DataBinding;
 }
 export interface UUIDFormulaBinding {
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.UUID;
@@ -3518,6 +3662,7 @@ export interface UUIDFormulaBinding {
 }
 export interface UniqueFormulaBinding {
   array: DataBinding;
+  displayName?: string;
   id: string;
   kind: ValueBindingKind.FORMULA;
   op?: FormulaOperator.UNIQUE;
@@ -3649,6 +3794,11 @@ export interface ObjectLiteralBinding {
   id: string;
   kind: ValueBindingKind.JSON;
 }
+export interface SecretBinding {
+  id: string;
+  kind: ValueBindingKind.SECRET;
+  secretConfigId: string;
+}
 export interface MobileClientConfiguration {
   appDidLoad: EventBinding[];
   breakpointRecord: Record<string, BreakPoint>;
@@ -3732,6 +3882,7 @@ export interface CodeComponentActionsInput {
 export interface ModalEvents {
   componentDidMount?: EventBinding[];
   componentWillUnmount?: EventBinding[];
+  scheduledJobs?: ScheduledJob[];
 }
 export interface PageEvents {
   componentDidMount?: EventBinding[];
@@ -3751,7 +3902,7 @@ export interface ImageEvents {
   onScrollIntoPage?: ComponentRefactorInteraction[];
 }
 export interface RichTextEvents {
-  onClick?: ComponentRefactorInteraction[];
+  onClick?: BaseEventBinding[];
   onHover?: ComponentRefactorInteraction[];
   onPageScroll?: ComponentRefactorInteraction[];
   onScrollIntoPage?: ComponentRefactorInteraction[];
@@ -3825,6 +3976,64 @@ export interface ListViewEvents {
 }
 export interface LottieEvents {
   onComplete?: EventBinding[];
+}
+export interface ComponentRefactorGeneralSocialMediaSeoConfig {
+  seoDescription: SocialMediaConfigValue;
+  seoThumbnail: DataBinding;
+  seoTitle: SocialMediaConfigValue;
+}
+export interface ComponentRefactorXPlatformSeoConfig {
+  cardType: XPlatformCardType;
+  seoDescription: SocialMediaConfigValue;
+  seoThumbnail: DataBinding;
+  seoTitle: SocialMediaConfigValue;
+  siteUrl: DataBinding;
+}
+export interface ReadOnlyVariable {
+  dataSource: DataSource;
+  displayName?: string;
+  itemType: string | null;
+  name: string;
+  type: string;
+}
+export interface ReadWriteVariable {
+  defaultValue?: DataBinding;
+  displayName?: string;
+  itemType: string | null;
+  name: string;
+  type: string;
+}
+export interface GeneralInputVariable {
+  category: InputVariableCategory.GENERAL;
+  defaultValue?: DataBinding;
+  displayName?: string;
+  itemType: string | null;
+  name: string;
+  optional: boolean;
+  type: string;
+}
+export interface UrlPathInputVariable {
+  category: InputVariableCategory.URL_PATH;
+  displayName?: undefined;
+  itemType: string | null;
+  name: string;
+  type: string;
+}
+export interface UrlQueryInputVariable {
+  category: InputVariableCategory.URL_QUERY;
+  displayName?: undefined;
+  ignoreWhenEmpty?: boolean;
+  itemType: string | null;
+  name: string;
+  optional: boolean;
+  type: string;
+}
+export interface OutputVariable {
+  displayName?: string;
+  itemType: string | null;
+  name: string;
+  type: string;
+  value: DataBinding;
 }
 export interface ForeignKeyConstraint {
   name: string;
@@ -3908,7 +4117,9 @@ export interface NoBodyParameterApiMeta {
   url: DataBinding;
 }
 export interface ApplicationJsonResponse {
-  body: ObjectNode;
+  body?: ObjectNode;
+  bodyAssignment?: TypeAssignment;
+  bodyEncoders?: TypeCodec[];
   type: ContentType;
 }
 export interface TextHtmlResponse {
@@ -3937,7 +4148,7 @@ export interface Modal {
   id: string;
   inputs?: Record<string, InputVariable>;
   outputs?: Record<string, OutputVariable>;
-  properties?: ModalProperties;
+  properties: ModalProperties;
   type: ComponentRefactorComponentType.MODAL;
   variables?: Record<string, InnerVariable>;
 }
@@ -4196,6 +4407,17 @@ export interface MapMarker {
   properties: MapMarkerProperties;
   type: ComponentRefactorComponentType.MAP_MARKER;
 }
+export interface NavigationBar {
+  design?: ComponentDesign<GeneralComponentStyle<NavigationBarWrapperStyle>>;
+  displayName: string;
+  events?: undefined;
+  id: string;
+  parentComponentId: string;
+  properties: NavigationBarProperties;
+  type:
+    | ComponentRefactorComponentType.MOBILE_NAVIGATION_BAR
+    | ComponentRefactorComponentType.WECHAT_NAVIGATION_BAR;
+}
 export interface ProgressBar {
   design?: ComponentDesign<ProgressBarStyles>;
   displayName: string;
@@ -4231,15 +4453,6 @@ export interface Video {
   parentComponentId: string;
   properties: VideoProperties;
   type: ComponentRefactorComponentType.VIDEO;
-}
-export interface WechatNavigationBar {
-  design?: ComponentDesign<GeneralComponentStyle<WechatNavigationBarWrapperStyle>>;
-  displayName: string;
-  events?: undefined;
-  id: string;
-  parentComponentId: string;
-  properties: WechatNavigationBarProperties;
-  type: ComponentRefactorComponentType.WECHAT_NAVIGATION_BAR;
 }
 export interface WechatOfficialAccount {
   design?: ComponentDesign<GeneralComponentStyle<WechatOfficialAccountWrapperStyle>>;
@@ -4824,7 +5037,7 @@ export interface GeneralContainerMeta {
   componentFrame: ComponentFrame;
   componentFrameMinSize?: ComponentSize;
   componentHidden: boolean;
-  dataAttributes: null;
+  dataAttributes: EmptyAttributes;
   dataPathComponents?: PathComponent[];
   interactionPropertyRecord: { [key in InteractionType]?: InteractionProperty };
   interactionRecord: Record<string, Interaction>;
@@ -5261,7 +5474,7 @@ export interface GeneralComponentMeta {
   componentFrame: ComponentFrame;
   componentFrameMinSize?: ComponentSize;
   componentHidden: boolean;
-  dataAttributes: null;
+  dataAttributes: EmptyAttributes;
   interactionPropertyRecord: { [key in InteractionType]?: InteractionProperty };
   interactionRecord: Record<string, Interaction>;
   isFloating: boolean;
@@ -5347,66 +5560,6 @@ export interface SheetMeta {
   variantRecord?: Record<string, InteractionProperty>;
   verticalLayout?: ComponentVerticalLayout;
 }
-export interface ComponentRefactorGeneralSocialMediaSeoConfig {
-  seoDescription: SocialMediaConfigValue;
-  seoThumbnail: DataBinding;
-  seoTitle: SocialMediaConfigValue;
-}
-export interface ComponentRefactorXPlatformSeoConfig {
-  cardType: XPlatformCardType;
-  seoDescription: SocialMediaConfigValue;
-  seoThumbnail: DataBinding;
-  seoTitle: SocialMediaConfigValue;
-  siteUrl: DataBinding;
-}
-export interface ReadOnlyVariable {
-  dataSource: DataSource;
-  displayName?: string;
-  itemType: string | null;
-  name: string;
-  type: string;
-}
-export interface ReadWriteVariable {
-  defaultValue?: DataBinding;
-  displayName?: string;
-  itemType: string | null;
-  name: string;
-  type: string;
-}
-export interface GeneralInputVariable {
-  category: InputVariableCategory.GENERAL;
-  defaultValue?: DataBinding;
-  displayName?: string;
-  itemType: string | null;
-  name: string;
-  optional: boolean;
-  type: string;
-}
-export interface UrlPathInputVariable {
-  category: InputVariableCategory.URL_PATH;
-  defaultValue?: DataBinding;
-  displayName?: undefined;
-  itemType: string | null;
-  name: string;
-  type: string;
-}
-export interface UrlQueryInputVariable {
-  category: InputVariableCategory.URL_QUERY;
-  defaultValue?: DataBinding;
-  displayName?: undefined;
-  ignoreWhenEmpty?: boolean;
-  itemType: string | null;
-  name: string;
-  optional: boolean;
-  type: string;
-}
-export interface OutputVariable {
-  displayName?: string;
-  itemType: string | null;
-  name: string;
-  type: string;
-  value: DataBinding;
-}
 export interface DbDeleteTrigger {
   conditionAfterDelete: BoolExp<ConditionBoolExp>;
   dbOperationType: DbOperationType.DELETE;
@@ -5424,6 +5577,10 @@ export interface DbUpdateTrigger {
   conditionBeforeUpdate: BoolExp<ConditionBoolExp>;
   dbOperationType: DbOperationType.UPDATE;
   selectedColumns: ColumnSelections;
+}
+export interface BackgroundImageStyle {
+  autoResize?: boolean;
+  imageData?: DataBinding;
 }
 export interface CallActionFlowAction {
   actionFlowUniqueId?: string;
@@ -5464,6 +5621,13 @@ export interface PaymentPermission {
   allowAll?: boolean;
   allowedPaymentTypeAndMethod?: { [key in PaymentType]?: BillingType[] };
 }
+export interface SendVerificationCodeConfig {
+  actionFlowId?: string;
+  contactType: SendVerificationCodeContactType;
+  displayName: string;
+  id: string;
+  inputArgs?: Record<string, DataBinding>;
+}
 export interface TablePermission {
   aggregate?: TableAggregatePermission;
   count?: TableCountPermission;
@@ -5493,7 +5657,7 @@ export interface ZAiConfig {
   initPrompt?: DataBinding;
   inputArgs: Record<string, Variable>;
   maxRound?: number;
-  model: AiModel;
+  model?: AiModel;
   name: string;
   outputConfig: ZAiOutputConfig;
   promptComponents: PromptComponent[];
@@ -5586,6 +5750,9 @@ export interface MapMarkerProperties {
 export interface ModalProperties {
   closeOnClickOverlay?: boolean;
 }
+export interface NavigationBarProperties {
+  title: DataBinding;
+}
 export interface PageProperties {
   autoScaleChildComponentSizeByScreenWidthForLegacyProject?: boolean;
   htmlPagePath?: string;
@@ -5622,9 +5789,6 @@ export interface VideoProperties {
 }
 export interface ViewProperties {
   foldingConfig?: FoldingConfig;
-}
-export interface WechatNavigationBarProperties {
-  title: DataBinding;
 }
 export interface ConstantCondition {
   category: ConditionCategory.CONSTANT;
@@ -5664,8 +5828,8 @@ export interface ProgressBarAttributes {
   defaultProgress: DataBinding;
   exId: string;
   onProgressChangeActions: EventBinding[];
-  step: LiteralOrDataBinding;
-  totalProgress: LiteralOrDataBinding;
+  step: IntOrDataBinding;
+  totalProgress: IntOrDataBinding;
 }
 export interface SwitchAttributes {
   deselectedColor: DataBinding;
@@ -5676,6 +5840,7 @@ export interface SwitchAttributes {
   size: DataBinding;
   styleType: SwitchStyleType;
 }
+export interface EmptyAttributes {}
 export interface MarkerIconAttributes {
   imageObject: DataBinding;
   imageSource: DataBinding;
@@ -5768,7 +5933,7 @@ export interface ValueNode {
 }
 export interface AngleLinearGradientDirection {
   type: LinearGradientDirectionType.ANGLE;
-  value: DataBinding;
+  value: number;
 }
 export interface KeywordLinearGradientDirection {
   type: LinearGradientDirectionType.KEYWORD;
@@ -5887,6 +6052,7 @@ export interface CustomResponseConfig {
   category: ResponseConfigCategory.CUSTOM;
   codeAndContentType: CodeAndContentType[];
   name: string;
+  responseDecoders?: TypeCodec[];
   responseType: string;
   uniqueId: string;
 }
@@ -5894,38 +6060,9 @@ export interface FallbackResponseConfig {
   category: ResponseConfigCategory.FALLBACK;
   codeAndContentType: CodeAndContentType[];
   name: string;
+  responseDecoders?: TypeCodec[];
   responseType: string;
   uniqueId: string;
-}
-export interface LiveSchema {
-  appConfiguration: AppConfiguration;
-  callbackConfigurations: CallbackConfiguration[];
-  colorTheme: Record<string, string>;
-  colorThemeLabelMap: Record<string, string>;
-  customTypeDefinitions: Record<string, CustomTypeDefinition>;
-  dataModel: DataModel;
-  draftActionFlows: BackendActionFlow[];
-  editorConfiguration?: EditorConfiguration;
-  mRefMap: Record<string, ComponentMeta>;
-  pendingActionFlows: BackendActionFlow[];
-  roleConfigs: RoleConfig[];
-  scheduledJobConfigurations: ScheduledJobConfiguration[];
-  serverConfiguration?: ServerConfiguration;
-  thirdPartyApiConfigs: ThirdPartyApiConfig[];
-  triggerConfiguration?: TriggerConfiguration[];
-  typeConversionDefinitions?: TypeConversionDefinition[];
-  typeDefinitionById?: Record<string, TypeDefinition>;
-  webConfiguration: WebConfiguration;
-  webRootMRefs: string[];
-  wechatConfiguration: WechatConfiguration;
-  wechatRootMRefs: string[];
-  zAiConfigs: ZAiConfig[];
-  zedVersion: string;
-}
-export interface ZSchema {
-  clients?: ClientsSchema;
-  server?: ServerSchema;
-  version: string;
 }
 export interface ArrayTypeSchema {
   defs?: Record<string, Schema>;
@@ -6024,16 +6161,12 @@ export interface CallbackConfiguration {
   callbackType: CallbackType;
   enabled?: boolean;
   name?: string;
+  parameterDecoders?: TypeCodec[];
+  parameterType?: string;
   parameters: ThirdPartyParameter[];
   removable?: boolean;
   response?: CallbackResponse;
   uniqueId: string;
-}
-export interface PlatformContentNode {
-  colorTheme: Record<string, string>;
-  platform: Platform;
-  platformConfiguration: PlatformConfiguration;
-  rootMRefs: string[];
 }
 export interface RelationSelection {
   alias?: string;
@@ -6048,6 +6181,26 @@ export interface RoleConfig {
   name: string;
   permissionConfig: PermissionConfig;
   uuid: string;
+}
+export interface ServerSchema {
+  actionFlows?: BackendActionFlow[];
+  apiWorkSpaces?: ApiWorkSpace[];
+  authenticationConfig?: AuthenticationConfig;
+  callbackConfigurations?: CallbackConfiguration[];
+  customAiModelConfigs?: CustomLLMConfig[];
+  dataModel?: DataModel;
+  draftActionFlows?: BackendActionFlow[];
+  editorConfiguration?: ServerEditorConfiguration;
+  paymentConfigRecord?: { [key in PaymentType]?: PaymentConfiguration };
+  pendingActionFlows?: BackendActionFlow[];
+  roleConfigs?: RoleConfig[];
+  scheduledJobConfigurations?: ScheduledJobConfiguration[];
+  secretConfigs?: SecretConfig[];
+  sendVerificationCodeConfigs?: SendVerificationCodeConfig[];
+  thirdPartyApiConfigs?: ThirdPartyApiConfig[];
+  triggerConfigurations?: TriggerConfiguration[];
+  types?: TypesSchema;
+  zAiConfigs?: ZAiConfig[];
 }
 export interface TableMetadata {
   columnMetadata: ColumnMetadata[];
@@ -6091,7 +6244,7 @@ export interface LinearGradientColorStyle {
 }
 export interface PlainColorStyle {
   type: DefaultColorType;
-  value: DataBinding;
+  value: StringOrDataBinding;
 }
 export interface ButtonStyles {
   title?: TextStyleAsComponentWrapperStyle;
@@ -6167,21 +6320,21 @@ export interface ButtonWrapperStyle {
   cursor?: CursorStyle;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface CalendarWrapperStyle {
   background?: BackgroundColorStyle;
   border?: BorderStyle;
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface CameraWrapperStyle {
   layout?: BlockOrNoneLayoutStyle;
@@ -6196,12 +6349,12 @@ export interface CodeComponentWrapperStyle {
   cursor?: CursorStyle;
   layout?: LayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   overflow?: OverflowStyle;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface DataSelectorWrapperStyle {
   background?: BackgroundColorStyle;
@@ -6209,11 +6362,11 @@ export interface DataSelectorWrapperStyle {
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface DateTimePickerWrapperStyle {
   background?: BackgroundColorStyle;
@@ -6221,21 +6374,21 @@ export interface DateTimePickerWrapperStyle {
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface FilePickerWrapperStyle {
   background?: BackgroundColorStyle;
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface GeoMapWrapperStyle {
   border?: BorderStyle;
@@ -6251,11 +6404,11 @@ export interface HorizontalLineWrapperStyle {
   background?: BackgroundColorStyle;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface HtmlWrapperStyle {
   backdropFilter?: StyleOrSyntax<BackdropFilterWithBlurStyle>;
@@ -6265,12 +6418,12 @@ export interface HtmlWrapperStyle {
   cursor?: CursorStyle;
   layout?: LayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   overflow?: OverflowStyle;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface ImageWrapperStyle {
   backdropFilter?: StyleOrSyntax<BackdropFilterWithBlurStyle>;
@@ -6281,10 +6434,10 @@ export interface ImageWrapperStyle {
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
   objectFit?: ObjectFit;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface ListWrapperStyle {
   backdropFilter?: StyleOrSyntax<BackdropFilterWithBlurStyle>;
@@ -6293,11 +6446,11 @@ export interface ListWrapperStyle {
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface LottieProgressBarWrapperStyle {
   position?: PositionStyle;
@@ -6306,10 +6459,10 @@ export interface LottieProgressBarWrapperStyle {
 export interface LottieWrapperStyle {
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface MapMarkerWrapperStyle {
   layout?: BlockOrNoneLayoutStyle;
@@ -6324,10 +6477,10 @@ export interface MixImagePickerImageStyle {
 export interface MixImagePickerWrapperStyle {
   layout?: GridOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface ModalWrapperStyle {
   backdropFilter?: StyleOrSyntax<BackdropFilterWithBlurStyle>;
@@ -6335,12 +6488,16 @@ export interface ModalWrapperStyle {
   border?: BorderStyle;
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: LayoutStyle;
-  opacity?: DataBinding;
+  opacity?: number;
   overflow?: OverflowStyle;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
+}
+export interface NavigationBarWrapperStyle {
+  background?: BackgroundColorStyle;
+  text?: TextStyle;
 }
 export interface NumberInputWrapperStyle {
   background?: BackgroundColorStyle;
@@ -6348,10 +6505,10 @@ export interface NumberInputWrapperStyle {
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface PageWrapperStyle {
   background?: BackgroundStyle;
@@ -6367,10 +6524,10 @@ export interface ProgressBarWrapperStyle {
   background?: BackgroundColorStyle;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface RichTextEditorWrapperStyle {
   background?: BackgroundColorStyle;
@@ -6378,21 +6535,21 @@ export interface RichTextEditorWrapperStyle {
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
   text?: TextColorStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface RichTextWrapperStyle {
   backdropFilter?: StyleOrSyntax<BackdropFilterWithBlurStyle>;
   background?: BackgroundStyle;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface ScrollBarStyle {
   layout?: BlockOrNoneLayoutStyle;
@@ -6403,12 +6560,12 @@ export interface SelectViewWrapperStyle {
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   overflow?: OverflowStyle;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface SheetDividerStyle {
   background?: BackgroundColorStyle;
@@ -6426,27 +6583,28 @@ export interface SheetWrapperStyle {
   border?: BorderStyle;
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
-  opacity?: DataBinding;
+  margin?: StyleOrSyntax<PlainDimensionValues>;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface SwitchWrapperStyle {
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: WidthHeightSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface TabViewWrapperStyle {
   background?: BackgroundColorStyle;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface TextInputWrapperStyle {
   backdropFilter?: StyleOrSyntax<BackdropFilterWithBlurStyle>;
@@ -6455,11 +6613,11 @@ export interface TextInputWrapperStyle {
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface TextStyleAsComponentWrapperStyle {
   text?: TextStyle;
@@ -6475,10 +6633,10 @@ export interface TextWrapperStyle {
   cursor?: CursorStyle;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface VideoPickerWrapperStyle {
   background?: BackgroundColorStyle;
@@ -6486,23 +6644,24 @@ export interface VideoPickerWrapperStyle {
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface VideoWrapperStyle {
   backdropFilter?: StyleOrSyntax<BackdropFilterWithBlurStyle>;
+  background?: BackgroundColorStyle;
   border?: BorderStyle;
   boxShadow?: StyleOrSyntax<BoxShadowStyle>;
   cursor?: CursorStyle;
   layout?: BlockOrNoneLayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
   objectFit?: ObjectFit;
-  opacity?: DataBinding;
+  opacity?: number;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface ViewWrapperStyle {
   backdropFilter?: StyleOrSyntax<BackdropFilterWithBlurStyle>;
@@ -6512,22 +6671,18 @@ export interface ViewWrapperStyle {
   cursor?: CursorStyle;
   layout?: LayoutStyle;
   margin?: StyleOrSyntax<PlainDimensionValues>;
-  opacity?: DataBinding;
+  opacity?: number;
   overflow?: OverflowStyle;
   padding?: StyleOrSyntax<PlainDimensionValues>;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
-}
-export interface WechatNavigationBarWrapperStyle {
-  background?: BackgroundColorStyle;
-  text?: TextStyle;
+  zIndex?: number;
 }
 export interface WechatOfficialAccountWrapperStyle {
   layout?: LayoutStyle;
   position?: PositionStyle;
   size?: GeneralSizeStyle;
-  zIndex?: DataBinding;
+  zIndex?: number;
 }
 export interface AbsoluteOrFixedPositionStyle {
   bottom?: FixedLengthSyntax;
@@ -6548,11 +6703,11 @@ export interface BlockOrNoneLayoutStyle {
   display: LayoutDisplay.BLOCK | LayoutDisplay.NONE;
 }
 export interface GridLayoutStyle {
-  columnGap?: DataBinding;
+  columnGap?: number;
   display: LayoutDisplay.GRID;
-  gridTemplateColumns?: DataBinding;
-  gridTemplateRows?: DataBinding;
-  rowGap?: DataBinding;
+  gridTemplateColumns?: number;
+  gridTemplateRows?: number;
+  rowGap?: number;
 }
 export interface NoneLayoutStyle {
   display: LayoutDisplay.NONE;
@@ -6562,20 +6717,20 @@ export interface BlockLayoutStyle {
 }
 export interface FlexLayoutStyle {
   alignItems?: AlignItems;
-  columnGap?: DataBinding;
+  columnGap?: number;
   display: LayoutDisplay.FLEX;
   flexDirection?: FlexDirection;
   flexWrap?: FlexWrap;
   justifyContent?: JustifyContent;
-  rowGap?: DataBinding;
+  rowGap?: number;
 }
 export interface FixedLengthSyntax {
   unit: LengthUnit.FIXED;
-  value: DataBinding;
+  value: number;
 }
 export interface RelativeLengthSyntax {
   unit: LengthUnit.RELATIVE;
-  value: DataBinding;
+  value: number;
 }
 export interface AutoLengthSyntax {
   unit: LengthUnit.AUTO;
@@ -6599,15 +6754,11 @@ export interface WidthHeightSizeStyle {
   width?: SizeMeasure;
 }
 export interface BackdropFilterWithBlurStyle {
-  type?: BackdropFilterType;
-  value?: FixedLengthSyntax;
+  type: BackdropFilterType;
+  value: FixedLengthSyntax;
 }
 export interface BackgroundColorStyle {
   color?: StyleOrSyntax<ColorStyle>;
-}
-export interface BackgroundImageStyle {
-  autoResize?: boolean;
-  imageData?: DataBinding;
 }
 export interface BackgroundStyle {
   color?: StyleOrSyntax<ColorStyle>;
@@ -6639,7 +6790,7 @@ export interface CursorStyle {
   value?: CursorKeyword;
 }
 export interface LinearGradientColor {
-  color: DataBinding;
+  color: StringOrDataBinding;
   stop: LengthSyntaxWithValue;
 }
 export interface LinearGradientColorConfig {
@@ -6647,8 +6798,8 @@ export interface LinearGradientColorConfig {
   direction?: LinearGradientDirection;
 }
 export interface MultilineStyle {
-  enabled?: DataBinding;
-  lineClamp?: DataBinding;
+  enabled?: boolean;
+  lineClamp?: number;
 }
 export interface OverflowStyle {
   x?: Overflow;
@@ -6656,11 +6807,11 @@ export interface OverflowStyle {
 }
 export interface SizeMeasure {
   unit?: SizeUnit;
-  value?: DataBinding;
+  value?: number;
 }
 export interface SizeMinMaxMeasure {
   unit?: SizeMinMaxUnit;
-  value?: DataBinding;
+  value?: number;
 }
 export interface TextColorAndFontSizeStyle {
   color?: ColorStyle;
@@ -6676,10 +6827,10 @@ export interface TextDecoration {
 }
 export interface TextStyle {
   color?: ColorStyle;
-  fontFamily?: DataBinding;
+  fontFamily?: string;
   fontSize?: FixedLengthSyntax;
   fontStyle?: ComponentRefactorFontStyle;
-  fontWeight?: DataBinding;
+  fontWeight?: number;
   letterSpacing?: FixedLengthSyntax;
   lineHeight?: FixedLengthSyntax;
   multiline?: MultilineStyle;
@@ -6689,10 +6840,10 @@ export interface TextStyle {
 }
 export interface TextStyleWithoutMultiline {
   color?: ColorStyle;
-  fontFamily?: DataBinding;
+  fontFamily?: string;
   fontSize?: FixedLengthSyntax;
   fontStyle?: ComponentRefactorFontStyle;
-  fontWeight?: DataBinding;
+  fontWeight?: number;
   letterSpacing?: FixedLengthSyntax;
   lineHeight?: FixedLengthSyntax;
   textAlign?: ComponentRefactorTextAlign;
@@ -6701,10 +6852,10 @@ export interface TextStyleWithoutMultiline {
 }
 export interface TextStyleWithoutMultilineAndTextDecoration {
   color?: ColorStyle;
-  fontFamily?: DataBinding;
+  fontFamily?: string;
   fontSize?: FixedLengthSyntax;
   fontStyle?: ComponentRefactorFontStyle;
-  fontWeight?: DataBinding;
+  fontWeight?: number;
   letterSpacing?: FixedLengthSyntax;
   lineHeight?: FixedLengthSyntax;
   textAlign?: ComponentRefactorTextAlign;
@@ -6734,6 +6885,16 @@ export interface ThirdPartyParameter {
   uniqueId: string;
   uploadStrategy?: UploadStrategy;
   zType?: string;
+}
+export interface CurrentTypeCodec {
+  encoder: EncoderType;
+  type: TypeCodecType;
+}
+export interface TargetTypeFieldCodec {
+  encoder: EncoderType;
+  field: string;
+  type: TypeCodecType;
+  typeIdentifier: string;
 }
 export interface ObjectTypeDefinition {
   category: TypeDefinitionCategory.OBJECT;
@@ -6984,6 +7145,13 @@ export interface ScheduledJobConfiguration {
   triggerType?: ScheduledTriggerType;
   uniqueId: string;
 }
+export interface SecretConfig {
+  description?: string;
+  displayName: string;
+  id: string;
+  secretKey?: string;
+  type: SecretType;
+}
 export interface SeoPathDataValueOptions {
   optionsFromDataModel: DbQuery[];
   staticOptions: string[];
@@ -6993,23 +7161,6 @@ export interface ServerConfiguration {
 }
 export interface ServerEditorConfiguration {
   dataModel: DataModelEditorConfiguration;
-}
-export interface ServerSchema {
-  apiWorkSpaces?: ApiWorkSpace[];
-  authenticationConfig?: AuthenticationConfig;
-  callbackConfigurations?: CallbackConfiguration[];
-  customAiModelConfigs?: CustomLLMConfig[];
-  dataModel?: DataModel;
-  draftActionFlows?: BackendActionFlow[];
-  editorConfiguration?: ServerEditorConfiguration;
-  paymentConfigRecord?: { [key in PaymentType]?: PaymentConfiguration };
-  pendingActionFlows?: BackendActionFlow[];
-  roleConfigs?: RoleConfig[];
-  scheduledJobConfigurations?: ScheduledJobConfiguration[];
-  thirdPartyApiConfigs?: ThirdPartyApiConfig[];
-  triggerConfigurations?: TriggerConfiguration[];
-  types?: TypesSchema;
-  zAiConfigs?: ZAiConfig[];
 }
 export interface SheetColumnConfig {
   title?: DataBinding;
@@ -7032,16 +7183,16 @@ export interface TabBarItem {
   title: DataBinding;
 }
 export interface TabBarSetting {
-  backgroundColor: DataBinding;
-  color: DataBinding;
+  backgroundColor: StringOrDataBinding;
+  color: StringOrDataBinding;
   enabled?: boolean;
   items: TabBarItem[];
-  selectedColor: DataBinding;
+  selectedColor: StringOrDataBinding;
 }
 export interface TableExtension {
   columnName: string;
   customEmbeddingId?: Identifier;
-  generator: VectorGenerator;
+  generator?: VectorGenerator;
   tokenCountColumn: string;
   vectorColumn: string;
 }
@@ -7147,6 +7298,11 @@ export interface ZAiPermission {
   allowAll?: boolean;
   allowedZAiIds?: string[];
   checkById?: Record<string, BoolExp<ConditionBoolExp>>;
+}
+export interface ZSchema {
+  clients?: ClientsSchema;
+  server?: ServerSchema;
+  version: string;
 }
 export interface AuthenticationConfig {
   emailAuthConfig: GeneralConfigState;
@@ -7354,7 +7510,7 @@ export interface Identifier {
   namespace: string;
 }
 export interface ItemVariable {
-  args: unknown;
+  args: any;
   displayName?: string;
   itemType: string | null;
   nullable: boolean;
@@ -7566,6 +7722,9 @@ export enum BuiltInFunction {
   GET_PAGE_URL = 'getPageUrl',
   GET_WEB_REFERRER = 'getWebReferrer',
   GET_USER_AGENT = 'getUserAgent',
+  GET_CURRENT_VERIFICATION_CODE = 'getCurrentVerificationCode',
+  GET_CURRENT_VERIFICATION_CODE_TARGET = 'getCurrentVerificationCodeTarget',
+  GET_CURRENT_VERIFICATION_CODE_TYPE = 'getCurrentVerificationCodeType',
 }
 export enum CallbackType {
   DEFAULT = 'DEFAULT',
@@ -7682,6 +7841,7 @@ export enum ComponentRefactorComponentType {
   VIDEO = 'VIDEO',
   LOTTIE = 'LOTTIE',
   WECHAT_NAVIGATION_BAR = 'WECHAT_NAVIGATION_BAR',
+  MOBILE_NAVIGATION_BAR = 'MOBILE_NAVIGATION_BAR',
   RICH_TEXT = 'RICH_TEXT',
   TEXT_INPUT = 'TEXT_INPUT',
   NUMBER_INPUT = 'NUMBER_INPUT',
@@ -7890,7 +8050,7 @@ export enum DateTimeUnit {
   HOUR = 'hour',
   MINUTE = 'minute',
   SECOND = 'second',
-  MILLISECONDS = 'millisecond',
+  MILLISECOND = 'millisecond',
   WEEKDAY = 'weekday',
   WEEK = 'week',
 }
@@ -7908,6 +8068,11 @@ export enum DistanceMeasurement {
 export enum EmbeddingModel {
   TEXT_EMBEDDING_ADA_002 = 'TEXT_EMBEDDING_ADA_002',
   ZHIPU_TEXT_EMBEDDING = 'ZHIPU_TEXT_EMBEDDING',
+}
+export enum EncoderType {
+  MEDIA_TO_URL = 'MEDIA_TO_URL',
+  MEDIA_TO_BASE64 = 'MEDIA_TO_BASE64',
+  JSON_TO_STRING = 'JSON_TO_STRING',
 }
 export enum EnvironmentConditionType {
   OS_TYPE = 'os-type',
@@ -8166,6 +8331,10 @@ export enum KeywordLinearGradientDirectionValue {
   TO_BOTTOM_LEFT = 'to bottom left',
   TO_BOTTOM_RIGHT = 'to bottom right',
 }
+export enum Language {
+  EN = 'EN',
+  ZH = 'ZH',
+}
 export enum LayoutDisplay {
   FLEX = 'flex',
   GRID = 'grid',
@@ -8246,10 +8415,8 @@ export enum NavigationOperation {
   GO_BACK = 'go-back',
 }
 export enum NumberFormatEnum {
-  COUNT_DOWN_MINUTE_SECOND = 'COUNT_DOWN_MINUTE_SECOND',
-  COUNT_DOWN_HH_MM_SS = 'COUNT_DOWN_HH_MM_SS',
-  METER_TO_KILOMETER = 'METER_TO_KILOMETER',
   THOUSANDS_SEPARATOR = 'THOUSANDS_SEPARATOR',
+  PERCENT = 'PERCENT',
 }
 export enum OAuth2AuthorizationGrantType {
   AUTHORIZATION_CODE = 'AUTHORIZATION_CODE',
@@ -8371,6 +8538,9 @@ export enum ScrollToMode {
   NEXT = 'next',
   PREV = 'prev',
 }
+export enum SecretType {
+  CUSTOM = 'CUSTOM',
+}
 export enum SelectViewSourceType {
   QUERY = 'QUERY',
   LOCAL = 'LOCAL',
@@ -8378,6 +8548,11 @@ export enum SelectViewSourceType {
 export enum SendVerificationCodeContactType {
   PHONE = 'phone',
   EMAIL = 'email',
+}
+export enum SendVerificationCodeMethod {
+  SYSTEM_PHONE = 'phone',
+  SYSTEM_EMAIL = 'email',
+  CUSTOM_CONFIG = 'custom',
 }
 export enum SendVerificationCodeType {
   REGISTER = 'register',
@@ -8498,8 +8673,19 @@ export enum TimeDirection {
   LATER = 'later',
   BEFORE = 'before',
 }
+export enum TimeUnit {
+  DAY = 'day',
+  HOUR = 'hour',
+  MINUTE = 'minute',
+  SECOND = 'second',
+  MILLISECONDS = 'millisecond',
+}
 export enum TriggerType {
   DB_TRIGGER = 'DB_TRIGGER',
+}
+export enum TypeCodecType {
+  CURRENT = 'CURRENT',
+  TARGET_FIELD = 'TARGET_FIELD',
 }
 export enum TypeDefinitionCategory {
   OBJECT = 'OBJECT',
@@ -8552,6 +8738,7 @@ export enum ValueBindingKind {
   IMAGE = 'image',
   VIDEO = 'video',
   FILE = 'file',
+  SECRET = 'secret',
   INPUT = 'input',
   SELECTION = 'selection',
   ARRAY_ELEMENT_MAPPING = 'arrayElementMapping',
@@ -8637,7 +8824,12 @@ export type Emphasis =
   | CommonEmphasis
   | FlipEmphasis;
 
-export type BlockEndNode = BranchMerge | ConcurrentBranchMerge | ForEachEnd | SuccessFailMerge;
+export type BlockEndNode =
+  | BranchMerge
+  | ConcurrentBranchMerge
+  | ForEachEnd
+  | SuccessFailMerge
+  | WhileEnd;
 
 export type BackgroundAttributes = CombinedStyleAttributes | DraggableScreenAttributes;
 
@@ -8647,13 +8839,16 @@ export type TextStyleAttributes =
   | OverrideAttributes
   | TextAttributes;
 
+export type ExtraAttributesFromInput = InputAttributes | OverrideAttributes;
+
 export type PropertyMappable = ArrayElementMapping | InputBinding | VariableBinding;
 
 export type BlockCreatable =
   | BranchSeparation
   | CallAction
   | ConcurrentBranchSeparation
-  | ForEachStart;
+  | ForEachStart
+  | WhileStart;
 
 export type ColumnOperator = GenericOperator | TextOperator;
 
@@ -8661,14 +8856,24 @@ export type ExpressionConditionType = BooleanOperator | CollectionOperator | Gen
 
 export type ComponentBinding = InputBinding;
 
+export type SendVerificationCodeEventBinding =
+  | SendCustomVerificationCodeEventBinding
+  | SendSystemVerificationCodeEventBinding;
+
 export type GenerateImageEventBinding =
   | GenerateMiniProgramCodeEventBinding
   | GenerateQRCodeEventBinding;
+
+export type NavigationGoToEventBinding =
+  | MobileNavigationGotoEventBinding
+  | WebNavigationGoToEventBinding
+  | WechatNavigationGotoEventBinding;
 
 export type HasGlobalTargetPageComponentIdEventBinding =
   | GenerateMiniProgramCodeEventBinding
   | NavigationActionEventBinding
   | NavigationGoBackEventBinding
+  | NavigationGoToEventBinding
   | SsoBindEventBinding
   | SsoLoginOrRegisterEventBinding
   | WechatShareEventBinding;
@@ -8678,11 +8883,6 @@ export type HasTargetComponentIdForAssignEventBinding =
   | SetInputValueEventBinding;
 
 export type HasTargetModalIdEventBinding = ShowModalWithCallbackEventsEventBinding;
-
-export type NavigationGoToEventBinding =
-  | MobileNavigationGotoEventBinding
-  | WebNavigationGoToEventBinding
-  | WechatNavigationGotoEventBinding;
 
 export type FullScreenImageEventBinding =
   | FullScreenCurrentImageEventBinding
@@ -8729,10 +8929,10 @@ export type HasAssignToEventBinding =
   | UploadFileEventBinding
   | ZAITaskEventBinding;
 
-export type HasIndexEventBinding =
-  | ImagePickerDeleteImageEventBinding
-  | ImagePickerReplaceImageEventBinding
-  | RefreshCellEventBinding;
+export type HasStreamingAssignToEventBinding =
+  | AICreateConversationEventBinding
+  | AISendMessageEventBinding
+  | ZAITaskEventBinding;
 
 export type HasTargetComponentIdEventBinding =
   | ComponentToBitmapEventBinding
@@ -8749,7 +8949,6 @@ export type HasTargetComponentIdEventBinding =
   | ImagePickerReplaceImageEventBinding
   | ListLoadMoreEventBinding
   | LottieEventBinding
-  | NavigationGoToEventBinding
   | PrintComponentEventBinding
   | RefreshCellEventBinding
   | RerunConditionEventBinding
@@ -8825,7 +9024,7 @@ export type EventBinding =
   | HasAIConversationIdEventBinding
   | HasArgsEventBinding
   | HasAssignToEventBinding
-  | HasIndexEventBinding
+  | HasStreamingAssignToEventBinding
   | HasTargetComponentIdEventBinding
   | ImageFilterEventBinding
   | ListEventBinding
@@ -8916,10 +9115,12 @@ export type FormulaBinding =
   | DateTimeFormulaBinding
   | DecimalFormulaBinding
   | DecodeUrlFormulaBinding
+  | DurationFormattingFormulaBinding
   | DurationFormulaBinding
   | EncodeUrlFormulaBinding
   | EnumEntriesFormulaBinding
   | GeoDistanceFormulaBinding
+  | GeoPointFormulaBinding
   | GeoPointGetValueFormulaBinding
   | GetCurrentTimeFormulaBinding
   | JsonFormulaBinding
@@ -8932,6 +9133,7 @@ export type FormulaBinding =
   | RegexExtractFormulaBinding
   | RegexMatchFormulaBinding
   | RegexReplaceFormulaBinding
+  | RelativeTimeFormulaBinding
   | SequenceFormulaBinding
   | SubstringFromStartFormulaBinding
   | SubstringToEndFormulaBinding
@@ -8984,6 +9186,7 @@ export type ValueBinding =
   | LiteralBinding
   | MediaBinding
   | ObjectLiteralBinding
+  | SecretBinding
   | VariableBinding;
 
 export type CodeComponentValueInput = CodeComponentMRefInput | CodeComponentVariableAssignment;
@@ -8995,6 +9198,8 @@ export type HasInteractions =
   | TextEvents
   | VideoEvents
   | ViewEvents;
+
+export type HasComponentRefactorScheduledJobs = ModalEvents | PageEvents;
 
 export type HasLifeCycle = ModalEvents | PageEvents;
 
@@ -9022,6 +9227,16 @@ export type HasOnValueChange =
   | TextInputEvents
   | VideoPickerEvents;
 
+export type InnerVariable = ReadOnlyVariable | ReadWriteVariable;
+
+export type InputVariable = GeneralInputVariable | UrlPathInputVariable | UrlQueryInputVariable;
+
+export type OptionalVariable = GeneralInputVariable | UrlQueryInputVariable;
+
+export type WithDataSource = ReadOnlyVariable;
+
+export type WithDefaultValue = GeneralInputVariable | ReadWriteVariable;
+
 export type RemoteDataSource = ThirdPartyQuery | ZQuery;
 
 export type AccountRoleNode = AddRoleToAccount | RemoveRoleFromAccount;
@@ -9030,10 +9245,13 @@ export type GeneralActionFlowNode =
   | BranchItem
   | BranchMerge
   | BranchSeparation
+  | Break
   | FlowEnd
   | FlowStart
   | ForEachEnd
-  | ForEachStart;
+  | ForEachStart
+  | WhileEnd
+  | WhileStart;
 
 export type BackendActionFlowNode =
   | AICreateConversation
@@ -9083,6 +9301,8 @@ export type ComponentWithOptionalPrivateScope = LayoutView | ListView | Modal | 
 
 export type Container = LayoutComponent | Modal | Page;
 
+export type HasItemComponents = GeoMap | ListView | SelectView | TabView;
+
 export type HasDataSourceRefactorComponent =
   | DataSelector
   | GeoMap
@@ -9115,6 +9335,7 @@ export type HasParentComponent =
   | LottieProgressBar
   | MapMarker
   | MixImagePicker
+  | NavigationBar
   | NumberInput
   | ProgressBar
   | RichText
@@ -9127,17 +9348,13 @@ export type HasParentComponent =
   | TextInput
   | Video
   | VideoPicker
-  | WechatNavigationBar
   | WechatOfficialAccount;
 
 export type HasSubComponents =
   | ComponentWithOptionalPrivateScope
   | ConditionalView
   | Container
-  | GeoMap
-  | ListView
-  | SelectView
-  | TabView;
+  | HasItemComponents;
 
 export type HasVariables = RootComponent;
 
@@ -9386,12 +9603,6 @@ export type ComponentMeta =
   | VideoPickerMeta
   | WechatNavigationBarMeta;
 
-export type InnerVariable = ReadOnlyVariable | ReadWriteVariable;
-
-export type InputVariable = GeneralInputVariable | UrlPathInputVariable | UrlQueryInputVariable;
-
-export type OptionalVariable = GeneralInputVariable | UrlQueryInputVariable;
-
 export type ActionFlowNode =
   | BackendActionFlowNode
   | BlockCreatable
@@ -9403,16 +9614,6 @@ export type ApiMeta = HasBodyParameterApiMeta | NoBodyParameterApiMeta;
 export type CallbackResponse = ApplicationJsonResponse | TextHtmlResponse | TextPlainResponse;
 
 export type ComponentBase = Component | ComponentMeta;
-
-export type ComponentRefactorSocialMediaSeoConfig =
-  | ComponentRefactorGeneralSocialMediaSeoConfig
-  | ComponentRefactorXPlatformSeoConfig;
-
-export type ComponentRefactorVariable =
-  | InnerVariable
-  | InputVariable
-  | OptionalVariable
-  | OutputVariable;
 
 export type DbTrigger =
   | DbDeleteTrigger
@@ -9440,11 +9641,7 @@ export type HtmlAttributes = HtmlCodeAttributes | HtmlIFrameAttributes;
 
 export type ConcreteBoolExp = ColumnValueExp | ConditionBoolExp;
 
-export type BoolExp<T> =
-  | AndExp<ConcreteBoolExp>
-  | T
-  | NotExp<ConcreteBoolExp>
-  | OrExp<ConcreteBoolExp>;
+export type BoolExp<T> = AndExp<T> | T | NotExp<T> | OrExp<T>;
 
 export type ComponentProperties =
   | AdvertBannerProperties
@@ -9466,6 +9663,7 @@ export type ComponentProperties =
   | MapMarkerProperties
   | MixImagePickerProperties
   | ModalProperties
+  | NavigationBarProperties
   | NumberInputProperties
   | PageProperties
   | ProgressBarProperties
@@ -9480,8 +9678,7 @@ export type ComponentProperties =
   | TextProperties
   | VideoPickerProperties
   | VideoProperties
-  | ViewProperties
-  | WechatNavigationBarProperties;
+  | ViewProperties;
 
 export type DataAttributes =
   | AdvertBannerAttributes
@@ -9500,7 +9697,7 @@ export type DataAttributes =
   | DataSelectorAttributes
   | DateTimePickerAttributes
   | DraggableScreenAttributes
-  | null
+  | EmptyAttributes
   | FilePickerAttributes
   | HorizontalLineAttributes
   | HorizontalListAttributes
@@ -9547,8 +9744,6 @@ export type ExtraAttributesFromDataSelector = DataSelectorAttributes | OverrideA
 export type ExtraAttributesFromDateTimePicker = DateTimePickerAttributes | OverrideAttributes;
 
 export type ExtraAttributesFromDraggableScreen = DraggableScreenAttributes | OverrideAttributes;
-
-export type ExtraAttributesFromInput = InputAttributes | OverrideAttributes;
 
 export type ExtraAttributesFromMapView = MapViewAttributes | OverrideAttributes;
 
@@ -9599,7 +9794,7 @@ export type ActionFlow = BackendActionFlow | FrontendActionFlow;
 
 export type ClientSchema = MobileSchema | WebSchema | WechatMiniProgramSchema;
 
-export type FormulaWithDataSource = ArrayFilterFormulaBinding | ArrayMappingFormulaBinding;
+export type SourceWithTransformFormula = ArrayFilterFormulaBinding | ArrayMappingFormulaBinding;
 
 export type TriggerConfiguration = DbTriggerConfiguration;
 
@@ -9679,6 +9874,7 @@ export type ComponentWrapperStyle =
   | MixImagePickerImageStyle
   | MixImagePickerWrapperStyle
   | ModalWrapperStyle
+  | NavigationBarWrapperStyle
   | NumberInputWrapperStyle
   | PageWrapperStyle
   | PlaceholderStyle
@@ -9700,7 +9896,6 @@ export type ComponentWrapperStyle =
   | VideoPickerWrapperStyle
   | VideoWrapperStyle
   | ViewWrapperStyle
-  | WechatNavigationBarWrapperStyle
   | WechatOfficialAccountWrapperStyle;
 
 export type DimensionValues = AbsoluteOrFixedPositionStyle | PlainDimensionValues;
@@ -9727,6 +9922,7 @@ export type HasBackgroundColorStyle =
   | FilePickerWrapperStyle
   | HorizontalLineWrapperStyle
   | MixImagePickerImageStyle
+  | NavigationBarWrapperStyle
   | NumberInputWrapperStyle
   | ProgressBarWrapperStyle
   | RichTextEditorWrapperStyle
@@ -9736,7 +9932,7 @@ export type HasBackgroundColorStyle =
   | TextInputWrapperStyle
   | TextWrapperStyle
   | VideoPickerWrapperStyle
-  | WechatNavigationBarWrapperStyle;
+  | VideoWrapperStyle;
 
 export type HasBackgroundStyle =
   | CodeComponentWrapperStyle
@@ -9824,6 +10020,7 @@ export type HasMargin =
   | RichTextEditorWrapperStyle
   | RichTextWrapperStyle
   | SelectViewWrapperStyle
+  | SheetWrapperStyle
   | SwitchWrapperStyle
   | TabViewWrapperStyle
   | TextInputWrapperStyle
@@ -9921,7 +10118,7 @@ export type HasSize = HasLayoutSize | LottieProgressBarWrapperStyle;
 
 export type HasTextColorStyle = RichTextEditorWrapperStyle;
 
-export type HasTextStyle = TextStyleAsComponentWrapperStyle | WechatNavigationBarWrapperStyle;
+export type HasTextStyle = NavigationBarWrapperStyle | TextStyleAsComponentWrapperStyle;
 
 export type HasZIndex =
   | ButtonWrapperStyle
@@ -9981,6 +10178,7 @@ export type CodeComponentInput = CodeComponentActionsInput | CodeComponentValueI
 
 export type ComponentEvents =
   | CalendarEvents
+  | HasComponentRefactorScheduledJobs
   | HasLifeCycle
   | HasOnClick
   | HasOnProgressChange
@@ -9991,6 +10189,18 @@ export type ComponentEvents =
   | ModalEvents
   | PageEvents
   | VideoEvents;
+
+export type ComponentRefactorSocialMediaSeoConfig =
+  | ComponentRefactorGeneralSocialMediaSeoConfig
+  | ComponentRefactorXPlatformSeoConfig;
+
+export type ComponentRefactorVariable =
+  | InnerVariable
+  | InputVariable
+  | OptionalVariable
+  | OutputVariable
+  | WithDataSource
+  | WithDefaultValue;
 
 export type ConstraintMetadata =
   | ForeignKeyConstraint
@@ -10037,8 +10247,6 @@ export type QueryWithSelections = DbQuery | TpaQuery;
 
 export type ResponseConfig = CustomResponseConfig | FallbackResponseConfig;
 
-export type RootSchema = LiveSchema | ZSchema;
-
 export type Schema = ReferenceSchema | TypeSchema;
 
 export type SheetDataSource = DBQueryDataSource;
@@ -10048,6 +10256,8 @@ export type SocialMediaConfigValue = SocialMediaDataBindingValue | SocialMediaUs
 export type SocialMediaSeoConfig = GeneralSocialMediaSeoConfig | XPlatformSeoConfig;
 
 export type SortConfig = BasicSortConfig | VectorSortConfig;
+
+export type StringOrDataBinding = DataBinding | string;
 
 export type Style =
   | BackdropFilterWithBlurStyle
@@ -10100,11 +10310,9 @@ export type StyleOrSyntax<T> = T | StyleSyntax;
 
 export type ThirdPartyDataMeta = ThirdPartyData | ThirdPartyParameter;
 
+export type TypeCodec = CurrentTypeCodec | TargetTypeFieldCodec;
+
 export type TypeDefinition = EnumTypeDefinition | ObjectTypeDefinition;
-
-export type WithDataSource = ReadOnlyVariable;
-
-export type WithDefaultValue = InputVariable | ReadWriteVariable;
 
 export type ZAiOutputConfig = DefaultZAiOutputConfig | StructuredZAiOutputConfig;
 
@@ -10122,7 +10330,7 @@ export type AuthorizationFailureEventBinding =
   | GetLocationEventBinding
   | UploadFileEventBinding;
 
-export type BoolExprOrAlwaysTrue = null | BoolExp<ColumnValueExp>;
+export type BoolExprOrAlwaysTrue = AlwaysTrueExp | BoolExp<ColumnValueExp>;
 
 export type BorderRadiusAttributes =
   | BlankContainerAttributes
@@ -10178,6 +10386,7 @@ export type ConfigState = LoginConfigState;
 export type CursorAttributes =
   | ButtonAttributes
   | CodeComponentAttributes
+  | ConditionalContainerChildAttributes
   | CustomViewAttributes
   | ImageAttributes
   | ModalViewAttributes
@@ -10263,6 +10472,7 @@ export type HasAndThenNodeId =
   | BlockEndNode
   | BranchItem
   | BranchMerge
+  | Break
   | CallActionFlow
   | CallThirdPartyApi
   | ConcurrentBranchMerge
@@ -10277,7 +10487,9 @@ export type HasAndThenNodeId =
   | RunTemplateCode
   | SuccessFailMerge
   | UpdateGlobalVariables
-  | UpdateRecord;
+  | UpdateRecord
+  | WhileEnd
+  | WhileStart;
 
 export type HasBackgroundColor =
   | BackgroundAttributes
@@ -10326,7 +10538,8 @@ export type HasDefaultValue =
   | NumberInputProperties
   | SelectViewProperties
   | SwitchProperties
-  | TextInputProperties;
+  | TextInputProperties
+  | VideoPickerProperties;
 
 export type HasFontSize =
   | DataSelectorAttributes
@@ -10349,7 +10562,11 @@ export type HasInputArgsDataBinding = RunCustomCode | RunTemplateCode;
 
 export type HasLabelColor = DataPickerAttributes | OverrideAttributes | SimpleProgressBarAttributes;
 
-export type HasMultiLine = InputAttributes | OverrideAttributes | TextStyleAttributes;
+export type HasMultiLine =
+  | ExtraAttributesFromInput
+  | InputAttributes
+  | OverrideAttributes
+  | TextStyleAttributes;
 
 export type HasMutation = DeleteRecord | InsertRecord | UpdateRecord;
 
@@ -10371,6 +10588,7 @@ export type HasPreviousNodeId =
   | AddRoleToAccount
   | BlockCreatable
   | BranchSeparation
+  | Break
   | CallAction
   | CallActionFlow
   | CallThirdPartyApi
@@ -10385,7 +10603,9 @@ export type HasPreviousNodeId =
   | RunCustomCode
   | RunTemplateCode
   | UpdateGlobalVariables
-  | UpdateRecord;
+  | UpdateRecord
+  | WhileEnd
+  | WhileStart;
 
 export type HasScheduledJobs = DraggableScreenAttributes | OverrideAttributes;
 
@@ -10397,6 +10617,8 @@ export type HasTextColor =
 
 export type HasVerticalPadding = CustomListAttributes | MultiImageAttributes | OverrideAttributes;
 
+export type IntOrDataBinding = DataBinding | number;
+
 export type Interaction =
   | CommonEmphasis
   | FadeEffect
@@ -10406,8 +10628,6 @@ export type Interaction =
   | SlideEffect
   | UnknownEffect
   | VariantInteraction;
-
-export type LiteralOrDataBinding = DataBinding | number;
 
 export type NavigationTransitionType =
   | MobileNavigationTransitionType

@@ -21,15 +21,20 @@ import {
   Locale,
   Product,
   type CopilotApiResult,
+  type OpaqueSchemaGraph,
 } from '../utils/zed/TypeSystem.ts';
 
 // import { NODE_ENV } from '../config/env.ts';
 
 import { isNil, get } from 'lodash-es';
-import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
-import { assertNotNull, genExtraContext, getError } from '../utils/zed/helpers.ts';
+import {
+  assertNotNull,
+  genExtraContext,
+  getError,
+} from '../utils/zed/helpers.ts';
 import type { ToolResult } from '../utils/graph-states.ts';
-import { SchemaDownloaderForTest } from '../langGraph/tools/SchemaDownloader.ts';
+import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from '../utils/zed/ZSchema.ts';
+import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from '../utils/zed/AfCustomCodeTemplates.ts';
 
 const DISCONNECT = false;
 const TERMINATE = false;
@@ -39,7 +44,11 @@ export class EvaluationJobRunner {
   private projectExId: string;
   private wsUrl: string;
   private query: string;
-  private typeSystemStore: TypeSystemStore;
+  private supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null =
+    null;
+  private afCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[] =
+    [];
+  private schemaGraph: OpaqueSchemaGraph | null = null;
   response: string = '';
   editableText: string = '';
   tasks: TaskMessage[] | null = null;
@@ -47,30 +56,38 @@ export class EvaluationJobRunner {
     // response: string;
     // tasks: TaskMessage[] | null;
     editableText: string;
-    schema: string;
   }>;
   // private resolveCompletion:
   //   | ((value: { response: string; tasks: TaskMessage[] | null }) => void)
   //   | null = null;
   private resolveCompletion:
-    | ((result: { editableText: string; schema: string }) => void)
+    | ((result: { editableText: string }) => void)
     | null = null;
   private rejectCompletion: ((reason: Error) => void) | null = null;
   private isCompleted: boolean = false;
   private timeoutId: NodeJS.Timeout | null = null;
-  private isSchemaSaving: boolean = false;
+  // private isSchemaSaving: boolean = false;
 
-  constructor(projectExId: string, wsUrl: string, query: string) {
+  constructor(
+    projectExId: string,
+    wsUrl: string,
+    query: string,
+    supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null,
+    afCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[],
+    schemaGraph: OpaqueSchemaGraph | null,
+  ) {
     this.projectExId = projectExId;
     this.wsUrl = wsUrl;
     this.query = query;
-    this.typeSystemStore = new TypeSystemStore();
+    this.supportedCustomModelDescriptor = supportedCustomModelDescriptor;
+    this.afCustomCodeTemplates = afCustomCodeTemplates;
+    this.schemaGraph = schemaGraph;
     // Create the completion promise in the constructor
     this.completionPromise = new Promise<{
       // response: string;
       // tasks: TaskMessage[] | null;
       editableText: string;
-      schema: string;
+      // schema: string;
     }>((resolve, reject) => {
       this.resolveCompletion = resolve;
       this.rejectCompletion = reject;
@@ -104,7 +121,7 @@ export class EvaluationJobRunner {
         this.clearTimeout();
         this.isCompleted = true;
         this.rejectCompletion(
-          new Error('WebSocket connection closed before job completion')
+          new Error('WebSocket connection closed before job completion'),
         );
       }
     });
@@ -115,7 +132,7 @@ export class EvaluationJobRunner {
         this.clearTimeout();
         this.isCompleted = true;
         this.rejectCompletion(
-          error instanceof Error ? error : new Error(String(error))
+          error instanceof Error ? error : new Error(String(error)),
         );
       }
     });
@@ -144,7 +161,7 @@ export class EvaluationJobRunner {
     const logEntry = `${new Date().toISOString()} - Job Update: ${JSON.stringify(
       data,
       null,
-      2
+      2,
     )}\n`;
     logger.info(`Received message: ${JSON.stringify(data)}`);
     appendFileSync('logs.txt', logEntry);
@@ -170,8 +187,8 @@ export class EvaluationJobRunner {
           this.isCompleted = true;
           this.rejectCompletion(
             new Error(
-              `Job execution error: ${(data[0] as { content: string }).content}`
-            )
+              `Job execution error: ${(data[0] as { content: string }).content}`,
+            ),
           );
         }
         this.stopJob();
@@ -182,14 +199,14 @@ export class EvaluationJobRunner {
       case CopilotMessageType.STATE_CHANGE:
         if (data[0]?.currentJobIsRunning === false) {
           logger.info(
-            `Job for project ${this.projectExId} has stopped running.`
+            `Job for project ${this.projectExId} has stopped running.`,
           );
-          if (!this.isCompleted && this.rejectCompletion && !this.isSchemaSaving) {
+          if (!this.isCompleted && this.rejectCompletion) {
             logger.error('Job has stopped running unexpectedly');
             this.clearTimeout();
             this.isCompleted = true;
             this.rejectCompletion(
-              new Error('Job has stopped running unexpectedly')
+              new Error('Job has stopped running unexpectedly'),
             );
             this.stopJob();
           }
@@ -197,19 +214,22 @@ export class EvaluationJobRunner {
         break;
       default:
         logger.info(
-          `Received message of type ${data[0]?.type} for project ${this.projectExId}.`
+          `Received message of type ${data[0]?.type} for project ${this.projectExId}.`,
         );
     }
   }
 
   async handleEditableTextMessage(message: EditableTextMessage): Promise<void> {
     this.editableText = message.content;
-    this.isSchemaSaving = true;
-    const schema = await SchemaDownloaderForTest(this.projectExId);
+    // this.isSchemaSaving = true;
+    // const schema = await SchemaDownloaderForTest(this.projectExId);
     if (!this.isCompleted && this.resolveCompletion) {
       this.clearTimeout();
       this.isCompleted = true;
-      this.resolveCompletion({ editableText: this.editableText, schema: schema as unknown as string });
+      this.resolveCompletion({
+        editableText: this.editableText,
+        // schema: schema as unknown as string,
+      });
     }
     this.stopJob();
   }
@@ -242,7 +262,7 @@ export class EvaluationJobRunner {
 
   async handleToolCallsMessage(message: ToolCallsMessage): Promise<void> {
     const { result, successful, errorMessage } = await this.runToolCalls(
-      message.toolCalls
+      message.toolCalls,
     );
     if (successful) {
       this.send({
@@ -260,21 +280,21 @@ export class EvaluationJobRunner {
       //   }
       // })
       logger.error(
-        `Tool calls failed for project ${this.projectExId}: ${errorMessage}.`
+        `Tool calls failed for project ${this.projectExId}: ${errorMessage}.`,
       );
     }
   }
 
   async handleAIResponseMessage(message: AIResponseMessage): Promise<void> {
     this.editableText = message.content;
-    this.isSchemaSaving = true;
-    const schema = await SchemaDownloaderForTest(this.projectExId);
+    // this.isSchemaSaving = true;
+    // const schema = await SchemaDownloaderForTest(this.projectExId);
     if (!this.isCompleted && this.resolveCompletion) {
       this.clearTimeout();
       this.isCompleted = true;
       this.resolveCompletion({
         editableText: this.editableText,
-        schema: schema as unknown as string,
+        // schema: schema as unknown as string,
       });
     }
     this.stopJob();
@@ -298,26 +318,18 @@ export class EvaluationJobRunner {
       : Locale.EN;
 
     try {
-      const res = await Promise.allSettled([
-        this.typeSystemStore.getAFCustomCodeTemplates(),
-        this.typeSystemStore.getSupportedCustomModelDescriptor(),
-        this.typeSystemStore.rehydrate(this.projectExId)
-      ]);
-      if (res.some(r => r.status === 'rejected')) {
-        throw new Error('Failed to initialize type system store');
-      }
       const result: CopilotApiResult = Copilot.toolCalls(
-        assertNotNull(this.typeSystemStore.schemaGraph),
+        assertNotNull(this.schemaGraph),
         genExtraContext(
-          this.typeSystemStore.supportedCustomModelDescriptor,
-          this.typeSystemStore.afCustomCodeTemplates
+          this.supportedCustomModelDescriptor,
+          this.afCustomCodeTemplates,
         ),
         null,
         product,
         clientType,
-        "WEB", // clientExId: wechat mini program, web, etc.
+        'WEB', // clientExId: wechat mini program, web, etc.
         locale,
-        toolCalls
+        toolCalls,
       );
       // if (NODE_ENV === 'development') {
       //   logger.debug('toolCall---result:', result, toolCalls);
@@ -375,8 +387,8 @@ export class EvaluationJobRunner {
    * @returns Promise that resolves with the response when job completes
    */
   async waitForCompletion(
-    timeoutMs: number = DEFAULT_TIMEOUT_MS
-  ): Promise<{ editableText: string, schema: string }> {
+    timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  ): Promise<{ editableText: string }> {
     // Clear any existing timeout before setting a new one (for multiple calls)
     this.clearTimeout();
 
@@ -386,7 +398,7 @@ export class EvaluationJobRunner {
         this.timeoutId = null;
         this.isCompleted = true;
         this.rejectCompletion(
-          new Error(`Job execution timeout after ${timeoutMs}ms`)
+          new Error(`Job execution timeout after ${timeoutMs}ms`),
         );
       }
     }, timeoutMs);
@@ -428,7 +440,10 @@ if (
   const evaluationJobRunner = new EvaluationJobRunner(
     args.projectExId,
     args.wsUrl,
-    args.query
+    args.query,
+    null,
+    [],
+    null
   );
 
   evaluationJobRunner.startJob();

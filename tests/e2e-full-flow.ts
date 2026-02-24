@@ -17,6 +17,8 @@ import { graphExecutionService } from '../src/services/GraphExecutionService.ts'
 import { goldenSetService } from '../src/services/GoldenSetService.ts';
 import { WS_URL } from '../src/config/env.ts';
 import type { QuestionSet, FinalReport } from '../src/langGraph/state/state.ts';
+import { TypeSystemStore } from '../src/utils/zed/TypeSystemStore.ts';
+import type { OpaqueSchemaGraph } from '../src/utils/zed/TypeSystem.ts';
 
 config();
 
@@ -181,7 +183,7 @@ async function step1_fetchOrCreateGoldenSet(): Promise<{
 async function step2_executeCopilot(
   projectExId: string,
   query: string,
-): Promise<{ editableText: string; schema: string }> {
+): Promise<{ editableText: string, schema: OpaqueSchemaGraph | null }> {
   const start = Date.now();
 
   try {
@@ -190,10 +192,29 @@ async function step2_executeCopilot(
     logger.info(`  Query: ${query.substring(0, 100)}...`);
     logger.debug(`  WS_URL: ${WS_URL}`);
 
-    const jobRunner = new EvaluationJobRunner(projectExId, WS_URL, query);
+    const typeSystemStore = new TypeSystemStore();
+    const res = await Promise.allSettled([
+      typeSystemStore.getAFCustomCodeTemplates(),
+      typeSystemStore.getSupportedCustomModelDescriptor(),
+      typeSystemStore.rehydrate(projectExId),
+    ]);
+
+    if (res.some((r) => r.status === 'rejected')) {
+      logger.error('Error initializing TypeSystemStore:', res);
+      throw new Error('Failed to initialize TypeSystemStore');
+    }
+
+    const jobRunner = new EvaluationJobRunner(
+      projectExId,
+      WS_URL,
+      query,
+      typeSystemStore.supportedCustomModelDescriptor,
+      typeSystemStore.afCustomCodeTemplates,
+      typeSystemStore.schemaGraph,
+    );
     logger.info('Starting Copilot job...');
     jobRunner.startJob();
-    const { editableText, schema } = await jobRunner.waitForCompletion(
+    const { editableText } = await jobRunner.waitForCompletion(
       TEST_CONFIG.copilotTimeoutMs,
     );
 
@@ -206,7 +227,7 @@ async function step2_executeCopilot(
       preview: editableText.substring(0, 200),
     });
 
-    return { editableText, schema };
+    return { editableText, schema: typeSystemStore.schemaGraph };
   } catch (error) {
     recordResult(
       'Step 2: Execute Copilot',
@@ -225,7 +246,7 @@ async function step3_runLangGraphWithHITL(
   copilotType: string,
   query: string,
   candidateOutput: string,
-  schema: string,
+  schema: OpaqueSchemaGraph | null,
 ): Promise<{
   sessionId: number;
   threadId: string;

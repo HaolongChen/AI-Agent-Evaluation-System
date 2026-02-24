@@ -14,6 +14,7 @@ import { evaluationPersistenceService } from '../services/EvaluationPersistenceS
 import { executionService } from '../services/ExecutionService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../../build/generated/prisma/enums.ts';
+import type { OpaqueSchemaGraph } from '../utils/zed/TypeSystem.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
@@ -73,7 +74,7 @@ export class RubricGenerationJobRunner {
     private readonly query: string,
     private readonly context: string,
     private readonly candidateOutput: string,
-    private readonly schema: string,
+    private readonly schema: OpaqueSchemaGraph | null,
     private readonly modelName: string,
     private readonly skipHumanReview: boolean = true,
     private readonly skipHumanEvaluation: boolean = true
@@ -378,7 +379,7 @@ if (
     args.query,
     args.context,
     args.candidateOutput,
-    args.schema,
+    null,
     args.modelName,
     args.skipHumanReview ?? true,
     args.skipHumanEvaluation ?? true

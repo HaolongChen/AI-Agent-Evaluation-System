@@ -19,6 +19,7 @@ import {
 import { EvaluationJobRunner } from '../jobs/EvaluationJobRunner.ts';
 import { RubricGenerationJobRunner } from '../jobs/RubricGenerationJobRunner.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
+import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
 
 const resolveDefaultModelName = (): string => {
   // Prefer Azure deployment when Azure is configured; otherwise fall back to Gemini if available.
@@ -53,6 +54,18 @@ export class ExecutionService {
       const goldenSet = await goldenSetService.getGoldenSet(goldenSetId);
       if (!goldenSet) {
         throw new Error('No golden set found');
+      }
+
+      const typeSystemStore = new TypeSystemStore();
+      const res = await Promise.allSettled([
+        typeSystemStore.getAFCustomCodeTemplates(),
+        typeSystemStore.getSupportedCustomModelDescriptor(),
+        typeSystemStore.rehydrate(goldenSet.projectExId),
+      ])
+
+      if(res.some(r => r.status === 'rejected')) {
+        logger.error('Error rehydrating type system store:', res.filter(r => r.status === 'rejected').map(r => (r as PromiseRejectedResult).reason));
+        throw new Error('Failed to rehydrate type system store');
       }
 
       logger.info(
@@ -131,7 +144,7 @@ export class ExecutionService {
           });
         }
       } else {
-        const copilotResponse: Array<[string, string, string]> = [];
+        const copilotResponse: Array<[string, string]> = [];
         if (!goldenSet.userInput[0]) {
           throw new Error('No user input found in golden set');
         }
@@ -139,18 +152,20 @@ export class ExecutionService {
           goldenSet.projectExId,
           WS_URL,
           goldenSet.userInput[0].content,
+          typeSystemStore.supportedCustomModelDescriptor,
+          typeSystemStore.afCustomCodeTemplates,
+          typeSystemStore.schemaGraph
         );
         evalJobRunner.startJob();
-        const { editableText, schema } =
+        const { editableText } =
           await evalJobRunner.waitForCompletion();
         copilotResponse.push([
           editableText,
-          schema,
           goldenSet.userInput[0].content,
         ]);
         const results = await Promise.allSettled(
           copilotResponse.map(
-            async ([editableText, schema, userInputContent]) => {
+            async ([editableText, userInputContent]) => {
               const rubricJobRunner = new RubricGenerationJobRunner(
                 goldenSet.id,
                 goldenSet.projectExId,
@@ -158,7 +173,7 @@ export class ExecutionService {
                 userInputContent,
                 '',
                 editableText,
-                schema,
+                typeSystemStore.schemaGraph,
                 resolvedModelName,
                 skipHumanReview,
                 skipHumanEvaluation,

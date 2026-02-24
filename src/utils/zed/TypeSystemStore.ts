@@ -205,9 +205,13 @@ export class TypeSystemStore {
     const arrayBuffer = await response.arrayBuffer();
     const modelBinary = new Uint8Array(arrayBuffer);
 
+    logger.debug("step 2 done, modelBinary length: " + modelBinary.length);
+
     // 3. Initialize CRDT model and apply patches
     // Convert Uint8Array binary to base64 string for Crdt.initModel
     const binaryBase64 = fromUint8Array(modelBinary);
+
+    logger.debug("step 3 done, binaryBase64 length: " + binaryBase64.length);
 
     // Get patch base64 strings
     const patchBase64Strings = lastUploadedSchema.crdtPatches?.patches?.map(
@@ -225,15 +229,22 @@ export class TypeSystemStore {
     // 4. Get the schema JSON
     const schemaJson = model.view();
 
+    logger.debug("step 4 done, schemaJson keys: " + Object.keys(schemaJson).join(", "));
+
     // 5. Merge with backend-only schema if needed
     const fullSchema = {
       ...schemaJson,
       // server: latestBackendOnlyAppSchema, // For non-backend-editable apps
     };
 
+
+
     // 6. Parse to ZSchema and create SchemaGraph
     const zSchema = ZTypeSystem.parseZSchemaFromJsObject(fullSchema);
     const schemaGraph = ZTypeSystem.resolveZSchemaToSchemaGraph(zSchema);
+
+
+    logger.debug("step 6 done, schemaGraph nodes: ");
 
     this.currSchemaGraph = schemaGraph;
     return schemaGraph;

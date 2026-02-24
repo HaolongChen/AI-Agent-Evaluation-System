@@ -60,7 +60,7 @@ export const goldenSetResolver = {
     updateGoldenSetInput: async (
       _: unknown,
       args: {
-        projectExId: string;
+        projectExId?: string;
         copilotType: keyof typeof COPILOT_TYPES;
         description?: string;
         query: string;
@@ -68,7 +68,7 @@ export const goldenSetResolver = {
     ) => {
       try {
         const result = await goldenSetService.updateGoldenSetInput(
-          args.projectExId,
+          args.projectExId ?? '0',
           args.copilotType,
           args.description ?? '',
           args.query

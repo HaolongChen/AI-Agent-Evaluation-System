@@ -8,11 +8,11 @@ async function seedGoldenSet() {
     // Example seed data
     const goldenSetData = [
       {
-        projectExId: 'X57jbwZzB76',
+        projectExId: 'mwLZrNj2ZKB',
         copilotType: 'dataModel' as const,
         description: 'Example data model for testing',
         query:
-          'Model a many-to-many relationship between users and teams where a user can have exactly one role per team, but roles are extensible. create anything else when needed. trigger your tools immediately. do not ask me for further info', // TODO: implement meaningful prompt templates
+          'Model a many-to-many relationship between users and teams where a user can have exactly one role per team, but roles are extensible. create anything else when needed. do not ask me for further info', // TODO: implement meaningful prompt templates
       },
       // {
       //   projectExId: 'example-project-2',

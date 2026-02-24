@@ -632,7 +632,7 @@ export const typeDefs = `#graphql
     RECOMMENDED for adding test cases.
     """
     updateGoldenSetInput(
-      projectExId: String!
+      projectExId: String
       copilotType: CopilotType!
       description: String
       query: String!

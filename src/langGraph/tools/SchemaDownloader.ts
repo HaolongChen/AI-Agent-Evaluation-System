@@ -6,26 +6,26 @@ import { TypeSystemStore } from '../../utils/zed/TypeSystemStore.ts';
 /**
  * Safely stringify an object with circular references
  */
-export function safeStringify(obj: unknown): string {
-  const seen = new WeakSet();
-  return JSON.stringify(
-    obj,
-    (_key, value) => {
-      if (typeof value === 'object' && value !== null) {
-        if (seen.has(value)) {
-          return '[Circular]';
-        }
-        seen.add(value);
-      }
-      // Handle functions - skip them
-      if (typeof value === 'function') {
-        return undefined;
-      }
-      return value;
-    },
-    2
-  );
-}
+// export function safeStringify(obj: unknown): string {
+//   const seen = new WeakSet();
+//   return JSON.stringify(
+//     obj,
+//     (_key, value) => {
+//       if (typeof value === 'object' && value !== null) {
+//         if (seen.has(value)) {
+//           return '[Circular]';
+//         }
+//         seen.add(value);
+//       }
+//       // Handle functions - skip them
+//       if (typeof value === 'function') {
+//         return undefined;
+//       }
+//       return value;
+//     },
+//     2
+//   );
+// }
 
 export const schemaDownloader = tool(
   async (input: { projectExId: string }) => {
@@ -41,7 +41,7 @@ export const schemaDownloader = tool(
     if (!schemaGraph) {
       throw new Error('Failed to download schema graph.');
     }
-    return safeStringify(schemaGraph);
+    return schemaGraph;
   },
   {
     name: 'schema_downloader',

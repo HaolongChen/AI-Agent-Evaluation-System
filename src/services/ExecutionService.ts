@@ -89,29 +89,31 @@ export class ExecutionService {
           }
         });
         const results = await Promise.allSettled(
-          copilotResponse.map(async ([editableText, schema, userInputContent], index) => {
-            const genJobResult = (await applyAndWatchJob(
-              `rubric-job-${goldenSet.projectExId}-${index}-${Date.now()}`,
-              'default',
-              './src/jobs/RubricGenerationJobRunner.ts',
-              300000,
-              'generation',
-              String(goldenSet.id),
-              goldenSet.projectExId,
-              goldenSet.copilotType,
-              userInputContent,
-              editableText,
-              schema,
-              resolvedModelName,
-              String(skipHumanReview),
-              String(skipHumanEvaluation),
-            )) as unknown as GenJobResult;
-            logger.info(
-              `Rubric generation job for golden set ${goldenSet.id} completed with status:`,
-              genJobResult.status,
-            );
-            return genJobResult;
-          }),
+          copilotResponse.map(
+            async ([editableText, schema, userInputContent], index) => {
+              const genJobResult = (await applyAndWatchJob(
+                `rubric-job-${goldenSet.projectExId}-${index}-${Date.now()}`,
+                'default',
+                './src/jobs/RubricGenerationJobRunner.ts',
+                300000,
+                'generation',
+                String(goldenSet.id),
+                goldenSet.projectExId,
+                goldenSet.copilotType,
+                userInputContent,
+                editableText,
+                schema,
+                resolvedModelName,
+                String(skipHumanReview),
+                String(skipHumanEvaluation),
+              )) as unknown as GenJobResult;
+              logger.info(
+                `Rubric generation job for golden set ${goldenSet.id} completed with status:`,
+                genJobResult.status,
+              );
+              return genJobResult;
+            },
+          ),
         );
 
         const successful = results.filter((r) => r.status === 'fulfilled');
@@ -130,18 +132,22 @@ export class ExecutionService {
         }
       } else {
         const copilotResponse: Array<[string, string, string]> = [];
-
-        goldenSet.userInput.forEach(async (userInput) => {
-          const evalJobRunner = new EvaluationJobRunner(
-            goldenSet.projectExId,
-            WS_URL,
-            userInput.content,
-          );
-          evalJobRunner.startJob();
-          const { editableText, schema } =
-            await evalJobRunner.waitForCompletion();
-          copilotResponse.push([editableText, schema, userInput.content]);
-        });
+        if (!goldenSet.userInput[0]) {
+          throw new Error('No user input found in golden set');
+        }
+        const evalJobRunner = new EvaluationJobRunner(
+          goldenSet.projectExId,
+          WS_URL,
+          goldenSet.userInput[0].content,
+        );
+        evalJobRunner.startJob();
+        const { editableText, schema } =
+          await evalJobRunner.waitForCompletion();
+        copilotResponse.push([
+          editableText,
+          schema,
+          goldenSet.userInput[0].content,
+        ]);
         const results = await Promise.allSettled(
           copilotResponse.map(
             async ([editableText, schema, userInputContent]) => {

@@ -23,7 +23,7 @@ import {
   type CopilotApiResult,
 } from '../utils/zed/TypeSystem.ts';
 
-import { NODE_ENV } from '../config/env.ts';
+// import { NODE_ENV } from '../config/env.ts';
 
 import { isNil, get } from 'lodash-es';
 import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
@@ -209,7 +209,7 @@ export class EvaluationJobRunner {
     if (!this.isCompleted && this.resolveCompletion) {
       this.clearTimeout();
       this.isCompleted = true;
-      this.resolveCompletion({ editableText: this.editableText, schema });
+      this.resolveCompletion({ editableText: this.editableText, schema: schema as unknown as string });
     }
     this.stopJob();
   }
@@ -265,22 +265,18 @@ export class EvaluationJobRunner {
     }
   }
 
-  handleAIResponseMessage(message: AIResponseMessage): void {
-    // Handle ai_response message type - this is a valid completion response
-    logger.info(
-      `Received AI response for project ${
-        this.projectExId
-      }: ${message.content.substring(0, 200)}${
-        message.content.length > 200 ? '...' : ''
-      }`
-    );
-    // reminder: temporarily not applicable for evaluation job runner
-    // this.response = message.content;
-    // if (!this.isCompleted && this.resolveCompletion) {
-    //   this.clearTimeout();
-    //   this.isCompleted = true;
-    //   this.resolveCompletion({ response: this.response, tasks: this.tasks });
-    // }
+  async handleAIResponseMessage(message: AIResponseMessage): Promise<void> {
+    this.editableText = message.content;
+    this.isSchemaSaving = true;
+    const schema = await SchemaDownloaderForTest(this.projectExId);
+    if (!this.isCompleted && this.resolveCompletion) {
+      this.clearTimeout();
+      this.isCompleted = true;
+      this.resolveCompletion({
+        editableText: this.editableText,
+        schema: schema as unknown as string,
+      });
+    }
     this.stopJob();
   }
 
@@ -323,9 +319,9 @@ export class EvaluationJobRunner {
         locale,
         toolCalls
       );
-      if (NODE_ENV === 'development') {
-        logger.debug('toolCall---result:', result, toolCalls);
-      }
+      // if (NODE_ENV === 'development') {
+      //   logger.debug('toolCall---result:', result, toolCalls);
+      // }
       const errorMessage = get(result, 'error');
       if (errorMessage) {
         throw getError(errorMessage, result);
@@ -334,9 +330,9 @@ export class EvaluationJobRunner {
       if (isNil(schemaDiff)) {
         return { result: result as unknown as ToolResult, successful: true };
       }
-      if (NODE_ENV === 'development') {
-        logger.debug('toolCall---schemaDiff:', schemaDiff);
-      }
+      // if (NODE_ENV === 'development') {
+      //   logger.debug('toolCall---schemaDiff:', schemaDiff);
+      // }
       // const applyResult = applyLocalCrdtDiff(schemaDiff, {
       //   isPendingApplication: true,
       // });

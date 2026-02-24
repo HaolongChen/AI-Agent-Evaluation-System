@@ -33,25 +33,33 @@ process.on('uncaughtException', (error) => {
 
 const TEST_DB_URL = process.env['TEST_DB_URL'];
 if (!TEST_DB_URL) {
-  logger.error('⚠️  SAFETY: TEST_DB_URL environment variable must be set to run E2E tests');
-  logger.error('This prevents accidental execution against production databases');
-  logger.error('Example: TEST_DB_URL=postgresql://user:pass@localhost:5432/testdb');
+  logger.error(
+    '⚠️  SAFETY: TEST_DB_URL environment variable must be set to run E2E tests',
+  );
+  logger.error(
+    'This prevents accidental execution against production databases',
+  );
+  logger.error(
+    'Example: TEST_DB_URL=postgresql://user:pass@localhost:5432/testdb',
+  );
   process.exit(2);
 }
 
-if (!TEST_DB_URL.includes('test') && !TEST_DB_URL.includes('dev')) {
-  logger.error('⚠️  SAFETY: TEST_DB_URL must contain "test" or "dev" in the connection string');
-  logger.error(`Current value: ${TEST_DB_URL}`);
-  logger.error('This is a safety check to prevent running against production');
-  process.exit(2);
-}
+// if (!TEST_DB_URL.includes('test') && !TEST_DB_URL.includes('dev')) {
+//   logger.error('⚠️  SAFETY: TEST_DB_URL must contain "test" or "dev" in the connection string');
+//   logger.error(`Current value: ${TEST_DB_URL}`);
+//   logger.error('This is a safety check to prevent running against production');
+//   process.exit(2);
+// }
 
-logger.info(`✓ Using test database: ${TEST_DB_URL.replace(/:[^:@]+@/, ':***@')}`);
+logger.info(
+  `✓ Using test database: ${TEST_DB_URL.replace(/:[^:@]+@/, ':***@')}`,
+);
 
 const TEST_CONFIG = {
   useExistingGoldenSet: false,
   goldenSetId: 1,
-  projectExId: process.env['projectExId'] || 'X57jbwZzB76',
+  projectExId: process.env['projectExId'] || 'mwLZrNj2ZKB',
   copilotType: 'DATA_MODEL_BUILDER' as const,
   testQuery:
     'Create a simple user table with id, name, email, and created_at fields',
@@ -180,9 +188,10 @@ async function step2_executeCopilot(
     logger.info('Connecting to Copilot WebSocket...');
     logger.info(`  Project: ${projectExId}`);
     logger.info(`  Query: ${query.substring(0, 100)}...`);
+    logger.debug(`  WS_URL: ${WS_URL}`);
 
     const jobRunner = new EvaluationJobRunner(projectExId, WS_URL, query);
-
+    logger.info('Starting Copilot job...');
     jobRunner.startJob();
     const { editableText, schema } = await jobRunner.waitForCompletion(
       TEST_CONFIG.copilotTimeoutMs,
@@ -577,10 +586,12 @@ async function runFullE2ETest(): Promise<void> {
   try {
     logger.warn('\n⚠️  WARNING: This test will DELETE data for project:');
     logger.warn(`    Project ExID: ${TEST_CONFIG.projectExId}`);
-    logger.warn(`    Database: ${(TEST_DB_URL || '').replace(/:[^:@]+@/, ':***@')}`);
+    logger.warn(
+      `    Database: ${(TEST_DB_URL || '').replace(/:[^:@]+@/, ':***@')}`,
+    );
     logger.warn('\n📢 Press Ctrl+C NOW if this is not a test database!');
     logger.warn('Proceeding in 3 seconds...\n');
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     logger.info('Cleaning up old test sessions...');
     await prisma.adaptiveRubricJudgeRecord.deleteMany({

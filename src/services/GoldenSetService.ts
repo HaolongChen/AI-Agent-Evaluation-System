@@ -18,10 +18,17 @@ export class GoldenSetService {
   ): Promise<GoldenSetWithRelations> {
     try {
       const copilotTypeValue = COPILOT_TYPES[copilotType];
-
       const goldenSet = await prisma.goldenSet.upsert({
         where: {
           projectExId
+        },
+        update: {
+          userInput: {
+            create: {
+              description,
+              content: query,
+            },
+          },
         },
         create: {
           projectExId,
@@ -33,21 +40,11 @@ export class GoldenSetService {
             },
           },
         },
-        update: {
-          userInput: {
-            create: {
-              description,
-              content: query,
-            },
-          },
-        },
         include: {
           userInput: true,
           copilotOutput: true,
-          evaluationSessions: true,
         },
       });
-
       logger.debug('Upserted golden set project:', goldenSet);
       return goldenSet;
     } catch (error) {

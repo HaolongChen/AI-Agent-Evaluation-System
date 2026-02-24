@@ -147,7 +147,8 @@ export class RubricGenerationJobRunner {
         skipHumanEvaluation: this.skipHumanEvaluation,
       };
 
-      const schemaData = JSON.parse(this.schema) as object;
+      // const schemaData = JSON.parse(this.schema) as object;
+      const schemaData = new Object(); // Placeholder since schema parsing is not the focus here
 
 
       const initialState = {

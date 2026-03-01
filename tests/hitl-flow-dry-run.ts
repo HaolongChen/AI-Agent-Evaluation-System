@@ -17,8 +17,6 @@ import type {
 import type {
   QuestionSet,
   EvaluationQuestion,
-  QuestionEvaluation,
-  QuestionAnswer,
   FinalReport,
 } from '../src/langGraph/state/state.ts';
 
@@ -51,37 +49,13 @@ function createMockQuestionSet(): QuestionSet {
   };
 }
 
-function createMockQuestionEvaluation(
-  questionSet: QuestionSet,
-  type: 'agent' | 'human'
-): QuestionEvaluation {
-  const answers: QuestionAnswer[] = questionSet.questions.map((q) => ({
-    questionId: q.id,
-    answer: true,
-    explanation: `${type} evaluation for ${q.title}`,
-  }));
-
-  return {
-    evaluatorType: type,
-    answers,
-    overallScore: 80,
-    summary: `${type} evaluation completed`,
-    timestamp: new Date().toISOString(),
-  };
-}
 
 function createMockFinalReport(
-  agentEval: QuestionEvaluation | null,
-  humanEval: QuestionEvaluation | null
 ): FinalReport {
   return {
-    verdict: 'pass',
     overallScore: 80,
     summary: 'Evaluation completed',
     detailedAnalysis: 'Both agent and human evaluations are consistent',
-    agentEvaluation: agentEval,
-    humanEvaluation: humanEval,
-    discrepancies: [],
     auditTrace: ['Test audit entry'],
     generatedAt: new Date().toISOString(),
   };
@@ -128,9 +102,7 @@ function simulateHITLFlowStates(): void {
     }\n`
   );
 
-  const agentEval = createMockQuestionEvaluation(mockQuestionSet, 'agent');
-  const humanEval = createMockQuestionEvaluation(mockQuestionSet, 'human');
-  const finalReport = createMockFinalReport(agentEval, humanEval);
+  const finalReport = createMockFinalReport();
 
   const humanEvalResult: HumanEvaluationResult = {
     sessionId: 1,
@@ -149,18 +121,7 @@ function simulateHITLFlowStates(): void {
   );
 
   logger.info('Final Report Verification:');
-  logger.info(`  Verdict: ${humanEvalResult.finalReport?.verdict}`);
   logger.info(`  Overall Score: ${humanEvalResult.finalReport?.overallScore}`);
-  logger.info(
-    `  Has Agent Evaluation: ${
-      humanEvalResult.finalReport?.agentEvaluation !== null
-    }`
-  );
-  logger.info(
-    `  Has Human Evaluation: ${
-      humanEvalResult.finalReport?.humanEvaluation !== null
-    }`
-  );
   logger.info('');
 }
 
@@ -168,8 +129,6 @@ function simulateAutomatedFlowStates(): void {
   logger.info('=== Simulating Automated Flow States ===\n');
 
   const mockQuestionSet = createMockQuestionSet();
-  const agentEval = createMockQuestionEvaluation(mockQuestionSet, 'agent');
-  void createMockFinalReport(agentEval, null);
 
   const startResult: StartSessionResult = {
     sessionId: 2,

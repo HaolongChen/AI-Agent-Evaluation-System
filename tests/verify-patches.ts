@@ -51,7 +51,6 @@ async function verify() {
   logger.info('\n=== Final Report ===');
   logger.info('Verdict:', finalReport?.verdict);
   logger.info('Overall Score:', finalReport?.overallScore);
-  logger.info('Discrepancies:', finalReport?.discrepancies ? 'Yes' : 'No');
 }
 
 async function main(): Promise<void> {

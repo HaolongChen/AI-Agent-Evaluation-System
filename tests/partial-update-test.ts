@@ -82,9 +82,12 @@ async function testQuestionPatchMergeLogic(): Promise<void> {
     weight: number;
   }> = [];
 
+  let counter = 1;
+
   for (const q of questionData) {
     const created = await prisma.adaptiveRubric.create({
       data: {
+        id: counter,
         sessionId: session.id,
         version: 'v1.0.0',
         title: q.title,
@@ -102,6 +105,7 @@ async function testQuestionPatchMergeLogic(): Promise<void> {
       expectedAnswer: created.expectedAnswer,
       weight: Number(created.weight),
     });
+    counter++;
   }
 
   logger.info('Created test questions:', {

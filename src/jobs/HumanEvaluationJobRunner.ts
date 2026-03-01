@@ -55,7 +55,6 @@ export class HumanEvaluationJobRunner {
       explanation: string;
     }>,
     private readonly overallAssessment: string,
-    private readonly evaluatorAccountId: string,
   ) {
     this.completionPromise = new Promise<HumanEvaluationJobResult>(
       (resolve, reject) => {
@@ -261,14 +260,12 @@ if (
       threadId: z.string().min(1, 'threadId is required'),
       answersJson: z.string().min(1, 'answersJson is required'),
       overallAssessment: z.string().min(1, 'overallAssessment is required'),
-      evaluatorAccountId: z.string().min(1, 'evaluatorAccountId is required'),
     })
     .parse({
       sessionId: process.argv[2],
       threadId: process.argv[3],
       answersJson: process.argv[4],
       overallAssessment: process.argv[5] || '',
-      evaluatorAccountId: process.argv[6] || '',
     });
 
   const answers = JSON.parse(args.answersJson) as Array<{
@@ -282,7 +279,6 @@ if (
     args.threadId,
     answers,
     args.overallAssessment,
-    args.evaluatorAccountId,
   );
 
   runner.startJob();

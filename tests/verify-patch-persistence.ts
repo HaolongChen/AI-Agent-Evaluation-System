@@ -38,6 +38,7 @@ async function testPatchPersistence() {
   const rubrics = await Promise.all([
     prisma.adaptiveRubric.create({
       data: {
+        id: 1,
         sessionId: session.id,
         version: '1.0.0',
         title: 'Original Question 1',
@@ -50,6 +51,7 @@ async function testPatchPersistence() {
     }),
     prisma.adaptiveRubric.create({
       data: {
+        id: 2,
         sessionId: session.id,
         version: '1.0.0',
         title: 'Original Question 2',
@@ -93,7 +95,7 @@ async function testPatchPersistence() {
   logger.info('\nApplying patches...');
   await evaluationPersistenceService.updateRubricQuestions(
     session.id,
-    patchedQuestionSet,
+    patchedQuestionSet.questions,
   );
 
   const updatedRubrics = await prisma.adaptiveRubric.findMany({

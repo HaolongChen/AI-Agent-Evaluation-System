@@ -240,8 +240,8 @@ export class GraphExecutionService {
     answers:
       | Array<{
           id: number;
-          answer: boolean;
-          explanation: string;
+          answer?: boolean;
+          explanation?: string;
         }>
       | undefined,
     overallAssessment: string,
@@ -264,8 +264,8 @@ export class GraphExecutionService {
           counter++;
           return {
             id: a.questionId,
-            answer: answer.answer,
-            explanation: answer.explanation,
+            answer: answer.answer ?? a.answer,
+            explanation: answer.explanation ?? a.explanation,
           };
         } else {
           return {
@@ -295,6 +295,7 @@ export class GraphExecutionService {
               sessionId,
               a.answer,
               a.explanation,
+              evaluatorAccountId
             ),
           ),
         );
@@ -318,7 +319,6 @@ export class GraphExecutionService {
           threadId,
           JSON.stringify(updatedAnswers),
           overallAssessment,
-          evaluatorAccountId,
         )) as unknown as HumanEvaluationK8sJobResult;
 
         logger.info('Human evaluation job completed:', evaluationJobResult);
@@ -345,7 +345,6 @@ export class GraphExecutionService {
           threadId,
           updatedAnswers,
           overallAssessment,
-          evaluatorAccountId,
         );
         evaluationJobRunner.startJob();
         const result = await evaluationJobRunner.waitForCompletion();

@@ -92,15 +92,17 @@ export class EvaluationPersistenceService {
   async overrideEvaluationAnswer(
     id: number,
     sessionId: number,
-    answer: boolean,
-    comment: string,
+    answer?: boolean,
+    comment?: string,
+    evaluatorAccountId?: string,
   ): Promise<void> {
     try {
       await prisma.adaptiveRubricJudgeRecord.update({
         where: { id_sessionId: {id, sessionId} },
         data: {
-          answer,
-          comment,
+          ...(answer !== undefined ? { answer } : {}),
+          ...(comment !== undefined ? { comment } : {}),
+          ...(evaluatorAccountId !== undefined ? { evaluatorAccountId } : {}),
           timestamp: new Date(),
         },
       });

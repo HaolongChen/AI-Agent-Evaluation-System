@@ -150,7 +150,7 @@ export class RubricGenerationJobRunner {
       };
 
       // const schemaData = JSON.parse(this.schema) as object;
-      const schemaData = new Object(); // Placeholder since schema parsing is not the focus here
+      const schemaData = new Object(this.schema); // Placeholder since schema parsing is not the focus here
 
       const initialState = {
         query: this.query,

@@ -469,31 +469,31 @@ async function step5_submitHumanEvaluation(
       throw new Error('No question set available for evaluation');
     }
 
-    const hasAgentEvaluation = !!state.agentEvaluation;
+    const hasAgentEvaluation = !!state.evaluation;
     logger.info(`  Has agent evaluation: ${hasAgentEvaluation}`);
 
-    if (!state.agentEvaluation || !state.agentEvaluation.answers) {
+    if (!state.evaluation || !state.evaluation.answers) {
       throw new Error('No agent evaluation available to patch against');
     }
 
-    const firstAnswer = state.agentEvaluation.answers[0];
+    const firstAnswer = state.evaluation.answers[0];
     if (!firstAnswer) {
       throw new Error('No agent answers found');
     }
     const lastAnswer =
-      state.agentEvaluation.answers[state.agentEvaluation.answers.length - 1];
+      state.evaluation.answers[state.evaluation.answers.length - 1];
     if (!lastAnswer) {
       throw new Error('No last answer found');
     }
 
     const answerPatches = [
       {
-        questionId: firstAnswer.questionId,
+        id: firstAnswer.questionId,
         answer: !firstAnswer.answer,
         explanation: `E2E test: Human override - flipped agent's answer from ${firstAnswer.answer} to ${!firstAnswer.answer}`,
       },
       {
-        questionId: lastAnswer.questionId,
+        id: lastAnswer.questionId,
         explanation: `E2E test: Human explanation for question ${lastAnswer.questionId}`,
       },
     ];
@@ -509,7 +509,6 @@ async function step5_submitHumanEvaluation(
     const submitResult = await graphExecutionService.submitHumanEvaluation(
       sessionId,
       threadId,
-      undefined,
       answerPatches,
       overallAssessment,
       evaluatorAccountId,
@@ -528,7 +527,6 @@ async function step5_submitHumanEvaluation(
       {
         submitStatus: submitResult.status,
         patchedAnswers: answerPatches.length,
-        verdict: submitResult.finalReport?.verdict,
         overallScore: submitResult.finalReport?.overallScore,
       },
     );
@@ -566,21 +564,12 @@ async function step6_verifyFinalReport(
 
     const report = state.finalReport;
 
-    const validVerdicts = ['pass', 'fail', 'needs_review'];
-    if (!report.verdict || !validVerdicts.includes(report.verdict)) {
-      throw new Error(`Invalid verdict: ${report.verdict}`);
-    }
-
     if (typeof report.overallScore !== 'number' || report.overallScore < 0) {
       throw new Error(`Invalid overall score: ${report.overallScore}`);
     }
 
     recordResult('Step 6: Verify Final Report', true, Date.now() - start, {
-      verdict: report.verdict,
       overallScore: report.overallScore,
-      hasAgentEvaluation: !!report.agentEvaluation,
-      hasHumanEvaluation: !!report.humanEvaluation,
-      discrepancyCount: report.discrepancies?.length || 0,
       auditTraceCount: report.auditTrace?.length || 0,
     });
 
@@ -700,7 +689,6 @@ async function runFullE2ETest(): Promise<void> {
 
     if (finalReport) {
       logger.info(`\nFinal Report:`);
-      logger.info(`  Verdict: ${finalReport.verdict}`);
       logger.info(`  Overall Score: ${finalReport.overallScore}`);
       logger.info(`  Summary: ${finalReport.summary.substring(0, 200)}...`);
     }

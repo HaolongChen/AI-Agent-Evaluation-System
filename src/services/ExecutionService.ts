@@ -56,6 +56,20 @@ export class ExecutionService {
         throw new Error('No golden set found');
       }
 
+      if(!goldenSet.userInput || goldenSet.userInput.length === 0) {
+        logger.warn(`Golden set ${goldenSet.id} has no user input`);
+        throw new Error('Golden set has no user input');
+      }
+
+      if(goldenSet.evaluationSessions && goldenSet.evaluationSessions.length > 0) {
+        logger.warn(`Golden set ${goldenSet.id} is existing and already has evaluation sessions`);
+        throw new Error('Golden set is existing and already has evaluation sessions');
+      }
+
+      if (!goldenSet.isProjectExisting) {
+        // 1. flexibly allocate some project IDs for new golden sets that don't have an associated project yet, so that we can use the schema downloader tool in the analysis agent
+      }
+
       const typeSystemStore = new TypeSystemStore();
       const res = await Promise.allSettled([
         typeSystemStore.getAFCustomCodeTemplates(),
@@ -148,6 +162,10 @@ export class ExecutionService {
         if (!goldenSet.userInput[0]) {
           throw new Error('No user input found in golden set');
         }
+
+
+        // when this project exists but has a lot waited requests, consider allocating new project IDs and importing original schema
+
         const evalJobRunner = new EvaluationJobRunner(
           goldenSet.projectExId,
           WS_URL,
@@ -249,7 +267,7 @@ export class ExecutionService {
     }
   }
 
-  async getSessionWithRubrics(sessionId: number) {
+  async getSessionWithRubrics(sessionId: number) { // TODO: rename =<
     try {
       return prisma.evaluationSession.findUnique({
         where: { id: sessionId },

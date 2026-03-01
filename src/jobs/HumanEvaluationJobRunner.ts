@@ -17,16 +17,17 @@ interface SessionMetadata {
   skipHumanEvaluation?: boolean;
 }
 
-type GraphResult = typeof import('../langGraph/state/state.ts').rubricAnnotation.State & {
-  __interrupt__?: Array<{
-    value: {
-      message?: string;
-      questionSetFinal?: unknown;
-    };
-    resumable: boolean;
-    ns: string[];
-  }>;
-};
+type GraphResult =
+  typeof import('../langGraph/state/state.ts').rubricAnnotation.State & {
+    __interrupt__?: Array<{
+      value: {
+        message?: string;
+        questionSetFinal?: unknown;
+      };
+      resumable: boolean;
+      ns: string[];
+    }>;
+  };
 
 export interface HumanEvaluationJobResult {
   status: 'succeeded' | 'failed';
@@ -49,19 +50,18 @@ export class HumanEvaluationJobRunner {
     private readonly sessionId: number,
     private readonly threadId: string,
     private readonly answers: Array<{
-      questionId: number;
+      id: number;
       answer: boolean;
       explanation: string;
-      evidence?: string[] | undefined;
     }>,
     private readonly overallAssessment: string,
-    private readonly evaluatorAccountId: string
+    private readonly evaluatorAccountId: string,
   ) {
     this.completionPromise = new Promise<HumanEvaluationJobResult>(
       (resolve, reject) => {
         this.resolveCompletion = resolve;
         this.rejectCompletion = reject;
-      }
+      },
     );
   }
 
@@ -74,115 +74,115 @@ export class HumanEvaluationJobRunner {
 
   /**
    * Core logic for human evaluation submission.
-   * 
+   *
    * RESPONSIBILITIES:
    * - Saves human answers to DB BEFORE resuming graph (for persistence)
    * - Resumes LangGraph workflow with human evaluation input
    * - Detects unexpected interrupts (defensive programming)
    * - Persists final report and updates session status
-   * 
+   *
    * POSITION IN WORKFLOW: Final HITL checkpoint before report generation
    */
   async submitHumanEvaluation(): Promise<HumanEvaluationJobResult> {
-    const session = await executionService.getSessionWithRubrics(this.sessionId);
-
-    if (!session) {
-      throw new Error('Session not found');
-    }
-
-    const metadata = session.metadata as SessionMetadata | null;
-    if (!metadata || metadata.threadId !== this.threadId) {
-      throw new Error('Thread ID mismatch');
-    }
-
-    if (session.rubrics.length > 0) {
-      logger.info('Saving human answers to database before resuming graph', {
-        sessionId: this.sessionId,
-        answerCount: this.answers.length,
-      });
-
-      for (const answer of this.answers) {
-        await evaluationPersistenceService.saveQuestionAnswer(
-          answer.questionId,
-          'human',
-          {
-            answer: answer.answer,
-            explanation: answer.explanation,
-            ...(answer.evidence && { evidence: answer.evidence }),
-          },
-          this.evaluatorAccountId
-        );
-      }
-    }
-
-    const humanEvaluationInput = {
-      answers: this.answers,
-      overallAssessment: this.overallAssessment,
-    };
-
-    const provider = session.modelName.toLowerCase().startsWith('gemini')
-      ? 'gemini'
-      : 'azure';
-
-    const evalConfigurable: GraphConfigurable = {
-      sessionId: this.sessionId,
-      thread_id: this.threadId,
-      provider,
-      model: session.modelName,
-      skipHumanReview: metadata.skipHumanReview ?? false,
-      skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
-    };
-
-    const result = await graph.invoke(
-      new Command({ resume: humanEvaluationInput }),
-      {
-        configurable: { ...evalConfigurable, projectExId: '' },
-      }
-    ) as GraphResult;
-
-    const graphStatus: HumanEvaluationJobResult['graphStatus'] = 'completed';
-    const message = 'Evaluation completed successfully';
-
-    if (result.__interrupt__ && result.__interrupt__.length > 0) {
-      logger.warn('Unexpected interrupt after human evaluation', {
-        sessionId: this.sessionId,
-        interrupts: result.__interrupt__,
-      });
-      throw new Error(
-        'Unexpected workflow interrupt after human evaluation. Graph should complete after this checkpoint.'
-      );
-    }
-
-    if (result.finalReport) {
-      await evaluationPersistenceService.saveFinalReport(
+    try {
+      const session = await executionService.getSessionWithRubrics(
         this.sessionId,
-        undefined,
-        session.modelName,
-        result.finalReport
       );
 
-      if (session.rubrics.length > 0) {
-        await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-          this.sessionId,
-          result.finalReport
+      if (!session) {
+        throw new Error('Session not found');
+      }
+
+      const metadata = session.metadata as SessionMetadata | null;
+      if (!metadata || metadata.threadId !== this.threadId) {
+        throw new Error('Thread ID mismatch');
+      }
+
+      // if (session.rubrics.length > 0) {
+      //   logger.info('Saving human answers to database before resuming graph', {
+      //     sessionId: this.sessionId,
+      //     answerCount: this.answers.length,
+      //   });
+
+      //   for (const answer of this.answers) {
+      //     await evaluationPersistenceService.saveQuestionAnswer(
+      //       answer.questionId,
+      //       'human',
+      //       {
+      //         answer: answer.answer,
+      //         explanation: answer.explanation,
+      //         ...(answer.evidence && { evidence: answer.evidence }),
+      //       },
+      //       this.evaluatorAccountId,
+      //     );
+      //   }
+      // }
+
+      const humanEvaluationInput = {
+        answers: this.answers,
+        overallAssessment: this.overallAssessment,
+      };
+
+      const provider = session.modelName.toLowerCase().startsWith('gemini')
+        ? 'gemini'
+        : 'azure';
+
+      const evalConfigurable: GraphConfigurable = {
+        sessionId: this.sessionId,
+        thread_id: this.threadId,
+        provider,
+        model: session.modelName,
+        skipHumanReview: metadata.skipHumanReview ?? false,
+        skipHumanEvaluation: metadata.skipHumanEvaluation ?? false,
+      };
+
+      const result = (await graph.invoke(
+        new Command({ resume: humanEvaluationInput }),
+        {
+          configurable: { ...evalConfigurable, projectExId: '' },
+        },
+      )) as GraphResult;
+
+      const graphStatus: HumanEvaluationJobResult['graphStatus'] = 'completed';
+      const message = 'Evaluation completed successfully';
+
+      if (result.__interrupt__ && result.__interrupt__.length > 0) {
+        logger.warn('Unexpected interrupt after human evaluation', {
+          sessionId: this.sessionId,
+          interrupts: result.__interrupt__,
+        });
+        throw new Error(
+          'Unexpected workflow interrupt after human evaluation. Graph should complete after this checkpoint.',
         );
       }
+
+      if (result.finalReport) {
+        await evaluationPersistenceService.saveFinalReport(
+          this.sessionId,
+          undefined,
+          session.modelName,
+          result.finalReport,
+        );
+      }
+
+      await executionService.updateSessionStatus(
+        this.sessionId,
+        SESSION_STATUS.COMPLETED,
+        new Date(),
+      );
+
+      return {
+        status: 'succeeded',
+        sessionId: this.sessionId,
+        threadId: this.threadId,
+        graphStatus,
+        message,
+        finalReport: result.finalReport ?? null,
+      };
+    } catch (error) {
+      logger.error('Error submitting human evaluation:', error);
+      throw error;
     }
-
-    await executionService.updateSessionStatus(
-      this.sessionId,
-      SESSION_STATUS.COMPLETED,
-      new Date()
-    );
-
-    return {
-      status: 'succeeded',
-      sessionId: this.sessionId,
-      threadId: this.threadId,
-      graphStatus,
-      message,
-      finalReport: result.finalReport ?? null,
-    };
   }
 
   async startJob(): Promise<void> {
@@ -216,7 +216,7 @@ export class HumanEvaluationJobRunner {
   }
 
   async waitForCompletion(
-    timeoutMs: number = DEFAULT_TIMEOUT_MS
+    timeoutMs: number = DEFAULT_TIMEOUT_MS,
   ): Promise<HumanEvaluationJobResult> {
     this.clearTimeout();
 
@@ -225,7 +225,7 @@ export class HumanEvaluationJobRunner {
         this.timeoutId = null;
         this.isCompleted = true;
         this.rejectCompletion(
-          new Error(`Human evaluation job timed out after ${timeoutMs}ms`)
+          new Error(`Human evaluation job timed out after ${timeoutMs}ms`),
         );
       }
     }, timeoutMs);
@@ -272,10 +272,9 @@ if (
     });
 
   const answers = JSON.parse(args.answersJson) as Array<{
-    questionId: number;
+    id: number;
     answer: boolean;
     explanation: string;
-    evidence?: string[];
   }>;
 
   const runner = new HumanEvaluationJobRunner(
@@ -283,7 +282,7 @@ if (
     args.threadId,
     answers,
     args.overallAssessment,
-    args.evaluatorAccountId
+    args.evaluatorAccountId,
   );
 
   runner.startJob();
@@ -300,7 +299,7 @@ if (
         `JOB_RESULT_JSON: ${JSON.stringify({
           status: 'failed',
           error: error instanceof Error ? error.message : String(error),
-        })}`
+        })}`,
       );
       process.exit(1);
     });

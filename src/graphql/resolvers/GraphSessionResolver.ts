@@ -25,17 +25,15 @@ export interface QuestionPatchInput {
 }
 
 export interface QuestionAnswerInput {
-  questionId: number;
+  id: number;
   answer: boolean;
   explanation: string;
-  evidence?: string[];
 }
 
 export interface QuestionAnswerPatchInput {
-  questionId: number;
+  id: number;
   answer?: boolean;
   explanation?: string;
-  evidence?: string[];
 }
 
 function transformQuestionSetInput(
@@ -92,8 +90,7 @@ export const graphSessionResolver = {
           threadId: state.threadId,
           questionSetDraft: state.questionSetDraft,
           questionSetFinal: state.questionSetFinal,
-          agentEvaluation: state.agentEvaluation,
-          humanEvaluation: state.humanEvaluation,
+          evaluation: state.evaluation,
           finalReport: state.finalReport,
         };
       } catch (error) {
@@ -154,8 +151,7 @@ export const graphSessionResolver = {
       args: {
         sessionId: number;
         threadId: string;
-        answers?: QuestionAnswerInput[] | null;
-        answerPatches?: QuestionAnswerPatchInput[] | null;
+        answers?: QuestionAnswerInput[];
         overallAssessment: string;
         evaluatorAccountId: string;
       }
@@ -163,14 +159,13 @@ export const graphSessionResolver = {
       try {
         logger.info('Submitting human evaluation', {
           sessionId: args.sessionId,
-          answersCount: args.answers?.length ?? args.answerPatches?.length ?? 0,
+          answersCount: args.answers?.length ?? 0,
         });
 
         const result = await graphExecutionService.submitHumanEvaluation(
           args.sessionId,
           args.threadId,
-          args.answers ?? undefined,
-          args.answerPatches ?? undefined,
+          args.answers,
           args.overallAssessment,
           args.evaluatorAccountId
         );

@@ -36,6 +36,22 @@ enum RubricReviewStatus {
   modified
 }
 
+enum Verdict {
+  pass
+  fail
+  needs_review
+}
+
+model project {
+  projectExId String   @unique @map("project_ex_id") // External project ID from the application
+  name        String   @unique @map("name")
+  lock        Boolean  @default(false) @map("lock") // Lock to prevent concurrent project use
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([projectExId], map: "idx_project_schema")
+}
+
 model goldenSet {
   id                 Int                 @id @default(autoincrement())
   projectExId        String              @map("project_ex_id")
@@ -45,7 +61,8 @@ model goldenSet {
   evaluationSessions evaluationSession[] @relation()
   createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy          String?             @map("created_by")
-  isActive           Boolean           @default(false) @map("is_active") // Is goldenSet in progress
+  isActive           Boolean             @default(false) @map("is_active") // Is goldenSet in progress
+  isProjectExisting  Boolean             @default(false) @map("is_existing") // Is goldenSet based on existing project or newly created
 
   @@unique([projectExId])
   @@index([id], map: "idx_golden_set")
@@ -64,10 +81,10 @@ model userInput {
 }
 
 model copilotOutput {
-  id          Int         @id @default(autoincrement())
-  goldenSetId Int         @map("golden_set_id") // Reference to golden_set.id
-  content     String      @map("output_content") // copilot output
-  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  id          Int      @id @default(autoincrement())
+  goldenSetId Int      @map("golden_set_id") // Reference to golden_set.id
+  content     String   @map("output_content") // copilot output
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Performance Metrics
   totalLatencyMs    Int?     @map("total_latency_ms")
@@ -105,15 +122,15 @@ model evaluationSession {
 
 // Adaptive Rubrics (AI-generated evaluation questions - one question per row)
 model adaptiveRubric {
-  id        Int @id @default(autoincrement())
+  id        Int
   sessionId Int @map("session_id")
 
   // Rubric Content (one question per row)
-  version         String  @default("1.0")
-  title           String  @map("title")
-  content         String  @map("content") @db.Text
-  expectedAnswer  Boolean @map("expected_answer")
-  weight          Decimal @map("weight") @db.Decimal(5, 2)
+  version        String  @default("1.0")
+  title          String  @map("title")
+  content        String  @map("content") @db.Text
+  expectedAnswer Boolean @map("expected_answer")
+  weight         Decimal @map("weight") @db.Decimal(5, 2)
 
   // Status
   reviewStatus RubricReviewStatus @default(pending) @map("review_status")
@@ -129,24 +146,24 @@ model adaptiveRubric {
   session     evaluationSession          @relation(fields: [sessionId], references: [id])
   judgeRecord adaptiveRubricJudgeRecord?
 
+  @@id([id, sessionId]) // Composite primary key to allow multiple questions per session
   @@index([sessionId], map: "idx_adaptive_rubric_session")
 }
 
 // Rubric Judgments (human and agent evaluations - one answer per rubric question)
 model adaptiveRubricJudgeRecord {
-  id               Int      @id @default(autoincrement())
-  adaptiveRubricId Int      @unique @map("adaptive_rubric_id")
-  evaluatorType    String   @map("evaluator_type") // 'agent' or 'human'
-  accountId        String?  @map("account_id") // ID of the human judge (null for agent evaluations)
-  answer           Boolean  // yes/no answer to the rubric question
-  comment          String?  @db.Text
-  overallScore     Decimal  @map("overall_score") @db.Decimal(5, 2)
-  timestamp        DateTime @default(now()) @map("timestamp") @db.Timestamptz(6)
+  id           Int
+  sessionId    Int      @map("session_id")
+  accountId    String?  @map("account_id") // ID of the human judge (null for agent evaluations)
+  answer      Boolean  @map("answer") // Yes/No answer to the rubric question
+  comment      String?  @db.Text
+  timestamp    DateTime @default(now()) @map("timestamp") @db.Timestamptz(6)
 
   // Relations
-  rubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
+  rubric adaptiveRubric @relation(fields: [id, sessionId], references: [id, sessionId])
 
-  @@index([id], map: "idx_rubric_judge_rubric")
+  @@id([id, sessionId], map: "idx_rubric_judge_rubric")
+  @@index([sessionId], map: "idx_rubric_judge_session")
 }
 
 // Evaluation Results Summary (matching LangGraph FinalReport interface)
@@ -159,11 +176,10 @@ model evaluationResult {
   evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
 
   // FinalReport fields (matching LangGraph FinalReport interface)
-  verdict          String   @default("needs_review") // 'pass', 'fail', 'needs_review'
+  verdict          Verdict  @default(needs_review) // 'pass', 'fail', 'needs_review'
   overallScore     Decimal  @map("overall_score") @db.Decimal(5, 2)
   summary          String   @db.Text
   detailedAnalysis String   @map("detailed_analysis") @db.Text
-  discrepancies    String[] @default([]) // Array of discrepancy descriptions
   auditTrace       String[] @default([]) @map("audit_trace") // Array of audit log entries
   generatedAt      DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
 

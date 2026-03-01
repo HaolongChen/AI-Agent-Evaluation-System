@@ -7,6 +7,9 @@ export type copilotType =
   | 'logAnalyzer'
   | 'agentBuilder';
 
+export type interruptType =
+  | 'rubric_review'
+  | 'human_evaluation'
 export type expectedAnswerType = 'yes' | 'no';
 
 export type rubricContentType = {

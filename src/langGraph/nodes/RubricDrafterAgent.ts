@@ -91,8 +91,8 @@ Generate questions with appropriate weights that sum to 100.
     totalWeight = response.questions.reduce((sum, q) => sum + q.weight, 0);
   }
 
-  const questions: EvaluationQuestion[] = response.questions.map((q) => ({
-    id: -1, // overwritten when saved
+  const questions: EvaluationQuestion[] = response.questions.map((q, idx) => ({
+    id: idx + 1, // overwritten when saved
     title: q.title,
     content: q.content,
     expectedAnswer: q.expectedAnswer,
@@ -109,18 +109,10 @@ Generate questions with appropriate weights that sum to 100.
     updatedAt: now,
   };
 
-  const {ids: questionIds} = await evaluationPersistenceService.saveQuestions(
+  await evaluationPersistenceService.saveQuestions(
     config?.configurable?.['sessionId'] as number,
     questionSetDraft
   );
-
-  questionSetDraft.questions.forEach((q, idx) => {
-    const id = questionIds[idx];
-    if (id === undefined) {
-      throw new Error(`Question ID at index ${idx} is undefined`);
-    }
-    q.id = id;
-  });
 
   const timestamp = new Date().toISOString();
   const auditEntry = `[${timestamp}] QuestionDrafter: Created ${questionSetDraft.questions.length} evaluation questions. Rationale: ${response.rationale}`;

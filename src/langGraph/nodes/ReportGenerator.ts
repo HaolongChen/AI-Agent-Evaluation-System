@@ -30,28 +30,17 @@ export async function reportGeneratorNode(
   const modelName =
     (config?.configurable?.['model'] as string | undefined) || 'gpt-4o';
 
-  if (!state.finalReport) {
-    throw new Error('No final report available for generation');
-  }
 
   const llm = getLLM({ provider, model: modelName });
   const llmWithStructuredOutput = llm.withStructuredOutput(reportSchema);
 
-  const agentAnswers =
-    state.agentEvaluation?.answers
+  const answer =
+    state.evaluation?.answers
       ?.map(
         (a) =>
           `- ${a.questionId}: ${a.answer ? 'YES' : 'NO'} - ${a.explanation}`
       )
       .join('\n') || 'No agent evaluation';
-
-  const humanAnswers =
-    state.humanEvaluation?.answers
-      ?.map(
-        (a) =>
-          `- ${a.questionId}: ${a.answer ? 'YES' : 'NO'} - ${a.explanation}`
-      )
-      .join('\n') || 'No human evaluation';
 
   // Build evaluation questions context (new model)
   const questionsInfo =
@@ -81,17 +70,10 @@ ANALYSIS: """${analysisContext}"""
 EVALUATION QUESTIONS:
 ${questionsInfo}
 
-VERDICT: ${state.finalReport.verdict}
-OVERALL SCORE: ${state.finalReport.overallScore}%
+OVERALL SCORE: ${state.evaluation?.overallScore}%
 
-AGENT EVALUATION ANSWERS:
-${agentAnswers}
-
-HUMAN EVALUATION ANSWERS:
-${humanAnswers}
-
-DISCREPANCIES:
-${state.finalReport.discrepancies.join('\n') || 'No discrepancies'}
+EVALUATION ANSWERS:
+${answer}
 
 Generate:
 1. A brief executive summary (2-3 sentences)
@@ -115,7 +97,7 @@ Generate:
 
   // Update the final report with enhanced content
   const enhancedReport: FinalReport = {
-    ...state.finalReport,
+    overallScore: state.evaluation?.overallScore || 0,
     summary: response.executiveSummary,
     detailedAnalysis: `${
       response.detailedFindings
@@ -134,8 +116,7 @@ Generate:
   const analysis = `
 # Evaluation Report
 
-## Verdict: ${enhancedReport.verdict.toUpperCase()}
-## Overall Score: ${enhancedReport.overallScore}%
+## Overall Score: ${state.evaluation?.overallScore}%
 
 ## Executive Summary
 ${response.executiveSummary}

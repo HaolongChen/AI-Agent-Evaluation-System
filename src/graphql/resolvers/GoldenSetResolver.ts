@@ -68,7 +68,7 @@ export const goldenSetResolver = {
     ) => {
       try {
         const result = await goldenSetService.updateGoldenSetInput(
-          args.projectExId ?? '0',
+          args.projectExId ?? 'N/A',
           args.copilotType,
           args.description ?? '',
           args.query

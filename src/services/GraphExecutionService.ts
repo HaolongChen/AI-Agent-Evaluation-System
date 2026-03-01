@@ -5,7 +5,6 @@ import { logger } from '../utils/logger.ts';
 import type {
   QuestionSet,
   QuestionEvaluation,
-  QuestionAnswer,
   FinalReport,
 } from '../langGraph/state/state.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
@@ -16,6 +15,7 @@ import {
 } from '../kubernetes/utils/apply-from-file.ts';
 import { HumanEvaluationJobRunner } from '../jobs/HumanEvaluationJobRunner.ts';
 import { RubricReviewJobRunner } from '../jobs/RubricReviewJobRunner.ts';
+import { evaluationPersistenceService } from './EvaluationPersistenceService.ts';
 
 export type GraphSessionStatus =
   | 'pending'
@@ -63,7 +63,6 @@ export interface HumanEvaluationResult {
  * and the graph pauses at interrupt points waiting for human input.
  */
 export class GraphExecutionService {
-
   async submitRubricReview(
     sessionId: number,
     threadId: string,
@@ -79,16 +78,16 @@ export class GraphExecutionService {
         }>
       | undefined,
     feedback: string | undefined,
-    reviewerAccountId: string
+    reviewerAccountId: string,
   ): Promise<RubricReviewResult> {
     try {
       let finalQuestionSet: QuestionSet | undefined;
 
       // Handle partial updates via questionPatches
       if (questionPatches && questionPatches.length > 0) {
-        logger.info('Applying question patches', { 
-          sessionId, 
-          patchCount: questionPatches.length 
+        logger.info('Applying question patches', {
+          sessionId,
+          patchCount: questionPatches.length,
         });
 
         // Fetch existing questions from database
@@ -117,8 +116,10 @@ export class GraphExecutionService {
               expectedAnswer: r.expectedAnswer,
               weight: Number(r.weight),
             },
-          ])
+          ]),
         );
+
+        const questionsUpdating = [];
 
         // Apply patches
         for (const patch of questionPatches) {
@@ -134,12 +135,12 @@ export class GraphExecutionService {
             question.expectedAnswer = patch.expectedAnswer;
           }
           if (patch.weight !== undefined) question.weight = patch.weight;
+          questionsUpdating.push(question);
         }
 
         // Reconstruct full QuestionSet with patches applied
         const questions = Array.from(questionMap.values());
         const totalWeight = questions.reduce((sum, q) => sum + q.weight, 0);
-
         finalQuestionSet = {
           version: session.rubrics[0]!.version,
           questions,
@@ -147,6 +148,11 @@ export class GraphExecutionService {
           createdAt: session.rubrics[0]!.createdAt.toISOString(),
           updatedAt: new Date().toISOString(),
         };
+
+        await evaluationPersistenceService.updateRubricQuestions(
+          sessionId,
+          questionsUpdating,
+        );
 
         logger.info('Question patches applied successfully', {
           sessionId,
@@ -175,7 +181,7 @@ export class GraphExecutionService {
           './src/jobs/RubricReviewJobRunner.ts',
           300000,
           'rubric-review',
-          ...args
+          ...args,
         )) as unknown as RubricReviewK8sJobResult;
 
         logger.info('Question set review job completed:', reviewJobResult);
@@ -184,7 +190,7 @@ export class GraphExecutionService {
           throw new Error(
             reviewJobResult.reason ||
               reviewJobResult.error ||
-              'Question set review Kubernetes job failed'
+              'Question set review Kubernetes job failed',
           );
         }
 
@@ -193,7 +199,9 @@ export class GraphExecutionService {
           threadId,
           status: 'completed',
           questionSetFinal: reviewJobResult.questionSetFinal ?? null,
-          message: reviewJobResult.message || 'Question set review completed successfully',
+          message:
+            reviewJobResult.message ||
+            'Question set review completed successfully',
         };
       } else {
         const reviewJobRunner = new RubricReviewJobRunner(
@@ -202,7 +210,7 @@ export class GraphExecutionService {
           approved,
           reviewerAccountId,
           finalQuestionSet,
-          feedback
+          feedback,
         );
         reviewJobRunner.startJob();
         const result = await reviewJobRunner.waitForCompletion();
@@ -212,7 +220,8 @@ export class GraphExecutionService {
           threadId,
           status: 'completed',
           questionSetFinal: result.questionSetFinal ?? null,
-          message: result.message || 'Question set review completed successfully',
+          message:
+            result.message || 'Question set review completed successfully',
         };
       }
     } catch (error) {
@@ -220,7 +229,7 @@ export class GraphExecutionService {
       throw new Error(
         `Failed to submit question set review: ${
           error instanceof Error ? error.message : 'Unknown error'
-        }`
+        }`,
       );
     }
   }
@@ -229,109 +238,73 @@ export class GraphExecutionService {
     sessionId: number,
     threadId: string,
     answers:
-      | Array<{ questionId: number; answer: boolean; explanation: string; evidence?: string[] }>
-      | undefined,
-    answerPatches:
       | Array<{
-          questionId: number;
-          answer?: boolean;
-          explanation?: string;
-          evidence?: string[];
+          id: number;
+          answer: boolean;
+          explanation: string;
         }>
       | undefined,
     overallAssessment: string,
-    evaluatorAccountId: string
+    evaluatorAccountId: string,
   ): Promise<HumanEvaluationResult> {
     try {
-      let finalAnswers: Array<{
-        questionId: number;
-        answer: boolean;
-        explanation: string;
-        evidence?: string[] | undefined;
-      }>;
+      const state = await this.getSessionState(sessionId);
 
-      if (answerPatches && answerPatches.length > 0) {
-        logger.info('Applying answer patches', {
-          sessionId,
-          patchCount: answerPatches.length,
-        });
-
-        const state = await this.getSessionState(sessionId);
-
-        if (!state.agentEvaluation || !state.questionSetFinal) {
-          throw new Error(
-            'Cannot apply answer patches: no agent evaluation or question set found'
-          );
-        }
-
-        const answerMap = new Map(
-          state.agentEvaluation.answers.map((a) => [
-            a.questionId,
-            {
-              questionId: a.questionId,
-              answer: a.answer,
-              explanation: a.explanation,
-              evidence: a.evidence,
-            },
-          ])
+      if (!state.evaluation || !state.questionSetFinal) {
+        throw new Error(
+          'Cannot apply answer patches: no agent evaluation or question set found',
         );
+      }
 
-        for (const patch of answerPatches) {
-          let answer = answerMap.get(patch.questionId);
+      let counter = 0;
 
-          if (!answer) {
-            const question = state.questionSetFinal.questions.find(
-              (q) => q.id === patch.questionId
-            );
-            if (!question) {
-              throw new Error(`Question ID ${patch.questionId} not found`);
-            }
-
-            answer = {
-              questionId: patch.questionId,
-              answer: patch.answer ?? question.expectedAnswer,
-              explanation: patch.explanation ?? '',
-              evidence: patch.evidence,
-            };
-            answerMap.set(patch.questionId, answer);
-          } else {
-            if (patch.answer !== undefined) answer.answer = patch.answer;
-            if (patch.explanation !== undefined) {
-              answer.explanation = patch.explanation;
-            }
-            if (patch.evidence !== undefined) answer.evidence = patch.evidence;
-          }
+      const updatedAnswers = state.evaluation.answers.map((a) => {
+        const answer = answers?.find((ans) => ans.id === a.questionId);
+        if (answer) {
+          counter++;
+          return {
+            id: a.questionId,
+            answer: answer.answer,
+            explanation: answer.explanation,
+          };
+        } else {
+          return {
+            answer: a.answer,
+            explanation: a.explanation,
+            id: a.questionId,
+          };
         }
+      });
 
-        const allQuestionIds = new Set(
-          state.questionSetFinal.questions.map((q) => q.id)
-        );
-        for (const qid of allQuestionIds) {
-          if (!answerMap.has(qid)) {
-            const agentAnswer = state.agentEvaluation.answers.find(
-              (a) => a.questionId === qid
-            );
-            if (agentAnswer) {
-              answerMap.set(qid, {
-                questionId: agentAnswer.questionId,
-                answer: agentAnswer.answer,
-                explanation: agentAnswer.explanation,
-                evidence: agentAnswer.evidence,
-              });
-            }
-          }
-        }
-
-        finalAnswers = Array.from(answerMap.values());
-
-        logger.info('Answer patches applied successfully', {
+      if (counter != (answers?.length ?? 0)) {
+        logger.warn('Some provided answers did not match existing questions', {
           sessionId,
-          totalAnswers: finalAnswers.length,
+          threadId,
+          providedAnswerIds: answers?.map((a) => a.id) ?? [],
+          existingQuestionIds: state.evaluation.answers.map(
+            (a) => a.questionId,
+          ),
         });
-      } else if (answers) {
-        finalAnswers = answers;
-      } else {
-        throw new Error('Either answers or answerPatches must be provided');
+      }
+
+      if (answers && answers.length > 0) {
+        const res = await Promise.allSettled(
+          answers.map((a) =>
+            evaluationPersistenceService.overrideEvaluationAnswer(
+              a.id,
+              sessionId,
+              a.answer,
+              a.explanation,
+            ),
+          ),
+        );
+        const failed = res.filter((r) => r.status === 'rejected');
+        if (failed.length > 0) {
+          logger.warn('Some evaluation answers failed to be overridden', {
+            sessionId,
+            failedCount: failed.length,
+          });
+        }
       }
 
       if (RUN_KUBERNETES_JOBS) {
@@ -343,9 +316,9 @@ export class GraphExecutionService {
           'human-evaluation',
           String(sessionId),
           threadId,
-          JSON.stringify(finalAnswers),
+          JSON.stringify(updatedAnswers),
           overallAssessment,
-          evaluatorAccountId
+          evaluatorAccountId,
         )) as unknown as HumanEvaluationK8sJobResult;
 
         logger.info('Human evaluation job completed:', evaluationJobResult);
@@ -354,7 +327,7 @@ export class GraphExecutionService {
           throw new Error(
             evaluationJobResult.reason ||
               evaluationJobResult.error ||
-              'Human evaluation Kubernetes job failed'
+              'Human evaluation Kubernetes job failed',
           );
         }
 
@@ -370,9 +343,9 @@ export class GraphExecutionService {
         const evaluationJobRunner = new HumanEvaluationJobRunner(
           sessionId,
           threadId,
-          finalAnswers,
+          updatedAnswers,
           overallAssessment,
-          evaluatorAccountId
+          evaluatorAccountId,
         );
         evaluationJobRunner.startJob();
         const result = await evaluationJobRunner.waitForCompletion();
@@ -390,7 +363,7 @@ export class GraphExecutionService {
       throw new Error(
         `Failed to submit human evaluation: ${
           error instanceof Error ? error.message : 'Unknown error'
-        }`
+        }`,
       );
     }
   }
@@ -401,8 +374,7 @@ export class GraphExecutionService {
     threadId: string | null;
     questionSetDraft: QuestionSet | null;
     questionSetFinal: QuestionSet | null;
-    agentEvaluation: QuestionEvaluation | null;
-    humanEvaluation: QuestionEvaluation | null;
+    evaluation: QuestionEvaluation | null;
     finalReport: FinalReport | null;
   }> {
     const session = await prisma.evaluationSession.findUnique({
@@ -420,37 +392,33 @@ export class GraphExecutionService {
     }
 
     const metadata = session.metadata as SessionMetadata | null;
-    const rubrics = session.rubrics;
+    const evaluatedRubrics = session.rubrics;
 
     let status: GraphSessionStatus = 'pending';
     if (session.status === SESSION_STATUS.COMPLETED) {
       status = 'completed';
     } else if (session.status === SESSION_STATUS.FAILED) {
       status = 'failed';
-    } else if (rubrics.length > 0) {
-      const allApproved = rubrics.every(
-        (r) => r.reviewStatus === REVIEW_STATUS.APPROVED
+    } else if (evaluatedRubrics.length > 0) {
+      const allApproved = evaluatedRubrics.every(
+        (r) => r.reviewStatus === REVIEW_STATUS.APPROVED,
       );
-      const anyPending = rubrics.some(
-        (r) => r.reviewStatus === REVIEW_STATUS.PENDING
+      const anyPending = evaluatedRubrics.some(
+        (r) => r.reviewStatus === REVIEW_STATUS.PENDING,
       );
-      const hasHumanEval = rubrics.some(
-        (r) => r.judgeRecord?.evaluatorType === 'human'
-      );
-
       if (anyPending) {
         status = 'awaiting_rubric_review';
-      } else if (allApproved && hasHumanEval) {
-        status = 'completed';
       } else if (allApproved) {
         status = 'awaiting_human_evaluation';
       }
     }
 
     const questionSet =
-      rubrics.length > 0 ? this.transformRubricsToQuestionSet(rubrics) : null;
-    const isApproved = rubrics.every(
-      (r) => r.reviewStatus === REVIEW_STATUS.APPROVED
+      evaluatedRubrics.length > 0
+        ? this.transformRubricsToQuestionSet(evaluatedRubrics)
+        : null;
+    const isApproved = evaluatedRubrics.every(
+      (r) => r.reviewStatus === REVIEW_STATUS.APPROVED,
     );
 
     return {
@@ -459,8 +427,7 @@ export class GraphExecutionService {
       threadId: metadata?.threadId ?? null,
       questionSetDraft: questionSet,
       questionSetFinal: isApproved ? questionSet : null,
-      agentEvaluation: this.extractQuestionEvaluation(rubrics, 'agent'),
-      humanEvaluation: this.extractQuestionEvaluation(rubrics, 'human'),
+      evaluation: this.extractQuestionEvaluation(evaluatedRubrics),
       finalReport: session.result
         ? this.transformResultToFinalReport(session.result)
         : null,
@@ -477,7 +444,7 @@ export class GraphExecutionService {
       weight: Prisma.Decimal;
       createdAt: Date;
       updatedAt: Date;
-    }>
+    }>,
   ): QuestionSet {
     const [firstRubric, ...rest] = rubrics;
     if (!firstRubric) {
@@ -485,7 +452,10 @@ export class GraphExecutionService {
     }
 
     const allRubrics = [firstRubric, ...rest];
-    const totalWeight = allRubrics.reduce((sum, r) => sum + Number(r.weight), 0);
+    const totalWeight = allRubrics.reduce(
+      (sum, r) => sum + Number(r.weight),
+      0,
+    );
 
     return {
       version: firstRubric.version,
@@ -504,61 +474,51 @@ export class GraphExecutionService {
 
   private extractQuestionEvaluation(
     rubrics: Array<{
-      id: number;
-      title: string;
       judgeRecord: {
-        evaluatorType: string;
+        id: number;
+        sessionId: number;
         answer: boolean;
         comment: string | null;
-        overallScore: Prisma.Decimal;
         timestamp: Date;
       } | null;
+      id: number;
+      expectedAnswer: boolean;
+      weight: Prisma.Decimal;
     }>,
-    type: 'agent' | 'human'
   ): QuestionEvaluation | null {
-    const matchingRecords = rubrics
-      .filter((r) => r.judgeRecord?.evaluatorType === type)
-      .map((r) => r.judgeRecord!);
-
-    if (matchingRecords.length === 0) return null;
-
-    const answers: QuestionAnswer[] = rubrics
-      .filter((r) => r.judgeRecord?.evaluatorType === type)
-      .map((r) => ({
-        questionId: r.id,
-        answer: r.judgeRecord!.answer,
-        explanation: r.judgeRecord!.comment ?? '',
-      }));
-
-    const firstRecord = matchingRecords[0];
+    const firstRecord = rubrics[0]?.judgeRecord;
     if (!firstRecord) return null;
 
     return {
-      evaluatorType: type,
-      answers,
-      overallScore: Number(firstRecord.overallScore),
+      answers: rubrics.map((r) => ({
+        questionId: r.id,
+        answer: r.judgeRecord?.answer ?? false,
+        explanation: r.judgeRecord?.comment ?? '',
+      })),
+      overallScore: Number(
+        rubrics.reduce(
+          (sum, r) =>
+            sum +
+            (r.expectedAnswer === r.judgeRecord?.answer ? Number(r.weight) : 0),
+          0,
+        ),
+      ),
       summary: '',
       timestamp: firstRecord.timestamp.toISOString(),
     };
   }
 
   private transformResultToFinalReport(result: {
-    verdict: string;
     overallScore: Prisma.Decimal;
     summary: string;
     detailedAnalysis: string;
-    discrepancies: string[];
     auditTrace: string[];
     generatedAt: Date;
   }): FinalReport {
     return {
-      verdict: result.verdict as FinalReport['verdict'],
       overallScore: Number(result.overallScore),
       summary: result.summary,
       detailedAnalysis: result.detailedAnalysis,
-      agentEvaluation: null,
-      humanEvaluation: null,
-      discrepancies: result.discrepancies,
       auditTrace: result.auditTrace,
       generatedAt: result.generatedAt.toISOString(),
     };

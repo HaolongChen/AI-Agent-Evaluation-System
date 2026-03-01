@@ -1,6 +1,7 @@
 import { type RunnableConfig } from "@langchain/core/runnables";
 import { interrupt } from "@langchain/langgraph";
 import { rubricAnnotation, type QuestionSet } from "../state/index.ts";
+import type { interruptType } from "../../utils/types.ts";
 
 /**
  * Input expected from human reviewer when resuming from question set review interrupt.
@@ -39,18 +40,14 @@ export async function humanReviewerNode(
   }
 
   // Interrupt for human review
-  const humanInput = await interrupt<
+  const humanInput = interrupt<
     {
-      questionSetDraft: typeof state.questionSetDraft;
-      query: string;
-      context: string | null;
+      type: interruptType
       message: string;
     },
     HumanReviewInput
-  >({
-    questionSetDraft: state.questionSetDraft,
-    query: state.query,
-    context: state.context,
+    >({
+    type: "rubric_review",
     message: "Please review the question set draft and approve or modify it.",
   });
 

@@ -386,10 +386,7 @@ export const typeDefs = `#graphql
     questionSetDraft: QuestionSet
     "Final question set (after review)"
     questionSetFinal: QuestionSet
-    "Agent evaluation results"
-    agentEvaluation: QuestionEvaluation
-    "Human evaluation results"
-    humanEvaluation: QuestionEvaluation
+    evaluation: QuestionEvaluation
     "Final combined report"
     finalReport: FinalReportOutput
   }
@@ -508,22 +505,6 @@ export const typeDefs = `#graphql
     evidence: [String!]
   }
   
-  """
-  Partial update for a single answer (HITL evaluation - RECOMMENDED).
-  Only provide fields you want to change.
-  Example: { questionId: 123, answer: true, explanation: "Nearly perfect" }
-  """
-  input QuestionAnswerPatchInput {
-    "Question ID to update (required)"
-    questionId: Int!
-    "New answer (optional)"
-    answer: Boolean
-    "New explanation (optional)"
-    explanation: String
-    "New evidence (optional)"
-    evidence: [String!]
-  }
-
   """
   Filters for querying golden sets.
   """
@@ -704,7 +685,6 @@ export const typeDefs = `#graphql
       sessionId: Int!
       threadId: String!
       answers: [QuestionAnswerInput!]
-      answerPatches: [QuestionAnswerPatchInput!]
       overallAssessment: String!
       evaluatorAccountId: String!
     ): HumanEvaluationResult!

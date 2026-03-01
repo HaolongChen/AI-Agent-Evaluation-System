@@ -5,7 +5,7 @@ import { humanReviewerNode } from './nodes/HumanReviewer.ts';
 import { rubricInterpreterNode } from './nodes/RubricInterpreter.ts';
 import { agentEvaluatorNode } from './nodes/AgentEvaluator.ts';
 import { humanEvaluatorNode } from './nodes/HumanEvaluator.ts';
-import { mergerNode } from './nodes/Merger.ts';
+// import { mergerNode } from './nodes/Merger.ts';
 import { reportGeneratorNode } from './nodes/ReportGenerator.ts';
 import * as z from 'zod';
 import { inputCollectorNode } from './nodes/InputCollector.ts';
@@ -47,7 +47,7 @@ function shouldRedraftQuestions(state: typeof rubricAnnotation.State): string {
  */
 function afterQuestionDrafter(
   state: typeof rubricAnnotation.State,
-  config?: { configurable?: Record<string, unknown> }
+  config?: { configurable?: Record<string, unknown> },
 ): string {
   void state;
   const skipHumanReview = config?.configurable?.['skipHumanReview'] === true;
@@ -62,7 +62,7 @@ function afterQuestionDrafter(
  */
 function afterAgentEvaluator(
   state: typeof rubricAnnotation.State,
-  config?: { configurable?: Record<string, unknown> }
+  config?: { configurable?: Record<string, unknown> },
 ): string {
   void state;
   const skipHumanEvaluation =
@@ -90,7 +90,7 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   })
   .addNode('agentEvaluator', agentEvaluatorNode)
   .addNode('humanEvaluator', humanEvaluatorNode)
-  .addNode('merger', mergerNode)
+  // .addNode('merger', mergerNode)
   .addNode('reportGenerator', reportGeneratorNode)
 
   // Define edges following the workflow design
@@ -121,7 +121,7 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
     {
       questionInterpreter: 'questionInterpreter',
       questionDrafter: 'questionDrafter',
-    }
+    },
   )
 
   // Direct interpretation after auto-approval
@@ -133,14 +133,11 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   // Agent Evaluator -> Human Evaluator or Merger (conditional)
   .addConditionalEdges('agentEvaluator', afterAgentEvaluator, {
     humanEvaluator: 'humanEvaluator',
-    merger: 'merger',
+    reportGenerator: 'reportGenerator',
   })
 
-  // Human Evaluator -> Merger
-  .addEdge('humanEvaluator', 'merger')
-
-  // Merger -> Report Generator
-  .addEdge('merger', 'reportGenerator')
+  // Human Evaluator -> Report Generator
+  .addEdge('humanEvaluator', 'reportGenerator')
 
   // Report Generator -> END
   .addEdge('reportGenerator', END);

@@ -15,6 +15,7 @@ import { executionService } from '../services/ExecutionService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../../build/generated/prisma/enums.ts';
 import type { OpaqueSchemaGraph } from '../utils/zed/TypeSystem.ts';
+import type { interruptType } from '../utils/types.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
@@ -43,17 +44,17 @@ interface SessionMetadata {
 
 interface InterruptInfo {
   value: {
-    message?: string;
-    questionSetDraft?: QuestionSet;
-    questionSetFinal?: QuestionSet;
+    type: interruptType;
+    message: string;
   };
   resumable: boolean;
   ns: string[];
 }
 
-type GraphResult = typeof import('../langGraph/state/state.ts').rubricAnnotation.State & {
-  __interrupt__?: InterruptInfo[];
-};
+type GraphResult =
+  typeof import('../langGraph/state/state.ts').rubricAnnotation.State & {
+    __interrupt__?: InterruptInfo[];
+  };
 
 /**
  * Job runner for rubric generation using LangGraph workflow.
@@ -77,13 +78,13 @@ export class RubricGenerationJobRunner {
     private readonly schema: OpaqueSchemaGraph | null,
     private readonly modelName: string,
     private readonly skipHumanReview: boolean = true,
-    private readonly skipHumanEvaluation: boolean = true
+    private readonly skipHumanEvaluation: boolean = true,
   ) {
     this.completionPromise = new Promise<RubricGenerationResult>(
       (resolve, reject) => {
         this.resolveCompletion = resolve;
         this.rejectCompletion = reject;
-      }
+      },
     );
   }
 
@@ -105,7 +106,7 @@ export class RubricGenerationJobRunner {
    */
   async startJob(): Promise<void> {
     logger.info(
-      `Starting rubric generation job for goldenSet ${this.goldenSetId} (${this.projectExId}) with model ${this.modelName}`
+      `Starting rubric generation job for goldenSet ${this.goldenSetId} (${this.projectExId}) with model ${this.modelName}`,
     );
 
     try {
@@ -126,7 +127,7 @@ export class RubricGenerationJobRunner {
         this.modelName,
         this.candidateOutput,
         SESSION_STATUS.PENDING,
-        metadata as unknown as Prisma.InputJsonValue
+        metadata as unknown as Prisma.InputJsonValue,
       );
 
       const graphToUse =
@@ -151,7 +152,6 @@ export class RubricGenerationJobRunner {
       // const schemaData = JSON.parse(this.schema) as object;
       const schemaData = new Object(); // Placeholder since schema parsing is not the focus here
 
-
       const initialState = {
         query: this.query,
         context: this.context,
@@ -159,37 +159,38 @@ export class RubricGenerationJobRunner {
         schema: schemaData,
       };
 
-      const result = await graphToUse.invoke(initialState, { configurable }) as GraphResult;
+      const result = (await graphToUse.invoke(initialState, {
+        configurable,
+      })) as GraphResult;
 
       let graphStatus: RubricGenerationResult['graphStatus'] = 'completed';
       let message = 'Evaluation completed successfully';
-      let questionSetForResponse: QuestionSet | null | undefined =
+      const questionSetForResponse: QuestionSet | null | undefined =
         result.questionSetFinal ?? result.questionSetDraft;
 
       if (result.__interrupt__ && result.__interrupt__.length > 0) {
         const interruptValue = result.__interrupt__[0]?.value;
-        if (
-          interruptValue?.questionSetDraft &&
-          !interruptValue?.questionSetFinal
-        ) {
+        if (interruptValue?.type === 'rubric_review') {
           graphStatus = 'awaiting_rubric_review';
           message =
+            interruptValue.message ||
             'Graph paused for question set review. Call submitRubricReview to continue.';
-          questionSetForResponse =
-            interruptValue.questionSetDraft ?? questionSetForResponse;
-        } else if (interruptValue?.questionSetFinal) {
+        } else if (interruptValue?.type === 'human_evaluation') {
           graphStatus = 'awaiting_human_evaluation';
           message =
+            interruptValue.message ||
             'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
-          questionSetForResponse =
-            interruptValue.questionSetFinal ?? questionSetForResponse;
 
-          if (result.agentEvaluation) {
+          if (result.evaluation) {
             await evaluationPersistenceService.saveAgentEvaluationAnswers(
               session.id,
-              result.agentEvaluation
+              result.evaluation,
             );
           }
+        } else {
+          logger.error('Unexpected interrupt type after resuming graph', {
+            interruptType: interruptValue?.type,
+          });
         }
       }
 
@@ -198,7 +199,7 @@ export class RubricGenerationJobRunner {
         graphStatus === 'completed'
           ? SESSION_STATUS.COMPLETED
           : SESSION_STATUS.RUNNING,
-        graphStatus === 'completed' ? new Date() : undefined
+        graphStatus === 'completed' ? new Date() : undefined,
       );
 
       if (graphStatus === 'completed' && result.finalReport) {
@@ -206,12 +207,13 @@ export class RubricGenerationJobRunner {
           session.id,
           this.copilotType,
           this.modelName,
-          result.finalReport
+          result.finalReport,
         );
-
-        await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
+      }
+      if (result.evaluation) {
+        await evaluationPersistenceService.saveAgentEvaluationAnswers(
           session.id,
-          result.finalReport
+          result.evaluation,
         );
       }
 
@@ -222,14 +224,14 @@ export class RubricGenerationJobRunner {
         graphStatus,
         message,
         questionSet: questionSetForResponse ?? null,
-        evaluationScore: result.agentEvaluation?.overallScore,
+        evaluationScore: result.evaluation?.overallScore,
         finalReport: result.finalReport ?? null,
         ...(result.analysis && { analysis: result.analysis }),
       };
 
       if (generationResult.evaluationScore !== undefined) {
         logger.info(
-          `Overall Evaluation Score: ${generationResult.evaluationScore}`
+          `Overall Evaluation Score: ${generationResult.evaluationScore}`,
         );
       }
 
@@ -237,31 +239,28 @@ export class RubricGenerationJobRunner {
         logger.info(
           `Analysis: ${generationResult.analysis.substring(0, 200)}${
             generationResult.analysis.length > 200 ? '...' : ''
-          }`
+          }`,
         );
       }
 
       if (generationResult.finalReport) {
         logger.info(
-          `Final Report Verdict: ${generationResult.finalReport.verdict}`
-        );
-        logger.info(
           `Final Report Summary: ${generationResult.finalReport.summary.substring(
             0,
-            200
-          )}${generationResult.finalReport.summary.length > 200 ? '...' : ''}`
+            200,
+          )}${generationResult.finalReport.summary.length > 200 ? '...' : ''}`,
         );
       }
 
       if (generationResult.questionSet) {
         logger.info(
-          `Generated QuestionSet: (v${generationResult.questionSet.version})`
+          `Generated QuestionSet: (v${generationResult.questionSet.version})`,
         );
         logger.info(
-          `  Questions count: ${generationResult.questionSet.questions.length}`
+          `  Questions count: ${generationResult.questionSet.questions.length}`,
         );
         logger.info(
-          `  Total weight: ${generationResult.questionSet.totalWeight}`
+          `  Total weight: ${generationResult.questionSet.totalWeight}`,
         );
       }
 
@@ -273,7 +272,7 @@ export class RubricGenerationJobRunner {
     } catch (error) {
       logger.error(
         `Rubric generation failed for goldenSet ${this.goldenSetId}:`,
-        error
+        error,
       );
 
       const errorResult: RubricGenerationResult = {
@@ -295,7 +294,7 @@ export class RubricGenerationJobRunner {
    * @returns Promise that resolves with the rubric generation result
    */
   async waitForCompletion(
-    timeoutMs: number = DEFAULT_TIMEOUT_MS
+    timeoutMs: number = DEFAULT_TIMEOUT_MS,
   ): Promise<RubricGenerationResult> {
     // Clear any existing timeout before setting a new one
     this.clearTimeout();
@@ -306,7 +305,7 @@ export class RubricGenerationJobRunner {
         this.timeoutId = null;
         this.isCompleted = true;
         this.rejectCompletion(
-          new Error(`Rubric generation timed out after ${timeoutMs}ms`)
+          new Error(`Rubric generation timed out after ${timeoutMs}ms`),
         );
       }
     }, timeoutMs);
@@ -382,7 +381,7 @@ if (
     null,
     args.modelName,
     args.skipHumanReview ?? true,
-    args.skipHumanEvaluation ?? true
+    args.skipHumanEvaluation ?? true,
   );
 
   jobRunner.startJob();
@@ -399,7 +398,7 @@ if (
         `JOB_RESULT_JSON: ${JSON.stringify({
           status: 'failed',
           error: error instanceof Error ? error.message : String(error),
-        })}`
+        })}`,
       );
       process.exit(1);
     });

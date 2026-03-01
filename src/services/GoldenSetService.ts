@@ -39,6 +39,7 @@ export class GoldenSetService {
               content: query,
             },
           },
+          isProjectExisting: projectExId !== 'N/A', // Mark as existing if projectExId is provided, otherwise it's a new golden set
         },
         include: {
           userInput: true,

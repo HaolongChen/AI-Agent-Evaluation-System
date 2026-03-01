@@ -33,16 +33,14 @@ export interface QuestionSet {
  */
 export interface QuestionAnswer {
   questionId: number;
-  answer: boolean;  // yes/no answer
+  answer: boolean; // YES (true) or NO (false)
   explanation: string;
-  evidence?: string[];
 }
 
 /**
  * An evaluation consisting of answers to all questions
  */
 export interface QuestionEvaluation {
-  evaluatorType: "agent" | "human";
   answers: QuestionAnswer[];
   overallScore: number;  // Percentage score based on weighted correct answers
   summary: string;
@@ -53,13 +51,9 @@ export interface QuestionEvaluation {
  * Final evaluation report
  */
 export interface FinalReport {
-  verdict: "pass" | "fail" | "needs_review";
   overallScore: number;
   summary: string;
   detailedAnalysis: string;
-  agentEvaluation: QuestionEvaluation | null;
-  humanEvaluation: QuestionEvaluation | null;
-  discrepancies: string[];
   auditTrace: string[];
   generatedAt: string;
 }
@@ -83,7 +77,7 @@ export const rubricAnnotation = Annotation.Root({
   query: Annotation<string>,
   context: Annotation<string>,
   candidateOutput: Annotation<string>({
-    value: (_prev, next) => next,
+    reducer: (_prev, next) => next,
     default: () => "",
   }), // copilot's output to be evaluated
 
@@ -102,8 +96,9 @@ export const rubricAnnotation = Annotation.Root({
   }),
 
   // Evaluation fields (new model - uses QuestionEvaluation)
-  agentEvaluation: Annotation<QuestionEvaluation | null>,
-  humanEvaluation: Annotation<QuestionEvaluation | null>,
+  evaluation: Annotation<QuestionEvaluation | null>({
+    reducer: (_, next) => next, // replace with latest evaluation
+  }),
 
   // Final report
   finalReport: Annotation<FinalReport | null>,

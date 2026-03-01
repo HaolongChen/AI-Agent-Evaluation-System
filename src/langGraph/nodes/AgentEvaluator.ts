@@ -47,7 +47,6 @@ export async function agentEvaluatorNode(
 - Question ID: ${q.id}
   Title: ${q.title}
   Question: ${q.content}
-  Weight: ${q.weight}%
 `
     )
     .join('\n');
@@ -111,8 +110,7 @@ Be objective and thorough in your assessment.
 
   const overallScore = totalWeight > 0 ? (correctWeight / totalWeight) * 100 : 0;
 
-  const evaluation: QuestionEvaluation = {
-    evaluatorType: 'agent',
+  const agentEvaluation: QuestionEvaluation = {
     answers,
     overallScore: Math.round(overallScore * 100) / 100,
     summary: response.overallAssessment,
@@ -120,10 +118,10 @@ Be objective and thorough in your assessment.
   };
 
   const timestamp = new Date().toISOString();
-  const auditEntry = `[${timestamp}] AgentEvaluator: Completed evaluation. Overall score: ${evaluation.overallScore}%`;
+  const auditEntry = `[${timestamp}] AgentEvaluator: Completed evaluation. Overall score: ${agentEvaluation.overallScore}%`;
 
   return {
-    agentEvaluation: evaluation,
+    evaluation: agentEvaluation,
     auditTrace: [auditEntry],
   };
 }

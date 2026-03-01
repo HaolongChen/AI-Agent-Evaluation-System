@@ -8,6 +8,7 @@ import { rubricService } from '../services/RubricService.ts';
 import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 import { graph, type GraphConfigurable } from '../langGraph/agent.ts';
 import type { QuestionSet, FinalReport } from '../langGraph/state/state.ts';
+import type { interruptType } from '../utils/types.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
@@ -20,8 +21,8 @@ interface SessionMetadata {
 
 interface InterruptInfo {
   value: {
-    message?: string;
-    questionSetFinal?: QuestionSet;
+    message: string;
+    type: interruptType;
   };
   resumable: boolean;
   ns: string[];
@@ -119,20 +120,6 @@ export class RubricReviewJobRunner {
       );
     }
 
-    // If we have a modified question set (from patches or full replacement),
-    // persist it to the database before resuming the graph
-    if (this.modifiedQuestionSet) {
-      logger.info('Persisting modified question set to database', {
-        sessionId: this.sessionId,
-        questionCount: this.modifiedQuestionSet.questions.length,
-      });
-
-      await evaluationPersistenceService.updateRubricQuestions(
-        this.sessionId,
-        this.modifiedQuestionSet
-      );
-    }
-
     const humanReviewInput = {
       approved: this.approved,
       ...(this.modifiedQuestionSet && { modifiedQuestionSet: this.modifiedQuestionSet }),
@@ -162,23 +149,24 @@ export class RubricReviewJobRunner {
 
     let graphStatus: RubricReviewJobResult['graphStatus'] = 'completed';
     let message = 'Evaluation completed successfully';
-    let questionSetFinalForResponse: QuestionSet | null | undefined = result.questionSetFinal;
+    const questionSetFinalForResponse: QuestionSet | null | undefined = result.questionSetFinal;
 
     if (result.__interrupt__ && result.__interrupt__.length > 0) {
       const interruptValue = result.__interrupt__[0]?.value;
-      if (interruptValue?.questionSetFinal) {
+      if (interruptValue?.type === 'human_evaluation') {
         graphStatus = 'awaiting_human_evaluation';
-        message =
-          'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
-        questionSetFinalForResponse =
-          interruptValue.questionSetFinal ?? questionSetFinalForResponse;
-        
-        if (result.agentEvaluation) {
+        message = interruptValue.message || 'Awaiting human evaluation';
+        if (result.evaluation) {
           await evaluationPersistenceService.saveAgentEvaluationAnswers(
             this.sessionId,
-            result.agentEvaluation
+            result.evaluation
           );
         }
+      }
+      else {
+        logger.error('Unexpected interrupt type after resuming graph', {
+          interruptType: interruptValue?.type,
+        });
       }
     }
 
@@ -198,12 +186,13 @@ export class RubricReviewJobRunner {
         result.finalReport
       );
 
-      if (session.rubrics.length > 0) {
-        await evaluationPersistenceService.saveJudgeRecordsFromFinalReport(
-          this.sessionId,
-          result.finalReport
-        );
-      }
+    }
+
+    if(result.evaluation) {
+      await evaluationPersistenceService.saveAgentEvaluationAnswers(
+        this.sessionId,
+        result.evaluation
+      );
     }
 
     return {

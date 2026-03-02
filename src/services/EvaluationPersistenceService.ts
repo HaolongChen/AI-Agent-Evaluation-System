@@ -13,20 +13,12 @@ import type { adaptiveRubricJudgeRecord } from '../../build/generated/prisma/cli
 export class EvaluationPersistenceService {
   async saveQuestions(sessionId: number, questionSet: QuestionSet) {
     try {
-      // for (const question of questionSet.questions) {
-      //   const created = await prisma.adaptiveRubric.create({
-      //     data: {
-      //       sessionId,
-      //       version: questionSet.version,
-      //       title: question.title,
-      //       content: question.content,
-      //       expectedAnswer: question.expectedAnswer,
-      //       weight: question.weight,
-      //       reviewStatus: REVIEW_STATUS.PENDING,
-      //     },
-      //   });
-      //   createdIds.push(created.id);
-      // }
+      // Delete any existing questions for this session before saving the new draft.
+      // This handles re-draft scenarios where the composite PK [id, sessionId] would
+      // otherwise conflict with previously saved question IDs.
+      await prisma.adaptiveRubric.deleteMany({
+        where: { sessionId },
+      });
 
       const res = await Promise.allSettled(
         questionSet.questions.map((question) =>
@@ -181,6 +173,7 @@ export class EvaluationPersistenceService {
     try {
       const rubrics = await prisma.adaptiveRubric.findMany({
         where: { sessionId },
+        orderBy: { id: 'asc' },
         select: {
           id: true,
           title: true,

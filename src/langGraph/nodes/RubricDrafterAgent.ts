@@ -33,6 +33,21 @@ const questionSetDraftSchema = z.object({
     .describe('Explanation of why these questions were chosen'),
 });
 
+/**
+ * Formats human-provided example questions for inclusion in the LLM prompt.
+ * Human examples are treated as authoritative and should be incorporated or
+ * closely followed in the new draft.
+ */
+function formatHumanExamples(examples: EvaluationQuestion[]): string {
+  if (examples.length === 0) return '';
+  const lines = examples.map(
+    (q, idx) =>
+      `  ${idx + 1}. [ID ${q.id}] "${q.title}" — ${q.content}\n` +
+      `     Expected answer: ${q.expectedAnswer ? 'YES' : 'NO'}, Weight: ${q.weight}`,
+  );
+  return lines.join('\n');
+}
+
 export async function questionDrafterNode(
   state: typeof rubricAnnotation.State,
   config?: RunnableConfig
@@ -48,9 +63,50 @@ export async function questionDrafterNode(
     questionSetDraftSchema
   );
 
+  // ── Build re-draft context sections ─────────────────────────────────────────
+
+  const attemptNumber = (state.questionDraftAttempts || 0) + 1;
+
+  // Section 1: human-provided authoritative examples (if any)
+  const humanExamplesSection =
+    state.humanExampleQuestions && state.humanExampleQuestions.length > 0
+      ? `
+IMPORTANT — Human-Provided Example Questions (treat these as authoritative and incorporate them into your draft):
+${formatHumanExamples(state.humanExampleQuestions)}
+
+These questions were provided directly by the human reviewer. Your new draft MUST incorporate or closely follow them.
+`
+      : '';
+
+  // Section 2: history of previously rejected drafts with feedback (if any)
+  const rejectionHistorySection =
+    state.rejectionHistory && state.rejectionHistory.length > 0
+      ? `
+Previous Draft Attempts That Were Rejected (learn from these mistakes — do NOT repeat them):
+${state.rejectionHistory
+  .map(
+    (record) =>
+      `--- Attempt ${record.attemptNumber} ---\n` +
+      `Feedback: ${record.feedback ?? '(no explicit feedback provided)'}\n` +
+      `Rejected questions:\n` +
+      record.draft.questions
+        .map(
+          (q, idx) =>
+            `  ${idx + 1}. "${q.title}" — ${q.content}\n` +
+            `     Expected: ${q.expectedAnswer ? 'YES' : 'NO'}, Weight: ${q.weight}`,
+        )
+        .join('\n'),
+  )
+  .join('\n\n')}
+`
+      : '';
+
+  // ── Build the full prompt ────────────────────────────────────────────────────
+
   const prompt = `
 You are an evaluation expert. Based on the query, context, and schema information, create yes/no evaluation questions.
-
+${attemptNumber > 1 ? `This is draft attempt #${attemptNumber}. Previous attempts were rejected — address the feedback below carefully.` : ''}
+${humanExamplesSection}
 Query: """${state.query}"""
 
 Context: """${state.context || 'No additional context provided.'}"""
@@ -62,7 +118,7 @@ Candidate Output to Evaluate: """${
 Schema Expression: """${
     state.schemaExpression || 'No schema information available.'
   }"""
-
+${rejectionHistorySection}
 Create 3-10 yes/no questions that:
 1. Cover all important aspects of the expected output
 2. Can be answered with a clear YES or NO
@@ -91,36 +147,42 @@ Generate questions with appropriate weights that sum to 100.
     totalWeight = response.questions.reduce((sum, q) => sum + q.weight, 0);
   }
 
-  const questions: EvaluationQuestion[] = response.questions.map((q, idx) => ({
-    id: idx + 1, // 1-based question index (matches adaptiveRubric composite key)
-    title: q.title,
-    content: q.content,
-    expectedAnswer: q.expectedAnswer,
-    weight: q.weight,
-  }));
+  // Assign IDs in ascending order starting at 1 (matches adaptiveRubric composite key)
+  const questions: EvaluationQuestion[] = response.questions
+    .map((q, idx) => ({
+      id: idx + 1,
+      title: q.title,
+      content: q.content,
+      expectedAnswer: q.expectedAnswer,
+      weight: q.weight,
+    }))
+    // Defensive sort: ensure ascending order even if the LLM or future code reorders
+    .sort((a, b) => a.id - b.id);
 
   const now = new Date().toISOString();
 
   const questionSetDraft: QuestionSet = {
     version: '1.0.0',
-    questions: questions,
+    questions,
     totalWeight,
     createdAt: now,
     updatedAt: now,
   };
 
+  // saveQuestions deletes existing records first, so re-draft cycles are safe
   await evaluationPersistenceService.saveQuestions(
     config?.configurable?.['sessionId'] as number,
     questionSetDraft
   );
 
   const timestamp = new Date().toISOString();
-  const auditEntry = `[${timestamp}] QuestionDrafter: Created ${questionSetDraft.questions.length} evaluation questions. Rationale: ${response.rationale}`;
+  const auditEntry = `[${timestamp}] QuestionDrafter (attempt #${attemptNumber}): Created ${questionSetDraft.questions.length} evaluation questions. Rationale: ${response.rationale}`;
 
   return {
     questionSetDraft,
     questionsApproved: false,
-    questionDraftAttempts: (state.questionDraftAttempts || 0) + 1,
+    // Increment attempt counter explicitly (annotation value: (_, next) => next)
+    questionDraftAttempts: attemptNumber,
     auditTrace: [auditEntry],
   };
 }

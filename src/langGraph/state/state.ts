@@ -59,6 +59,23 @@ export interface FinalReport {
 }
 
 // ============================================================================
+// RE-DRAFT CONTEXT TYPES
+// ============================================================================
+
+/**
+ * A single rejection record capturing a failed draft and the human's feedback.
+ * Accumulated across all re-draft attempts so the LLM sees the full history.
+ */
+export interface RejectionRecord {
+  /** The rubric draft that was rejected */
+  draft: QuestionSet;
+  /** Optional feedback message explaining why the draft was rejected */
+  feedback?: string;
+  /** Which attempt number this rejection occurred on (1-based) */
+  attemptNumber: number;
+}
+
+// ============================================================================
 // STATE ANNOTATION
 // ============================================================================
 
@@ -92,7 +109,7 @@ export const rubricAnnotation = Annotation.Root({
   questionSetFinal: Annotation<QuestionSet | null>,
   questionDraftAttempts: Annotation<number>({
     default: () => 0,
-    value: (prev) => (prev || 0) + 1,
+    value: (_, next) => next,
   }),
 
   // Evaluation fields (new model - uses QuestionEvaluation)
@@ -108,5 +125,16 @@ export const rubricAnnotation = Annotation.Root({
   // Audit trace
   auditTrace: Annotation<string[]>({
     reducer: arrayReducer,
+  }),
+
+  // Re-draft context: accumulates rejected drafts with feedback for LLM awareness
+  rejectionHistory: Annotation<RejectionRecord[]>({
+    reducer: arrayReducer,
+  }),
+
+  // Human-provided example questions — treated as authoritative (latest wins)
+  humanExampleQuestions: Annotation<EvaluationQuestion[] | null>({
+    reducer: (_prev, next) => next ?? _prev ?? null,
+    default: () => null,
   }),
 });

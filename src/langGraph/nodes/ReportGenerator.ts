@@ -70,10 +70,10 @@ ANALYSIS: """${analysisContext}"""
 EVALUATION QUESTIONS:
 ${questionsInfo}
 
-OVERALL SCORE: ${state.evaluation?.overallScore}%
-
 EVALUATION ANSWERS:
 ${answer}
+
+OVERALL SCORE: ${state.evaluation?.overallScore}%
 
 Generate:
 1. A brief executive summary (2-3 sentences)

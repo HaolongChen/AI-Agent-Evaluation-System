@@ -27,6 +27,8 @@ export async function questionInterpreterNode(
   const now = new Date().toISOString();
   const finalQuestionSet: QuestionSet = {
     ...state.questionSetDraft,
+    // Ensure questions are in ascending ID order so answer mapping is always deterministic
+    questions: [...state.questionSetDraft.questions].sort((a, b) => a.id - b.id),
     version: incrementVersion(state.questionSetDraft.version),
     updatedAt: now,
   };

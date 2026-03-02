@@ -160,7 +160,18 @@ export class GraphExecutionService {
           totalWeight,
         });
       } else if (modifiedQuestionSet) {
+        // Human provided a full replacement set (approved=false path).
+        // Persist the human-provided questions to DB for audit and state consistency.
+        // These serve as authoritative examples for the LLM on the next draft attempt.
         finalQuestionSet = modifiedQuestionSet;
+        await evaluationPersistenceService.updateRubricQuestions(
+          sessionId,
+          modifiedQuestionSet.questions,
+        );
+        logger.info('Human-provided example questions saved to DB (approved=false)', {
+          sessionId,
+          questionCount: modifiedQuestionSet.questions.length,
+        });
       } else if (!approved) {
         finalQuestionSet = undefined;
       }
@@ -381,6 +392,7 @@ export class GraphExecutionService {
       include: {
         rubrics: {
           include: { judgeRecord: true },
+          orderBy: { id: 'asc' },
         },
         result: true,
       },
@@ -450,7 +462,8 @@ export class GraphExecutionService {
       throw new Error('Cannot transform empty rubrics array to QuestionSet');
     }
 
-    const allRubrics = [firstRubric, ...rest];
+    // Sort ascending by id for deterministic question-answer mapping
+    const allRubrics = [firstRubric, ...rest].sort((a, b) => a.id - b.id);
     const totalWeight = allRubrics.reduce(
       (sum, r) => sum + Number(r.weight),
       0,

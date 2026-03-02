@@ -1,6 +1,7 @@
 import { type RunnableConfig } from "@langchain/core/runnables";
 import { interrupt } from "@langchain/langgraph";
 import { rubricAnnotation, type QuestionSet } from "../state/index.ts";
+import type { RejectionRecord } from "../state/state.ts";
 import type { interruptType } from "../../utils/types.ts";
 
 /**
@@ -67,14 +68,29 @@ export async function humanReviewerNode(
       auditTrace: [auditEntry],
     };
   } else {
-    // Human rejected or wants modifications
-    auditEntry = `[${timestamp}] HumanReviewer: Question set not approved${
+    // Human rejected — record current draft + feedback for LLM re-draft context
+    const rejectionRecord: RejectionRecord = {
+      draft: state.questionSetDraft!,
+      ...(humanInput.feedback !== undefined ? { feedback: humanInput.feedback } : {}),
+      attemptNumber: state.questionDraftAttempts,
+    };
+
+    auditEntry = `[${timestamp}] HumanReviewer: Question set not approved (attempt ${state.questionDraftAttempts})${
       humanInput.feedback ? `. Feedback: ${humanInput.feedback}` : ""
     }`;
 
-    return {
+    const partialUpdate: Partial<typeof rubricAnnotation.State> = {
       questionsApproved: false,
+      rejectionHistory: [rejectionRecord],
       auditTrace: [auditEntry],
     };
+
+    // If the human provided their own questions, store them as authoritative examples.
+    // These will inform the next draft attempt but do NOT count as approval.
+    if (humanInput.modifiedQuestionSet) {
+      partialUpdate.humanExampleQuestions = humanInput.modifiedQuestionSet.questions;
+    }
+
+    return partialUpdate;
   }
 }

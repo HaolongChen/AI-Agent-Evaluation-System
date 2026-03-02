@@ -44,13 +44,16 @@ export async function humanEvaluatorNode(
   );
   let correctWeight = 0;
 
-  humanInput.answers.forEach((answer, idx) => {
-    if(questionSetFinal.questions[idx]){
-      if (answer.answer === questionSetFinal.questions[idx].expectedAnswer) {
-        correctWeight += questionSetFinal.questions[idx].weight;
+  humanInput.answers.forEach((answer) => {
+    const question = questionSetFinal.questions.find(
+      (q) => q.id === answer.questionId
+    );
+    if (question) {
+      if (answer.answer === question.expectedAnswer) {
+        correctWeight += question.weight;
       }
     } else {
-      logger.warn(`Received answer for unknown question index: ${idx}`);
+      logger.warn(`Received answer for unknown question ID: ${answer.questionId}`);
     }
   });
 

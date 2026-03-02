@@ -68,7 +68,7 @@ function afterAgentEvaluator(
   const skipHumanEvaluation =
     config?.configurable?.['skipHumanEvaluation'] === true;
   if (skipHumanEvaluation) {
-    return 'merger';
+    return 'reportGenerator';
   }
   return 'humanEvaluator';
 }
@@ -153,6 +153,4 @@ export const graph = workflow.compile({
 // Export a simplified graph without checkpointer for automated evaluation
 // Note: Automated mode uses skipHumanReview and skipHumanEvaluation config
 // which routes around the human nodes entirely
-export const automatedGraph = workflow.compile({
-  checkpointer,
-});
+export const automatedGraph = workflow.compile();

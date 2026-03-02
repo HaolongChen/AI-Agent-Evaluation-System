@@ -156,12 +156,6 @@ export class RubricReviewJobRunner {
       if (interruptValue?.type === 'human_evaluation') {
         graphStatus = 'awaiting_human_evaluation';
         message = interruptValue.message || 'Awaiting human evaluation';
-        if (result.evaluation) {
-          await evaluationPersistenceService.saveAgentEvaluationAnswers(
-            this.sessionId,
-            result.evaluation
-          );
-        }
       }
       else {
         logger.error('Unexpected interrupt type after resuming graph', {
@@ -188,12 +182,6 @@ export class RubricReviewJobRunner {
 
     }
 
-    if(result.evaluation) {
-      await evaluationPersistenceService.saveAgentEvaluationAnswers(
-        this.sessionId,
-        result.evaluation
-      );
-    }
 
     return {
       status: 'succeeded',

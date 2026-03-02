@@ -37,7 +37,7 @@ enum RubricReviewStatus {
 }
 
 model project {
-  projectExId String   @unique @map("project_ex_id") // External project ID from the application
+  projectExId String   @id @map("project_ex_id") // External project ID from the application
   name        String   @unique @map("name")
   lock        Boolean  @default(false) @map("lock") // Lock to prevent concurrent project use
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)

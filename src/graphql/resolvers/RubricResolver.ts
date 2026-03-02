@@ -14,7 +14,6 @@ type JudgeRecordDB = {
   accountId: string | null;
   answer: boolean;
   comment: string | null;
-  overallScore: unknown;
   timestamp: Date;
 };
 
@@ -83,7 +82,6 @@ export const rubricResolver = {
         accountId: judgeRecord.accountId,
         answer: judgeRecord.answer,
         comment: judgeRecord.comment,
-        overallScore: Number(judgeRecord.overallScore),
         timestamp: judgeRecord.timestamp,
       };
     },

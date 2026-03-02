@@ -201,6 +201,7 @@ export class EvaluationPersistenceService {
         expectedAnswer: r.expectedAnswer,
         weight: Number(r.weight),
         reviewStatus: r.reviewStatus,
+        judgeRecord: r.judgeRecord,
       }));
     } catch (error) {
       logger.error('Error getting questions by session ID:', error);

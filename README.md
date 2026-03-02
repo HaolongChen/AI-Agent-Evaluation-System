@@ -65,17 +65,15 @@ pnpm db:seed
 mutation UpsertGoldenSetInput {
   updateGoldenSetInput(
     projectExId: "proj-123"
-    schemaExId: "schema-abc"
     copilotType: DATA_MODEL_BUILDER
     description: "login flow"
     query: "Generate a login page with email + OTP"
   ) {
     id
     projectExId
-    schemaExId
     copilotType
     isActive
-    userInput {
+    userInputs {
       id
       description
       content
@@ -108,10 +106,17 @@ mutation Review {
     approved: true
     reviewerAccountId: "user-456"
   ) {
+    sessionId
     status
-    rubricFinal {
-      id
+    questionSetFinal {
       version
+      questions {
+        id
+        title
+        weight
+        expectedAnswer
+      }
+      totalWeight
     }
     message
   }
@@ -123,13 +128,14 @@ mutation Eval {
     threadId: "thread-xyz"
     overallAssessment: "The agent followed all requirements."
     evaluatorAccountId: "user-456"
-    scores: [{ criterionId: "crit-1", score: 1.0, reasoning: "Perfect match." }]
   ) {
+    sessionId
     status
     finalReport {
-      verdict
       overallScore
-      discrepancies
+      summary
+      detailedAnalysis
+      generatedAt
     }
     message
   }
@@ -184,7 +190,7 @@ mutation EvalWithPatches {
     threadId: "thread-xyz"
     overallAssessment: "Minor corrections needed"
     evaluatorAccountId: "user-456"
-    answerPatches: [
+    answers: [
       {
         questionId: 123
         answer: true
@@ -197,19 +203,13 @@ mutation EvalWithPatches {
       }
     ]
   ) {
+    sessionId
     status
     finalReport {
-      verdict
       overallScore
-      humanEvaluation {
-        answers {
-          questionId
-          answer
-          explanation
-        }
-        overallScore
-      }
-      discrepancies
+      summary
+      detailedAnalysis
+      generatedAt
     }
     message
   }
@@ -227,12 +227,12 @@ mutation EvalWithPatches {
 
 The system uses a structured schema to track the entire evaluation lifecycle:
 
-- **`goldenSet`**: Identified by (`projectExId`, `schemaExId`, `copilotType`); holds user-provided prompts and context through related `userInput` rows, and stores generated outputs via `copilotOutput` rows. A single `isActive` flag guards in-progress sets.
+- **`goldenSet`**: Identified by (`projectExId`, `copilotType`); holds user-provided prompts and context through related `userInput` rows, and stores generated outputs via `copilotOutput` rows. A single `isActive` flag guards in-progress sets.
 - **`userInput` / `copilotOutput`**: Child records that capture multiple inputs and outputs per golden set (each uses the golden set’s ID as its primary/foreign key).
 - **`evaluationSession`**: Runs are keyed by `goldenSetId` and store performance metrics (latency, tokens, context usage) plus metadata.
 - **`adaptiveRubric`**: Generated or reviewed rubric content tied to an `evaluationSession`, with criteria and weights.
 - **`adaptiveRubricJudgeRecord`**: Stores agent or human scoring against a rubric.
-- **`evaluationResult`**: Final report for a session (verdict, score, summary, discrepancies, audit trace).
+- **`evaluationResult`**: Final report for a session (overall score, summary, detailed analysis, audit trace).
 
 ## Development
 

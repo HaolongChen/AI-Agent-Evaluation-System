@@ -92,7 +92,7 @@ Generate questions with appropriate weights that sum to 100.
   }
 
   const questions: EvaluationQuestion[] = response.questions.map((q, idx) => ({
-    id: idx + 1, // overwritten when saved
+    id: idx + 1, // 1-based question index (matches adaptiveRubric composite key)
     title: q.title,
     content: q.content,
     expectedAnswer: q.expectedAnswer,

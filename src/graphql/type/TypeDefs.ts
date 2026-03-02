@@ -198,7 +198,7 @@ export const typeDefs = `#graphql
     content: String!
     "Expected correct answer (true/false for binary evaluation)"
     expectedAnswer: Boolean!
-    "Weight of this criterion in overall score calculation (0.0 - 1.0)"
+    "Weight of this criterion in overall score calculation (0 - 100)"
     weight: Float!
     
     "Review status after human review checkpoint"
@@ -226,7 +226,7 @@ export const typeDefs = `#graphql
   type JudgeRecord {
     "Unique judge record identifier"
     id: Int!
-    "Parent rubric criterion ID"
+    "Parent rubric criterion session ID"
     sessionId: Int!
     "Account ID if human evaluator"
     accountId: String
@@ -234,8 +234,6 @@ export const typeDefs = `#graphql
     answer: Boolean!
     "Optional explanation or reasoning for the answer"
     comment: String
-    "Overall score for this criterion (0.0 - 1.0)"
-    overallScore: Float!
     "Timestamp of evaluation"
     timestamp: DateTime!
   }
@@ -256,7 +254,7 @@ export const typeDefs = `#graphql
     "Status of evaluation process"
     evaluationStatus: EvaluationStatus!
     
-    "Aggregated score across all weighted criteria (0.0 - 1.0)"
+    "Aggregated score across all weighted criteria (0 - 100)"
     overallScore: Float!
     "Executive summary of evaluation"
     summary: String!
@@ -288,7 +286,7 @@ export const typeDefs = `#graphql
     content: String!
     "Expected binary answer"
     expectedAnswer: Boolean!
-    "Weight in overall score (0.0 - 1.0)"
+    "Weight in overall score (0 - 100)"
     weight: Float!
   }
   
@@ -300,7 +298,7 @@ export const typeDefs = `#graphql
     version: String!
     "List of questions in this set"
     questions: [EvaluationQuestion!]!
-    "Sum of all question weights (should equal 1.0)"
+    "Sum of all question weights (should equal 100)"
     totalWeight: Float!
     "ISO timestamp when set was created"
     createdAt: String!
@@ -340,7 +338,7 @@ export const typeDefs = `#graphql
   Final evaluation report combining agent and human assessments.
   """
   type FinalReportOutput {
-    "Aggregated score (0.0 - 1.0)"
+    "Aggregated score (0 - 100)"
     overallScore: Float!
     "Executive summary"
     summary: String!
@@ -442,7 +440,7 @@ export const typeDefs = `#graphql
     content: String!
     "Expected answer"
     expectedAnswer: Boolean!
-    "Weight (0.0 - 1.0)"
+    "Weight (0 - 100)"
     weight: Float!
   }
   
@@ -454,14 +452,14 @@ export const typeDefs = `#graphql
     version: String!
     "List of questions"
     questions: [EvaluationQuestionInput!]!
-    "Total weight (should equal 1.0)"
+    "Total weight (should equal 100)"
     totalWeight: Float!
   }
   
   """
   Partial update for a single question (HITL review - RECOMMENDED).
   Only provide fields you want to change.
-  Example: { questionId: 123, weight: 0.6, title: "Correctness - Enhanced" }
+  Example: { questionId: 123, weight: 60, title: "Correctness - Enhanced" }
   """
   input QuestionPatchInput {
     "Question ID to update (required)"
@@ -481,7 +479,7 @@ export const typeDefs = `#graphql
   """
   input QuestionAnswerInput {
     "Question being answered"
-    questionId: Int!
+    id: Int!
     "Binary answer"
     answer: Boolean!
     "Explanation"
@@ -651,20 +649,15 @@ export const typeDefs = `#graphql
     """
     Submit human evaluation scores for rubric criteria.
     
-    Use answerPatches (RECOMMENDED) to provide only specific answers:
-      answerPatches: [
-        { questionId: 123, answer: true, explanation: "Nearly perfect" },
-        { questionId: 125, answer: false, explanation: "Needs improvement" }
-      ]
-    
-    Or use answers (DEPRECATED) to provide all answers at once:
+    Use answers (RECOMMENDED) to provide only specific answers (patches):
       answers: [
-        { questionId: 123, answer: true, explanation: "..." },
-        { questionId: 124, answer: true, explanation: "..." },
-        ...
+        { id: 123, answer: true, explanation: "Nearly perfect" },
+        { id: 125, answer: false, explanation: "Needs improvement" }
       ]
     
-    System merges patches with agent evaluation and recalculates scores.
+    Omit answers to accept agent evaluation as-is.
+    
+    System merges provided answers with agent evaluation and recalculates scores.
     """
     submitHumanEvaluation(
       sessionId: Int!

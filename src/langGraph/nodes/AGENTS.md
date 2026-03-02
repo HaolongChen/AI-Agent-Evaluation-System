@@ -6,23 +6,24 @@ Pure workflow functions implementing the HITL evaluation pipeline.
 
 ## OVERVIEW
 
-12 pure functions forming the question-based evaluation workflow: draft → review → evaluate → merge → report.
+10 active nodes wired in `agent.ts` implementing the HITL evaluation pipeline. 13 files exist; `AnalysisAgent.ts` and `Merger.ts` are present but **not wired** into the active graph.
 
 ## WHERE TO LOOK
 
-| Node | Purpose | Interrupts |
-|------|---------|------------|
-| `InputCollector.ts` | Gathers initial context | No |
-| `SchemaChecker.ts` | Validates schema needs via LLM | No |
-| `SchemaLoader.ts` | Downloads schema via tool | No |
-| `AnalysisAgent.ts` | Analyzes requirements | No |
-| `RubricDrafterAgent.ts` | Generates question set | No |
-| `RubricInterpreter.ts` | Parses LLM output | No |
-| `HumanReviewer.ts` | **INTERRUPT** for human review | Yes |
-| `AgentEvaluator.ts` | Agent answers questions | No |
-| `HumanEvaluator.ts` | **INTERRUPT** for human eval | Yes |
-| `Merger.ts` | Compares agent/human answers | No |
-| `ReportGenerator.ts` | Generates narrative report | No |
+| Node | File | Purpose | Interrupts | Active |
+|------|------|---------|------------|--------|
+| `inputCollector` | `InputCollector.ts` | Gathers initial context from state | No | ✅ |
+| `schemaChecker` | `SchemaChecker.ts` | Determines if schema download needed | No | ✅ |
+| `schemaLoader` | `SchemaLoader.ts` | Downloads schema via tool | No | ✅ |
+| `questionDrafter` | `RubricDrafterAgent.ts` | Generates question set via LangChain | No | ✅ |
+| `humanReviewer` | `HumanReviewer.ts` | **INTERRUPT** for human rubric review | Yes | ✅ |
+| `questionInterpreter` | `RubricInterpreter.ts` | Parses approved rubric from human input | No | ✅ |
+| `questionInterpreterDirect` | *(inline in agent.ts)* | Parses rubric when skipping human review | No | ✅ |
+| `agentEvaluator` | `AgentEvaluator.ts` | Agent answers evaluation questions | No | ✅ |
+| `humanEvaluator` | `HumanEvaluator.ts` | **INTERRUPT** for human evaluation | Yes | ✅ |
+| `reportGenerator` | `ReportGenerator.ts` | Generates narrative final report | No | ✅ |
+| *(unused)* | `AnalysisAgent.ts` | Analyzes requirements | No | ❌ not wired |
+| *(unused)* | `Merger.ts` | Compares agent/human answers | No | ❌ commented out |
 
 ## NODE PATTERN (MANDATORY)
 

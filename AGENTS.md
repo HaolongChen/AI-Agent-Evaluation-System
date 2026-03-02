@@ -1,6 +1,6 @@
 # AGENTS.md - AI Agent Evaluation System
 
-> **Generated:** 2026-02-10 | **Commit:** 27cfc69 | **Branch:** main
+> **Generated:** 2026-03-02 | **Commit:** bc61d57 | **Branch:** main
 
 Guidelines for agentic coding systems operating in this repository.
 
@@ -17,15 +17,16 @@ AI-Agent-Evaluation-System/
 ├── src/
 │   ├── index.ts              # Express + ApolloServer entry
 │   ├── langGraph/            # LangGraph HITL workflow (see langGraph/AGENTS.md)
-│   │   ├── nodes/            # 12 workflow nodes (pure functions)
+│   │   ├── nodes/            # 10 active workflow nodes (pure functions)
 │   │   ├── state/            # rubricAnnotation (state machine)
 │   │   ├── llm/              # Azure/Gemini provider abstraction
 │   │   └── tools/            # Schema download tool
 │   ├── services/             # Business logic, DB ops (see services/AGENTS.md)
 │   ├── jobs/                 # CLI job runners (see jobs/AGENTS.md)
 │   ├── graphql/              # GraphQL API layer (see graphql/resolvers/AGENTS.md)
-│   ├── utils/                # Pure utilities, logger
+│   ├── utils/                # Pure utilities, logger (see utils/AGENTS.md)
 │   └── config/               # Environment, constants, prisma
+│   ├── langchain/            # LangChain rubric generation chain
 ├── tests/                    # Script-based tests (tsx execution)
 ├── prisma/                   # Schema + migrations
 └── scripts/                  # DB setup/seed utilities
@@ -43,6 +44,7 @@ AI-Agent-Evaluation-System/
 | Change database schema | `prisma/schema.prisma` | Run `pnpm db:generate` after |
 | Add utility function | `src/utils/` | Pure functions, no side effects |
 | Configure LLM providers | `src/langGraph/llm/` | Azure OpenAI, Gemini support |
+| Make Functorz backend GQL request | `src/utils/graphql-client.ts` | Use `gqlRequest()` + `backendClient` |
 | Add tests | `tests/` | Script-based, use tsx (not Jest/Vitest) |
 
 **See also**: `src/langGraph/AGENTS.md` for HITL workflow architecture details.
@@ -189,6 +191,8 @@ function processData() {
 | Direct LLM calls | No retry, no logging | Use `invokeWithRetry()` |
 | Mutating state in nodes | LangGraph expects immutable | Return partial state updates |
 | Full replacement in HITL | Verbose, error-prone | Use patch arrays (`questionPatches`, `answerPatches`) |
+| `import from 'graphql-utils.ts'` in new code | Deprecated shim | Import from `graphql-client.ts` directly |
+| String interpolation for GQL | Not type-safe, error-prone | Use `GoldenSetDocuments` + `gqlRequest()` from `graphql-client.ts` |
 
 ## Partial Update Pattern (HITL)
 
@@ -242,7 +246,7 @@ logger.debug('Detailed debug info');  // Only in development
 
 ### LLM Calls with Retry
 ```typescript
-import { getLLM, invokeWithRetry } from '../llm/index.ts';
+import { getLLM, invokeWithRetry } from '../langGraph/llm/index.ts';
 
 const llm = getLLM({ provider: 'azure', model: 'gpt-4o' });
 const response = await invokeWithRetry(
@@ -251,6 +255,25 @@ const response = await invokeWithRetry(
   { operationName: 'RubricDrafter.invoke' }
 );
 ```
+
+### GraphQL Requests (Functorz backend)
+```typescript
+import { backendClient, gqlRequest, authState } from '../utils/graphql-client.ts';
+import { GoldenSetDocuments } from '../utils/graphql-builder.ts';
+
+// Set auth token before requests
+authState.setToken(accessToken);
+
+// Typed request
+const data = await gqlRequest<ResponseType, VariablesType>(
+  backendClient,
+  GoldenSetDocuments.getGoldenSets,
+  { projectExId: 'proj-123' },
+);
+```
+
+- `localClient` → our own Apollo Server (`URL/graphql`)
+- `backendClient` → Functorz backend (`BACKEND_GRAPHQL_URL`, requires Bearer token)
 
 ## Important Notes
 

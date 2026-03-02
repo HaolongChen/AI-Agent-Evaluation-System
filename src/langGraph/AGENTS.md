@@ -1,6 +1,6 @@
 # LangGraph HITL Workflow
 
-> **Scope:** src/langGraph/ | **Generated:** 2026-02-10
+> **Scope:** src/langGraph/ | **Updated:** 2026-03-02
 
 Core evaluation workflow with Human-in-the-Loop (HITL) interrupts.
 
@@ -13,7 +13,7 @@ Question-based evaluation pipeline: AI drafts questions → human reviews → ag
 ```text
 langGraph/
 ├── agent.ts           # Graph builder, compiles workflow
-├── nodes/             # 11 workflow nodes (pure functions)
+├── nodes/             # 10 active workflow nodes (pure functions)
 ├── state/             # rubricAnnotation (LangGraph Annotation)
 ├── llm/               # Provider abstraction (Azure, Gemini)
 └── tools/             # Schema download tool
@@ -32,10 +32,20 @@ langGraph/
 ## Workflow Flow
 
 ```text
-START → RubricDrafter → HumanReviewer(INTERRUPT) 
-      → AgentEvaluator → HumanEvaluator(INTERRUPT) 
-      → Merger → ReportGenerator → END
+START → inputCollector → schemaChecker → schemaLoader → questionDrafter
+  → [skipHumanReview=true]  → questionInterpreterDirect → agentEvaluator
+  → [skipHumanReview=false] → humanReviewer(INTERRUPT)
+      → [approved]  → questionInterpreter → agentEvaluator
+      → [rejected, <5 attempts] → questionDrafter (loop)
+  → [skipHumanEvaluation=true]  → reportGenerator → END
+  → [skipHumanEvaluation=false] → humanEvaluator(INTERRUPT) → reportGenerator → END
 ```
+
+**Two interrupt points** (skippable via flags):
+1. `humanReviewer` — question set approval (`skipHumanReview=true` to bypass)
+2. `humanEvaluator` — evaluation validation (`skipHumanEvaluation=true` to bypass)
+
+**Note:** `mergerNode` exists in `Merger.ts` but is **commented out** in `agent.ts`.
 
 **Two interrupt points:**
 1. `HumanReviewer` - question set approval
@@ -75,13 +85,19 @@ export async function myNode(
 | `query` | string | User's evaluation request |
 | `context` | string | Additional context |
 | `candidateOutput` | string | Copilot output to evaluate |
+| `schemaNeeded` | boolean | Whether schema download is required |
+| `schema` | string | Raw downloaded schema |
+| `schemaExpression` | string | Resolved schema expression |
 | `questionSetDraft` | QuestionSet | AI-generated questions |
 | `questionsApproved` | boolean | Human approval flag |
 | `questionSetFinal` | QuestionSet | Approved questions |
-| `agentEvaluation` | QuestionEvaluation | AI's answers |
-| `humanEvaluation` | QuestionEvaluation | Human's answers |
+| `questionDraftAttempts` | number | Redraft loop counter (max 5) |
+| `evaluation` | QuestionEvaluation | Agent or merged evaluation answers |
 | `finalReport` | FinalReport | Generated report |
-| `auditTrace` | string[] | Execution log (reducer: append) |
+| `analysis` | string | Analysis output (AnalysisAgent) |
+| `auditTrace` | string[] | Execution log (reducer: append-only) |
+| `rejectionHistory` | RejectionRecord[] | Redraft rejection reasons (reducer: append-only) |
+| `humanExampleQuestions` | EvaluationQuestion[] | Optional human-provided seed questions |
 
 ## Interrupt Pattern
 

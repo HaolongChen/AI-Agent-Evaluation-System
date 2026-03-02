@@ -79,3 +79,23 @@ export enum AfCodeTemplateStatus {
 }
 
 export const SYSTEM_MODEL_PROVIDER = 'Functorz';
+
+export enum ProjectCreationStatus {
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  PROCESSING = 'PROCESSING',
+}
+
+export interface OnProjectCreationStatusChanged_onProjectCreationStatusChanged {
+  __typename: 'ProjectCreationResult';
+  projectExId: string | null;
+  status: ProjectCreationStatus | null;
+}
+
+export interface OnProjectCreationStatusChanged {
+  onProjectCreationStatusChanged: OnProjectCreationStatusChanged_onProjectCreationStatusChanged | null;
+}
+
+export interface OnProjectCreationStatusChangedVariables {
+  uniqueId: string;
+}

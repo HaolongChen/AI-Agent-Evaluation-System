@@ -1,6 +1,7 @@
+import { gql } from 'graphql-request';
 import { ZTypeSystem, type OpaqueSchemaGraph } from './TypeSystem.ts';
 import { logger } from '../logger.ts';
-import { graphqlUtils } from '../graphql-utils.ts';
+import { authState, backendClient, gqlRequest } from '../graphql-client.ts';
 import { Crdt } from '@functorz/crdt-helper';
 import { login } from '../login.ts';
 import { FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD } from '../../config/env.ts';
@@ -8,10 +9,140 @@ import { fromUint8Array } from 'js-base64';
 import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from './AfCustomCodeTemplates.ts';
 import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from './ZSchema.ts';
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface LatestSchema {
+  crdtModelUrl: string;
+  crdtPatches?: {
+    lastPatchExId: string;
+    patches: Array<{ patchBase64: string }>;
+  };
+}
+
+interface FetchAppDetailResponse {
+  fetchAppDetailByExId?: {
+    latestSchema?: LatestSchema;
+  };
+}
+
+interface FetchAppDetailVariables {
+  projectExId: string;
+  appExId: null;
+  appVersionExId: null;
+}
+
+interface AfCustomCodeTemplatesResponse {
+  visibleAfCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[];
+}
+
+interface SupportedCustomModelDescriptorResponse {
+  supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor;
+}
+
+// ---------------------------------------------------------------------------
+// Documents
+// ---------------------------------------------------------------------------
+
+const FETCH_APP_DETAIL_QUERY = gql`
+  query FetchAppDetailByExId(
+    $projectExId: String!
+    $appExId: String
+    $appVersionExId: String
+  ) {
+    fetchAppDetailByExId(
+      projectExId: $projectExId
+      appExId: $appExId
+      appVersionExId: $appVersionExId
+    ) {
+      ... on WechatMiniProgramApp {
+        latestSchema {
+          crdtModelUrl
+          crdtPatches {
+            lastPatchExId
+            patches {
+              patchBase64
+            }
+          }
+        }
+      }
+      ... on Project {
+        latestSchema {
+          crdtModelUrl
+          crdtPatches {
+            lastPatchExId
+            patches {
+              patchBase64
+            }
+          }
+        }
+      }
+      ... on WebApp {
+        latestSchema {
+          crdtModelUrl
+          crdtPatches {
+            lastPatchExId
+            patches {
+              patchBase64
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const AF_CUSTOM_CODE_TEMPLATES_QUERY = gql`
+  query AfCustomCodeTemplates {
+    visibleAfCustomCodeTemplates {
+      async
+      exId
+      author
+      displayName
+      inputType {
+        ... on NodeTemplateVariable {
+          name
+          type
+          defaultValue
+          required
+          description
+        }
+      }
+      logoUrl
+      outputType {
+        ... on NodeTemplateVariable {
+          name
+          type
+          defaultValue
+          required
+          description
+        }
+      }
+      status
+      templateGroup
+      updatedAt
+      version
+    }
+  }
+`;
+
+const SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY = gql`
+  query SupportedCustomModelDescriptor {
+    supportedCustomModelDescriptor {
+      chatModelDescriptors
+      embeddingModelDescriptors
+    }
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// TypeSystemStore
+// ---------------------------------------------------------------------------
+
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
-  public afCustomCodeTemplates:
-    | AfCustomCodeTemplates_visibleAfCustomCodeTemplates[] = [];
+  public afCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[] = [];
   public supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null =
     null;
 
@@ -20,7 +151,7 @@ export class TypeSystemStore {
   }
 
   private async ensureAuthenticated(): Promise<void> {
-    if (graphqlUtils.isTokenValid()) {
+    if (authState.isValid()) {
       logger.info('Access token is still valid');
       return;
     }
@@ -34,80 +165,23 @@ export class TypeSystemStore {
     }
 
     const accessToken = await login(FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD);
-    graphqlUtils.setAccessToken(accessToken);
+    authState.setToken(accessToken);
     logger.info('Successfully authenticated');
   }
 
-  async fetchAppDetailByExId(projectExId: string): Promise<{
-    crdtModelUrl: string;
-    crdtPatches?: {
-      lastPatchExId: string;
-      patches: Array<{ patchBase64: string }>;
-    };
-  } | null> {
-    // Use latestSchema instead of lastUploadedSchema (API change)
-    const query = `
-      query FetchAppDetailByExId {
-        fetchAppDetailByExId(
-          projectExId: "${projectExId}"
-          appExId: null
-          appVersionExId: null
-        ) {
-          ... on WechatMiniProgramApp {
-            latestSchema {
-              crdtModelUrl
-              crdtPatches {
-                lastPatchExId
-                patches {
-                  patchBase64
-                }
-              }
-            }
-          }
-          ... on Project {
-            latestSchema {
-              crdtModelUrl
-              crdtPatches {
-                lastPatchExId
-                patches {
-                  patchBase64
-                }
-              }
-            }
-          }
-          ... on WebApp {
-            latestSchema {
-              crdtModelUrl
-              crdtPatches {
-                lastPatchExId
-                patches {
-                  patchBase64
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
-
+  async fetchAppDetailByExId(projectExId: string): Promise<LatestSchema | null> {
     try {
       await this.ensureAuthenticated();
-      const response = await graphqlUtils.accessEndpointWithQuery(query, true);
-      const data = response as {
-        data?: {
-          fetchAppDetailByExId?: {
-            latestSchema?: {
-              crdtModelUrl: string;
-              crdtPatches?: {
-                lastPatchExId: string;
-                patches: Array<{ patchBase64: string }>;
-              };
-            };
-          };
-        };
-      };
-      const latestSchema = data.data?.fetchAppDetailByExId?.latestSchema;
+
+      const data = await gqlRequest<FetchAppDetailResponse, FetchAppDetailVariables>(
+        backendClient,
+        FETCH_APP_DETAIL_QUERY,
+        { projectExId, appExId: null, appVersionExId: null },
+      );
+
+      const latestSchema = data.fetchAppDetailByExId?.latestSchema;
       logger.info('GraphQL response for fetchAppDetailByExId:', data);
+
       if (latestSchema) {
         logger.info('Fetched latestSchema:', latestSchema);
         return latestSchema;
@@ -125,45 +199,17 @@ export class TypeSystemStore {
   async getAFCustomCodeTemplates(): Promise<
     AfCustomCodeTemplates_visibleAfCustomCodeTemplates[]
   > {
-    const query = `
-      query AfCustomCodeTemplates {
-        visibleAfCustomCodeTemplates {
-          async
-          exId
-          author
-          displayName
-          inputType {
-            ... on NodeTemplateVariable {
-              name
-              type
-              defaultValue
-              required
-              description
-            }
-          }
-          logoUrl
-          outputType {
-            ... on NodeTemplateVariable {
-              name
-              type
-              defaultValue
-              required
-              description
-            }
-          }
-          status
-          templateGroup
-          updatedAt
-          version
-        }
-      }
-    `;
     try {
-      if (this.afCustomCodeTemplates) return this.afCustomCodeTemplates;
+      if (this.afCustomCodeTemplates.length > 0) return this.afCustomCodeTemplates;
       await this.ensureAuthenticated();
-      const result = await graphqlUtils.accessEndpointWithQuery(query, true);
-      return (this.afCustomCodeTemplates =
-        result as AfCustomCodeTemplates_visibleAfCustomCodeTemplates[]);
+
+      const data = await gqlRequest<AfCustomCodeTemplatesResponse>(
+        backendClient,
+        AF_CUSTOM_CODE_TEMPLATES_QUERY,
+      );
+
+      this.afCustomCodeTemplates = data.visibleAfCustomCodeTemplates;
+      return this.afCustomCodeTemplates;
     } catch (error) {
       logger.error('Error fetching AF custom code templates:', error);
       throw error;
@@ -171,21 +217,16 @@ export class TypeSystemStore {
   }
 
   async getSupportedCustomModelDescriptor(): Promise<SupportedCustomModelDescriptor_supportedCustomModelDescriptor> {
-    const query = `
-      query SupportedCustomModelDescriptor {
-        supportedCustomModelDescriptor {
-          chatModelDescriptors
-          embeddingModelDescriptors
-        }
-      }
-    `;
     try {
-      if (this.supportedCustomModelDescriptor)
-        return this.supportedCustomModelDescriptor;
+      if (this.supportedCustomModelDescriptor) return this.supportedCustomModelDescriptor;
       await this.ensureAuthenticated();
-      const result = await graphqlUtils.accessEndpointWithQuery(query, true);
-      this.supportedCustomModelDescriptor =
-        result as SupportedCustomModelDescriptor_supportedCustomModelDescriptor;
+
+      const data = await gqlRequest<SupportedCustomModelDescriptorResponse>(
+        backendClient,
+        SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
+      );
+
+      this.supportedCustomModelDescriptor = data.supportedCustomModelDescriptor;
       return this.supportedCustomModelDescriptor;
     } catch (error) {
       logger.error('Error fetching supported custom model descriptor:', error);
@@ -205,13 +246,13 @@ export class TypeSystemStore {
     const arrayBuffer = await response.arrayBuffer();
     const modelBinary = new Uint8Array(arrayBuffer);
 
-    logger.debug("step 2 done, modelBinary length: " + modelBinary.length);
+    logger.debug('step 2 done, modelBinary length: ' + modelBinary.length);
 
     // 3. Initialize CRDT model and apply patches
     // Convert Uint8Array binary to base64 string for Crdt.initModel
     const binaryBase64 = fromUint8Array(modelBinary);
 
-    logger.debug("step 3 done, binaryBase64 length: " + binaryBase64.length);
+    logger.debug('step 3 done, binaryBase64 length: ' + binaryBase64.length);
 
     // Get patch base64 strings
     const patchBase64Strings = lastUploadedSchema.crdtPatches?.patches?.map(
@@ -229,7 +270,7 @@ export class TypeSystemStore {
     // 4. Get the schema JSON
     const schemaJson = model.view();
 
-    logger.debug("step 4 done, schemaJson keys: " + Object.keys(schemaJson).join(", "));
+    logger.debug('step 4 done, schemaJson keys: ' + Object.keys(schemaJson).join(', '));
 
     // 5. Merge with backend-only schema if needed
     const fullSchema = {
@@ -237,14 +278,11 @@ export class TypeSystemStore {
       // server: latestBackendOnlyAppSchema, // For non-backend-editable apps
     };
 
-
-
     // 6. Parse to ZSchema and create SchemaGraph
     const zSchema = ZTypeSystem.parseZSchemaFromJsObject(fullSchema);
     const schemaGraph = ZTypeSystem.resolveZSchemaToSchemaGraph(zSchema);
 
-
-    logger.debug("step 6 done, schemaGraph nodes: ");
+    logger.debug('step 6 done, schemaGraph nodes: ');
 
     this.currSchemaGraph = schemaGraph;
     return schemaGraph;

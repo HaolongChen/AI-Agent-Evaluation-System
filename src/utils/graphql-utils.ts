@@ -1,135 +1,67 @@
-import { URL, BACKEND_GRAPHQL_URL } from '../config/env.ts';
-import axios from 'axios';
-import * as z from 'zod';
+/**
+ * @deprecated
+ * This module is a compatibility shim. All new code should import directly from
+ * `./graphql-client.ts` and use `localClient`, `backendClient`, and `gqlRequest()`.
+ *
+ * This file will be removed in a future cleanup.
+ */
+
+import { authState, localClient, backendClient, gqlRequest } from './graphql-client.ts';
 import { logger } from './logger.ts';
 
-class GraphQLUtils {
-  private gqlUrl: string = URL + '/graphql';
-  private backendGqlUrl: string = BACKEND_GRAPHQL_URL;
-  private accessToken: string | null = null;
-  private tokenExpiry: number | null = null;
-  private readonly TOKEN_TTL_MS = 3600000; // 1 hour default TTL
-
+class GraphQLUtilsShim {
+  /** @deprecated Use `authState.setToken()` from `./graphql-client.ts`. */
   public setAccessToken(token: string): void {
-    this.accessToken = token;
-    this.tokenExpiry = Date.now() + this.TOKEN_TTL_MS;
-    logger.info(
-      'Access token set, expires in',
-      this.TOKEN_TTL_MS / 1000,
-      'seconds'
-    );
+    authState.setToken(token);
   }
 
+  /** @deprecated Use `authState.clearToken()` from `./graphql-client.ts`. */
   public clearAccessToken(): void {
-    this.accessToken = null;
-    this.tokenExpiry = null;
+    authState.clearToken();
   }
 
+  /** @deprecated Use `authState.isValid()` from `./graphql-client.ts`. */
   public isTokenValid(): boolean {
-    if (!this.accessToken || !this.tokenExpiry) {
-      return false;
-    }
-    return Date.now() < this.tokenExpiry;
+    return authState.isValid();
   }
 
-  private getAuthHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Zed-Version': '2.1.0',
-    };
-
-    if (this.accessToken && this.isTokenValid()) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
-    }
-
-    return headers;
-  }
-
+  /** @deprecated Use `gqlRequest(localClient | backendClient, document, variables)`. */
   public accessEndpointWithQuery = async (
     query: string,
-    useBackendEndpoint: boolean = false
+    useBackendEndpoint: boolean = false,
   ): Promise<object> => {
-    try {
-      query = z.string().nonempty().parse(query);
-      const endpoint = useBackendEndpoint ? this.backendGqlUrl : this.gqlUrl;
-      // logger.info('GraphQL Query to:', endpoint);
-      // console.debug('GraphQL Query:', query);
-      const response = await axios.post(
-        endpoint,
-        {
-          query,
-        },
-        {
-          headers: this.getAuthHeaders(),
-        }
-      );
-      return response.data;
-    } catch (error) {
-      logger.error('Error accessing GraphQL endpoint:', error);
-      throw new Error('Failed to access GraphQL endpoint');
-    }
+    const client = useBackendEndpoint ? backendClient : localClient;
+    return gqlRequest<object>(client, query);
   };
 
+  /** @deprecated Use `gqlRequest(localClient | backendClient, document, variables)`. */
   public accessEndpointWithMutation = async (
     mutation: string,
-    useBackendEndpoint: boolean = false
+    useBackendEndpoint: boolean = false,
   ): Promise<object> => {
-    try {
-      mutation = z.string().nonempty().parse(mutation);
-      const endpoint = useBackendEndpoint ? this.backendGqlUrl : this.gqlUrl;
-      logger.info('GraphQL Mutation to:', endpoint);
-      console.debug('GraphQL Mutation:', mutation);
-      const response = await axios.post(
-        endpoint,
-        {
-          query: mutation,
-        },
-        {
-          headers: this.getAuthHeaders(),
-        }
-      );
-      return response.data;
-    } catch (error) {
-      logger.error('Error accessing GraphQL endpoint:', error);
-      throw new Error('Failed to access GraphQL endpoint');
-    }
+    const client = useBackendEndpoint ? backendClient : localClient;
+    logger.info('GraphQL Mutation to:', useBackendEndpoint ? 'backend' : 'local');
+    return gqlRequest<object>(client, mutation);
   };
 
+  /** @deprecated Use parallel `gqlRequest()` calls instead. */
   public accessEndpointWithQueries = async (
     queries: string[],
-    useBackendEndpoint: boolean = false
+    useBackendEndpoint: boolean = false,
   ): Promise<object[]> => {
-    try {
-      queries = z.array(z.string().nonempty()).min(1).parse(queries);
-      const results = await Promise.all(
-        queries.map((query) => {
-          return this.accessEndpointWithQuery(query, useBackendEndpoint);
-        })
-      );
-      return results;
-    } catch (error) {
-      logger.error('Error accessing GraphQL endpoint:', error);
-      throw new Error('Failed to access GraphQL endpoint');
-    }
+    const client = useBackendEndpoint ? backendClient : localClient;
+    return Promise.all(queries.map((q) => gqlRequest<object>(client, q)));
   };
 
+  /** @deprecated Use parallel `gqlRequest()` calls instead. */
   public accessEndpointWithMutations = async (
     mutations: string[],
-    useBackendEndpoint: boolean = false
+    useBackendEndpoint: boolean = false,
   ): Promise<object[]> => {
-    try {
-      mutations = z.array(z.string().nonempty()).min(1).parse(mutations);
-      const results = await Promise.all(
-        mutations.map((mutation) => {
-          return this.accessEndpointWithMutation(mutation, useBackendEndpoint);
-        })
-      );
-      return results;
-    } catch (error) {
-      logger.error('Error accessing GraphQL endpoint:', error);
-      throw new Error('Failed to access GraphQL endpoint');
-    }
+    const client = useBackendEndpoint ? backendClient : localClient;
+    return Promise.all(mutations.map((m) => gqlRequest<object>(client, m)));
   };
 }
 
-export const graphqlUtils = new GraphQLUtils();
+/** @deprecated Import from `./graphql-client.ts` instead. */
+export const graphqlUtils = new GraphQLUtilsShim();

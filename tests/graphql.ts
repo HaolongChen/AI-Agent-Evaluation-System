@@ -1,5 +1,5 @@
-import { QueryBuilder } from '../src/utils/graphql-builder.ts';
-import { graphqlUtils } from '../src/utils/graphql-utils.ts';
+import { GoldenSetDocuments, type GetGoldenSetsVariables } from '../src/utils/graphql-builder.ts';
+import { localClient, gqlRequest } from '../src/utils/graphql-client.ts';
 import { logger } from '../src/utils/logger.ts';
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -13,25 +13,29 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-const operationName = 'getGoldenSets';
+interface GoldenSet {
+  id: number;
+  projectExId: string;
+  copilotType: string;
+  description: string;
+  query: string;
+  createdAt: string;
+  isActive: boolean;
+}
 
-const query = new QueryBuilder(operationName)
-  .withVariable('copilotType', 'DATA_MODEL_BUILDER')
-  .select(
-    'id',
-    'projectExId',
-    'copilotType',
-    'description',
-    'query',
-    'createdAt',
-    'isActive'
-  )
-  .build();
+interface GetGoldenSetsResponse {
+  getGoldenSets: GoldenSet[];
+}
 
 async function main(): Promise<void> {
   let exitCode = 0;
   try {
-    const response = await graphqlUtils.accessEndpointWithQuery(query);
+    const variables: GetGoldenSetsVariables = { copilotType: 'DATA_MODEL_BUILDER' };
+    const response = await gqlRequest<GetGoldenSetsResponse, GetGoldenSetsVariables>(
+      localClient,
+      GoldenSetDocuments.getGoldenSets,
+      variables,
+    );
     logger.info('GraphQL Response:', response);
   } catch (error) {
     logger.error('GraphQL Error:', error);

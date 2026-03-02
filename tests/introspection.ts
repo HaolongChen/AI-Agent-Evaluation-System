@@ -1,4 +1,4 @@
-import { graphqlUtils } from '../src/utils/graphql-utils.ts';
+import { backendClient, gqlRequest } from '../src/utils/graphql-client.ts';
 import { logger } from '../src/utils/logger.ts';
 import type {
   IntrospectionField,
@@ -19,7 +19,7 @@ process.on('uncaughtException', (error) => {
 });
 
 // GraphQL introspection query to discover available queries and types
-const introspectionQuery = `
+const INTROSPECTION_QUERY = `
   query IntrospectionQuery {
     __schema {
       queryType {
@@ -57,24 +57,22 @@ const introspectionQuery = `
   }
 `;
 
-async function discoverSchema() {
+interface IntrospectionResponse {
+  __schema: IntrospectionQuery['__schema'];
+}
+
+async function discoverSchema(): Promise<void> {
   try {
     logger.info('Fetching GraphQL schema...');
-    const response = await graphqlUtils.accessEndpointWithQuery(
-      introspectionQuery,
-      true
+
+    const response = await gqlRequest<IntrospectionResponse>(
+      backendClient,
+      INTROSPECTION_QUERY,
     );
 
     logger.info('GraphQL Schema:', JSON.stringify(response, null, 2));
 
-    type IntrospectionResponse = {
-      data?: IntrospectionQuery;
-      errors?: unknown;
-    };
-
-    // Extract query fields
-    const schema = response as IntrospectionResponse;
-    const queryType = schema.data?.__schema?.queryType;
+    const queryType = response.__schema?.queryType;
     const queries: IntrospectionField[] =
       queryType && 'fields' in queryType
         ? (queryType.fields as IntrospectionField[])
@@ -98,7 +96,7 @@ async function discoverSchema() {
 }
 
 function describeType(
-  typeRef: IntrospectionTypeRef | null | undefined
+  typeRef: IntrospectionTypeRef | null | undefined,
 ): string {
   if (!typeRef) {
     return 'Unknown';

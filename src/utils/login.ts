@@ -1,42 +1,52 @@
+import { gql } from 'graphql-request';
 import { logger } from './logger.ts';
-import { graphqlUtils } from './graphql-utils.ts';
+import { backendClient, gqlRequest } from './graphql-client.ts';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface LoginVariables {
+  phoneNumber: string;
+  password: string;
+}
+
+interface LoginResponse {
+  loginWithPhoneNumber: {
+    accessToken: string;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Document
+// ---------------------------------------------------------------------------
+
+const LOGIN_MUTATION = gql`
+  mutation LoginWithPhoneNumber($phoneNumber: String!, $password: String!) {
+    loginWithPhoneNumber(phoneNumber: $phoneNumber, password: $password) {
+      accessToken
+    }
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// Login function
+// ---------------------------------------------------------------------------
 
 export const login = async (
   phoneNumber: string,
-  password: string
+  password: string,
 ): Promise<string> => {
-  const query = `
-      mutation LoginWithPhoneNumber {
-        loginWithPhoneNumber(
-          phoneNumber: "${phoneNumber}"
-          password: "${password}"
-        ) {
-          accessToken
-        }
-      }
-    `;
-
   try {
     logger.info('Attempting login for phone number:', phoneNumber);
-    const response = await graphqlUtils.accessEndpointWithQuery(query, true);
 
-    const data = response as {
-      data?: {
-        loginWithPhoneNumber?: {
-          accessToken: string;
-        };
-      };
-      errors?: Array<{ message: string }>;
-    };
+    const data = await gqlRequest<LoginResponse, LoginVariables>(
+      backendClient,
+      LOGIN_MUTATION,
+      { phoneNumber, password },
+    );
 
-    if (data.errors) {
-      logger.error('Login error:', data.errors);
-      throw new Error(
-        `Login failed: ${data.errors[0]?.message || 'Unknown error'}`
-      );
-    }
-
-    const accessToken = data.data?.loginWithPhoneNumber?.accessToken;
+    const accessToken = data.loginWithPhoneNumber.accessToken;
 
     if (!accessToken) {
       throw new Error('No access token received from login');

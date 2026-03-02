@@ -1,12 +1,24 @@
 import * as z from 'zod';
+import { gql } from 'graphql-request';
 
 /**
  * GraphQL Query and Mutation Builder
- * Provides elegant type-safe builders for GraphQL operations
+ *
+ * Two layers:
+ *  1. QueryBuilder / MutationBuilder — fluent string builders retained for
+ *     constructing ad-hoc query strings (e.g. tests that exercise our own
+ *     local Apollo Server where injection risk is negligible).
+ *  2. Typed document constants (GoldenSetDocuments) — use with gqlRequest()
+ *     + proper GraphQL variables for production code paths.
  */
 
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
 /**
- * Serialize a value for GraphQL query string
+ * Serialize a value for inline GraphQL query strings.
+ * Only used by the legacy string-builder path.
  */
 function serializeValue(value: unknown): string {
   if (value === null || value === undefined) {
@@ -32,7 +44,6 @@ function serializeValue(value: unknown): string {
   }
 
   if (typeof value === 'object') {
-    // Serialize object as JSON-like GraphQL input
     const entries = Object.entries(value as Record<string, unknown>);
     const serialized = entries
       .map(([key, val]) => `${key}: ${serializeValue(val)}`)
@@ -42,6 +53,10 @@ function serializeValue(value: unknown): string {
 
   return String(value);
 }
+
+// ---------------------------------------------------------------------------
+// QueryBuilder — fluent string builder (local Apollo Server use only)
+// ---------------------------------------------------------------------------
 
 export class QueryBuilder {
   private operationName: string;
@@ -56,7 +71,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Add a variable to the query
+   * Add a variable to the query (inlined into the query string).
    * @example .withVariable('id', '123')
    * @example .withVariable('data', { name: 'John', age: 30 })
    */
@@ -67,7 +82,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Select fields to return
+   * Select fields to return.
    * @example .select('id', 'name', 'email')
    */
   select(...fields: string[]): this {
@@ -76,7 +91,7 @@ export class QueryBuilder {
   }
 
   /**
-   * Select nested fields with object notation
+   * Select nested fields with object notation.
    * @example .selectNested({ user: ['id', 'name'], posts: ['title'] })
    */
   selectNested(fieldMap: Record<string, string[]>): this {
@@ -86,9 +101,7 @@ export class QueryBuilder {
     return this;
   }
 
-  /**
-   * Build the query string
-   */
+  /** Build the query string. */
   build(): string {
     const variablePart =
       this.variableDefinitions.length > 0
@@ -109,8 +122,11 @@ export class QueryBuilder {
   }
 }
 
+// ---------------------------------------------------------------------------
+// MutationBuilder — fluent string builder (local Apollo Server use only)
+// ---------------------------------------------------------------------------
+
 export class MutationBuilder {
-  // TODO: modify mutation part to correspond to query part
   private operationName: string;
   private mutationName: string;
   private fields: string[] = [];
@@ -123,7 +139,7 @@ export class MutationBuilder {
   }
 
   /**
-   * Add a variable and its argument mapping
+   * Add a variable and its argument mapping (inlined into the mutation string).
    * @example .withVariable('id', '123')
    * @example .withVariable('data', { name: 'John', age: 30 })
    */
@@ -133,17 +149,13 @@ export class MutationBuilder {
     return this;
   }
 
-  /**
-   * Select fields to return from the mutation
-   */
+  /** Select fields to return from the mutation. */
   select(...fields: string[]): this {
     this.fields.push(...fields);
     return this;
   }
 
-  /**
-   * Select nested fields
-   */
+  /** Select nested fields. */
   selectNested(fieldMap: Record<string, string[]>): this {
     Object.entries(fieldMap).forEach(([field, subfields]) => {
       this.fields.push(`${field} { ${subfields.join(' ')} }`);
@@ -151,9 +163,7 @@ export class MutationBuilder {
     return this;
   }
 
-  /**
-   * Build the mutation string
-   */
+  /** Build the mutation string. */
   build(): string {
     const variablePart =
       this.variableDefinitions.length > 0
@@ -174,14 +184,65 @@ export class MutationBuilder {
   }
 }
 
-/**
- * Convenient factory functions
- */
-export const query = (name: string) => new QueryBuilder(name);
-export const mutation = (name: string) => new MutationBuilder(name);
+// ---------------------------------------------------------------------------
+// Convenient factory functions
+// ---------------------------------------------------------------------------
+
+export const query = (name: string): QueryBuilder => new QueryBuilder(name);
+export const mutation = (name: string): MutationBuilder => new MutationBuilder(name);
+
+// ---------------------------------------------------------------------------
+// Typed document constants + variable types (use with gqlRequest())
+//
+// These replace the old GoldenSetQueries string-builder helpers.
+// Usage:
+//   import { GoldenSetDocuments } from '../utils/graphql-builder.ts';
+//   import { gqlRequest, localClient } from '../utils/graphql-client.ts';
+//
+//   const data = await gqlRequest<GetGoldenSetsResponse, GetGoldenSetsVariables>(
+//     localClient,
+//     GoldenSetDocuments.getGoldenSets,
+//     { projectExId: 'proj-123', copilotType: 'DATA_MODEL_BUILDER' },
+//   );
+// ---------------------------------------------------------------------------
+
+export interface GetGoldenSetSchemasVariables {
+  copilotType?: string;
+}
+
+export interface GetGoldenSetsVariables {
+  projectExId?: string;
+  copilotType?: string;
+}
+
+export const GoldenSetDocuments = {
+  /** Fetch available golden set schemas, optionally filtered by copilot type. */
+  getGoldenSetSchemas: gql`
+    query GetGoldenSetSchemas($copilotType: String) {
+      getGoldenSetSchemas(copilotType: $copilotType)
+    }
+  `,
+
+  /** Fetch golden sets, optionally filtered by project and/or copilot type. */
+  getGoldenSets: gql`
+    query GetGoldenSets($projectExId: String, $copilotType: String) {
+      getGoldenSets(projectExId: $projectExId, copilotType: $copilotType) {
+        id
+        projectExId
+        copilotType
+        description
+        query
+        createdAt
+        isActive
+      }
+    }
+  `,
+} as const;
 
 /**
- * Pre-built operations for common use cases
+ * @deprecated Use GoldenSetDocuments + gqlRequest() instead.
+ *
+ * Retained for backward compatibility. Will be removed in a future cleanup.
  */
 export const GoldenSetQueries = {
   getSchemas: (copilotType?: string) => {
@@ -200,7 +261,7 @@ export const GoldenSetQueries = {
       'description',
       'query',
       'createdAt',
-      'isActive'
+      'isActive',
     );
 
     if (projectExId) {
@@ -213,5 +274,3 @@ export const GoldenSetQueries = {
     return builder.build();
   },
 };
-
-

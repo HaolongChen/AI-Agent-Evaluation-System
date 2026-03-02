@@ -227,9 +227,7 @@ export const typeDefs = `#graphql
     "Unique judge record identifier"
     id: Int!
     "Parent rubric criterion ID"
-    rubricCriterionId: Int!
-    "Type of evaluator: 'agent' or 'human'"
-    evaluatorType: String!
+    sessionId: Int!
     "Account ID if human evaluator"
     accountId: String
     "Binary answer to the criterion question"
@@ -258,16 +256,12 @@ export const typeDefs = `#graphql
     "Status of evaluation process"
     evaluationStatus: EvaluationStatus!
     
-    "Overall verdict: 'PASS', 'FAIL', or 'PARTIAL'"
-    verdict: String!
     "Aggregated score across all weighted criteria (0.0 - 1.0)"
     overallScore: Float!
     "Executive summary of evaluation"
     summary: String!
     "Detailed analysis with per-criterion breakdown"
     detailedAnalysis: String!
-    "List of discrepancies between agent and human evaluation"
-    discrepancies: [String!]!
     "Audit trail of workflow steps and decisions"
     auditTrace: [String!]!
     "Timestamp when report was generated"
@@ -332,8 +326,6 @@ export const typeDefs = `#graphql
   Complete evaluation by agent or human, with answers to all questions.
   """
   type QuestionEvaluation {
-    "Type of evaluator: 'agent' or 'human'"
-    evaluatorType: String!
     "Answers to all questions"
     answers: [QuestionAnswer!]!
     "Calculated overall score based on weights"
@@ -348,20 +340,13 @@ export const typeDefs = `#graphql
   Final evaluation report combining agent and human assessments.
   """
   type FinalReportOutput {
-    "Overall verdict: 'PASS', 'FAIL', or 'PARTIAL'"
-    verdict: String!
     "Aggregated score (0.0 - 1.0)"
     overallScore: Float!
     "Executive summary"
     summary: String!
     "Detailed analysis with discrepancy breakdown"
     detailedAnalysis: String!
-    "Agent evaluation (null if skipped)"
-    agentEvaluation: QuestionEvaluation
-    "Human evaluation (null if skipped)"
-    humanEvaluation: QuestionEvaluation
-    "List of discrepancies between agent and human"
-    discrepancies: [String!]!
+    evaluation: QuestionEvaluation
     "Audit trail of all workflow steps"
     auditTrace: [String!]!
     "ISO timestamp when report was generated"

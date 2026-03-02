@@ -1,6 +1,6 @@
 import { prisma } from '../config/prisma.ts';
 import { logger } from '../utils/logger.ts';
-import { COPILOT_TYPES, VERDICT } from '../config/constants.ts';
+import { COPILOT_TYPES } from '../config/constants.ts';
 import type { Prisma } from '../../build/generated/prisma/client.ts';
 import { goldenSetService } from './GoldenSetService.ts';
 
@@ -21,10 +21,8 @@ export class AnalyticsService {
     copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
     modelName: string,
     reportData: {
-      verdict?: (typeof VERDICT)[keyof typeof VERDICT];
       summary?: string;
       detailedAnalysis?: string;
-      discrepancies?: string[];
       auditTrace?: string[];
     },
     overallScore: number
@@ -35,7 +33,6 @@ export class AnalyticsService {
           sessionId: parseInt(sessionId),
           copilotType: copilotType,
           modelName: modelName,
-          verdict: reportData.verdict ?? 'needs_review',
           overallScore: overallScore,
           summary: reportData.summary ?? '',
           detailedAnalysis: reportData.detailedAnalysis ?? '',

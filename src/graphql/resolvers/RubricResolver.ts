@@ -10,8 +10,7 @@ type RubricRecord = {
 
 type JudgeRecordDB = {
   id: number;
-  adaptiveRubricId: number;
-  evaluatorType: string;
+  sessionId: number;
   accountId: string | null;
   answer: boolean;
   comment: string | null;
@@ -80,8 +79,7 @@ export const rubricResolver = {
       
       return {
         id: judgeRecord.id,
-        rubricCriterionId: judgeRecord.adaptiveRubricId,
-        evaluatorType: judgeRecord.evaluatorType,
+        sessionId: judgeRecord.sessionId,
         accountId: judgeRecord.accountId,
         answer: judgeRecord.answer,
         comment: judgeRecord.comment,

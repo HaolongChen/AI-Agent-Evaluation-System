@@ -71,18 +71,6 @@ export const REVERSE_EVALUATOR: { [key: string]: string } = {
   agent: 'AGENT',
 };
 
-export const VERDICT = {
-  PASS: 'pass',
-  FAIL: 'fail',
-  NEEDS_REVIEW: 'needs_review',
-} as const;
-
-export const REVERSE_VERDICT: { [key: string]: string } = {
-  pass: 'PASS',
-  fail: 'FAIL',
-  needs_review: 'NEEDS_REVIEW',
-};
-
 export const METRIC_CATEGORIES = {
   DATA_MODEL: [
     'entity_coverage',

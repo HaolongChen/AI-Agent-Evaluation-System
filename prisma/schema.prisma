@@ -36,12 +36,6 @@ enum RubricReviewStatus {
   modified
 }
 
-enum Verdict {
-  pass
-  fail
-  needs_review
-}
-
 model project {
   projectExId String   @unique @map("project_ex_id") // External project ID from the application
   name        String   @unique @map("name")
@@ -176,7 +170,6 @@ model evaluationResult {
   evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
 
   // FinalReport fields (matching LangGraph FinalReport interface)
-  verdict          Verdict  @default(needs_review) // 'pass', 'fail', 'needs_review'
   overallScore     Decimal  @map("overall_score") @db.Decimal(5, 2)
   summary          String   @db.Text
   detailedAnalysis String   @map("detailed_analysis") @db.Text

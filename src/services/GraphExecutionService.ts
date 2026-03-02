@@ -500,7 +500,7 @@ export class GraphExecutionService {
             sum +
             (r.expectedAnswer === r.judgeRecord?.answer ? Number(r.weight) : 0),
           0,
-        ),
+        ) / rubrics.reduce((sum, r) => sum + Number(r.weight), 0)
       ),
       summary: '',
       timestamp: firstRecord.timestamp.toISOString(),

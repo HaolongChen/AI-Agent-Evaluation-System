@@ -45,11 +45,9 @@ async function verify() {
   });
 
   assert.ok(finalReport, 'Final report should exist');
-  assert.ok(['pass', 'fail'].includes(finalReport.verdict), `Invalid verdict: ${finalReport.verdict}`);
   assert.strictEqual(typeof finalReport.overallScore, 'number', 'Overall score should be a number');
 
   logger.info('\n=== Final Report ===');
-  logger.info('Verdict:', finalReport?.verdict);
   logger.info('Overall Score:', finalReport?.overallScore);
 }
 

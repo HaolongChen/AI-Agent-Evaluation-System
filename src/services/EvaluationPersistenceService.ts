@@ -94,7 +94,7 @@ export class EvaluationPersistenceService {
     sessionId: number,
     answer?: boolean,
     comment?: string,
-    evaluatorAccountId?: string,
+    accountId?: string,
   ): Promise<void> {
     try {
       await prisma.adaptiveRubricJudgeRecord.update({
@@ -102,7 +102,7 @@ export class EvaluationPersistenceService {
         data: {
           ...(answer !== undefined ? { answer } : {}),
           ...(comment !== undefined ? { comment } : {}),
-          ...(evaluatorAccountId !== undefined ? { evaluatorAccountId } : {}),
+          ...(accountId !== undefined ? { accountId } : {}),
           timestamp: new Date(),
         },
       });

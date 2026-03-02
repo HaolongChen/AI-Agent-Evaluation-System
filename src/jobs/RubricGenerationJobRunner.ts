@@ -180,13 +180,6 @@ export class RubricGenerationJobRunner {
           message =
             interruptValue.message ||
             'Graph paused for human evaluation. Call submitHumanEvaluation to continue.';
-
-          if (result.evaluation) {
-            await evaluationPersistenceService.saveAgentEvaluationAnswers(
-              session.id,
-              result.evaluation,
-            );
-          }
         } else {
           logger.error('Unexpected interrupt type after resuming graph', {
             interruptType: interruptValue?.type,

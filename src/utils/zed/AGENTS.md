@@ -14,7 +14,7 @@ Functorz-specific CRDT schema retrieval, Zed type system bindings, and UI compon
 | `AfCustomCodeTemplates.ts` | Auto-generated GQL response types for `visibleAfCustomCodeTemplates` |
 | `ZSchema.ts` | Auto-generated GQL response types + `SYSTEM_MODEL_PROVIDER` constant |
 | `index.ts` | **Large** (~2500+ lines): Functorz UI component attribute interfaces + action flow node types |
-| `createProject.ts` | Project creation helper (untracked — do not document) |
+| `createProject.ts` | Creates a new WEB project via mutation + Apollo WS subscription; saves `projectExId` to DB |
 
 ## TypeSystemStore
 
@@ -93,3 +93,41 @@ Auto-generated (`@generated` header present). GQL response type interfaces. Do n
 - Import `TypeSystem.ts` re-exports rather than `@functorz/ztype` directly
 - `KtList.fromJsArray()` / `KtMap.fromJsMap()` are required when passing JS arrays/maps to Kotlin APIs
 - `genExtraContext()` is the main entry point for building the context object used by Zed copilot operations
+
+## createProject.ts
+
+Creates a Functorz project asynchronously. Pre-flight checks the name for duplicates, fires a GQL mutation to get a `taskId`, then subscribes to `OnProjectCreationStatusChanged`. On `COMPLETED`, upserts the `project` row in the database.
+
+```typescript
+import { createProject, ProjectNameDuplicateError } from '../utils/zed/createProject.ts';
+
+// Legacy Apollo WS path (default)
+const projectExId = await createProject('My New Project');
+
+// Modern graphql-ws path (for future use once backend supports it)
+const projectExId2 = await createProject('My New Project', { useModernProtocol: true });
+```
+
+**Requires env vars:** `ORGANIZATION_EX_ID`, `SUBSCRIPTION_GRAPHQL_URL` (defaults to `wss://zionbackend.functorz.work/api/graphql-subscription`).
+
+**Auth:** reads token from `authState.getToken()` — call `authState.setToken()` (or `login()`) before invoking.
+
+**Flow:**
+1. `CheckProjectNameDuplicate` query — throws `ProjectNameDuplicateError` if name is taken
+2. `createProjectInOrganizationAsync` mutation with `platform: WEB`, `projectSpaceType: PERSONAL`, `category: OTHERS` → `taskId`
+3. Subscribe to `OnProjectCreationStatusChanged(uniqueId: taskId)` — legacy Apollo WS path by default, or modern `gqlSubscribe()` path via `useModernProtocol: true`
+4. Resolves on `COMPLETED`, rejects on `FAILED`, keeps waiting on `PROCESSING`
+
+**Legacy WS protocol details:**
+- Subprotocol header: `graphql-ws` (Apollo `subscriptions-transport-ws` format — NOT modern graphql-ws)
+- Init payload includes `authToken`, `X-SESSION-ID` (uuid v4), `X-ZED-VERSION: "2.0.5"`
+- Messages use `type: "start"` / `type: "data"` (old format)
+
+**Named exports:**
+- `createProject(projectName, opts?): Promise<string>` — main entry point
+- `ProjectNameDuplicateError` — thrown when name check returns `true`
+- `GQL_CHECK_PROJECT_NAME_DUPLICATE` — name-check query document (string)
+- `GQL_CREATE_PROJECT_IN_ORGANIZATION` — mutation document (string)
+- `GQL_ON_PROJECT_CREATION_STATUS_CHANGED` — subscription document (string)
+- `PROJECT_CREATION_STATUS` — `as const` object `{ COMPLETED, FAILED, PROCESSING }`
+- `ProjectCreationStatus` — union type of the above values

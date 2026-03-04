@@ -16,6 +16,9 @@ export const SUBSCRIPTION_GRAPHQL_URL =
   process.env['SUBSCRIPTION_GRAPHQL_URL'] ||
   'wss://zionbackend.functorz.work/api/graphql-subscription';
 
+export const ORGANIZATION_EX_ID =
+  process.env['ORGANIZATION_EX_ID'] || '';
+
 
 export const FUNCTORZ_PHONE_NUMBER = process.env['FUNCTORZ_PHONE_NUMBER'];
 export const FUNCTORZ_PASSWORD = process.env['FUNCTORZ_PASSWORD'];

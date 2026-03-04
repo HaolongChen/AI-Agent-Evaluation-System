@@ -15,6 +15,7 @@ Core business logic and database orchestration layer, delegating from GraphQL re
 | `GoldenSetService.ts` | Dataset Management | CRUD for inputs/expected outputs, versioning, bulk imports |
 | `RubricService.ts` | Rubric Management | Criteria definitions, scoring logic validation, patch processing |
 | `AnalyticsService.ts` | Metrics & Reporting | Aggregation queries, success rate calculations, trend analysis |
+| `ProjectService.ts` | Project Lifecycle | `createProject()`, `acquireProject()`, `releaseProject()`, `getProjectById()` |
 
 ## CONVENTIONS
 - **Singleton Export**: Always export a class instance: `export const serviceName = new ServiceName();`.
@@ -29,3 +30,34 @@ Core business logic and database orchestration layer, delegating from GraphQL re
 - **Logic Leaks**: Writing business validation or DB queries directly in GraphQL resolvers or LangGraph nodes.
 - **State Mismanagement**: Modifying LangGraph state outside of `GraphExecutionService` or node functions.
 - **Silencing Prisma**: Catching DB errors without logging context-specific metadata via `logger`.
+
+## ProjectService
+
+Owns the full project creation lifecycle and lock management.
+
+```typescript
+import { projectService, ProjectNameDuplicateError } from '../services/ProjectService.ts';
+
+// Create a new project (name check → mutation → WS subscribe → DB upsert)
+// Throws ProjectNameDuplicateError if name is taken
+const projectExId = await projectService.createProject('My New Project');
+
+// Modern graphql-ws path (for future use)
+const projectExId2 = await projectService.createProject('My New Project', { useModernProtocol: true });
+
+// Acquire / release the project lock
+await projectService.acquireProject(projectExId);
+await projectService.releaseProject(projectExId);
+```
+
+**`createProject()` flow:**
+1. Validates `ORGANIZATION_EX_ID` env var is set
+2. `CheckProjectNameDuplicate` query via `backendClient` — throws `ProjectNameDuplicateError` if taken
+3. `createProjectInOrganizationAsync` mutation → `taskId`
+4. Subscribes to `OnProjectCreationStatusChanged(uniqueId: taskId)` via legacy Apollo WS (default) or modern graphql-ws (`useModernProtocol: true`)
+5. On `COMPLETED`: upserts `project` row (`projectExId`, `name`) in DB, resolves with `projectExId`
+6. On `FAILED`: rejects
+
+**Auth:** Reads token from `authState.getToken()` — call `authState.setToken()` before invoking.
+
+`ProjectNameDuplicateError` is re-exported from this module for callers.

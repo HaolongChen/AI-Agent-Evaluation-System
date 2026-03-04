@@ -1,6 +1,6 @@
 # Utilities Layer
 
-> **Scope:** src/utils/ | **Updated:** 2026-03-02
+> **Scope:** src/utils/ | **Updated:** 2026-03-04
 
 Shared utilities and cross-cutting concerns used across all layers.
 
@@ -8,9 +8,9 @@ Shared utilities and cross-cutting concerns used across all layers.
 
 | File | Purpose | Used By |
 |------|---------|---------|
-| `graphql-client.ts` | Primary GQL client — `authState`, `localClient`, `backendClient`, `gqlRequest()` | Tests, job runners, zed/ |
+| `graphql-client.ts` | Primary GQL client — `authState`, `localClient`, `backendClient`, `gqlRequest()`, `gqlSubscribe()` | Tests, job runners, zed/ |
 | `graphql-builder.ts` | Typed GQL documents (`GoldenSetDocuments`) + legacy string builders | Tests, job runners |
-| `graphql-utils.ts` | **@deprecated** compat shim → re-routes to `graphql-client.ts` | Legacy callers only |
+| ~~`graphql-utils.ts`~~ | **Deleted** — was a deprecated shim; use `graphql-client.ts` directly | — |
 | `login.ts` | `login(phone, password)` — authenticates and returns `accessToken` | Job runners, zed/ |
 | `logger.ts` | Structured logging (console + caller location) | All modules |
 | `types.ts` | Domain types: `CopilotMessage` union, `copilotType`, `SessionState`, enums | Services, jobs, state |
@@ -37,12 +37,34 @@ const data = await gqlRequest<GetGoldenSetsResponse, GetGoldenSetsVariables>(
 );
 ```
 
+**Subscriptions (graphql-ws protocol):**
+
+```typescript
+import { gqlSubscribe } from '../utils/graphql-client.ts';
+
+// Subscribe — returns an unsubscribe cleanup function
+const unsubscribe = gqlSubscribe<MyEventData, MyVars>(
+  MY_SUBSCRIPTION_DOCUMENT,
+  { id: '123' },          // optional variables
+  {
+    next:     (data) => logger.info('event', data),
+    error:    (err)  => logger.error('sub error', err),
+    complete: ()     => logger.info('subscription ended'),
+  },
+);
+
+// Stop listening:
+unsubscribe();
+```
+
+**Subscription client config:** reads `SUBSCRIPTION_GRAPHQL_URL` from env (default: `wss://zionbackend.functorz.work/api/graphql-subscription`). WS connection is created lazily on first `gqlSubscribe()` call. Auth token is injected via `connectionParams` on every (re)connect.
+
 **Clients:**
 - `localClient` → our own Apollo Server (`URL/graphql`, no auth required)
 - `backendClient` → Functorz backend (`BACKEND_GRAPHQL_URL`, requires Bearer token)
 - `authState.setToken(token)` / `authState.clearToken()` / `authState.isValid()`
 
-**Never** use `graphql-utils.ts` in new code — import from `graphql-client.ts` directly.
+**Never** import from `graphql-utils.ts` — it has been deleted. Import from `graphql-client.ts` directly.
 
 ## GRAPHQL BUILDER
 
@@ -74,5 +96,5 @@ logger.debug('Trace info');  // Only in development (NODE_ENV check)
 ## NOTES
 
 - `zed/` is the heaviest subdirectory (10k+ lines in `index.ts`) — see `zed/AGENTS.md` for details
-- `graphql-utils.ts` will be removed in a future cleanup; do not add new callers
+- `graphql-utils.ts` has been **deleted** (was a no-op shim with zero real callers)
 - `login.ts` calls `backendClient` with typed variables — the returned token should be passed to `authState.setToken()`

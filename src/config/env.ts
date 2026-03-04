@@ -12,6 +12,10 @@ export const URL = process.env['URL'] || `http://localhost:${PORT}`;
 export const BACKEND_GRAPHQL_URL =
   process.env['BACKEND_GRAPHQL_URL'] ||
   'https://zionbackend.functorz.work/api/graphql';
+export const SUBSCRIPTION_GRAPHQL_URL =
+  process.env['SUBSCRIPTION_GRAPHQL_URL'] ||
+  'wss://zionbackend.functorz.work/api/graphql-subscription';
+
 
 export const FUNCTORZ_PHONE_NUMBER = process.env['FUNCTORZ_PHONE_NUMBER'];
 export const FUNCTORZ_PASSWORD = process.env['FUNCTORZ_PASSWORD'];

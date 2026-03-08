@@ -66,12 +66,6 @@ export class ExecutionService {
       throw new Error('Golden set is existing and already has evaluation sessions');
     }
 
-    // Create a fresh Functorz project for this evaluation run.
-    const evalProjectName = `eval-${goldenSetId}-${Date.now()}`;
-    logger.info('Creating evaluation project', { evalProjectName, goldenSetId });
-    const evalProjectExId = await projectService.createProject(evalProjectName);
-    const evalWsUrl = buildWsUrl(evalProjectExId);
-    logger.info('Evaluation project created', { evalProjectExId });
 
     try {
       const typeSystemStore = new TypeSystemStore();
@@ -97,36 +91,51 @@ export class ExecutionService {
         await this.setGoldenSetActive(goldenSetId, true);
         const copilotResponse: Array<[string, string, string]> = [];
         goldenSet.userInput.forEach(async (userInput, index) => {
-          const evalJobResult = (await applyAndWatchJob(
-            `evaluation-job-${evalProjectExId}-${index}-${Date.now()}`,
-            'default',
-            './src/jobs/EvaluationJobRunner.ts',
-            300000,
-            'evaluation',
-            evalProjectExId,
-            evalWsUrl,
-            userInput.content,
-          )) as unknown as EvalJobResult;
-          copilotResponse.push([
-            evalJobResult.editableText || '',
-            evalJobResult.schema || '',
-            userInput.content,
-          ]);
-          logger.info(
-            `Evaluation job for golden set ${goldenSet.id} completed with status:`,
-            evalJobResult.status,
-          );
-          if (evalJobResult.status !== 'succeeded') {
-            throw new Error(
-              `Evaluation job for golden set ${goldenSet.id} failed`,
+          // Create a fresh project for each user input
+          const evalProjectName = `eval-${goldenSetId}-${index}-${Date.now()}`;
+          logger.info('Creating evaluation project', { evalProjectName, goldenSetId });
+          const evalProjectExId = await projectService.createProject(evalProjectName);
+          const evalWsUrl = buildWsUrl(evalProjectExId);
+          logger.info('Evaluation project created', { evalProjectExId });
+
+          try {
+            const evalJobResult = (await applyAndWatchJob(
+              `evaluation-job-${evalProjectExId}-${index}-${Date.now()}`,
+              'default',
+              './src/jobs/EvaluationJobRunner.ts',
+              300000,
+              'evaluation',
+              evalProjectExId,
+              evalWsUrl,
+              userInput.content,
+            )) as unknown as EvalJobResult;
+            copilotResponse.push([
+              evalJobResult.editableText || '',
+              evalJobResult.schema || '',
+              userInput.content,
+            ]);
+            logger.info(
+              `Evaluation job for golden set ${goldenSet.id} completed with status:`,
+              evalJobResult.status,
             );
+            if (evalJobResult.status !== 'succeeded') {
+              throw new Error(
+                `Evaluation job for golden set ${goldenSet.id} failed`,
+              );
+            }
+          } finally {
+            try {
+              await projectService.deleteProject(evalProjectExId);
+            } catch (deleteErr) {
+              logger.error('Failed to delete evaluation project', { evalProjectExId, deleteErr });
+            }
           }
         });
         const results = await Promise.allSettled(
           copilotResponse.map(
             async ([editableText, schema, userInputContent], index) => {
               const genJobResult = (await applyAndWatchJob(
-                `rubric-job-${evalProjectExId}-${index}-${Date.now()}`,
+                `rubric-job-${goldenSetId}-${index}-${Date.now()}`,
                 'default',
                 './src/jobs/RubricGenerationJobRunner.ts',
                 300000,
@@ -165,44 +174,53 @@ export class ExecutionService {
           });
         }
       } else {
-        const copilotResponse: Array<[string, string]> = [];
-        if (!goldenSet.userInput[0]) {
-          throw new Error('No user input found in golden set');
-        }
-
-        const evalJobRunner = new EvaluationJobRunner(
-          evalProjectExId,
-          evalWsUrl,
-          goldenSet.userInput[0].content,
-          typeSystemStore.supportedCustomModelDescriptor,
-          typeSystemStore.afCustomCodeTemplates,
-          typeSystemStore.schemaGraph,
-        );
-        evalJobRunner.startJob();
-        const { editableText } = await evalJobRunner.waitForCompletion();
-        copilotResponse.push([editableText, goldenSet.userInput[0].content]);
-
         const results = await Promise.allSettled(
-          copilotResponse.map(async ([editableText, userInputContent]) => {
-            const rubricJobRunner = new RubricGenerationJobRunner(
-              goldenSet.id,
-              goldenSet.projectExId,
-              goldenSet.copilotType,
-              userInputContent,
-              '',
-              editableText,
-              typeSystemStore.schemaGraph,
-              resolvedModelName,
-              skipHumanReview,
-              skipHumanEvaluation,
-            );
-            rubricJobRunner.startJob();
-            const rubricResult = await rubricJobRunner.waitForCompletion();
-            logger.info(
-              `Rubric generation job for golden set ${goldenSet.id} completed with response:`,
-              rubricResult,
-            );
-            return rubricResult;
+          goldenSet.userInput.map(async (userInput, index) => {
+            // Create a fresh project for each user input
+            const evalProjectName = `eval-${goldenSetId}-${index}-${Date.now()}`;
+            logger.info('Creating evaluation project', { evalProjectName, goldenSetId, index });
+            const evalProjectExId = await projectService.createProject(evalProjectName);
+            const evalWsUrl = buildWsUrl(evalProjectExId);
+            logger.info('Evaluation project created', { evalProjectExId, index });
+
+            try {
+              const evalJobRunner = new EvaluationJobRunner(
+                evalProjectExId,
+                evalWsUrl,
+                userInput.content,
+                typeSystemStore.supportedCustomModelDescriptor,
+                typeSystemStore.afCustomCodeTemplates,
+                typeSystemStore.schemaGraph,
+              );
+              evalJobRunner.startJob();
+              const { editableText } = await evalJobRunner.waitForCompletion();
+
+              const rubricJobRunner = new RubricGenerationJobRunner(
+                goldenSet.id,
+                goldenSet.projectExId,
+                goldenSet.copilotType,
+                userInput.content,
+                '',
+                editableText,
+                typeSystemStore.schemaGraph,
+                resolvedModelName,
+                skipHumanReview,
+                skipHumanEvaluation,
+              );
+              rubricJobRunner.startJob();
+              const rubricResult = await rubricJobRunner.waitForCompletion();
+              logger.info(
+                `Rubric generation job for golden set ${goldenSet.id} (input ${index}) completed with response:`,
+                rubricResult,
+              );
+              return rubricResult;
+            } finally {
+              try {
+                await projectService.deleteProject(evalProjectExId);
+              } catch (deleteErr) {
+                logger.error('Failed to delete evaluation project', { evalProjectExId, deleteErr });
+              }
+            }
           }),
         );
 
@@ -224,13 +242,6 @@ export class ExecutionService {
     } catch (error) {
       logger.error('Error creating evaluation sessions:', error);
       throw new Error('Failed to create evaluation sessions');
-    } finally {
-      // Always delete the ephemeral evaluation project when done.
-      try {
-        await projectService.deleteProject(evalProjectExId);
-      } catch (deleteErr) {
-        logger.error('Failed to delete evaluation project', { evalProjectExId, deleteErr });
-      }
     }
   }
 

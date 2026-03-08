@@ -9,8 +9,6 @@ import { humanEvaluatorNode } from './nodes/HumanEvaluator.ts';
 import { reportGeneratorNode } from './nodes/ReportGenerator.ts';
 import * as z from 'zod';
 import { inputCollectorNode } from './nodes/InputCollector.ts';
-import { schemaCheckerNode } from './nodes/SchemaChecker.ts';
-import { schemaLoaderNode } from './nodes/SchemaLoader.ts';
 
 const ContextSchema = z.object({
   provider: z.string().optional(),
@@ -78,8 +76,6 @@ function afterAgentEvaluator(
 const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   // Add all nodes
   .addNode('inputCollector', inputCollectorNode)
-  .addNode('schemaChecker', schemaCheckerNode)
-  .addNode('schemaLoader', schemaLoaderNode)
   .addNode('questionDrafter', rubricDrafterNode)
   .addNode('humanReviewer', humanReviewerNode)
   .addNode('questionInterpreter', rubricInterpreterNode)
@@ -97,9 +93,7 @@ const workflow = new StateGraph(rubricAnnotation, ContextSchema)
   // Start -> Analysis Agent (handles schema loading)
   .addEdge('__start__', 'inputCollector')
 
-  .addEdge('inputCollector', 'schemaChecker')
-  .addEdge('schemaChecker', 'schemaLoader')
-  .addEdge('schemaLoader', 'questionDrafter')
+  .addEdge('inputCollector', 'questionDrafter')
 
   // Question Drafter -> Human Reviewer (conditional)
   .addConditionalEdges('questionDrafter', afterQuestionDrafter, {

@@ -11,14 +11,8 @@ import {
   USES_AZURE_OPENAI,
   buildWsUrl,
 } from '../config/env.ts';
-import {
-  applyAndWatchJob,
-  type EvalJobResult,
-  type GenJobResult,
-} from '../kubernetes/utils/apply-from-file.ts';
 import { EvaluationJobRunner } from '../jobs/EvaluationJobRunner.ts';
 import { RubricGenerationJobRunner } from '../jobs/RubricGenerationJobRunner.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
 import { projectService } from './ProjectService.ts';
 
@@ -45,7 +39,6 @@ export class ExecutionService {
       skipHumanEvaluation?: boolean;
     },
   ) {
-    const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
     // Bulk execution defaults to fully automated evaluation
     const skipHumanReview = options?.skipHumanReview ?? true;
     const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
@@ -87,42 +80,45 @@ export class ExecutionService {
         `Creating ${goldenSet.userInput.length - goldenSet.copilotOutput.length} evaluation sessions concurrently`,
       );
 
-      if (USE_KUBERNETES_JOBS) {
-        await this.setGoldenSetActive(goldenSetId, true);
-        const copilotResponse: Array<[string, string, string]> = [];
-        goldenSet.userInput.forEach(async (userInput, index) => {
+      const results = await Promise.allSettled(
+        goldenSet.userInput.map(async (userInput, index) => {
           // Create a fresh project for each user input
           const evalProjectName = `eval-${goldenSetId}-${index}-${Date.now()}`;
-          logger.info('Creating evaluation project', { evalProjectName, goldenSetId });
+          logger.info('Creating evaluation project', { evalProjectName, goldenSetId, index });
           const evalProjectExId = await projectService.createProject(evalProjectName);
           const evalWsUrl = buildWsUrl(evalProjectExId);
-          logger.info('Evaluation project created', { evalProjectExId });
+          logger.info('Evaluation project created', { evalProjectExId, index });
 
           try {
-            const evalJobResult = (await applyAndWatchJob(
-              `evaluation-job-${evalProjectExId}-${index}-${Date.now()}`,
-              'default',
-              './src/jobs/EvaluationJobRunner.ts',
-              300000,
-              'evaluation',
+            const evalJobRunner = new EvaluationJobRunner(
               evalProjectExId,
               evalWsUrl,
               userInput.content,
-            )) as unknown as EvalJobResult;
-            copilotResponse.push([
-              evalJobResult.editableText || '',
-              evalJobResult.schema || '',
-              userInput.content,
-            ]);
-            logger.info(
-              `Evaluation job for golden set ${goldenSet.id} completed with status:`,
-              evalJobResult.status,
+              typeSystemStore.supportedCustomModelDescriptor,
+              typeSystemStore.afCustomCodeTemplates,
+              typeSystemStore.schemaGraph,
             );
-            if (evalJobResult.status !== 'succeeded') {
-              throw new Error(
-                `Evaluation job for golden set ${goldenSet.id} failed`,
-              );
-            }
+            evalJobRunner.startJob();
+            const { editableText } = await evalJobRunner.waitForCompletion();
+
+            const rubricJobRunner = new RubricGenerationJobRunner(
+              goldenSet.id,
+              goldenSet.projectExId,
+              goldenSet.copilotType,
+              userInput.content,
+              '',
+              editableText,
+              resolvedModelName,
+              skipHumanReview,
+              skipHumanEvaluation,
+            );
+            rubricJobRunner.startJob();
+            const rubricResult = await rubricJobRunner.waitForCompletion();
+            logger.info(
+              `Rubric generation job for golden set ${goldenSet.id} (input ${index}) completed with response:`,
+              rubricResult,
+            );
+            return rubricResult;
           } finally {
             try {
               await projectService.deleteProject(evalProjectExId);
@@ -130,114 +126,22 @@ export class ExecutionService {
               logger.error('Failed to delete evaluation project', { evalProjectExId, deleteErr });
             }
           }
+        }),
+      );
+
+      const successful = results.filter((r) => r.status === 'fulfilled');
+      const failed = results.filter((r) => r.status === 'rejected');
+
+      logger.info(
+        `Local evaluation jobs completed: ${successful.length} successful, ${failed.length} failed`,
+      );
+
+      if (failed.length > 0) {
+        failed.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            logger.error(`Local job ${index + 1} failed:`, result.reason);
+          }
         });
-        const results = await Promise.allSettled(
-          copilotResponse.map(
-            async ([editableText, schema, userInputContent], index) => {
-              const genJobResult = (await applyAndWatchJob(
-                `rubric-job-${goldenSetId}-${index}-${Date.now()}`,
-                'default',
-                './src/jobs/RubricGenerationJobRunner.ts',
-                300000,
-                'generation',
-                String(goldenSet.id),
-                goldenSet.projectExId,
-                goldenSet.copilotType,
-                userInputContent,
-                editableText,
-                schema,
-                resolvedModelName,
-                String(skipHumanReview),
-                String(skipHumanEvaluation),
-              )) as unknown as GenJobResult;
-              logger.info(
-                `Rubric generation job for golden set ${goldenSet.id} completed with status:`,
-                genJobResult.status,
-              );
-              return genJobResult;
-            },
-          ),
-        );
-
-        const successful = results.filter((r) => r.status === 'fulfilled');
-        const failed = results.filter((r) => r.status === 'rejected');
-
-        logger.info(
-          `Kubernetes jobs created: ${successful.length} successful, ${failed.length} failed`,
-        );
-
-        if (failed.length > 0) {
-          failed.forEach((result, index) => {
-            if (result.status === 'rejected') {
-              logger.error(`Job ${index + 1} failed:`, result.reason);
-            }
-          });
-        }
-      } else {
-        const results = await Promise.allSettled(
-          goldenSet.userInput.map(async (userInput, index) => {
-            // Create a fresh project for each user input
-            const evalProjectName = `eval-${goldenSetId}-${index}-${Date.now()}`;
-            logger.info('Creating evaluation project', { evalProjectName, goldenSetId, index });
-            const evalProjectExId = await projectService.createProject(evalProjectName);
-            const evalWsUrl = buildWsUrl(evalProjectExId);
-            logger.info('Evaluation project created', { evalProjectExId, index });
-
-            try {
-              const evalJobRunner = new EvaluationJobRunner(
-                evalProjectExId,
-                evalWsUrl,
-                userInput.content,
-                typeSystemStore.supportedCustomModelDescriptor,
-                typeSystemStore.afCustomCodeTemplates,
-                typeSystemStore.schemaGraph,
-              );
-              evalJobRunner.startJob();
-              const { editableText } = await evalJobRunner.waitForCompletion();
-
-              const rubricJobRunner = new RubricGenerationJobRunner(
-                goldenSet.id,
-                goldenSet.projectExId,
-                goldenSet.copilotType,
-                userInput.content,
-                '',
-                editableText,
-                typeSystemStore.schemaGraph,
-                resolvedModelName,
-                skipHumanReview,
-                skipHumanEvaluation,
-              );
-              rubricJobRunner.startJob();
-              const rubricResult = await rubricJobRunner.waitForCompletion();
-              logger.info(
-                `Rubric generation job for golden set ${goldenSet.id} (input ${index}) completed with response:`,
-                rubricResult,
-              );
-              return rubricResult;
-            } finally {
-              try {
-                await projectService.deleteProject(evalProjectExId);
-              } catch (deleteErr) {
-                logger.error('Failed to delete evaluation project', { evalProjectExId, deleteErr });
-              }
-            }
-          }),
-        );
-
-        const successful = results.filter((r) => r.status === 'fulfilled');
-        const failed = results.filter((r) => r.status === 'rejected');
-
-        logger.info(
-          `Local evaluation jobs completed: ${successful.length} successful, ${failed.length} failed`,
-        );
-
-        if (failed.length > 0) {
-          failed.forEach((result, index) => {
-            if (result.status === 'rejected') {
-              logger.error(`Local job ${index + 1} failed:`, result.reason);
-            }
-          });
-        }
       }
     } catch (error) {
       logger.error('Error creating evaluation sessions:', error);

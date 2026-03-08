@@ -18,7 +18,6 @@ import { goldenSetService } from '../src/services/GoldenSetService.ts';
 import { WS_URL } from '../src/config/env.ts';
 import type { QuestionSet, FinalReport } from '../src/langGraph/state/state.ts';
 import { TypeSystemStore } from '../src/utils/zed/TypeSystemStore.ts';
-import type { OpaqueSchemaGraph } from '../src/utils/zed/TypeSystem.ts';
 
 config();
 
@@ -183,7 +182,7 @@ async function step1_fetchOrCreateGoldenSet(): Promise<{
 async function step2_executeCopilot(
   projectExId: string,
   query: string,
-): Promise<{ editableText: string, schema: OpaqueSchemaGraph | null }> {
+): Promise<{ editableText: string }> {
   const start = Date.now();
 
   try {
@@ -227,7 +226,7 @@ async function step2_executeCopilot(
       preview: editableText.substring(0, 200),
     });
 
-    return { editableText, schema: typeSystemStore.schemaGraph };
+    return { editableText };
   } catch (error) {
     recordResult(
       'Step 2: Execute Copilot',
@@ -246,7 +245,6 @@ async function step3_runLangGraphWithHITL(
   copilotType: string,
   query: string,
   candidateOutput: string,
-  schema: OpaqueSchemaGraph | null,
 ): Promise<{
   sessionId: number;
   threadId: string;
@@ -272,7 +270,6 @@ async function step3_runLangGraphWithHITL(
       query,
       '',
       candidateOutput,
-      schema,
       TEST_CONFIG.modelName,
       skipHumanReview,
       skipHumanEvaluation,
@@ -662,7 +659,6 @@ async function runFullE2ETest(): Promise<void> {
         goldenSetInfo.copilotType,
         goldenSetInfo.query,
         copilotOutput.editableText,
-        copilotOutput.schema,
       );
     logger.info(`\nSession: ${sessionId}, Thread: ${threadId}\n`);
 

@@ -1,7 +1,5 @@
-import * as z from 'zod';
 import { Command } from '@langchain/langgraph';
 import { logger } from '../utils/logger.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
 import { executionService } from '../services/ExecutionService.ts';
 import { rubricService } from '../services/RubricService.ts';
@@ -262,67 +260,3 @@ export class RubricReviewJobRunner {
   }
 }
 
-// CLI entry point for Kubernetes job execution
-if (
-  RUN_KUBERNETES_JOBS &&
-  process.argv[2] &&
-  process.argv[3] &&
-  process.argv[4]
-) {
-  logger.debug(`RubricReviewJobRunner CLI args: ${process.argv}`);
-
-  const args = z
-    .object({
-      sessionId: z.coerce.number().int().positive('sessionId is required'),
-      threadId: z.string().min(1, 'threadId is required'),
-      approved: z
-        .string()
-        .min(1)
-        .transform((v) => v === 'true'),
-      reviewerAccountId: z.string().min(1, 'reviewerAccountId is required'),
-      modifiedRubricJson: z.string().optional(),
-      feedback: z.string().optional(),
-    })
-    .parse({
-      sessionId: process.argv[2],
-      threadId: process.argv[3],
-      approved: process.argv[4],
-      reviewerAccountId: process.argv[5] || '',
-      modifiedRubricJson: process.argv[6],
-      feedback: process.argv[7],
-    });
-
-  const modifiedQuestionSet = args.modifiedRubricJson
-    ? args.modifiedRubricJson === 'null'
-      ? undefined
-      : (JSON.parse(args.modifiedRubricJson) as QuestionSet)
-    : undefined;
-
-  const runner = new RubricReviewJobRunner(
-    args.sessionId,
-    args.threadId,
-    args.approved,
-    args.reviewerAccountId,
-    modifiedQuestionSet,
-    args.feedback
-  );
-
-  runner.startJob();
-
-  runner
-    .waitForCompletion()
-    .then((result) => {
-      console.log(`JOB_RESULT_JSON: ${JSON.stringify(result)}`);
-      process.exit(result.status === 'succeeded' ? 0 : 1);
-    })
-    .catch((error) => {
-      logger.error('Rubric review job execution failed:', error);
-      console.log(
-        `JOB_RESULT_JSON: ${JSON.stringify({
-          status: 'failed',
-          error: error instanceof Error ? error.message : String(error),
-        })}`
-      );
-      process.exit(1);
-    });
-}

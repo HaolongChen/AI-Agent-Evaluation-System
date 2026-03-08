@@ -1,6 +1,4 @@
 import { WebSocket } from 'ws';
-import * as z from 'zod';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import { logger } from '../utils/logger.ts';
 import { appendFileSync } from 'fs';
 import {
@@ -418,46 +416,3 @@ export class EvaluationJobRunner {
   }
 }
 
-if (
-  RUN_KUBERNETES_JOBS &&
-  process.argv[2] &&
-  process.argv[3] &&
-  process.argv[4]
-) {
-  logger.debug(`${process.argv}`);
-  const args = z
-    .object({
-      projectExId: z.string().min(1, 'projectExId is required'),
-      wsUrl: z.url('wsUrl must be a valid URL'),
-      query: z.string().min(1, 'query is required'),
-    })
-    .parse({
-      projectExId: process.argv[2] || '',
-      wsUrl: process.argv[3] || '',
-      query: process.argv[4] || '',
-    });
-
-  const evaluationJobRunner = new EvaluationJobRunner(
-    args.projectExId,
-    args.wsUrl,
-    args.query,
-    null,
-    [],
-    null
-  );
-
-  evaluationJobRunner.startJob();
-
-  // Wait for completion and output the result as JSON for the parent process to read
-  evaluationJobRunner
-    .waitForCompletion()
-    .then((result) => {
-      // Output the result as a special marker line that can be parsed from logs
-      console.log(`JOB_RESULT_JSON: ${JSON.stringify(result)}`);
-      process.exit(0);
-    })
-    .catch((error) => {
-      logger.error('Job execution failed:', error);
-      process.exit(1);
-    });
-}

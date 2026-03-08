@@ -8,5 +8,3 @@ export * from "./Merger.ts";
 export * from "./ReportGenerator.ts";
 // Optional nodes (not used in main workflow, but available for custom workflows)
 export * from "./InputCollector.ts";
-export * from "./SchemaChecker.ts";
-export * from "./SchemaLoader.ts";

@@ -32,8 +32,6 @@ if (
   );
 }
 
-export const RUN_KUBERNETES_JOBS =
-  process.env['RUN_KUBERNETES_JOBS'] === 'true';
 
 export const WS_URL =
   NODE_ENV === 'development'
@@ -130,22 +128,3 @@ export const resolveLLMConfiguration = (
   return null;
 };
 
-// Kubernetes Configuration
-export const KUBERNETES_NAMESPACE =
-  process.env['KUBERNETES_NAMESPACE'] || 'ai-evaluation';
-export const KUBERNETES_JOB_IMAGE =
-  process.env['KUBERNETES_JOB_IMAGE'] || 'evaluation';
-export const KUBERNETES_JOB_CPU_REQUEST =
-  process.env['KUBERNETES_JOB_CPU_REQUEST'] || '500m';
-export const KUBERNETES_JOB_MEMORY_REQUEST =
-  process.env['KUBERNETES_JOB_MEMORY_REQUEST'] || '1Gi';
-export const KUBERNETES_JOB_CPU_LIMIT =
-  process.env['KUBERNETES_JOB_CPU_LIMIT'] || '2000m';
-export const KUBERNETES_JOB_MEMORY_LIMIT =
-  process.env['KUBERNETES_JOB_MEMORY_LIMIT'] || '4Gi';
-export const KUBERNETES_JOB_BACKOFF_LIMIT = parseInt(
-  process.env['KUBERNETES_JOB_BACKOFF_LIMIT'] || '3'
-);
-export const KUBERNETES_JOB_ACTIVE_DEADLINE_SECONDS = parseInt(
-  process.env['KUBERNETES_JOB_ACTIVE_DEADLINE_SECONDS'] || '3600'
-);

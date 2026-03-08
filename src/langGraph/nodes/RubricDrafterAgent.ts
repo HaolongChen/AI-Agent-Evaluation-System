@@ -115,9 +115,7 @@ Candidate Output to Evaluate: """${
     state.candidateOutput || 'No candidate output provided.'
   }"""
 
-Schema Expression: """${
-    state.schemaExpression || 'No schema information available.'
-  }"""
+Schema Expression: """No schema information available."""
 ${rejectionHistorySection}
 Create 3-10 yes/no questions that:
 1. Cover all important aspects of the expected output

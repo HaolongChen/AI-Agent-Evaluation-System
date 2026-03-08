@@ -7,12 +7,6 @@ import type {
   QuestionEvaluation,
   FinalReport,
 } from '../langGraph/state/state.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
-import {
-  applyAndWatchJob,
-  type HumanEvaluationK8sJobResult,
-  type RubricReviewK8sJobResult,
-} from '../kubernetes/utils/apply-from-file.ts';
 import { HumanEvaluationJobRunner } from '../jobs/HumanEvaluationJobRunner.ts';
 import { RubricReviewJobRunner } from '../jobs/RubricReviewJobRunner.ts';
 import { evaluationPersistenceService } from './EvaluationPersistenceService.ts';
@@ -176,65 +170,25 @@ export class GraphExecutionService {
         finalQuestionSet = undefined;
       }
 
-      if (RUN_KUBERNETES_JOBS) {
-        const args = [
-          String(sessionId),
-          threadId,
-          String(approved),
-          reviewerAccountId,
-          finalQuestionSet ? JSON.stringify(finalQuestionSet) : '',
-          feedback ?? '',
-        ];
-
-        const reviewJobResult = (await applyAndWatchJob(
-          `graph-rubric-review-${sessionId}-${Date.now()}`,
-          'default',
-          './src/jobs/RubricReviewJobRunner.ts',
-          300000,
-          'rubric-review',
-          ...args,
-        )) as unknown as RubricReviewK8sJobResult;
-
-        logger.info('Question set review job completed:', reviewJobResult);
-
-        if (reviewJobResult.status !== 'succeeded') {
-          throw new Error(
-            reviewJobResult.reason ||
-              reviewJobResult.error ||
-              'Question set review Kubernetes job failed',
-          );
-        }
-
-        return {
-          sessionId,
-          threadId,
-          status: 'completed',
-          questionSetFinal: reviewJobResult.questionSetFinal ?? null,
-          message:
-            reviewJobResult.message ||
-            'Question set review completed successfully',
-        };
-      } else {
-        const reviewJobRunner = new RubricReviewJobRunner(
-          sessionId,
-          threadId,
-          approved,
-          reviewerAccountId,
-          finalQuestionSet,
-          feedback,
-        );
-        reviewJobRunner.startJob();
-        const result = await reviewJobRunner.waitForCompletion();
-        logger.info('Question set review completed:', result);
-        return {
-          sessionId,
-          threadId,
-          status: 'completed',
-          questionSetFinal: result.questionSetFinal ?? null,
-          message:
-            result.message || 'Question set review completed successfully',
-        };
-      }
+      const reviewJobRunner = new RubricReviewJobRunner(
+        sessionId,
+        threadId,
+        approved,
+        reviewerAccountId,
+        finalQuestionSet,
+        feedback,
+      );
+      reviewJobRunner.startJob();
+      const result = await reviewJobRunner.waitForCompletion();
+      logger.info('Question set review completed:', result);
+      return {
+        sessionId,
+        threadId,
+        status: 'completed',
+        questionSetFinal: result.questionSetFinal ?? null,
+        message:
+          result.message || 'Question set review completed successfully',
+      };
     } catch (error) {
       logger.error('Error submitting question set review:', error);
       throw new Error(
@@ -319,55 +273,22 @@ export class GraphExecutionService {
         }
       }
 
-      if (RUN_KUBERNETES_JOBS) {
-        const evaluationJobResult = (await applyAndWatchJob(
-          `graph-human-eval-${sessionId}-${Date.now()}`,
-          'default',
-          './src/jobs/HumanEvaluationJobRunner.ts',
-          300000,
-          'human-evaluation',
-          String(sessionId),
-          threadId,
-          JSON.stringify(updatedAnswers),
-          overallAssessment,
-        )) as unknown as HumanEvaluationK8sJobResult;
-
-        logger.info('Human evaluation job completed:', evaluationJobResult);
-
-        if (evaluationJobResult.status !== 'succeeded') {
-          throw new Error(
-            evaluationJobResult.reason ||
-              evaluationJobResult.error ||
-              'Human evaluation Kubernetes job failed',
-          );
-        }
-
-        return {
-          sessionId,
-          threadId,
-          status: 'completed',
-          finalReport: evaluationJobResult.finalReport ?? null,
-          message:
-            evaluationJobResult.message || 'Evaluation completed successfully',
-        };
-      } else {
-        const evaluationJobRunner = new HumanEvaluationJobRunner(
-          sessionId,
-          threadId,
-          updatedAnswers,
-          overallAssessment,
-        );
-        evaluationJobRunner.startJob();
-        const result = await evaluationJobRunner.waitForCompletion();
-        logger.info('Human evaluation completed:', result);
-        return {
-          sessionId,
-          threadId,
-          status: 'completed',
-          finalReport: result.finalReport ?? null,
-          message: result.message || 'Evaluation completed successfully',
-        };
-      }
+      const evaluationJobRunner = new HumanEvaluationJobRunner(
+        sessionId,
+        threadId,
+        updatedAnswers,
+        overallAssessment,
+      );
+      evaluationJobRunner.startJob();
+      const result = await evaluationJobRunner.waitForCompletion();
+      logger.info('Human evaluation completed:', result);
+      return {
+        sessionId,
+        threadId,
+        status: 'completed',
+        finalReport: result.finalReport ?? null,
+        message: result.message || 'Evaluation completed successfully',
+      };
     } catch (error) {
       logger.error('Error submitting human evaluation:', error);
       throw new Error(

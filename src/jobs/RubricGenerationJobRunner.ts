@@ -1,7 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import * as z from 'zod';
 import { logger } from '../utils/logger.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import {
   graph,
   automatedGraph,
@@ -14,7 +12,6 @@ import { evaluationPersistenceService } from '../services/EvaluationPersistenceS
 import { executionService } from '../services/ExecutionService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
 import type { CopilotType } from '../../build/generated/prisma/enums.ts';
-import type { OpaqueSchemaGraph } from '../utils/zed/TypeSystem.ts';
 import type { interruptType } from '../utils/types.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
@@ -75,7 +72,6 @@ export class RubricGenerationJobRunner {
     private readonly query: string,
     private readonly context: string,
     private readonly candidateOutput: string,
-    private readonly schema: OpaqueSchemaGraph | null,
     private readonly modelName: string,
     private readonly skipHumanReview: boolean = true,
     private readonly skipHumanEvaluation: boolean = true,
@@ -149,14 +145,10 @@ export class RubricGenerationJobRunner {
         skipHumanEvaluation: this.skipHumanEvaluation,
       };
 
-      // const schemaData = JSON.parse(this.schema) as object;
-      const schemaData = new Object(); // Placeholder since schema parsing is not the focus here
-
       const initialState = {
         query: this.query,
         context: this.context,
         candidateOutput: this.candidateOutput,
-        schema: schemaData,
       };
 
       const result = (await graphToUse.invoke(initialState, {
@@ -322,77 +314,3 @@ export class RubricGenerationJobRunner {
   }
 }
 
-// CLI entry point for Kubernetes job execution
-if (
-  RUN_KUBERNETES_JOBS &&
-  process.argv[2] &&
-  process.argv[3] &&
-  process.argv[4] &&
-  process.argv[5]
-) {
-  logger.debug(`RubricGenerationJobRunner CLI args: ${process.argv}`);
-
-  const args = z
-    .object({
-      goldenSetId: z.int(),
-      projectExId: z.string().min(1, 'projectExId is required'),
-      copilotType: z.string().min(1, 'copilotType is required'),
-      query: z.string().min(1, 'query is required'),
-      context: z.string(),
-      candidateOutput: z.string(),
-      schema: z.string(),
-      modelName: z.string().min(1, 'modelName is required'),
-      skipHumanReview: z
-        .string()
-        .optional()
-        .transform((v) => v === 'true'),
-      skipHumanEvaluation: z
-        .string()
-        .optional()
-        .transform((v) => v === 'true'),
-    })
-    .parse({
-      goldenSetId: process.argv[2] || '',
-      projectExId: process.argv[3] || '',
-      copilotType: process.argv[4] || '',
-      query: process.argv[5] || '',
-      context: process.argv[6] || '',
-      candidateOutput: process.argv[7] || '',
-      schema: process.argv[8] || '',
-      modelName: process.argv[9] || 'gpt-4o',
-      skipHumanReview: process.argv[10],
-      skipHumanEvaluation: process.argv[11],
-    });
-
-  const jobRunner = new RubricGenerationJobRunner(
-    args.goldenSetId,
-    args.projectExId,
-    args.copilotType as CopilotType,
-    args.query,
-    args.context,
-    args.candidateOutput,
-    null,
-    args.modelName,
-    args.skipHumanReview ?? true,
-    args.skipHumanEvaluation ?? true,
-  );
-
-  jobRunner.startJob();
-
-  jobRunner
-    .waitForCompletion()
-    .then((result) => {
-      console.log(`JOB_RESULT_JSON: ${JSON.stringify(result)}`);
-      process.exit(result.status === 'succeeded' ? 0 : 1);
-    })
-    .catch((error) => {
-      logger.error('Rubric generation job execution failed:', error);
-      console.log(
-        `JOB_RESULT_JSON: ${JSON.stringify({
-          status: 'failed',
-          error: error instanceof Error ? error.message : String(error),
-        })}`,
-      );
-      process.exit(1);
-    });
-}

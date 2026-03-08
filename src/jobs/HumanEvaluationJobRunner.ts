@@ -1,7 +1,5 @@
-import * as z from 'zod';
 import { Command } from '@langchain/langgraph';
 import { logger } from '../utils/logger.ts';
-import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import { evaluationPersistenceService } from '../services/EvaluationPersistenceService.ts';
 import { executionService } from '../services/ExecutionService.ts';
 import { SESSION_STATUS } from '../config/constants.ts';
@@ -245,58 +243,3 @@ export class HumanEvaluationJobRunner {
   }
 }
 
-// CLI entry point for Kubernetes job execution
-if (
-  RUN_KUBERNETES_JOBS &&
-  process.argv[2] &&
-  process.argv[3] &&
-  process.argv[4]
-) {
-  logger.debug(`HumanEvaluationJobRunner CLI args: ${process.argv}`);
-
-  const args = z
-    .object({
-      sessionId: z.coerce.number().int().positive('sessionId is required'),
-      threadId: z.string().min(1, 'threadId is required'),
-      answersJson: z.string().min(1, 'answersJson is required'),
-      overallAssessment: z.string().min(1, 'overallAssessment is required'),
-    })
-    .parse({
-      sessionId: process.argv[2],
-      threadId: process.argv[3],
-      answersJson: process.argv[4],
-      overallAssessment: process.argv[5] || '',
-    });
-
-  const answers = JSON.parse(args.answersJson) as Array<{
-    id: number;
-    answer: boolean;
-    explanation: string;
-  }>;
-
-  const runner = new HumanEvaluationJobRunner(
-    args.sessionId,
-    args.threadId,
-    answers,
-    args.overallAssessment,
-  );
-
-  runner.startJob();
-
-  runner
-    .waitForCompletion()
-    .then((result) => {
-      console.log(`JOB_RESULT_JSON: ${JSON.stringify(result)}`);
-      process.exit(result.status === 'succeeded' ? 0 : 1);
-    })
-    .catch((error) => {
-      logger.error('Human evaluation job execution failed:', error);
-      console.log(
-        `JOB_RESULT_JSON: ${JSON.stringify({
-          status: 'failed',
-          error: error instanceof Error ? error.message : String(error),
-        })}`,
-      );
-      process.exit(1);
-    });
-}

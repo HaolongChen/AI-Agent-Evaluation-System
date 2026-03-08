@@ -58,9 +58,7 @@ Query: """${state.query}"""
 
 Context: """${state.context || 'No additional context provided.'}"""
 
-Schema Information: """${
-    state.schemaExpression || 'No schema information available.'
-  }"""
+Schema Information: """No schema information available."""
 
 Candidate Output to Evaluate: """${
     state.candidateOutput || 'No candidate output provided.'

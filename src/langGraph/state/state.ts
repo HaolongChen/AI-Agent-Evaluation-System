@@ -98,10 +98,6 @@ export const rubricAnnotation = Annotation.Root({
     default: () => "",
   }), // copilot's output to be evaluated
 
-  // Schema fields
-  schemaNeeded: Annotation<boolean>,
-  schema: Annotation<object | null>,
-  schemaExpression: Annotation<string>,
 
   // Question Set fields (new model)
   questionSetDraft: Annotation<QuestionSet | null>,

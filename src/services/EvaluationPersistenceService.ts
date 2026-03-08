@@ -11,7 +11,7 @@ import { logger } from '../utils/logger.ts';
 import type { adaptiveRubricJudgeRecord } from '../../build/generated/prisma/client.ts';
 
 export class EvaluationPersistenceService {
-  async saveQuestions(sessionId: number, questionSet: QuestionSet) {
+  async saveQuestions(sessionId: number, questionSet: QuestionSet, isReviewSkipped: boolean): Promise<void> {
     try {
       // Delete any existing questions for this session before saving the new draft.
       // This handles re-draft scenarios where the composite PK [id, sessionId] would
@@ -31,7 +31,7 @@ export class EvaluationPersistenceService {
               content: question.content,
               expectedAnswer: question.expectedAnswer,
               weight: question.weight,
-              reviewStatus: REVIEW_STATUS.PENDING,
+              reviewStatus: isReviewSkipped ? REVIEW_STATUS.APPROVED : REVIEW_STATUS.PENDING,
             },
           }),
         ),

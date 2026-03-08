@@ -175,7 +175,8 @@ Generate questions with appropriate weights that sum to 100.
   // saveQuestions deletes existing records first, so re-draft cycles are safe
   await evaluationPersistenceService.saveQuestions(
     sessionId,
-    questionSetDraft
+    questionSetDraft,
+    config?.configurable?.['skipHumanReview'] === true
   );
 
   const timestamp = new Date().toISOString();

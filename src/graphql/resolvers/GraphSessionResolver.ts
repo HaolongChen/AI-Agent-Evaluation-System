@@ -138,11 +138,7 @@ export const graphSessionResolver = {
         };
       } catch (error) {
         logger.error('Error submitting question set review:', error);
-        throw new Error(
-          `Failed to submit question set review: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        );
+        throw new Error('Failed to submit question set review');
       }
     },
 
@@ -179,11 +175,7 @@ export const graphSessionResolver = {
         };
       } catch (error) {
         logger.error('Error submitting human evaluation:', error);
-        throw new Error(
-          `Failed to submit human evaluation: ${
-            error instanceof Error ? error.message : 'Unknown error'
-          }`
-        );
+        throw new Error('Failed to submit human evaluation');
       }
     },
   },

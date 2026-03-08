@@ -3,6 +3,7 @@ import { AIMessage, BaseMessage } from "@langchain/core/messages";
 import { CallbackManagerForLLMRun } from "@langchain/core/callbacks/manager";
 import type { ChatResult, ChatGeneration } from "@langchain/core/outputs";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import { logger } from '../../utils/logger.ts';
 
 interface GeminiPart {
   text?: string;
@@ -152,7 +153,7 @@ export class GeminiChatModel extends BaseChatModel {
         }, {} as Record<string, { type: string }>);
       }
     } catch (e) {
-      console.warn("Failed to extract tool properties:", e);
+      logger.warn('Failed to extract tool properties:', e);
     }
     return {};
   }

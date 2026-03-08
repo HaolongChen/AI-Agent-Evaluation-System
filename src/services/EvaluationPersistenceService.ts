@@ -109,18 +109,20 @@ export class EvaluationPersistenceService {
     questions: EvaluationQuestion[],
   ): Promise<void> {
     try {
-      for (const question of questions) {
-        await prisma.adaptiveRubric.update({
-          where: { id_sessionId: { id: question.id, sessionId } },
-          data: {
-            title: question.title,
-            content: question.content,
-            expectedAnswer: question.expectedAnswer,
-            weight: question.weight,
-            updatedAt: new Date(),
-          },
-        });
-      }
+      await Promise.all(
+        questions.map((question) =>
+          prisma.adaptiveRubric.update({
+            where: { id_sessionId: { id: question.id, sessionId } },
+            data: {
+              title: question.title,
+              content: question.content,
+              expectedAnswer: question.expectedAnswer,
+              weight: question.weight,
+              updatedAt: new Date(),
+            },
+          })
+        )
+      );
 
       logger.info('Rubric questions updated successfully', {
         sessionId,

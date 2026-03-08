@@ -5,6 +5,10 @@ export const NODE_ENV = process.env['NODE_ENV'] || 'development';
 export const DATABASE_URL =
   process.env['DATABASE_URL'] || process.env['DATABASE_URL_DEVELOPMENT'];
 
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL is required but is not set in the environment');
+}
+
 export const URL = process.env['URL'] || `http://localhost:${PORT}`;
 // Functorz backend GraphQL endpoint (NOT the copilot WebSocket service)
 // This should be the main backend API that has queries like fetchAppDetailByExId
@@ -75,12 +79,10 @@ export const LLM_PROVIDER: LLMProvider | 'auto' =
 
 export const OPENAI_MODEL = process.env['OPENAI_MODEL'] || 'gpt-5-mini';
 export const GEMINI_MODEL = process.env['GEMINI_MODEL'] || 'gemini-3-flash-preview';
-export const LLM_TEMPERATURE = parseFloat(
-  process.env['LLM_TEMPERATURE'] || '0.2'
-);
-export const LLM_MAX_OUTPUT_TOKENS = parseInt(
-  process.env['LLM_MAX_OUTPUT_TOKENS'] || '1024'
-);
+const _temp = parseFloat(process.env['LLM_TEMPERATURE'] || '0.2');
+export const LLM_TEMPERATURE = Number.isFinite(_temp) ? _temp : 0.2;
+const _tokens = parseInt(process.env['LLM_MAX_OUTPUT_TOKENS'] || '1024', 10);
+export const LLM_MAX_OUTPUT_TOKENS = Number.isFinite(_tokens) ? _tokens : 1024;
 
 const PROVIDER_PRIORITY: LLMProvider[] = ['openai', 'gemini'];
 

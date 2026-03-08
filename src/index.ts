@@ -33,6 +33,15 @@ app.listen({ port: PORT }, () => {
   logger.info(`🚀 Server ready at http://localhost:${PORT}/graphql`);
 });
 
-const token = await login(process.env['FUNCTORZ_PHONE_NUMBER']!, process.env['FUNCTORZ_PASSWORD']!);
-logger.info('Initial login successful, token obtained');
-authState.setToken(token);
+import { FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD } from './config/env.ts';
+
+try {
+  if (!FUNCTORZ_PHONE_NUMBER || !FUNCTORZ_PASSWORD) {
+    throw new Error('FUNCTORZ_PHONE_NUMBER and FUNCTORZ_PASSWORD are required for initial login');
+  }
+  const token = await login(FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD);
+  logger.info('Initial login successful, token obtained');
+  authState.setToken(token);
+} catch (err) {
+  logger.error('Initial login failed — server will continue, TypeSystemStore will re-auth on demand', err);
+}

@@ -44,7 +44,7 @@ export class RubricService {
     }
   }
 
-  async updateQuestionsTotalWeight(sessionId: number) {
+  async getQuestionsTotalWeight(sessionId: number) {
     try {
       const questions = await prisma.adaptiveRubric.findMany({
         where: { sessionId, isActive: true },
@@ -55,8 +55,8 @@ export class RubricService {
         totalWeight: questions.reduce((sum, q) => sum + Number(q.weight), 0),
       };
     } catch (error) {
-      logger.error('Error updating total weight:', error);
-      throw new Error('Failed to update total weight');
+      logger.error('Error getting total weight:', error);
+      throw new Error('Failed to get total weight');
     }
   }
 

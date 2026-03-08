@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-use-before-define */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 export enum BackendOnlyActionFlowNodeType {
   CUSTOM_CODE = 'CUSTOM_CODE',

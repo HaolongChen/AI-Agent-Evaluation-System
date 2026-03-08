@@ -140,8 +140,6 @@ ${auditTrace.map((entry) => `- ${entry}`).join('\n')}
   return {
     finalReport: enhancedReport,
     analysis,
-    auditTrace: [
-      `[${new Date().toISOString()}] ReportGenerator: Final report generated`,
-    ],
+    auditTrace,
   };
 }

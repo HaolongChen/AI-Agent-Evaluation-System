@@ -95,25 +95,6 @@ export class HumanEvaluationJobRunner {
         throw new Error('Thread ID mismatch');
       }
 
-      // if (session.rubrics.length > 0) {
-      //   logger.info('Saving human answers to database before resuming graph', {
-      //     sessionId: this.sessionId,
-      //     answerCount: this.answers.length,
-      //   });
-
-      //   for (const answer of this.answers) {
-      //     await evaluationPersistenceService.saveQuestionAnswer(
-      //       answer.questionId,
-      //       'human',
-      //       {
-      //         answer: answer.answer,
-      //         explanation: answer.explanation,
-      //         ...(answer.evidence && { evidence: answer.evidence }),
-      //       },
-      //       this.evaluatorAccountId,
-      //     );
-      //   }
-      // }
 
       const humanEvaluationInput = {
         answers: this.answers,
@@ -136,7 +117,7 @@ export class HumanEvaluationJobRunner {
       const result = (await graph.invoke(
         new Command({ resume: humanEvaluationInput }),
         {
-          configurable: { ...evalConfigurable, projectExId: '' },
+          configurable: evalConfigurable,
         },
       )) as GraphResult;
 

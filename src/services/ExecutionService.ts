@@ -54,18 +54,16 @@ export class ExecutionService {
       throw new Error('Golden set has no user input');
     }
 
-    if (goldenSet.evaluationSessions && goldenSet.evaluationSessions.length > 0) {
-      logger.warn(`Golden set ${goldenSet.id} is existing and already has evaluation sessions`);
-      throw new Error('Golden set is existing and already has evaluation sessions');
-    }
+    const originalProjectExId: string = goldenSet.isProjectExisting ? goldenSet.projectExId : await projectService.createProject(`golden-set-project-${goldenSet.id}-${Date.now()}`);
 
 
+    
     try {
       const typeSystemStore = new TypeSystemStore();
       const res = await Promise.allSettled([
         typeSystemStore.getAFCustomCodeTemplates(),
         typeSystemStore.getSupportedCustomModelDescriptor(),
-        typeSystemStore.rehydrate(goldenSet.projectExId),
+        typeSystemStore.rehydrate(originalProjectExId),
       ]);
 
       if (res.some((r) => r.status === 'rejected')) {
@@ -103,7 +101,7 @@ export class ExecutionService {
 
             const rubricJobRunner = new RubricGenerationJobRunner(
               goldenSet.id,
-              goldenSet.projectExId,
+              originalProjectExId,
               goldenSet.copilotType,
               userInput.content,
               '',
@@ -142,6 +140,9 @@ export class ExecutionService {
             logger.error(`Local job ${index + 1} failed:`, result.reason);
           }
         });
+      }
+      if(!goldenSet.isProjectExisting) {
+        await projectService.deleteProject(originalProjectExId);
       }
     } catch (error) {
       logger.error('Error creating evaluation sessions:', error);

@@ -98,13 +98,12 @@ export async function invokeWithRetry<T>(
 
       const delay = Math.min(maxDelayMs, baseDelayMs * Math.pow(2, attempt));
       // Avoid importing logger here to keep llm module dependency-light.
-      console.warn(
-        `[LangGraph][LLM] ${
-          options.operationName ?? 'invoke'
-        } failed with DeploymentNotFound; retrying in ${delay}ms (attempt ${
-          attempt + 1
-        }/${retries + 1})`
-      );
+      const delayMsg = `[LangGraph][LLM] ${
+        options.operationName ?? 'invoke'
+      } failed with DeploymentNotFound; retrying in ${delay}ms (attempt ${
+        attempt + 1
+      }/${retries + 1})`;
+      process.stderr.write(`WARN ${delayMsg}\n`);
       await sleep(delay);
     }
   }

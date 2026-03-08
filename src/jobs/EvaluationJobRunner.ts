@@ -21,21 +21,11 @@ import {
   type CopilotApiResult,
   type OpaqueSchemaGraph,
 } from '../utils/zed/TypeSystem.ts';
-
-// import { NODE_ENV } from '../config/env.ts';
-
-import { isNil, get } from 'lodash-es';
-import {
-  assertNotNull,
-  genExtraContext,
-  getError,
-} from '../utils/zed/helpers.ts';
-import type { ToolResult } from '../utils/graph-states.ts';
 import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from '../utils/zed/ZSchema.ts';
 import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from '../utils/zed/AfCustomCodeTemplates.ts';
+import { assertNotNull, genExtraContext } from '../utils/zed/helpers.ts';
+import type { ToolResult } from '../utils/graph-states.ts';
 
-const DISCONNECT = false;
-const TERMINATE = false;
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
 export class EvaluationJobRunner {
@@ -97,20 +87,15 @@ export class EvaluationJobRunner {
   connect(): void {
     this.socket = new WebSocket(this.wsUrl);
 
-    if (DISCONNECT) {
-      this.stopJob();
-    }
-
-    if (TERMINATE) {
-      this.terminate();
-    }
 
     this.socket.on('open', () => {
       logger.info('WebSocket connection established.');
     });
 
     this.socket.on('message', (data) => {
-      this.handleMessage(data);
+      void this.handleMessage(data).catch((err: unknown) => {
+        logger.error('Unhandled error in message handler:', err);
+      });
     });
 
     this.socket.on('close', () => {
@@ -266,7 +251,7 @@ export class EvaluationJobRunner {
       this.send({
         type: CopilotMessageType.TOOL_RESPONSE,
         toolCallsId: message.toolCallsId,
-        result,
+        result: result!,
       });
     } else {
       // this.send({
@@ -299,24 +284,12 @@ export class EvaluationJobRunner {
   }
 
   runToolCalls = async (toolCalls: ToolCall[]) => {
-    const product = (() => {
-      return false;
-    })()
-      ? Product.MOMEN
-      : Product.ZION;
-    const clientType = (() => {
-      return false;
-    })()
-      ? ClientType.WECHAT_MINI_PROGRAM
-      : ClientType.WEB;
-    const locale = (() => {
-      return true;
-    })()
-      ? Locale.ZH
-      : Locale.EN;
+    const product = Product.ZION;
+    const clientType = ClientType.WEB;
+    const locale = Locale.ZH;
 
     try {
-      const result: CopilotApiResult = Copilot.toolCalls(
+      const result: CopilotApiResult = await Copilot.toolCalls(
         assertNotNull(this.schemaGraph),
         genExtraContext(
           this.supportedCustomModelDescriptor,
@@ -329,35 +302,14 @@ export class EvaluationJobRunner {
         locale,
         toolCalls,
       );
-      // if (NODE_ENV === 'development') {
-      //   logger.debug('toolCall---result:', result, toolCalls);
-      // }
-      const errorMessage = get(result, 'error');
-      if (errorMessage) {
-        throw getError(errorMessage, result);
-      }
-      const schemaDiff = get(result, 'schemaDiff');
-      if (isNil(schemaDiff)) {
-        return { result: result as unknown as ToolResult, successful: true };
-      }
-      // if (NODE_ENV === 'development') {
-      //   logger.debug('toolCall---schemaDiff:', schemaDiff);
-      // }
-      // const applyResult = applyLocalCrdtDiff(schemaDiff, {
-      //   isPendingApplication: true,
-      // });
-      // if (applyResult.successful) {
-      //   return { result, successful: true };
-      // }
-      // throw getError(JSON.stringify(applyResult.errorContent), result);
       // probably not necessary to apply schema diff in evaluation job runner
       return { result: result as unknown as ToolResult, successful: true };
     } catch (error: unknown) {
-      console.log('toolCall---error:', error, toolCalls);
+      logger.error('toolCall---error:', error, toolCalls);
       return {
         successful: false,
-        errorMessage: (error as unknown as { message: string }).message,
-        result: (error as unknown as { result: ToolResult }).result,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        result: (error as { result?: ToolResult }).result,
       };
     }
   };

@@ -138,15 +138,16 @@ Generate questions with appropriate weights that sum to 100.
     { operationName: 'QuestionDrafter.invoke' }
   );
 
+  let normalizedResponseQuestions = response.questions;
   let totalWeight = response.questions.reduce((sum, q) => sum + q.weight, 0);
   if (Math.abs(totalWeight - 100) > 0.01 && totalWeight > 0) {
     const factor = 100 / totalWeight;
-    response.questions.forEach((q) => (q.weight = q.weight * factor));
-    totalWeight = response.questions.reduce((sum, q) => sum + q.weight, 0);
+    normalizedResponseQuestions = response.questions.map((q) => ({ ...q, weight: q.weight * factor }));
+    totalWeight = normalizedResponseQuestions.reduce((sum, q) => sum + q.weight, 0);
   }
 
   // Assign IDs in ascending order starting at 1 (matches adaptiveRubric composite key)
-  const questions: EvaluationQuestion[] = response.questions
+  const questions: EvaluationQuestion[] = normalizedResponseQuestions
     .map((q, idx) => ({
       id: idx + 1,
       title: q.title,
@@ -167,9 +168,13 @@ Generate questions with appropriate weights that sum to 100.
     updatedAt: now,
   };
 
+  const sessionId = Number(config?.configurable?.['sessionId']);
+  if (!Number.isFinite(sessionId)) {
+    throw new Error('sessionId is missing or invalid in configurable');
+  }
   // saveQuestions deletes existing records first, so re-draft cycles are safe
   await evaluationPersistenceService.saveQuestions(
-    config?.configurable?.['sessionId'] as number,
+    sessionId,
     questionSetDraft
   );
 

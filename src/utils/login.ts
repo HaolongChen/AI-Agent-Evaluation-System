@@ -38,7 +38,7 @@ export const login = async (
   password: string,
 ): Promise<string> => {
   try {
-    logger.info('Attempting login for phone number:', phoneNumber);
+    logger.info('Attempting login for phone number:', `***${phoneNumber.slice(-4)}`);
 
     const data = await gqlRequest<LoginResponse, LoginVariables>(
       backendClient,
@@ -56,6 +56,6 @@ export const login = async (
     return accessToken;
   } catch (error) {
     logger.error('Error during login:', error);
-    throw new Error('Failed to login');
+    throw new Error('Failed to login', { cause: error });
   }
 };

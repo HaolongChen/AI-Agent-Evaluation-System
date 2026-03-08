@@ -241,7 +241,7 @@ export class GraphExecutionService {
         }
       });
 
-      if (counter != (answers?.length ?? 0)) {
+      if (counter !== (answers?.length ?? 0)) {
         logger.warn('Some provided answers did not match existing questions', {
           sessionId,
           threadId,
@@ -428,14 +428,14 @@ export class GraphExecutionService {
         answer: r.judgeRecord?.answer ?? false,
         explanation: r.judgeRecord?.comment ?? '',
       })),
-      overallScore: Number(
-        rubrics.reduce(
-          (sum, r) =>
-            sum +
-            (r.expectedAnswer === r.judgeRecord?.answer ? Number(r.weight) : 0),
+      overallScore: (() => {
+        const totalWeight = rubrics.reduce((sum, r) => sum + Number(r.weight), 0);
+        const weightedSum = rubrics.reduce(
+          (sum, r) => sum + (r.expectedAnswer === r.judgeRecord?.answer ? Number(r.weight) : 0),
           0,
-        ) / rubrics.reduce((sum, r) => sum + Number(r.weight), 0) * 100
-      ),
+        );
+        return Number(totalWeight === 0 ? 0 : (weightedSum / totalWeight) * 100);
+      })(),
       summary: '',
       timestamp: firstRecord.timestamp.toISOString(),
     };

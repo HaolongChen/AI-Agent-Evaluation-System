@@ -2,11 +2,11 @@ import { z } from 'zod';
 
 export const schemaExIdValidator = z.string().min(1);
 export const copilotTypeValidator = z.enum([
-  'data_model_builder',
-  'ui_builder',
-  'actionflow_builder',
-  'log_analyzer',
-  'agent_builder',
+  'dataModel',
+  'uiBuilder',
+  'actionflow',
+  'logAnalyzer',
+  'agentBuilder',
 ]);
 export const modelNameValidator = z.string().min(1);
 

@@ -6,6 +6,8 @@ import cors from 'cors';
 import { typeDefs, resolvers } from './graphql/schema.ts';
 import { PORT } from './config/env.ts';
 import { logger } from './utils/logger.ts';
+import { login } from './utils/login.ts';
+import { authState } from './utils/graphql-client.ts';
 
 const app = express();
 logger.info('Starting server...');
@@ -30,3 +32,7 @@ app.get('/health', (_req: express.Request, res: express.Response) => {
 app.listen({ port: PORT }, () => {
   logger.info(`🚀 Server ready at http://localhost:${PORT}/graphql`);
 });
+
+const token = await login(process.env['FUNCTORZ_PHONE_NUMBER']!, process.env['FUNCTORZ_PASSWORD']!);
+logger.info('Initial login successful, token obtained');
+authState.setToken(token);

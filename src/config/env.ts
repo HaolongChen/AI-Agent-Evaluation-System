@@ -75,8 +75,8 @@ export const LLM_PROVIDER: LLMProvider | 'auto' =
     ? (RAW_LLM_PROVIDER as LLMProvider)
     : 'auto';
 
-export const OPENAI_MODEL = process.env['OPENAI_MODEL'] || 'gpt-4o-mini';
-export const GEMINI_MODEL = process.env['GEMINI_MODEL'] || 'gemini-2.5-pro';
+export const OPENAI_MODEL = process.env['OPENAI_MODEL'] || 'gpt-5-mini';
+export const GEMINI_MODEL = process.env['GEMINI_MODEL'] || 'gemini-3-flash-preview';
 export const LLM_TEMPERATURE = parseFloat(
   process.env['LLM_TEMPERATURE'] || '0.2'
 );

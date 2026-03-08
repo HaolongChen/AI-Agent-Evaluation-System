@@ -9,7 +9,7 @@ import {
   GEMINI_MODEL,
   OPENAI_MODEL,
   USES_AZURE_OPENAI,
-  WS_URL,
+  buildWsUrl,
 } from '../config/env.ts';
 import {
   applyAndWatchJob,
@@ -20,6 +20,7 @@ import { EvaluationJobRunner } from '../jobs/EvaluationJobRunner.ts';
 import { RubricGenerationJobRunner } from '../jobs/RubricGenerationJobRunner.ts';
 import { RUN_KUBERNETES_JOBS } from '../config/env.ts';
 import { TypeSystemStore } from '../utils/zed/TypeSystemStore.ts';
+import { projectService } from './ProjectService.ts';
 
 const resolveDefaultModelName = (): string => {
   // Prefer Azure deployment when Azure is configured; otherwise fall back to Gemini if available.
@@ -44,41 +45,47 @@ export class ExecutionService {
       skipHumanEvaluation?: boolean;
     },
   ) {
+    const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
+    // Bulk execution defaults to fully automated evaluation
+    const skipHumanReview = options?.skipHumanReview ?? true;
+    const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
+    const resolvedModelName = normalizeRequestedModelName(undefined);
+
+    const goldenSet = await goldenSetService.getGoldenSet(goldenSetId);
+    if (!goldenSet) {
+      throw new Error('No golden set found');
+    }
+
+    if (!goldenSet.userInput || goldenSet.userInput.length === 0) {
+      logger.warn(`Golden set ${goldenSet.id} has no user input`);
+      throw new Error('Golden set has no user input');
+    }
+
+    if (goldenSet.evaluationSessions && goldenSet.evaluationSessions.length > 0) {
+      logger.warn(`Golden set ${goldenSet.id} is existing and already has evaluation sessions`);
+      throw new Error('Golden set is existing and already has evaluation sessions');
+    }
+
+    // Create a fresh Functorz project for this evaluation run.
+    const evalProjectName = `eval-${goldenSetId}-${Date.now()}`;
+    logger.info('Creating evaluation project', { evalProjectName, goldenSetId });
+    const evalProjectExId = await projectService.createProject(evalProjectName);
+    const evalWsUrl = buildWsUrl(evalProjectExId);
+    logger.info('Evaluation project created', { evalProjectExId });
+
     try {
-      const USE_KUBERNETES_JOBS = RUN_KUBERNETES_JOBS;
-      // Bulk execution defaults to fully automated evaluation
-      const skipHumanReview = options?.skipHumanReview ?? true;
-      const skipHumanEvaluation = options?.skipHumanEvaluation ?? true;
-      const resolvedModelName = normalizeRequestedModelName(undefined);
-
-      const goldenSet = await goldenSetService.getGoldenSet(goldenSetId);
-      if (!goldenSet) {
-        throw new Error('No golden set found');
-      }
-
-      if(!goldenSet.userInput || goldenSet.userInput.length === 0) {
-        logger.warn(`Golden set ${goldenSet.id} has no user input`);
-        throw new Error('Golden set has no user input');
-      }
-
-      if(goldenSet.evaluationSessions && goldenSet.evaluationSessions.length > 0) {
-        logger.warn(`Golden set ${goldenSet.id} is existing and already has evaluation sessions`);
-        throw new Error('Golden set is existing and already has evaluation sessions');
-      }
-
-      if (!goldenSet.isProjectExisting) {
-        // 1. flexibly allocate some project IDs for new golden sets that don't have an associated project yet, so that we can use the schema downloader tool in the analysis agent
-      }
-
       const typeSystemStore = new TypeSystemStore();
       const res = await Promise.allSettled([
         typeSystemStore.getAFCustomCodeTemplates(),
         typeSystemStore.getSupportedCustomModelDescriptor(),
         typeSystemStore.rehydrate(goldenSet.projectExId),
-      ])
+      ]);
 
-      if(res.some(r => r.status === 'rejected')) {
-        logger.error('Error rehydrating type system store:', res.filter(r => r.status === 'rejected').map(r => (r as PromiseRejectedResult).reason));
+      if (res.some((r) => r.status === 'rejected')) {
+        logger.error(
+          'Error rehydrating type system store:',
+          res.filter((r) => r.status === 'rejected').map((r) => (r as PromiseRejectedResult).reason),
+        );
         throw new Error('Failed to rehydrate type system store');
       }
 
@@ -91,13 +98,13 @@ export class ExecutionService {
         const copilotResponse: Array<[string, string, string]> = [];
         goldenSet.userInput.forEach(async (userInput, index) => {
           const evalJobResult = (await applyAndWatchJob(
-            `evaluation-job-${goldenSet.projectExId}-${index}-${Date.now()}`,
+            `evaluation-job-${evalProjectExId}-${index}-${Date.now()}`,
             'default',
             './src/jobs/EvaluationJobRunner.ts',
             300000,
             'evaluation',
-            goldenSet.projectExId,
-            WS_URL,
+            evalProjectExId,
+            evalWsUrl,
             userInput.content,
           )) as unknown as EvalJobResult;
           copilotResponse.push([
@@ -119,7 +126,7 @@ export class ExecutionService {
           copilotResponse.map(
             async ([editableText, schema, userInputContent], index) => {
               const genJobResult = (await applyAndWatchJob(
-                `rubric-job-${goldenSet.projectExId}-${index}-${Date.now()}`,
+                `rubric-job-${evalProjectExId}-${index}-${Date.now()}`,
                 'default',
                 './src/jobs/RubricGenerationJobRunner.ts',
                 300000,
@@ -163,48 +170,40 @@ export class ExecutionService {
           throw new Error('No user input found in golden set');
         }
 
-
-        // when this project exists but has a lot waited requests, consider allocating new project IDs and importing original schema
-
         const evalJobRunner = new EvaluationJobRunner(
-          goldenSet.projectExId,
-          WS_URL,
+          evalProjectExId,
+          evalWsUrl,
           goldenSet.userInput[0].content,
           typeSystemStore.supportedCustomModelDescriptor,
           typeSystemStore.afCustomCodeTemplates,
-          typeSystemStore.schemaGraph
+          typeSystemStore.schemaGraph,
         );
         evalJobRunner.startJob();
-        const { editableText } =
-          await evalJobRunner.waitForCompletion();
-        copilotResponse.push([
-          editableText,
-          goldenSet.userInput[0].content,
-        ]);
+        const { editableText } = await evalJobRunner.waitForCompletion();
+        copilotResponse.push([editableText, goldenSet.userInput[0].content]);
+
         const results = await Promise.allSettled(
-          copilotResponse.map(
-            async ([editableText, userInputContent]) => {
-              const rubricJobRunner = new RubricGenerationJobRunner(
-                goldenSet.id,
-                goldenSet.projectExId,
-                goldenSet.copilotType,
-                userInputContent,
-                '',
-                editableText,
-                typeSystemStore.schemaGraph,
-                resolvedModelName,
-                skipHumanReview,
-                skipHumanEvaluation,
-              );
-              rubricJobRunner.startJob();
-              const rubricResult = await rubricJobRunner.waitForCompletion();
-              logger.info(
-                `Rubric generation job for golden set ${goldenSet.id} completed with response:`,
-                rubricResult,
-              );
-              return rubricResult;
-            },
-          ),
+          copilotResponse.map(async ([editableText, userInputContent]) => {
+            const rubricJobRunner = new RubricGenerationJobRunner(
+              goldenSet.id,
+              goldenSet.projectExId,
+              goldenSet.copilotType,
+              userInputContent,
+              '',
+              editableText,
+              typeSystemStore.schemaGraph,
+              resolvedModelName,
+              skipHumanReview,
+              skipHumanEvaluation,
+            );
+            rubricJobRunner.startJob();
+            const rubricResult = await rubricJobRunner.waitForCompletion();
+            logger.info(
+              `Rubric generation job for golden set ${goldenSet.id} completed with response:`,
+              rubricResult,
+            );
+            return rubricResult;
+          }),
         );
 
         const successful = results.filter((r) => r.status === 'fulfilled');
@@ -225,6 +224,13 @@ export class ExecutionService {
     } catch (error) {
       logger.error('Error creating evaluation sessions:', error);
       throw new Error('Failed to create evaluation sessions');
+    } finally {
+      // Always delete the ephemeral evaluation project when done.
+      try {
+        await projectService.deleteProject(evalProjectExId);
+      } catch (deleteErr) {
+        logger.error('Failed to delete evaluation project', { evalProjectExId, deleteErr });
+      }
     }
   }
 
@@ -267,7 +273,7 @@ export class ExecutionService {
     }
   }
 
-  async getSessionWithRubrics(sessionId: number) { // TODO: rename =<
+  async getSessionWithRubrics(sessionId: number) {
     try {
       return prisma.evaluationSession.findUnique({
         where: { id: sessionId },

@@ -51,6 +51,12 @@ export const GQL_ON_PROJECT_CREATION_STATUS_CHANGED = gql`
 	}
 `;
 
+export const GQL_DELETE_PROJECT = gql`
+	mutation DeleteProject($projectExId: String!) {
+		deleteProject(projectExId: $projectExId)
+	}
+`;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -91,6 +97,14 @@ export interface ProjectCreationStatusPayload {
 
 export interface OnProjectCreationStatusChangedData {
 	onProjectCreationStatusChanged: ProjectCreationStatusPayload;
+}
+
+export interface DeleteProjectResponse {
+	deleteProject: boolean;
+}
+
+export interface DeleteProjectVariables {
+	projectExId: string;
 }
 
 // ---------------------------------------------------------------------------

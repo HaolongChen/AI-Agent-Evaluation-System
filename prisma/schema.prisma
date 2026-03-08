@@ -36,16 +36,6 @@ enum RubricReviewStatus {
   modified
 }
 
-model project {
-  projectExId String   @id @map("project_ex_id") // External project ID from the application
-  name        String   @unique @map("name")
-  lock        Boolean  @default(false) @map("lock") // Lock to prevent concurrent project use
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  @@index([projectExId], map: "idx_project_schema")
-}
-
 model goldenSet {
   id                 Int                 @id @default(autoincrement())
   projectExId        String              @map("project_ex_id")

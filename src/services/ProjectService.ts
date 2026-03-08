@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from 'uuid';
-import { prisma } from '../config/prisma.ts';
 
 export { ProjectNameDuplicateError } from '../utils/zed/createProject.ts';
 import { ORGANIZATION_EX_ID } from '../config/env.ts';
@@ -8,6 +7,7 @@ import { backendClient, gqlRequest } from '../utils/graphql-client.ts';
 import {
 	GQL_CHECK_PROJECT_NAME_DUPLICATE,
 	GQL_CREATE_PROJECT_IN_ORGANIZATION,
+	GQL_DELETE_PROJECT,
 	GQL_ON_PROJECT_CREATION_STATUS_CHANGED,
 	PROJECT_CREATION_STATUS,
 	ProjectNameDuplicateError,
@@ -20,6 +20,8 @@ import type {
 	CheckProjectNameDuplicateVariables,
 	CreateProjectMutationResponse,
 	CreateProjectMutationVariables,
+	DeleteProjectResponse,
+	DeleteProjectVariables,
 } from '../utils/zed/createProject.ts';
 
 export class ProjectService {
@@ -57,32 +59,28 @@ export class ProjectService {
 		const taskId = mutationData.createProjectInOrganizationAsync;
 		logger.info('Project creation task started', { taskId, projectName });
 
-		const upsertProject = async (projectExId: string): Promise<void> => {
-			await prisma.project.upsert({
-				where: { projectExId },
-				update: { name: projectName },
-				create: { projectExId, name: projectName },
-			});
-			logger.info('Project saved to DB', { projectExId, projectName });
+		// No DB upsert — project table has been removed.
+		const onProjectCreated = async (projectExId: string): Promise<void> => {
+			logger.info('Project creation completed', { projectExId, projectName });
 		};
 
 		if (useModernProtocol) {
 			logger.info('Using modern graphql-ws subscription path', { taskId });
 			return subscribeViaModernProtocol(
 				taskId,
-				upsertProject,
+				onProjectCreated,
 				(tid) => logger.error('Project creation failed on server', { taskId: tid, projectName }),
 			);
 		}
 
 		logger.info('Using legacy Apollo WS subscription path', { taskId });
-		return this.subscribeViaLegacyProtocol(taskId, projectName, upsertProject);
+		return this.subscribeViaLegacyProtocol(taskId, projectName, onProjectCreated);
 	}
 
 	private subscribeViaLegacyProtocol(
 		taskId: string,
 		projectName: string,
-		upsertProject: (projectExId: string) => Promise<void>,
+		onProjectCreated: (projectExId: string) => Promise<void>,
 	): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
 			const subscriptionId = uuidv4();
@@ -105,13 +103,13 @@ export class ProjectService {
 					logger.info('Project creation status update', { projectExId, status });
 
 					if (status === PROJECT_CREATION_STATUS.COMPLETED) {
-						upsertProject(projectExId)
+						onProjectCreated(projectExId)
 							.then(() => {
 								cleanup?.();
 								settle(() => resolve(projectExId));
 							})
 							.catch((err: unknown) => {
-								logger.error('Failed to save project to DB', { projectExId, err });
+								logger.error('Project creation callback failed', { projectExId, err });
 								cleanup?.();
 								settle(() =>
 									reject(err instanceof Error ? err : new Error(String(err))),
@@ -145,73 +143,15 @@ export class ProjectService {
 		});
 	}
 
-	async updateProject() {}
-
-	async getProjectById(projectExId: string) {
-		try {
-			const project = await prisma.project.findUnique({
-				where: {
-					projectExId,
-				},
-			});
-			return project;
-		} catch (error) {
-			logger.error('Error retrieving project:', error);
-			throw new Error('Failed to retrieve project');
-		}
+	async deleteProject(projectExId: string): Promise<void> {
+		logger.info('Deleting project', { projectExId });
+		await gqlRequest<DeleteProjectResponse, DeleteProjectVariables>(
+			backendClient,
+			GQL_DELETE_PROJECT,
+			{ projectExId },
+		);
+		logger.info('Project deleted', { projectExId });
 	}
-
-	async getFreeProject() {}
-
-	async acquireProject(projectExId: string) {
-		try {
-			const project = await this.getProjectById(projectExId);
-			if (!project) {
-				throw new Error('Project not found');
-			}
-			if (project.lock) {
-				throw new Error('Project is currently locked');
-			}
-			const result = await prisma.project.update({
-				where: {
-					projectExId,
-				},
-				data: {
-					lock: true,
-				},
-			});
-			return result;
-		} catch (error) {
-			logger.error('Error acquiring project:', error);
-			throw new Error('Failed to acquire project');
-		}
-	}
-
-	async releaseProject(projectExId: string) {
-		try {
-			const project = await this.getProjectById(projectExId);
-			if (!project) {
-				throw new Error('Project not found');
-			}
-			if (!project.lock) {
-				throw new Error('Project is not locked');
-			}
-			const result = await prisma.project.update({
-				where: {
-					projectExId,
-				},
-				data: {
-					lock: false,
-				},
-			});
-			return result;
-		} catch (error) {
-			logger.error('Error releasing project:', error);
-			throw new Error('Failed to release project');
-		}
-	}
-
-	async deleteProject() {}
 }
 
 export const projectService = new ProjectService();

@@ -25,11 +25,10 @@ export const FUNCTORZ_PASSWORD = process.env['FUNCTORZ_PASSWORD'];
 
 if (
   !process.env['WS_URL'] ||
-  !process.env['userToken'] ||
-  !process.env['projectExId']
+  !process.env['userToken']
 ) {
   throw new Error(
-    'Missing required environment variables: WS_URL, userToken, or projectExId'
+    'Missing required environment variables: WS_URL or userToken'
   );
 }
 
@@ -48,6 +47,14 @@ export const WS_URL =
       }&projectExId=${process.env['projectExId']}&clientType=${
         process.env['clientType'] || 'WEB'
       }`; // TODO: modify WS_URL for production mode
+
+export const buildWsUrl = (projectExId: string): string =>
+  `${process.env['WS_URL']}userToken=${
+    process.env['userToken']
+  }&projectExId=${projectExId}&clientType=${
+    process.env['clientType'] || 'WEB'
+  }`;
+
 export type LLMProvider = 'openai' | 'gemini';
 
 export const OPENAI_API_KEY =

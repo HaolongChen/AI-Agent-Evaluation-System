@@ -104,6 +104,17 @@ export class GoldenSetService {
         include: {
           userInput: true,
           copilotOutput: true,
+          evaluationSessions: {
+            include: {
+              rubrics: {
+                include: {
+                  judgeRecord: true,
+                },
+                orderBy: { id: 'asc' },
+              },
+              result: true,
+            }
+          }
         },
       });
 
@@ -133,7 +144,17 @@ export class GoldenSetService {
         include: {
           userInput: true,
           copilotOutput: true,
-          evaluationSessions: true,
+          evaluationSessions: {
+            include: {
+              rubrics: {
+                include: {
+                  judgeRecord: true,
+                },
+                orderBy: { id: 'asc' },
+              },
+              result: true,
+            }
+          },
         },
         orderBy: { createdAt: 'desc' },
       });

@@ -56,7 +56,9 @@ export class ExecutionService {
 
     const originalProjectExId: string = goldenSet.isProjectExisting ? goldenSet.projectExId : await projectService.createProject(`golden-set-project-${goldenSet.id}-${Date.now()}`);
 
-
+    if (!originalProjectExId){
+      throw new Error('Failed to create project for golden set');
+    }
     
     try {
       const typeSystemStore = new TypeSystemStore();

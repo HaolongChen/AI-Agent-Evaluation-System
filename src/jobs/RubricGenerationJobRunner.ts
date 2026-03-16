@@ -72,6 +72,7 @@ export class RubricGenerationJobRunner {
     private readonly query: string,
     private readonly context: string,
     private readonly candidateOutput: string,
+    private readonly duration: number,
     private readonly modelName: string,
     private readonly skipHumanReview: boolean = true,
     private readonly skipHumanEvaluation: boolean = true,
@@ -121,6 +122,7 @@ export class RubricGenerationJobRunner {
       const session = await analyticsService.createEvaluationSession(
         this.goldenSetId,
         this.modelName,
+        this.duration,
         this.candidateOutput,
         SESSION_STATUS.PENDING,
         metadata as unknown as Prisma.InputJsonValue,

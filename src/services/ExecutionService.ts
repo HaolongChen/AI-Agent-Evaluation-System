@@ -98,8 +98,10 @@ export class ExecutionService {
               typeSystemStore.afCustomCodeTemplates,
               typeSystemStore.schemaGraph,
             );
+            const startTime = new Date();
             evalJobRunner.startJob();
             const { editableText } = await evalJobRunner.waitForCompletion();
+            const endTime = new Date();
 
             const rubricJobRunner = new RubricGenerationJobRunner(
               goldenSet.id,
@@ -108,6 +110,7 @@ export class ExecutionService {
               userInput.content,
               '',
               editableText,
+              endTime.getTime() - startTime.getTime(),
               resolvedModelName,
               skipHumanReview,
               skipHumanEvaluation,

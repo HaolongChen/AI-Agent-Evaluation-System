@@ -49,6 +49,7 @@ export class AnalyticsService {
   async createEvaluationSession(
     goldenSetId: number,
     modelName: string,
+    duration: number,
     candidateOutput: string,
     status: 'pending' | 'running' | 'completed' | 'failed',
     metadata: Prisma.InputJsonValue
@@ -57,6 +58,7 @@ export class AnalyticsService {
       const goldenSet = await goldenSetService.updateGoldenSetOutputAndInitSession(
         goldenSetId,
         candidateOutput,
+        duration,
         modelName,
         status,
         metadata

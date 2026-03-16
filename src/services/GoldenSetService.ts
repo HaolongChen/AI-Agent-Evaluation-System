@@ -57,6 +57,7 @@ export class GoldenSetService {
   async updateGoldenSetOutputAndInitSession(
     goldenSetId: number,
     output: string,
+    duration: number,
     modelName: string,
     status: 'pending' | 'running' | 'completed' | 'failed',
     metadata: Prisma.InputJsonValue
@@ -70,6 +71,7 @@ export class GoldenSetService {
           copilotOutput: {
             create: {
               content: output,
+              totalLatencyMs: duration,
             },
           },
           evaluationSessions: {

@@ -39,6 +39,7 @@ export class EvaluationJobRunner {
   private schemaGraph: OpaqueSchemaGraph | null = null;
   response: string = '';
   editableText: string = '';
+  rounds: number = 0;
   tasks: TaskMessage[] | null = null;
   private completionPromise: Promise<{
     // response: string;
@@ -287,7 +288,7 @@ export class EvaluationJobRunner {
     const product = Product.ZION;
     const clientType = ClientType.WEB;
     const locale = Locale.ZH;
-
+    this.rounds++;
     try {
       const result: CopilotApiResult = await Copilot.toolCalls(
         assertNotNull(this.schemaGraph),

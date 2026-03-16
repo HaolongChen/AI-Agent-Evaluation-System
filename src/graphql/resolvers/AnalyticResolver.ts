@@ -49,11 +49,11 @@ export const analyticResolver = {
           options.skipHumanEvaluation = args.skipHumanEvaluation;
         }
 
-        await executionService.createEvaluationSessions(
+        const sessionIds: (number | undefined)[] = await executionService.createEvaluationSessions(
           args.goldenSetId,
           Object.keys(options).length > 0 ? options : undefined
         );
-        return true;
+        return sessionIds;
       } catch (error) {
         logger.error('Error running evaluation:', error);
         throw new Error('Failed to run evaluation');

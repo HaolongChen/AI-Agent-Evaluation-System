@@ -608,7 +608,7 @@ export const typeDefs = `#graphql
 
     """
     Run complete evaluation workflow (background execution).
-    Returns immediately; use getSession or getGraphSessionState to poll status.
+    Returns session IDs.
     
     RECOMMENDED for batch evaluations or fully automated workflows.
     """
@@ -616,7 +616,7 @@ export const typeDefs = `#graphql
       goldenSetId: Int!
       skipHumanReview: Boolean
       skipHumanEvaluation: Boolean
-    ): Boolean!
+    ): [Int!]!
     
     # -------------------------------------------------------------------------
     # HITL Workflow - Human Review & Evaluation

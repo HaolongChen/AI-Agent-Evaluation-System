@@ -149,6 +149,7 @@ export class ExecutionService {
       if(!goldenSet.isProjectExisting) {
         await projectService.deleteProject(originalProjectExId);
       }
+      return results.filter((r) => r.status === 'fulfilled').map((r) => (r.value.sessionId));
     } catch (error) {
       logger.error('Error creating evaluation sessions:', error);
       throw new Error('Failed to create evaluation sessions');

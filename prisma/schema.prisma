@@ -38,15 +38,15 @@ enum RubricReviewStatus {
 
 // context
 model goldenSet {
-  id                 Int                   @id @default(autoincrement())
-  schemaExId         String                @map("project_ex_id")
-  copilotType        CopilotType           @map("copilot_type")
-  modelName          String                @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-  copilotInputs      goldenSet_userInput[] @relation()
+  id            Int                   @id @default(autoincrement())
+  schemaExId    String                @map("project_ex_id")
+  copilotType   CopilotType           @map("copilot_type")
+  modelName     String                @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
+  copilotInputs goldenSet_userInput[] @relation()
   // copilotOutput      copilotOutput[]     @relation()
   // evaluationSessions evaluationSession[] @relation()
-  updatedAt          DateTime              @default(now()) @map("updated_at") @db.Timestamptz(6)
-  evaluationSessions evaluationSession[]
+  updatedAt     DateTime              @default(now()) @map("updated_at") @db.Timestamptz(6)
+  // evaluationSessions evaluationSession[]
 
   @@unique([schemaExId, copilotType, modelName], map: "unique_golden_set")
 }
@@ -57,9 +57,10 @@ model goldenSet_userInput {
   goldenSetId Int @map("golden_set_id")
   userInputId Int @map("user_input_id")
 
-  goldenSet     goldenSet                    @relation(fields: [goldenSetId], references: [id])
-  userInput     userInput                    @relation(fields: [userInputId], references: [id])
-  copilotOutput copilotInput_copilotOutput[] @relation()
+  goldenSet      goldenSet       @relation(fields: [goldenSetId], references: [id])
+  userInput      userInput       @relation(fields: [userInputId], references: [id])
+  copilotOutputs copilotOutput[] @relation()
+  questionSets   questionSet[]   @relation()
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
@@ -70,28 +71,18 @@ model userInput {
   id             Int                   @id @default(autoincrement())
   description    String?
   content        String                @map("input_content") // user input
-  copilotOutputs copilotOutput[]       @relation()
+  // copilotOutputs copilotOutput[]       @relation()
   createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy      String?               @map("created_by")
   copilotInputs  goldenSet_userInput[] @relation()
 }
 
-model copilotInput_copilotOutput {
-  copilotInputId  Int @map("copilot_input_id")
-  copilotOutputId Int @map("copilot_output_id")
-
-  copilotInput  goldenSet_userInput @relation(fields: [copilotInputId], references: [goldenSetId, userInputId])
-  copilotOutput copilotOutput       @relation(fields: [copilotOutputId], references: [id])
-
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  @@id([copilotInputId, copilotOutputId], map: "idx_copilot_input_output")
-}
-
 model copilotOutput {
-  id        Int      @id @default(autoincrement())
-  content   String   @map("output_content") // copilot output
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id          Int      @id @default(autoincrement())
+  goldenSetId Int      @map("golden_set_id")
+  userInputId Int      @map("user_input_id")
+  content     String   @map("output_content") // copilot output
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Performance Metrics
   totalLatencyMs    Int?     @map("total_latency_ms")
@@ -101,31 +92,43 @@ model copilotOutput {
   totalTokens       Int?     @map("total_tokens") // input_tokens + output_tokens + reasoning tokens
   contextPercentage Decimal? @map("context_percentage") @db.Decimal(5, 2) // % of max context window used
 
-  copilotInput copilotInput_copilotOutput[] @relation()
+  copilotInput       goldenSet_userInput         @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
+  evaluationSessions copilotOutput_questionSet[] @relation()
+}
+
+model copilotOutput_questionSet {
+  copilotOutputId Int @map("copilot_output_id")
+  questionSetId   Int @map("question_set_id")
+
+  copilotOutput      copilotOutput            @relation(fields: [copilotOutputId], references: [id])
+  questionSet        questionSet              @relation(fields: [questionSetId], references: [id])
+  agentEvaluationSessions agentEvaluationSession[] @relation()
+  humanEvaluationSessions humanEvaluationSession[] @relation()
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@id([copilotOutputId, questionSetId], map: "idx_copilot_output_question_set")
 }
 
 // Adaptive Rubrics (AI-generated evaluation questions - one question per row)
 model questionSet {
-  id Int @id @default(autoincrement())
+  id          Int @id @default(autoincrement())
+  goldenSetId Int @map("golden_set_id")
+  userInputId Int @map("user_input_id")
 
-  rubrics questionSet_adaptiveRubric[] @relation()
+  copilotInputs      goldenSet_userInput         @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
+  rubrics            question[]                  @relation()
+  evaluationSessions copilotOutput_questionSet[] @relation()
 
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([goldenSetId, userInputId], map: "idx_question_set_golden_user_input")
 }
 
-model questionSet_adaptiveRubric {
-  questionSetId    Int @map("question_set_id")
-  adaptiveRubricId Int @map("adaptive_rubric_id")
-
-  questionSet    questionSet    @relation(fields: [questionSetId], references: [id])
-  adaptiveRubric adaptiveRubric @relation(fields: [adaptiveRubricId], references: [id])
-
-  @@id([questionSetId, adaptiveRubricId], map: "idx_question_set_adaptive_rubric")
-}
-
-model adaptiveRubric {
-  id Int @id @default(autoincrement())
+model question {
+  id            Int @id @default(autoincrement())
+  questionSetId Int @map("question_set_id")
 
   // Rubric Content (one question per row)
   version        String  @default("1.0")
@@ -134,53 +137,77 @@ model adaptiveRubric {
   expectedAnswer Boolean @map("expected_answer") // perhaps could be multiple choice question
   weight         Decimal @map("weight") @db.Decimal(5, 2)
 
-  questionSet questionSet_adaptiveRubric[] @relation()
+  questionSet       questionSet        @relation(fields: [questionSetId], references: [id])
+  evaluationRecords evaluationRecord[] @relation()
+
+  @@unique([id, questionSetId], map: "unique_question_per_set")
 }
 
 // Execution Sessions (references copilot schema tables)
-model evaluationSession {
-  id           Int           @id @default(autoincrement())
-  goldenSetId  Int           @map("golden_set_id") // Reference to golden_set.id
-  modelName    String        @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-  sessionIdRef Int?          @map("session_id_ref") // Reference to copilot_session.id
-  startedAt    DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
-  completedAt  DateTime?     @map("completed_at") @db.Timestamptz(6)
-  status       SessionStatus @default(running)
+model agentEvaluationSession {
+  id              Int           @id @default(autoincrement())
+  copilotOutputId Int           @map("copilot_output_id")
+  questionSetId   Int           @map("question_set_id")
+  evaluatorId     String        @map("evaluator_id") // could be agentId or "auto-evaluation" for agent evaluations
+  modelName       String        @map("model_name") // e.g., 'gpt-4', 'claude-3-opus' * only for evaluation agents *
+  startedAt       DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt     DateTime?     @map("completed_at") @db.Timestamptz(6)
+  status          SessionStatus @default(running)
 
   // Metadata for HITL graph execution (stores threadId, skipHumanReview, etc.)
   metadata Json?
 
   // Relations
-  goldenSet goldenSet         @relation(fields: [goldenSetId], references: [id])
-  rubrics   adaptiveRubric[]
-  result    evaluationResult?
+  resource          copilotOutput_questionSet @relation(fields: [copilotOutputId, questionSetId], references: [copilotOutputId, questionSetId])
+  evaluationRecords evaluationRecord[]        @relation(map: "agent_evaluation_records")
+  result            evaluationResult?         @relation(map: "agent_evaluation_result_relation")
 
-  @@index([id], map: "idx_evaluation_session_schema")
+  @@unique([evaluatorId, copilotOutputId, questionSetId], map: "unique_agent_evaluation_session")
+  @@index([copilotOutputId, questionSetId], map: "idx_evaluation_session_scheme")
+}
+
+model humanEvaluationSession {
+  id              Int           @id @default(autoincrement())
+  evaluatorId     String        @map("evaluator_id") // ID of the human evaluator
+  copilotOutputId Int           @map("copilot_output_id")
+  questionSetId   Int           @map("question_set_id")
+  startedAt       DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt     DateTime?     @map("completed_at") @db.Timestamptz(6)
+  status          SessionStatus @default(running)
+
+  resource          copilotOutput_questionSet @relation(fields: [copilotOutputId, questionSetId], references: [copilotOutputId, questionSetId])
+  evaluationRecords evaluationRecord[]        @relation(map: "human_evaluation_records")
+  result            evaluationResult?         @relation(map: "human_evaluation_result_relation")
+
+  @@unique([evaluatorId, copilotOutputId, questionSetId], map: "unique_human_evaluation_session")
+  @@index([copilotOutputId, questionSetId], map: "idx_human_evaluation_session_scheme")
 }
 
 // Rubric Judgments (human and agent evaluations - one answer per rubric question)
-model adaptiveRubricJudgeRecord {
-  id        Int
-  sessionId Int      @map("session_id")
-  accountId String?  @map("account_id") // ID of the human judge (null for agent evaluations)
-  answer    Boolean  @map("answer") // Yes/No answer to the rubric question
-  comment   String?  @db.Text
-  timestamp DateTime @default(now()) @map("timestamp") @db.Timestamptz(6)
+model evaluationRecord {
+  id              Int      @id @default(autoincrement())
+  copilotOutputId Int      @map("copilot_output_id")
+  questionSetId   Int      @map("question_set_id")
+  questionId      Int      @map("question_id")
+  evaluatorId     String   @map("evaluator_id") // humanId for human evaluations. otherwise, could be agentId or "auto-evaluation" for agent evaluations
+  evaluatorAnswer Boolean  @map("evaluator_answer") // perhaps could be multiple choice question in the future
+  feedback        String?  @map("feedback") // optional free-form feedback from the evaluator
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  // Relations
-  rubric adaptiveRubric @relation(fields: [id, sessionId], references: [id, sessionId])
+  agentEvaluationSession agentEvaluationSession? @relation(fields: [evaluatorId, copilotOutputId, questionSetId], references: [evaluatorId, copilotOutputId, questionSetId], map: "agent_evaluation_session_relation")
+  humanEvaluationSession humanEvaluationSession? @relation(fields: [evaluatorId, copilotOutputId, questionSetId], references: [evaluatorId, copilotOutputId, questionSetId], map: "human_evaluation_session_relation")
+  question               question                @relation(fields: [questionId, questionSetId], references: [id, questionSetId])
 
-  @@id([id, sessionId], map: "idx_rubric_judge_rubric")
-  @@index([sessionId], map: "idx_rubric_judge_session")
+  @@unique([evaluatorId, copilotOutputId, questionSetId, questionId], map: "unique_agent_evaluation_record")
+  @@index([copilotOutputId, questionSetId], map: "idx_agent_evaluation_record_scheme")
 }
 
 // Evaluation Results Summary (matching LangGraph FinalReport interface)
 model evaluationResult {
-  id          Int         @id @default(autoincrement())
-  sessionId   Int         @unique @map("session_id")
-  copilotType CopilotType @map("copilot_type")
-  modelName   String      @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-
+  id               Int              @id @default(autoincrement())
+  evaluatorId      String           @map("evaluator_id") // humanId for human evaluations. otherwise, could be agentId or "auto-evaluation" for agent evaluations
+  copilotOutputId  Int              @map("copilot_output_id")
+  questionSetId    Int              @map("question_set_id")
   evaluationStatus EvaluationStatus @default(pending) @map("evaluation_status")
 
   // FinalReport fields (matching LangGraph FinalReport interface)
@@ -193,7 +220,8 @@ model evaluationResult {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relations
-  session evaluationSession @relation(fields: [sessionId], references: [id])
+  humanEvaluation humanEvaluationSession? @relation(fields: [evaluatorId, copilotOutputId, questionSetId], references: [evaluatorId, copilotOutputId, questionSetId], map: "human_evaluation_result_relation")
+  agentEvaluation agentEvaluationSession? @relation(fields: [evaluatorId, copilotOutputId, questionSetId], references: [evaluatorId, copilotOutputId, questionSetId], map: "agent_evaluation_result_relation")
 
-  @@index([sessionId], map: "idx_evaluation_result_lookup")
+  @@unique([evaluatorId, copilotOutputId, questionSetId], map: "idx_evaluation_result_lookup")
 }

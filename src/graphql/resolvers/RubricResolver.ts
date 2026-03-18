@@ -34,13 +34,19 @@ function transformRubric(rubric: RubricRecord) {
 
 export const rubricResolver = {
   Query: {
-    getRubricsBySessionId: async (
+    getQuestionSetById: async (
       _: unknown,
-      args: { sessionId: number }
+      args: { id: number }
     ) => {
       try {
-        const rubrics = await rubricService.getQuestionsBySession(args.sessionId);
-        return rubrics.map((r) => transformRubric(r as unknown as RubricRecord));
+        const questionSet = await rubricService.getQuestionSetById(args.id);
+        return questionSet          ? {
+              ...questionSet,
+              criteria: questionSet.criteria.map((criterion) =>
+                transformRubric(criterion as unknown as RubricRecord)
+              ),
+            }
+          : null;
       } catch (error) {
         logger.error('Error fetching rubrics by sessionId:', error);
         throw new Error('Failed to fetch rubrics by sessionId');

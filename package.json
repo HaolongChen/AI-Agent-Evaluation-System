@@ -25,7 +25,9 @@
     "db:studio": "pnpm dlx prisma studio",
     "db:reset": "pnpm dlx prisma migrate reset --force",
     "db:delete": "ts-node scripts/delete-golden-sets.ts",
-    "eval": "tsx src/jobs/EvaluationJobRunner.ts"
+    "db:format": "pnpm dlx prisma format",
+    "eval": "tsx src/jobs/EvaluationJobRunner.ts",
+    "codegen": "graphql-codegen --config codegen.yml"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +38,9 @@
     "@eslint/js": "^9.39.2",
     "@eslint/json": "^0.14.0",
     "@eslint/markdown": "^7.5.1",
+    "@graphql-codegen/cli": "^6.2.1",
+    "@graphql-codegen/typescript": "^5.0.9",
+    "@graphql-codegen/typescript-resolvers": "^5.1.7",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/lodash-es": "^4.17.12",
@@ -48,6 +53,7 @@
     "jiti": "^2.6.1",
     "lodash-es": "^4.17.21",
     "nodemon": "^3.1.11",
+    "prettier": "^3.8.1",
     "prisma": "7.4.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
@@ -78,6 +84,7 @@
     "graphql": "^16.12.0",
     "graphql-request": "^7.4.0",
     "graphql-scalars": "^1.25.0",
+    "graphql-tag": "^2.12.6",
     "graphql-type-json": "^0.3.2",
     "graphql-ws": "^6.0.7",
     "js-base64": "^3.7.8",
@@ -86,7 +93,7 @@
     "langchain": "^1.2.0",
     "mobx": "^6.15.0",
     "pg": "^8.16.3",
-    "uuid": "^8.1.0",
+    "uuid": "^13.0.0",
     "ws": "^8.18.3",
     "zod": "^4.1.13"
   }

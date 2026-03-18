@@ -1,0 +1,259 @@
+type Query {
+	"""
+	Retrieve a single golden set by ID.
+	"""
+	getGoldenSetById(id: Int!): GoldenSet
+
+	"""
+	List golden sets with optional filtering.
+	"""
+	getGoldenSets(filters: GoldenSetFilters): [GoldenSet]
+
+	"""
+	Retrieve a single evaluation session by ID.
+	"""
+	getEvaluationSessionById(id: Int!): EvaluationSession
+
+	"""
+	List evaluation sessions with optional filtering.
+	"""
+	getEvaluationSessions(filters: SessionFilters): [EvaluationSession]
+
+	"""
+	Get all rubric criteria for a specific session.
+	"""
+	getQuestionSetById(id: Int!): QuestionSet
+
+	"""
+	Get rubric criteria filtered by review parameters.
+	Useful for finding criteria pending human review.
+	"""
+	getQuestionSetByContext(goldenSetId: Int, userInputId: Int): [QuestionSet!]!
+
+	"""
+	Get final evaluation result for a completed session.
+	"""
+	getEvaluationResultById(id: Int!): EvaluationResult
+
+	getEvaluationResults(filters: ResultFilters): [EvaluationResult!]!
+}
+
+type Mutation {
+	initializeGoldenSet(
+		schemaExId: String!
+		copilotType: CopilotType!
+		modelName: String
+	): GoldenSet!
+
+	"""
+	Upsert golden set with a new user input (atomic operation).
+	Creates golden set if it doesn't exist, or adds input to existing one.
+	RECOMMENDED for adding test cases.
+	"""
+	createUserInput(
+		id: Int!
+		description: String
+		query: String!
+		createdBy: String
+	): UserInput!
+
+	linkGoldenSetToUserInput(goldenSetId: Int!, userInputId: Int!): GoldenSet!
+
+	generateQuestionSet(goldenSetId: Int!, userInputId: Int!): QuestionSet!
+
+	executeCopilot(goldenSetId: Int!, userInputId: Int!): CopilotOutput!
+
+	submitHumanEvaluation(
+		evaluatorId: String!
+		copilotOutputId: Int!
+		questionSetId: Int!
+		answers: [QuestionAnswerInput!]!
+	): EvaluationSession!
+}
+"""
+Type of AI Copilot being evaluated.
+"""
+enum CopilotType {
+	"Data model builder for database schema generation"
+	DATA_MODEL_BUILDER
+	"UI component builder for frontend development"
+	UI_BUILDER
+	"Workflow builder for action flows"
+	ACTIONFLOW_BUILDER
+	"Log analysis assistant"
+	LOG_ANALYZER
+	"General agent builder"
+	AGENT_BUILDER
+}
+
+"""
+A golden set represents a collection of test cases (user inputs)
+and expected copilot outputs for evaluating agent performance.
+Identified uniquely by (schemaExId, copilotType, modelName).
+"""
+type GoldenSet {
+	"Unique database identifier"
+	id: Int!
+	"External project identifier from Functorz"
+	schemaExId: String!
+	"Type of copilot being evaluated"
+	copilotType: CopilotType!
+	"Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
+	modelName: String
+}
+
+"""
+A user input represents a test case prompt or query that will be sent
+to the copilot being evaluated.
+"""
+type UserInput {
+	"Unique identifier"
+	id: Int!
+	"Optional description of what this input tests"
+	description: String
+	"The actual prompt or query content"
+	content: String!
+	"Timestamp when input was added"
+	createdAt: String
+	"Account ID of creator"
+	createdBy: String
+}
+
+"""
+A copilot output represents the expected or actual response from the copilot,
+including performance metrics (latency, tokens, context usage).
+"""
+type CopilotOutput {
+	"Unique identifier"
+	id: Int!
+	"Parent golden set ID"
+	goldenSetId: Int!
+	"Associated user input ID"
+	userInputId: Int!
+	"The copilot's generated output content"
+	content: String!
+	"Timestamp when output was captured"
+	createdAt: String
+
+	"Total end-to-end latency in milliseconds"
+	totalLatencyMs: Int
+	"Number of request/response roundtrips"
+	roundtripCount: Int
+	"Number of input tokens consumed"
+	inputTokens: Int
+	"Number of output tokens generated"
+	outputTokens: Int
+	"Total tokens used (input + output)"
+	totalTokens: Int
+	"Percentage of context window utilized"
+	contextPercentage: Float
+}
+
+type QuestionSet {
+	id: Int!
+	goldenSetId: Int!
+	userInputId: Int!
+	questions: [Question!]!
+}
+
+type Question {
+	id: Int!
+	questionSetId: Int!
+	version: String!
+	title: String
+	content: String!
+	expectedAnswer: Boolean!
+	weight: Float!
+}
+
+enum EvaluatorType {
+	HUMAN
+	AGENT
+}
+
+"""
+An evaluation session represents a single run of the evaluation workflow
+against a golden set, producing rubric criteria and scored results.
+"""
+type EvaluationSession {
+	"Unique session identifier"
+	id: Int!
+	copilotOutputId: Int!
+	questionSetId: Int!
+	evaluatorId: String!
+	evaluatorType: EvaluatorType!
+	"LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')"
+	modelName: String
+	answers: [EvaluationRecord]
+	"Timestamp when session started"
+	startedAt: String
+	"Timestamp when session completed (null if still running)"
+	completedAt: String
+}
+
+"""
+A judge record captures the agent or human evaluator's assessment
+of a single rubric criterion.
+"""
+type EvaluationRecord {
+	"Unique evaluation record identifier"
+	id: Int!
+	"Parent rubric criterion session ID"
+	copilotOutputId: Int!
+	questionSetId: Int!
+	questionId: Int!
+	evaluatorId: String!
+	"Binary answer to the criterion question"
+	answer: Boolean!
+	"Optional explanation or reasoning for the answer"
+	feedback: String
+}
+
+"""
+Final evaluation result aggregating all rubric criterion scores
+and generating a comprehensive report.
+"""
+type EvaluationResult {
+	"Unique result identifier"
+	id: Int!
+	evaluatorId: String!
+	copilotOutputId: Int!
+	questionSetId: Int!
+
+	"Aggregated score across all weighted criteria (0 - 100)"
+	overallScore: Float!
+	"Executive summary of evaluation"
+	summary: String!
+	"Detailed analysis with per-criterion breakdown"
+	detailedAnalysis: String!
+	"Audit trail of workflow steps and decisions"
+	auditTrace: [String]
+}
+
+input GoldenSetFilters {
+	schemaExId: String
+	copilotType: CopilotType
+	modelName: String
+}
+
+input SessionFilters {
+	evaluatorId: String
+	copilotOutputId: Int
+	questionSetId: Int
+	evaluatorType: EvaluatorType
+}
+
+input ResultFilters {
+	evaluatorId: String
+	copilotOutputId: Int
+	questionSetId: Int
+}
+
+input QuestionAnswerInput {
+	"Question being answered"
+	questionId: Int!
+	"Binary answer"
+	answer: Boolean!
+	"Detailed explanation of the answer"
+	feedback: String
+}

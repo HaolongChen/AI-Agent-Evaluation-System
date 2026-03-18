@@ -3,12 +3,7 @@ import { COPILOT_TYPES, REVERSE_COPILOT_TYPES } from '../../config/constants.ts'
 import { logger } from '../../utils/logger.ts';
 import type { CopilotType } from '../../../build/generated/prisma/enums.ts';
 import { transformSession } from './SessionResolver.ts';
-
-export interface GoldenSetFilters {
-  projectExId?: string;
-  copilotType?: keyof typeof COPILOT_TYPES;
-  isActive?: boolean;
-}
+import type { GoldenSetFilters } from '../generated/resolvers-types.ts';
 
 function transformGoldenSet(goldenSet: {
   id: number;
@@ -32,7 +27,7 @@ function transformGoldenSet(goldenSet: {
 
 export const goldenSetResolver = {
   Query: {
-    getGoldenSet: async (_: unknown, args: { id: number }) => {
+    getGoldenSetById: async (_: unknown, args: { id: number }) => {
       try {
         const goldenSet = await goldenSetService.getGoldenSet(args.id);
         if (!goldenSet) {

@@ -1,0 +1,9 @@
+{
+	"client": {
+		"service": {
+			"name": "ai-agent-evaluation-system",
+			"localSchemaFile": "./src/graphql/type/schema.graphql"
+		},
+		"excludes": ["**/node_modules", "**/__tests__", "**/dist", "**/generated"]
+	}
+}

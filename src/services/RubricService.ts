@@ -1,9 +1,44 @@
 import { prisma } from '../config/prisma.ts';
 import { REVIEW_STATUS } from '../config/constants.ts';
 import { logger } from '../utils/logger.ts';
+import type { question } from '../../build/generated/prisma/client.ts';
 
 export class RubricService {
-  async getQuestionsBySession(sessionId: number) {
+
+
+  async initializeQuestionSetWithRubrics(
+    goldenSetId: number,
+    userInputId: number,
+    rubrics: Array<question>
+  ) {
+    try {
+      const questionSet = await prisma.$transaction(async (tx) => {
+        const newQuestionSet = await tx.questionSet.create({
+          data: {
+            goldenSetId,
+            userInputId,
+          },
+        });
+
+        const rubricData = rubrics.map((rubric) => ({
+          ...rubric,
+          questionSetId: newQuestionSet.id,
+        }));
+
+        await tx.question.createMany({
+          data: rubricData,
+        });
+      });
+      return questionSet;
+    } catch (error) {
+      logger.error('Error initializing question set:', error);
+      throw new Error('Failed to initialize question set');
+    }
+  }
+
+
+
+  async getQuestionsBySessionX(sessionId: number) {
     try {
       return prisma.adaptiveRubric.findMany({
         where: {
@@ -21,7 +56,7 @@ export class RubricService {
     }
   }
 
-  async getQuestionsForReview(
+  async getQuestionsForReviewX(
     sessionId?: number,
     reviewStatus?: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS]
   ) {
@@ -60,7 +95,7 @@ export class RubricService {
     }
   }
 
-  async updateRubricsReviewStatus(
+  async updateRubricsReviewStatusX(
     sessionId: number,
     reviewStatus: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS],
     reviewedBy: string

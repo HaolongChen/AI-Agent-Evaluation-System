@@ -7,7 +7,7 @@ import css from '@eslint/css';
 import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
-  { ignores: ['src/generated/**', 'dist/**'] },
+  { ignores: ['src/generated/**', 'dist/**', 'node_modules/**', 'build/**', 'src/graphql/__generated__/**'] },
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
     plugins: { js },

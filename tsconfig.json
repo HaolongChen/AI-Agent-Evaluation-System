@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
+    "rootDirs": ["src"],
+    "outDir": "dist",
 
     "module": "nodenext",
     "target": "esnext",
@@ -23,7 +24,6 @@
     "noPropertyAccessFromIndexSignature": true,
 
     "strict": true,
-    "jsx": "react-jsx",
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,

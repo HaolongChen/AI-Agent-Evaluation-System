@@ -68,13 +68,13 @@ model goldenSet_userInput {
 }
 
 model userInput {
-  id             Int                   @id @default(autoincrement())
-  description    String?
-  content        String                @map("input_content") // user input
+  id            Int                   @id @default(autoincrement())
+  description   String?
+  content       String                @map("input_content") // user input
   // copilotOutputs copilotOutput[]       @relation()
-  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy      String?               @map("created_by")
-  copilotInputs  goldenSet_userInput[] @relation()
+  createdAt     DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy     String?               @map("created_by")
+  copilotInputs goldenSet_userInput[] @relation()
 }
 
 model copilotOutput {
@@ -94,14 +94,16 @@ model copilotOutput {
 
   copilotInput       goldenSet_userInput         @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
   evaluationSessions copilotOutput_questionSet[] @relation()
+
+  @@index([goldenSetId, userInputId], map: "idx_copilot_output_golden_user_input")
 }
 
 model copilotOutput_questionSet {
   copilotOutputId Int @map("copilot_output_id")
   questionSetId   Int @map("question_set_id")
 
-  copilotOutput      copilotOutput            @relation(fields: [copilotOutputId], references: [id])
-  questionSet        questionSet              @relation(fields: [questionSetId], references: [id])
+  copilotOutput           copilotOutput            @relation(fields: [copilotOutputId], references: [id])
+  questionSet             questionSet              @relation(fields: [questionSetId], references: [id])
   agentEvaluationSessions agentEvaluationSession[] @relation()
   humanEvaluationSessions humanEvaluationSession[] @relation()
 
@@ -224,4 +226,5 @@ model evaluationResult {
   agentEvaluation agentEvaluationSession? @relation(fields: [evaluatorId, copilotOutputId, questionSetId], references: [evaluatorId, copilotOutputId, questionSetId], map: "agent_evaluation_result_relation")
 
   @@unique([evaluatorId, copilotOutputId, questionSetId], map: "idx_evaluation_result_lookup")
+  @@index([copilotOutputId, questionSetId], map: "idx_evaluation_result_scheme")
 }

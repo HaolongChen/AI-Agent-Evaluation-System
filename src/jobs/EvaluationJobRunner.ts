@@ -15,15 +15,15 @@ import {
 } from '../utils/types.ts';
 import {
   ClientType,
-  Copilot,
+  CopilotJs,
   Locale,
   Product,
-  type CopilotApiResult,
+  type CopilotApiResultJs,
   type OpaqueSchemaGraph,
 } from '../utils/zed/TypeSystem.ts';
 import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from '../utils/zed/ZSchema.ts';
 import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from '../utils/zed/AfCustomCodeTemplates.ts';
-import { assertNotNull, genExtraContext } from '../utils/zed/helpers.ts';
+import { assertNotNull } from '../utils/zed/helpers.ts';
 import type { ToolResult } from '../utils/graph-states.ts';
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
@@ -290,12 +290,8 @@ export class EvaluationJobRunner {
     const locale = Locale.ZH;
     this.rounds++;
     try {
-      const result: CopilotApiResult = await Copilot.toolCalls(
+      const result: CopilotApiResultJs = await CopilotJs.toolCalls(
         assertNotNull(this.schemaGraph),
-        genExtraContext(
-          this.supportedCustomModelDescriptor,
-          this.afCustomCodeTemplates,
-        ),
         null,
         product,
         clientType,

@@ -32,7 +32,7 @@ export type TypeSelectorOptionResult =
   ztype.com.functorz.ztype.application.editor.type.TypeSelectorOptionResult;
 export type CodeComponentInputMutationResult =
   ztype.com.functorz.ztype.application.editor.CodeComponentInputMutationResult;
-export type CopilotApiResult =
+export type CopilotApiResultJs =
   ztype.com.functorz.ztype.application.copilot.CopilotApiResultJs;
 export type ZAiConfigWrapperJs =
   ztype.com.functorz.ztype.typesystem.schema.ZAiConfigWrapperJs;
@@ -114,7 +114,7 @@ export const {
   CopyActionFlowNodesResultFormat,
 } = ztype.com.functorz.ztype.typesystem.schema;
 
-export const { copilot } = ztype.com.functorz.ztype.application;
+export const { CopilotJs } = ztype.com.functorz.ztype.application.copilot;
 
 export const { KtList, KtMap, KtSet } = ztype.kotlin.collections;
 

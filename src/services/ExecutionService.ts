@@ -74,6 +74,7 @@ export class ExecutionService {
 			const typeSystemStore = new TypeSystemStore();
 			await typeSystemStore.getAFCustomCodeTemplates();
 			await typeSystemStore.getSupportedCustomModelDescriptor();
+			await typeSystemStore.rehydrate(copilotInput.schemaId);
 
 			const projectName = `temp-project-${goldenSetId}-${userInputId}-${Date.now()}`;
 			const projectExId = await projectService.createProject(projectName);

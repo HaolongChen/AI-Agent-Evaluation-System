@@ -72,8 +72,19 @@ export class ExecutionService {
 			}
 
 			const typeSystemStore = new TypeSystemStore();
-			await typeSystemStore.getAFCustomCodeTemplates();
-			await typeSystemStore.getSupportedCustomModelDescriptor();
+			const results = await Promise.allSettled([
+				typeSystemStore.getAFCustomCodeTemplates(),
+				typeSystemStore.getSupportedCustomModelDescriptor()
+			]);
+			if (results.some((r) => r.status === "rejected")) {
+				logger.error(
+					"Error initializing type system store:",
+					results
+						.filter((r) => r.status === "rejected")
+						.map((r) => (r as PromiseRejectedResult).reason),
+				);
+				throw new Error("Failed to initialize type system store");
+			}
 			await typeSystemStore.rehydrate(copilotInput.schemaId);
 
 			const projectName = `temp-project-${goldenSetId}-${userInputId}-${Date.now()}`;

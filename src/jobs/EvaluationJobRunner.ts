@@ -151,7 +151,7 @@ export class EvaluationJobRunner {
         this.handleSystemStatusMessage(data[0] as SystemStatusMessage);
         break;
       case CopilotMessageType.TOOL_CALLS:
-        await this.handleToolCallsMessage(data[0] as ToolCallsMessage);
+        this.handleToolCallsMessage(data[0] as ToolCallsMessage);
         break;
       case CopilotMessageType.AI_RESPONSE:
         this.handleAIResponseMessage(data[0] as AIResponseMessage);
@@ -197,7 +197,7 @@ export class EvaluationJobRunner {
     }
   }
 
-  async handleEditableTextMessage(message: EditableTextMessage): Promise<void> {
+  handleEditableTextMessage(message: EditableTextMessage) {
     this.editableText = message.content;
     // this.isSchemaSaving = true;
     // const schema = await SchemaDownloaderForTest(this.projectExId);
@@ -238,8 +238,8 @@ export class EvaluationJobRunner {
     // TODO: Handle system status message as needed
   }
 
-  async handleToolCallsMessage(message: ToolCallsMessage): Promise<void> {
-    const { result, successful, errorMessage } = await this.runToolCalls(
+  handleToolCallsMessage(message: ToolCallsMessage) {
+    const { result, successful, errorMessage } = this.runToolCalls(
       message.toolCalls,
     );
     if (successful) {
@@ -263,7 +263,7 @@ export class EvaluationJobRunner {
     }
   }
 
-  async handleAIResponseMessage(message: AIResponseMessage): Promise<void> {
+  handleAIResponseMessage(message: AIResponseMessage) {
     this.editableText = message.content;
     // this.isSchemaSaving = true;
     // const schema = await SchemaDownloaderForTest(this.projectExId);
@@ -278,13 +278,13 @@ export class EvaluationJobRunner {
     this.stopJob();
   }
 
-  runToolCalls = async (toolCalls: ToolCall[]) => {
+  runToolCalls = (toolCalls: ToolCall[]) => {
     const product = Product.ZION;
     const clientType = ClientType.WEB;
     const locale = Locale.ZH;
     this.rounds++;
     try {
-      const result: CopilotApiResultJs = await CopilotJs.toolCalls(
+      const result: CopilotApiResultJs = CopilotJs.toolCalls(
         assertNotNull(this.schemaGraph),
         null,
         product,

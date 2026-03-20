@@ -113,6 +113,37 @@ export class RubricService {
 		}
 	}
 
+	async saveQuestionSet(
+		goldenSetId: number,
+		userInputId: number,
+		questions: question[],
+	) {
+		try {
+			const questionSet = await prisma.questionSet.create({
+				data: {
+					goldenSetId,
+					userInputId,
+					rubrics: {
+						create: questions.map((question) => ({
+							version: question.version,
+							title: question.title,
+							content: question.content,
+							expectedAnswer: question.expectedAnswer,
+							weight: question.weight,
+						})),
+					},
+				},
+				include: {
+					rubrics: true,
+				},
+			});
+			return questionSet;
+		} catch (error) {
+			logger.error("Error saving question set:", error);
+			throw new Error("Failed to save question set");
+		}
+	}
+
 	// async getQuestionsBySessionX(sessionId: number) {
 	// 	try {
 	// 		return prisma.adaptiveRubric.findMany({

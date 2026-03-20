@@ -84,8 +84,6 @@ export class ExecutionService {
 				projectExId,
 				wsUrl,
 				copilotInput.userInputs[0].content,
-				typeSystemStore.supportedCustomModelDescriptor,
-				typeSystemStore.afCustomCodeTemplates,
 				typeSystemStore.schemaGraph,
 			);
 			evalJobRunner.startJob();

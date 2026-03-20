@@ -1,97 +1,91 @@
 import { rubricService } from '../../services/RubricService.ts';
-import { REVERSE_REVIEW_STATUS, REVIEW_STATUS } from '../../config/constants.ts';
+// import { REVERSE_REVIEW_STATUS, REVIEW_STATUS } from '../../config/constants.ts';
 import { logger } from '../../utils/logger.ts';
 
-type RubricRecord = {
-  reviewStatus: string;
-  judgeRecord?: JudgeRecordDB | null;
-  [key: string]: unknown;
-};
+// type RubricRecord = {
+//   reviewStatus: string;
+//   judgeRecord?: JudgeRecordDB | null;
+//   [key: string]: unknown;
+// };
 
-type JudgeRecordDB = {
-  id: number;
-  sessionId: number;
-  accountId: string | null;
-  answer: boolean;
-  comment: string | null;
-  timestamp: Date;
-};
+// type JudgeRecordDB = {
+//   id: number;
+//   sessionId: number;
+//   accountId: string | null;
+//   answer: boolean;
+//   comment: string | null;
+//   timestamp: Date;
+// };
 
-const graphqlToDbReviewStatus: Record<string, (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS]> = {
-  PENDING: REVIEW_STATUS.PENDING,
-  APPROVED: REVIEW_STATUS.APPROVED,
-  REJECTED: REVIEW_STATUS.REJECTED,
-  MODIFIED: REVIEW_STATUS.MODIFIED,
-};
+// const graphqlToDbReviewStatus: Record<string, (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS]> = {
+//   PENDING: REVIEW_STATUS.PENDING,
+//   APPROVED: REVIEW_STATUS.APPROVED,
+//   REJECTED: REVIEW_STATUS.REJECTED,
+//   MODIFIED: REVIEW_STATUS.MODIFIED,
+// };
 
-function transformRubric(rubric: RubricRecord) {
-  return {
-    ...rubric,
-    reviewStatus:
-      REVERSE_REVIEW_STATUS[rubric.reviewStatus] ?? rubric.reviewStatus,
-  };
-}
+// function transformRubric(rubric: RubricRecord) {
+//   return {
+//     ...rubric,
+//     reviewStatus:
+//       REVERSE_REVIEW_STATUS[rubric.reviewStatus] ?? rubric.reviewStatus,
+//   };
+// }
 
 export const rubricResolver = {
   Query: {
     getQuestionSetById: async (
       _: unknown,
-      args: { id: number }
+      args: { id: string }
     ) => {
       try {
         const questionSet = await rubricService.getQuestionSetById(args.id);
-        return questionSet          ? {
-              ...questionSet,
-              criteria: questionSet.criteria.map((criterion) =>
-                transformRubric(criterion as unknown as RubricRecord)
-              ),
-            }
-          : null;
+        return questionSet;
       } catch (error) {
         logger.error('Error fetching rubrics by sessionId:', error);
         throw new Error('Failed to fetch rubrics by sessionId');
       }
     },
 
-    getRubricsForReview: async (
-      _: unknown,
-      args: {
-        sessionId?: number;
-        reviewStatus?: string;
-      }
-    ) => {
-      try {
-        const dbStatus = args.reviewStatus
-          ? graphqlToDbReviewStatus[args.reviewStatus]
-          : undefined;
+    // getRubricsForReview: async (
+    //   _: unknown,
+    //   args: {
+    //     sessionId?: number;
+    //     reviewStatus?: string;
+    //   }
+    // ) => {
+    //   try {
+    //     const dbStatus = args.reviewStatus
+    //       ? graphqlToDbReviewStatus[args.reviewStatus]
+    //       : undefined;
 
-        const rubrics = await rubricService.getQuestionsForReview(
-          args.sessionId,
-          dbStatus ?? REVIEW_STATUS.PENDING
-        );
-        return rubrics.map((r) => transformRubric(r as unknown as RubricRecord));
-      } catch (error) {
-        logger.error('Error fetching rubrics for review:', error);
-        throw new Error('Failed to fetch rubrics for review');
-      }
-    },
+    //     const rubrics = await rubricService.getQuestionsForReview(
+    //       args.sessionId,
+    //       dbStatus ?? REVIEW_STATUS.PENDING
+    //     );
+    //     return rubrics.map((r) => transformRubric(r as unknown as RubricRecord));
+    //   } catch (error) {
+    //     logger.error('Error fetching rubrics for review:', error);
+    //     throw new Error('Failed to fetch rubrics for review');
+    //   }
+    // },
   },
 
-  RubricCriterion: {
-    evaluation: (parent: Record<string, unknown>) => {
-      const judgeRecord = parent['judgeRecord'] as JudgeRecordDB | null | undefined;
-      if (!judgeRecord) return null;
+  // RubricCriterion: {
+  //   evaluation: (parent: Record<string, unknown>) => {
+  //     const judgeRecord = parent['judgeRecord'] as JudgeRecordDB | null | undefined;
+  //     if (!judgeRecord) return null;
       
-      return {
-        id: judgeRecord.id,
-        sessionId: judgeRecord.sessionId,
-        accountId: judgeRecord.accountId,
-        answer: judgeRecord.answer,
-        comment: judgeRecord.comment,
-        timestamp: judgeRecord.timestamp,
-      };
-    },
-  },
+  //     return {
+  //       id: judgeRecord.id,
+  //       sessionId: judgeRecord.sessionId,
+  //       accountId: judgeRecord.accountId,
+  //       answer: judgeRecord.answer,
+  //       comment: judgeRecord.comment,
+  //       timestamp: judgeRecord.timestamp,
+  //     };
+  //   },
+  // },
 
   Mutation: {},
 };

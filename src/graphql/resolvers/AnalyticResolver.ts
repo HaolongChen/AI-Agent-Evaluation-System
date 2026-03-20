@@ -1,7 +1,7 @@
-import { executionService } from '../../services/ExecutionService.ts';
-import { analyticsService } from '../../services/AnalyticsService.ts';
-import { logger } from '../../utils/logger.ts';
-import { transformEvaluationResult } from './SessionResolver.ts';
+// import { executionService } from '../../services/ExecutionService.ts';
+// import { analyticsService } from '../../services/AnalyticsService.ts';
+// import { logger } from '../../utils/logger.ts';
+// import { transformEvaluationResult } from './SessionResolver.ts';
 
 // const graphStatusMapping: Record<string, string> = {
 //   completed: 'COMPLETED',
@@ -13,51 +13,51 @@ import { transformEvaluationResult } from './SessionResolver.ts';
 
 export const analyticResolver = {
   Query: {
-    getEvaluationResult: async (_: unknown, args: { sessionId: number }) => {
-      try {
-        const result = await analyticsService.getEvaluationResult(
-          String(args.sessionId)
-        );
-        return transformEvaluationResult(
-          result as Record<string, unknown> | null | undefined
-        );
-      } catch (error) {
-        logger.error('Error fetching evaluation result:', error);
-        throw new Error('Failed to fetch evaluation result');
-      }
-    },
+    // getEvaluationResult: async (_: unknown, args: { sessionId: number }) => {
+    //   try {
+    //     const result = await analyticsService.getEvaluationResult(
+    //       String(args.sessionId)
+    //     );
+    //     return transformEvaluationResult(
+    //       result as Record<string, unknown> | null | undefined
+    //     );
+    //   } catch (error) {
+    //     logger.error('Error fetching evaluation result:', error);
+    //     throw new Error('Failed to fetch evaluation result');
+    //   }
+    // },
   },
 
   Mutation: {
-    runEvaluation: async (
-      _: unknown,
-      args: {
-        goldenSetId: number;
-        skipHumanReview?: boolean;
-        skipHumanEvaluation?: boolean;
-      }
-    ) => {
-      try {
-        const options: {
-          skipHumanReview?: boolean;
-          skipHumanEvaluation?: boolean;
-        } = {};
-        if (args.skipHumanReview !== undefined) {
-          options.skipHumanReview = args.skipHumanReview;
-        }
-        if (args.skipHumanEvaluation !== undefined) {
-          options.skipHumanEvaluation = args.skipHumanEvaluation;
-        }
+    // runEvaluation: async (
+    //   _: unknown,
+    //   args: {
+    //     goldenSetId: number;
+    //     skipHumanReview?: boolean;
+    //     skipHumanEvaluation?: boolean;
+    //   }
+    // ) => {
+    //   try {
+    //     const options: {
+    //       skipHumanReview?: boolean;
+    //       skipHumanEvaluation?: boolean;
+    //     } = {};
+    //     if (args.skipHumanReview !== undefined) {
+    //       options.skipHumanReview = args.skipHumanReview;
+    //     }
+    //     if (args.skipHumanEvaluation !== undefined) {
+    //       options.skipHumanEvaluation = args.skipHumanEvaluation;
+    //     }
 
-        const sessionIds: (number | undefined)[] = await executionService.createEvaluationSessions(
-          args.goldenSetId,
-          Object.keys(options).length > 0 ? options : undefined
-        );
-        return sessionIds;
-      } catch (error) {
-        logger.error('Error running evaluation:', error);
-        throw new Error('Failed to run evaluation');
-      }
-    },
+    //     const sessionIds: (number | undefined)[] = await executionService.createEvaluationSessions(
+    //       args.goldenSetId,
+    //       Object.keys(options).length > 0 ? options : undefined
+    //     );
+    //     return sessionIds;
+    //   } catch (error) {
+    //     logger.error('Error running evaluation:', error);
+    //     throw new Error('Failed to run evaluation');
+    //   }
+    // },
   },
 };

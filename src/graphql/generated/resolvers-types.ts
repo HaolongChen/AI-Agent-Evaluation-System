@@ -127,7 +127,7 @@ export enum EvaluatorType {
 /**
  * A golden set represents a collection of test cases (user inputs)
  * and expected copilot outputs for evaluating agent performance.
- * Identified uniquely by (schemaExId, copilotType, modelName).
+ * Identified uniquely by (schemaId, copilotType, modelName).
  */
 export type GoldenSet = {
   __typename?: 'GoldenSet';
@@ -138,13 +138,13 @@ export type GoldenSet = {
   /** Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro') */
   modelName?: Maybe<Scalars['String']['output']>;
   /** External project identifier from Functorz */
-  schemaExId: Scalars['String']['output'];
+  schemaId: Scalars['String']['output'];
 };
 
 export type GoldenSetFilters = {
   copilotType?: InputMaybe<CopilotType>;
   modelName?: InputMaybe<Scalars['String']['input']>;
-  schemaExId?: InputMaybe<Scalars['String']['input']>;
+  schemaId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type Mutation = {
@@ -166,7 +166,6 @@ export type Mutation = {
 export type MutationCreateUserInputArgs = {
   createdBy?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
-  id: Scalars['Int']['input'];
   query: Scalars['String']['input'];
 };
 
@@ -186,7 +185,7 @@ export type MutationGenerateQuestionSetArgs = {
 export type MutationInitializeGoldenSetArgs = {
   copilotType: CopilotType;
   modelName?: InputMaybe<Scalars['String']['input']>;
-  schemaExId: Scalars['String']['input'];
+  schemaId: Scalars['String']['input'];
 };
 
 

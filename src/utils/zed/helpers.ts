@@ -159,6 +159,7 @@ export function genExtraContext(
           item.exId,
           new ActionFlowTemplateCodeDescriptor(
             item.exId,
+            item.async,
             getAFTemplateCodeInputOutputMap(
               filterNotNullOrUndefined(item.inputType ?? []),
             ),

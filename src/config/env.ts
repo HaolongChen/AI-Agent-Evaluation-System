@@ -24,7 +24,9 @@ export const ORGANIZATION_EX_ID =
   process.env['ORGANIZATION_EX_ID'] || '';
 
 
-export const SCHEMA_URL: string = process.env['SCHEMA_URL'] || 'oss://fz-zion-staging/schema/';
+export const ALIYUN_OSS_BUCKET = process.env['ALIYUN_OSS_BUCKET'] || '';
+export const ALIYUN_ACCESS_KEY = process.env['ALIYUN_ACCESS_KEY'] || '';
+export const ALIYUN_ACCESS_SECRET = process.env['ALIYUN_ACCESS_SECRET'] || '';
 
 export const FUNCTORZ_PHONE_NUMBER = process.env['FUNCTORZ_PHONE_NUMBER'];
 export const FUNCTORZ_PASSWORD = process.env['FUNCTORZ_PASSWORD'];
@@ -58,6 +60,9 @@ export const buildWsUrl = (projectExId: string): string =>
   }&projectExId=${projectExId}&clientType=${
     process.env['clientType'] || 'WEB'
   }`;
+
+export const OSS_URL = (schemaId: string): string =>
+  `oss://${ALIYUN_OSS_BUCKET}/schema/${schemaId}`;
 
 export type LLMProvider = 'openai' | 'gemini';
 

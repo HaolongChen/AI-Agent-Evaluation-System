@@ -23,7 +23,7 @@ export type OpaqueTypeSelectorContext =
 export type CopyPasteMenuItemStatus =
   ztype.com.functorz.ztype.application.data.CopyPasteMenuItemStatus;
 export type DataBindingSelectorOptionJS =
-  ztype.com.functorz.ztype.application.editor.databinding.DataBindingSelectorOptionJS;
+  ztype.com.functorz.ztype.application.editor.databinding.DataBindingSelectorOptionJs;
 export type TypeSelectorOptionJs =
   ztype.com.functorz.ztype.application.editor.type.TypeSelectorOptionJs;
 export type DataBindingSelectorOptionResult =
@@ -33,7 +33,7 @@ export type TypeSelectorOptionResult =
 export type CodeComponentInputMutationResult =
   ztype.com.functorz.ztype.application.editor.CodeComponentInputMutationResult;
 export type CopilotApiResult =
-  ztype.com.functorz.ztype.application.copilot.apis.CopilotApiResult;
+  ztype.com.functorz.ztype.application.copilot.CopilotApiResultJs;
 export type ZAiConfigWrapperJs =
   ztype.com.functorz.ztype.typesystem.schema.ZAiConfigWrapperJs;
 export type ThirdPartyApiWrapperJs =
@@ -87,14 +87,9 @@ export const {
 } = ztype.com.functorz.ztype.typesystem.schema;
 export const { Locale, IdUtilsJs } = ztype.com.functorz.ztype.typesystem.utils;
 export const {
-  DataBindingSelectorBuilderJS,
-  DataBindingBuilderJS,
-  DataBindingSelectorCategoryOptionJS,
-  DataBindingSelectorDataBindingOptionJS,
   DataModelEditingStateInfoJs,
 } = ztype.com.functorz.ztype.application.editor.databinding;
 export const {
-  TypeSelectorBuilderJS,
   TypeSelectorTypeOption,
   TypeSelectorTypeOptionJs,
   TypeSelectorObjectOptionJs,
@@ -119,7 +114,7 @@ export const {
   CopyActionFlowNodesResultFormat,
 } = ztype.com.functorz.ztype.typesystem.schema;
 
-export const { Copilot } = ztype.com.functorz.ztype.application.copilot;
+export const { copilot } = ztype.com.functorz.ztype.application;
 
 export const { KtList, KtMap, KtSet } = ztype.kotlin.collections;
 

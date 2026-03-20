@@ -43,7 +43,7 @@ export const typeDefs = gql`
 
 	type Mutation {
 		initializeGoldenSet(
-			schemaExId: String!
+			schemaId: String!
 			copilotType: CopilotType!
 			modelName: String
 		): GoldenSet!
@@ -54,7 +54,6 @@ export const typeDefs = gql`
 		RECOMMENDED for adding test cases.
 		"""
 		createUserInput(
-			id: Int!
 			description: String
 			query: String!
 			createdBy: String
@@ -92,13 +91,13 @@ export const typeDefs = gql`
 	"""
 	A golden set represents a collection of test cases (user inputs)
 	and expected copilot outputs for evaluating agent performance.
-	Identified uniquely by (schemaExId, copilotType, modelName).
+	Identified uniquely by (schemaId, copilotType, modelName).
 	"""
 	type GoldenSet {
 		"Unique database identifier"
 		id: Int!
 		"External project identifier from Functorz"
-		schemaExId: String!
+		schemaId: String!
 		"Type of copilot being evaluated"
 		copilotType: CopilotType!
 		"Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
@@ -234,7 +233,7 @@ export const typeDefs = gql`
 	}
 
 	input GoldenSetFilters {
-		schemaExId: String
+		schemaId: String
 		copilotType: CopilotType
 		modelName: String
 	}

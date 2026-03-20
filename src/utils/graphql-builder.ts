@@ -1,5 +1,4 @@
 import * as z from 'zod';
-import { gql } from 'graphql-request';
 
 /**
  * GraphQL Query and Mutation Builder
@@ -214,30 +213,6 @@ export interface GetGoldenSetsVariables {
   projectExId?: string;
   copilotType?: string;
 }
-
-export const GoldenSetDocuments = {
-  /** Fetch available golden set schemas, optionally filtered by copilot type. */
-  getGoldenSetSchemas: gql`
-    query GetGoldenSetSchemas($copilotType: String) {
-      getGoldenSetSchemas(copilotType: $copilotType)
-    }
-  `,
-
-  /** Fetch golden sets, optionally filtered by project and/or copilot type. */
-  getGoldenSets: gql`
-    query GetGoldenSets($projectExId: String, $copilotType: String) {
-      getGoldenSets(projectExId: $projectExId, copilotType: $copilotType) {
-        id
-        projectExId
-        copilotType
-        description
-        query
-        createdAt
-        isActive
-      }
-    }
-  `,
-} as const;
 
 /**
  * @deprecated Use GoldenSetDocuments + gqlRequest() instead.

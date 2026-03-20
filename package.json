@@ -65,7 +65,7 @@
     "@apollo/server": "^5.2.0",
     "@as-integrations/express5": "^1.1.2",
     "@functorz/crdt-helper": "2.7.0",
-    "@functorz/ztype": "2.9.42",
+    "@functorz/ztype": "2.10.11",
     "@js-joda/core": "^5.6.5",
     "@kubernetes/client-node": "^1.4.0",
     "@langchain/core": "^1.1.5",

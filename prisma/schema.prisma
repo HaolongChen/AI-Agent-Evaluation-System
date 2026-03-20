@@ -23,14 +23,14 @@ enum EvaluatorType {
 // context
 model goldenSet {
   id          Int         @id @default(autoincrement())
-  schemaExId  String      @map("project_ex_id")
+  schemaId    String      @map("project_ex_id")
   copilotType CopilotType @map("copilot_type")
   modelName   String      @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
   userInputs  userInput[]
   // updatedAt   DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
   // evaluationSessions evaluationSession[]
 
-  @@unique([schemaExId, copilotType, modelName], map: "unique_golden_set")
+  @@unique([schemaId, copilotType, modelName], map: "unique_golden_set")
 }
 
 model userInput {
@@ -153,7 +153,7 @@ model evaluationResult {
   id              Int           @id @default(autoincrement())
   evaluatorId     String        @map("evaluator_id") // humanId for human evaluations. otherwise, could be agentId or "auto-evaluation" for agent evaluations
   copilotOutputId Int           @map("copilot_output_id")
-  questionSetId   Int           @map("question_set_id")
+  questionSetId   String           @map("question_set_id")
   evaluatorType   EvaluatorType @map("evaluator_type") // human or agent
 
   // FinalReport fields (matching LangGraph FinalReport interface)

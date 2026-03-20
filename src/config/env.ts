@@ -24,6 +24,8 @@ export const ORGANIZATION_EX_ID =
   process.env['ORGANIZATION_EX_ID'] || '';
 
 
+export const SCHEMA_URL: string = process.env['SCHEMA_URL'] || 'oss://fz-zion-staging/schema/';
+
 export const FUNCTORZ_PHONE_NUMBER = process.env['FUNCTORZ_PHONE_NUMBER'];
 export const FUNCTORZ_PASSWORD = process.env['FUNCTORZ_PASSWORD'];
 

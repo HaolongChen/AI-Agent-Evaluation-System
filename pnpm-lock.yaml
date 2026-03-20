@@ -18,8 +18,8 @@ importers:
         specifier: 2.7.0
         version: 2.7.0(js-base64@3.7.8)(json-joy@16.27.2(@jsonjoy.com/base64@1.1.2(tslib@2.8.1))(@jsonjoy.com/json-expression@1.1.1(tslib@2.8.1))(@jsonjoy.com/json-pack@1.21.0(tslib@2.8.1))(@jsonjoy.com/json-pointer@1.0.2(tslib@2.8.1))(@jsonjoy.com/util@1.9.0(tslib@2.8.1))(tslib@2.8.1))(lodash-es@4.17.23)(uuid@13.0.0)
       '@functorz/ztype':
-        specifier: 2.9.42
-        version: 2.9.42
+        specifier: 2.10.11
+        version: 2.10.11
       '@js-joda/core':
         specifier: ^5.6.5
         version: 5.7.0
@@ -634,8 +634,8 @@ packages:
       lodash-es: ^4.17.21
       uuid: ^8.1.0
 
-  '@functorz/ztype@2.9.42':
-    resolution: {integrity: sha512-a86X7syid8s/pTspiek/f3lA1YRKU4kDJ7p2qnHBTF8qJgk7QnymMj7uJwjRUPpP8aDRQ4GXIe2tlGnSFumEWQ==}
+  '@functorz/ztype@2.10.11':
+    resolution: {integrity: sha512-fx83HnyHeG7WNqfZ+Mle0MYs8MdUDsygGx7ipflRLT4ZmvHm2k6GpFtXKRaKJklvXv1Z7XarH/H+lUnhcQfu0g==}
 
   '@google/generative-ai@0.24.1':
     resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
@@ -4156,7 +4156,7 @@ snapshots:
       lodash-es: 4.17.23
       uuid: 13.0.0
 
-  '@functorz/ztype@2.9.42':
+  '@functorz/ztype@2.10.11':
     dependencies:
       '@js-joda/core': 3.2.0
       js-yaml: 4.1.1

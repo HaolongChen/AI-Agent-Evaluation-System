@@ -15,7 +15,7 @@ export const typeDefs = gql`
 		"""
 		Retrieve a single evaluation session by ID.
 		"""
-		getEvaluationSessionById(id: Int!): EvaluationSession
+		getEvaluationSessionById(id: String!): EvaluationSession
 
 		"""
 		List evaluation sessions with optional filtering.
@@ -25,7 +25,7 @@ export const typeDefs = gql`
 		"""
 		Get all rubric criteria for a specific session.
 		"""
-		getQuestionSetById(id: Int!): QuestionSet
+		getQuestionSetById(id: String!): QuestionSet
 
 		"""
 		Get rubric criteria filtered by review parameters.
@@ -68,7 +68,7 @@ export const typeDefs = gql`
 		submitHumanEvaluation(
 			evaluatorId: String!
 			copilotOutputId: Int!
-			questionSetId: Int!
+			questionSetId: String!
 			answers: [QuestionAnswerInput!]!
 		): EvaluationSession!
 	}
@@ -101,7 +101,7 @@ export const typeDefs = gql`
 		"Type of copilot being evaluated"
 		copilotType: CopilotType!
 		"Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
-		modelName: String!
+		modelName: String
 	}
 
 	"""
@@ -152,15 +152,15 @@ export const typeDefs = gql`
 	}
 
 	type QuestionSet {
-		id: Int!
+		id: String!
 		goldenSetId: Int!
 		userInputId: Int!
 		questions: [Question!]!
 	}
 
 	type Question {
-		id: Int!
-		questionSetId: Int!
+		id: String!
+		questionSetId: String!
 		version: String!
 		title: String
 		content: String!
@@ -179,9 +179,9 @@ export const typeDefs = gql`
 	"""
 	type EvaluationSession {
 		"Unique session identifier"
-		id: Int!
+		id: String!
 		copilotOutputId: Int!
-		questionSetId: Int!
+		questionSetId: String!
 		evaluatorId: String!
 		evaluatorType: EvaluatorType!
 		"LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')"
@@ -202,8 +202,8 @@ export const typeDefs = gql`
 		id: Int!
 		"Parent rubric criterion session ID"
 		copilotOutputId: Int!
-		questionSetId: Int!
-		questionId: Int!
+		questionSetId: String!
+		questionId: String!
 		evaluatorId: String!
 		"Binary answer to the criterion question"
 		answer: Boolean!
@@ -220,7 +220,7 @@ export const typeDefs = gql`
 		id: Int!
 		evaluatorId: String!
 		copilotOutputId: Int!
-		questionSetId: Int!
+		questionSetId: String!
 
 		"Aggregated score across all weighted criteria (0 - 100)"
 		overallScore: Float!
@@ -241,19 +241,19 @@ export const typeDefs = gql`
 	input SessionFilters {
 		evaluatorId: String
 		copilotOutputId: Int
-		questionSetId: Int
+		questionSetId: String
 		evaluatorType: EvaluatorType
 	}
 
 	input ResultFilters {
 		evaluatorId: String
 		copilotOutputId: Int
-		questionSetId: Int
+		questionSetId: String
 	}
 
 	input QuestionAnswerInput {
 		"Question being answered"
-		questionId: Int!
+		questionId: String!
 		"Binary answer"
 		answer: Boolean!
 		"Detailed explanation of the answer"

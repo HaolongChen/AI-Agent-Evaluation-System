@@ -73,8 +73,8 @@ export type EvaluationRecord = {
   feedback?: Maybe<Scalars['String']['output']>;
   /** Unique evaluation record identifier */
   id: Scalars['Int']['output'];
-  questionId: Scalars['Int']['output'];
-  questionSetId: Scalars['Int']['output'];
+  questionId: Scalars['String']['output'];
+  questionSetId: Scalars['String']['output'];
 };
 
 /**
@@ -93,7 +93,7 @@ export type EvaluationResult = {
   id: Scalars['Int']['output'];
   /** Aggregated score across all weighted criteria (0 - 100) */
   overallScore: Scalars['Float']['output'];
-  questionSetId: Scalars['Int']['output'];
+  questionSetId: Scalars['String']['output'];
   /** Executive summary of evaluation */
   summary: Scalars['String']['output'];
 };
@@ -111,10 +111,10 @@ export type EvaluationSession = {
   evaluatorId: Scalars['String']['output'];
   evaluatorType: EvaluatorType;
   /** Unique session identifier */
-  id: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
   /** LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro') */
   modelName?: Maybe<Scalars['String']['output']>;
-  questionSetId: Scalars['Int']['output'];
+  questionSetId: Scalars['String']['output'];
   /** Timestamp when session started */
   startedAt?: Maybe<Scalars['String']['output']>;
 };
@@ -199,7 +199,7 @@ export type MutationSubmitHumanEvaluationArgs = {
   answers: Array<QuestionAnswerInput>;
   copilotOutputId: Scalars['Int']['input'];
   evaluatorId: Scalars['String']['input'];
-  questionSetId: Scalars['Int']['input'];
+  questionSetId: Scalars['String']['input'];
 };
 
 export type Query = {
@@ -236,7 +236,7 @@ export type QueryGetEvaluationResultsArgs = {
 
 
 export type QueryGetEvaluationSessionByIdArgs = {
-  id: Scalars['Int']['input'];
+  id: Scalars['String']['input'];
 };
 
 
@@ -262,15 +262,15 @@ export type QueryGetQuestionSetByContextArgs = {
 
 
 export type QueryGetQuestionSetByIdArgs = {
-  id: Scalars['Int']['input'];
+  id: Scalars['String']['input'];
 };
 
 export type Question = {
   __typename?: 'Question';
   content: Scalars['String']['output'];
   expectedAnswer: Scalars['Boolean']['output'];
-  id: Scalars['Int']['output'];
-  questionSetId: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
+  questionSetId: Scalars['String']['output'];
   title?: Maybe<Scalars['String']['output']>;
   version: Scalars['String']['output'];
   weight: Scalars['Float']['output'];
@@ -282,13 +282,13 @@ export type QuestionAnswerInput = {
   /** Detailed explanation of the answer */
   feedback?: InputMaybe<Scalars['String']['input']>;
   /** Question being answered */
-  questionId: Scalars['Int']['input'];
+  questionId: Scalars['String']['input'];
 };
 
 export type QuestionSet = {
   __typename?: 'QuestionSet';
   goldenSetId: Scalars['Int']['output'];
-  id: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
   questions: Array<Question>;
   userInputId: Scalars['Int']['output'];
 };
@@ -296,14 +296,14 @@ export type QuestionSet = {
 export type ResultFilters = {
   copilotOutputId?: InputMaybe<Scalars['Int']['input']>;
   evaluatorId?: InputMaybe<Scalars['String']['input']>;
-  questionSetId?: InputMaybe<Scalars['Int']['input']>;
+  questionSetId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type SessionFilters = {
   copilotOutputId?: InputMaybe<Scalars['Int']['input']>;
   evaluatorId?: InputMaybe<Scalars['String']['input']>;
   evaluatorType?: InputMaybe<EvaluatorType>;
-  questionSetId?: InputMaybe<Scalars['Int']['input']>;
+  questionSetId?: InputMaybe<Scalars['String']['input']>;
 };
 
 /**

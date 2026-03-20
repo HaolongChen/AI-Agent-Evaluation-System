@@ -82,6 +82,37 @@ export class RubricService {
     }
   }
 
+	async generateQuestionSet(goldenSetId: number, userInputId: number) {
+		try {
+			// Call copilot to generate questions based on goldenSetId and userInputId
+			// const generatedQuestions = await executionService.generateQuestions(
+			// 	goldenSetId,
+			// 	userInputId,
+			// );
+
+			// Create a new question set and associate the generated questions
+			const questionSet = await prisma.questionSet.create({
+				data: {
+					goldenSetId,
+					userInputId,
+					// rubrics: {
+					// 	create: generatedQuestions.map((question) => ({
+					// 		questionText: question.questionText,
+					// 		weight: question.weight,
+					// 	})),
+					},
+				})
+				// include: {
+				// 	rubrics: true,
+				// },
+
+			return questionSet;
+		} catch (error) {
+			logger.error("Error generating question set:", error);
+			throw new Error("Failed to generate question set");
+		}
+	}
+
 	// async getQuestionsBySessionX(sessionId: number) {
 	// 	try {
 	// 		return prisma.adaptiveRubric.findMany({

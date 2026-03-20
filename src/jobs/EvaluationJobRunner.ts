@@ -21,8 +21,8 @@ import {
   type CopilotApiResultJs,
   type OpaqueSchemaGraph,
 } from '../utils/zed/TypeSystem.ts';
-import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from '../utils/zed/ZSchema.ts';
-import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from '../utils/zed/AfCustomCodeTemplates.ts';
+// import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from '../utils/zed/ZSchema.ts';
+// import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from '../utils/zed/AfCustomCodeTemplates.ts';
 import { assertNotNull } from '../utils/zed/helpers.ts';
 import type { ToolResult } from '../utils/graph-states.ts';
 
@@ -32,10 +32,6 @@ export class EvaluationJobRunner {
   private projectExId: string;
   private wsUrl: string;
   private query: string;
-  private supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null =
-    null;
-  private afCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[] =
-    [];
   private schemaGraph: OpaqueSchemaGraph | null = null;
   response: string = '';
   editableText: string = '';
@@ -61,15 +57,13 @@ export class EvaluationJobRunner {
     projectExId: string,
     wsUrl: string,
     query: string,
-    supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null,
-    afCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[],
+    // supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null,
+    // afCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[],
     schemaGraph: OpaqueSchemaGraph | null,
   ) {
     this.projectExId = projectExId;
     this.wsUrl = wsUrl;
     this.query = query;
-    this.supportedCustomModelDescriptor = supportedCustomModelDescriptor;
-    this.afCustomCodeTemplates = afCustomCodeTemplates;
     this.schemaGraph = schemaGraph;
     // Create the completion promise in the constructor
     this.completionPromise = new Promise<{

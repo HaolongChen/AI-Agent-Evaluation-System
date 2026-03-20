@@ -12,7 +12,7 @@ type Query {
 	"""
 	Retrieve a single evaluation session by ID.
 	"""
-	getEvaluationSessionById(id: Int!): EvaluationSession
+	getEvaluationSessionById(id: String!): EvaluationSession
 
 	"""
 	List evaluation sessions with optional filtering.
@@ -22,7 +22,7 @@ type Query {
 	"""
 	Get all rubric criteria for a specific session.
 	"""
-	getQuestionSetById(id: Int!): QuestionSet
+	getQuestionSetById(id: String!): QuestionSet
 
 	"""
 	Get rubric criteria filtered by review parameters.
@@ -65,7 +65,7 @@ type Mutation {
 	submitHumanEvaluation(
 		evaluatorId: String!
 		copilotOutputId: Int!
-		questionSetId: Int!
+		questionSetId: String!
 		answers: [QuestionAnswerInput!]!
 	): EvaluationSession!
 }
@@ -149,15 +149,15 @@ type CopilotOutput {
 }
 
 type QuestionSet {
-	id: Int!
+	id: String!
 	goldenSetId: Int!
 	userInputId: Int!
 	questions: [Question!]!
 }
 
 type Question {
-	id: Int!
-	questionSetId: Int!
+	id: String!
+	questionSetId: String!
 	version: String!
 	title: String
 	content: String!
@@ -176,9 +176,9 @@ against a golden set, producing rubric criteria and scored results.
 """
 type EvaluationSession {
 	"Unique session identifier"
-	id: Int!
+	id: String!
 	copilotOutputId: Int!
-	questionSetId: Int!
+	questionSetId: String!
 	evaluatorId: String!
 	evaluatorType: EvaluatorType!
 	"LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')"
@@ -199,8 +199,8 @@ type EvaluationRecord {
 	id: Int!
 	"Parent rubric criterion session ID"
 	copilotOutputId: Int!
-	questionSetId: Int!
-	questionId: Int!
+	questionSetId: String!
+	questionId: String!
 	evaluatorId: String!
 	"Binary answer to the criterion question"
 	answer: Boolean!
@@ -217,7 +217,7 @@ type EvaluationResult {
 	id: Int!
 	evaluatorId: String!
 	copilotOutputId: Int!
-	questionSetId: Int!
+	questionSetId: String!
 
 	"Aggregated score across all weighted criteria (0 - 100)"
 	overallScore: Float!
@@ -238,19 +238,19 @@ input GoldenSetFilters {
 input SessionFilters {
 	evaluatorId: String
 	copilotOutputId: Int
-	questionSetId: Int
+	questionSetId: String
 	evaluatorType: EvaluatorType
 }
 
 input ResultFilters {
 	evaluatorId: String
 	copilotOutputId: Int
-	questionSetId: Int
+	questionSetId: String
 }
 
 input QuestionAnswerInput {
 	"Question being answered"
-	questionId: Int!
+	questionId: String!
 	"Binary answer"
 	answer: Boolean!
 	"Detailed explanation of the answer"

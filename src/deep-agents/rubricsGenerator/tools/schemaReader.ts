@@ -4,7 +4,8 @@ import * as jq from "node-jq";
 import { logger } from "../../../utils/logger.ts";
 
 export const read_json_schema = tool(
-	async ({ query }, config) => {
+	async ({ query }: { query: string }, config) => {
+		logger.debug(`Executing jq query: ${query}\n`);
 		const filePath =
 			config?.context?.schemaId ?
 				`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/${config.context.schemaId}.json`
@@ -16,8 +17,12 @@ export const read_json_schema = tool(
 				return output;
 			})
 			.catch((err) => {
-				logger.error("Error executing jq query:", err);
-				return `Error executing jq query: ${err.message}`;
+				setTimeout(() => {
+					logger.error(`Error executing jq ${query}:`, err);
+					return `Error executing jq query: ${err.message}`.length > 100 ?
+						`Error executing jq query: ${err.message.substring(0, 97)}...`
+						: `Error executing jq query: ${err.message}`;
+				}, 5000); // Add a small delay to ensure the error is logged before returning
 			});
 	},
 	{
@@ -27,11 +32,8 @@ export const read_json_schema = tool(
 			query: z
 				.string()
 				.describe(
-					"The jq query used to search against the target JSON schema. It must be a valid jq query string without any decorators. For example, if you want to extract the 'name' field from a JSON object, your query should be '.name'.(without quotes) If you want to filter an array of objects where the 'age' field is greater than 30, your query should be '.[] | select(.age > 30)'.(without quotes) The query should be designed according to the structure of the JSON schema you are targeting.",
+					"The jq query used to search against the target JSON schema. It must be a valid jq query string without any decorators. For example, if you want to extract the 'name' field from a JSON object, your query should be '.name'.(without quotes) If you want to filter an array of objects where the 'age' field is greater than 30, your query should be '.[] | select(.age > 30)'.(without quotes) The query should be designed according to the structure of the JSON schema you are targeting. IMPORTANT: your query would be sent as a string, so make sure to escape any special characters properly. For example, if your query includes double quotes, you should escape them like this: '.[] | select(.name == \"John\")'.(without quotes) Always test your jq queries independently to ensure they return the expected results before using them in this tool.",
 				),
-			filePath: z
-				.string()
-				.describe("The file path to the JSON schema file you want to read."),
 		}),
 	},
 );
@@ -39,6 +41,7 @@ export const read_json_schema = tool(
 export const get_schema_structure = tool(
 	async () => {
 		try {
+			logger.debug("Fetching JSON schema structure from official URL");
 			const schemaUrl = "http://json-schema.org/draft-07/schema#";
 			const response = await fetch(schemaUrl);
 			const schema = await response.json();

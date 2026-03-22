@@ -51,29 +51,29 @@ export const logger = {
     const caller = getCallerInfo();
     const formattedArgs = args.length > 0 ? '\n' + formatArgs(args) : '';
     console.log(
-      `[INFO] ${new Date().toISOString()} ${caller} - ${message}${formattedArgs}`
+      `\n[INFO] ${new Date().toISOString()} ${caller} - ${message}${formattedArgs}\n`
     );
   },
   error: (message: string, ...args: unknown[]) => {
     const caller = getCallerInfo();
     const formattedArgs = args.length > 0 ? '\n' + formatArgs(args) : '';
     console.error(
-      `[ERROR] ${new Date().toISOString()} ${caller} - ${message}${formattedArgs}`
+      `\n[ERROR] ${new Date().toISOString()} ${caller} - ${message}${formattedArgs}\n`
     );
   },
-  warn: (message: string, ...args: unknown[]) => {
+  warn: (message: string, ...args: unknown[]) => { // TODO: add color for logging in console
     const caller = getCallerInfo();
     const formattedArgs = args.length > 0 ? '\n' + formatArgs(args) : '';
     console.warn(
-      `[WARN] ${new Date().toISOString()} ${caller} - ${message}${formattedArgs}`
-    );
+      `\n[WARN] ${new Date().toISOString()} ${caller} - ${message}${formattedArgs}\n`
+    ); // TODO: add color
   },
   debug: (message: string, ...args: unknown[]) => {
     if (NODE_ENV === 'development') {
       const caller = getCallerInfo();
       const formattedArgs = args.length > 0 ? '\n' + formatArgs(args) : '';
       console.debug(
-        `[DEBUG] ${new Date().toISOString()} ${caller} - ${message}${formattedArgs}`
+        `\n[DEBUG] ${new Date().toISOString()} ${caller} - ${message}${formattedArgs}\n`
       );
     }
   },

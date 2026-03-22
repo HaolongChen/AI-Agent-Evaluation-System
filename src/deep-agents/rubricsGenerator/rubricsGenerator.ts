@@ -11,6 +11,7 @@ import { getSchemaModel } from "../../utils/ali-oss.ts";
 import { fromUint8Array } from "js-base64";
 import { Crdt } from "@functorz/crdt-helper";
 import fs from "node:fs/promises";
+import { MemorySaver } from "@langchain/langgraph";
 
 if (!GEMINI_API_KEY) {
 	throw new Error(
@@ -76,6 +77,8 @@ const rubricsGeneratorPrompt =
 	"Output: Your primary task is to create clear, concise, and effective rubrics that outline the evaluation criteria and standards for the given JSON schema. Your responses should be structured in a way that is specially and uniquely designed for evaluation, which means it cannot be answered only with public information or common sense without referring to the provided zion schema and zion (momen) official documentation. And it can only be answered true or false and should avoid vagueness that narrows the disparity of true or false.\n" +
 	"Sub-agents: You have access to a sub-agent called SchemaLookupAgent, which has access to a reference schema of the zion schema you own. You can ask SchemaLookupAgent any questions related to the structure, content, specific elements, etc. of the zion schema to help you better understand your zion schema and generate accurate and relevant rubrics.\n";
 
+const checkpointer = new MemorySaver();
+
 const rubricsGenerator = createDeepAgent({
 	// model: `azure_openai:${OPENAI_MODEL}`,
 	responseFormat: toolStrategy(responseSchema),
@@ -85,6 +88,7 @@ const rubricsGenerator = createDeepAgent({
 	contextSchema: contextSchema,
 	subagents: [schemaLookupAgent],
 	systemPrompt: rubricsGeneratorPrompt,
+	// checkpointer,
 });
 
 export const generateRubrics = async (

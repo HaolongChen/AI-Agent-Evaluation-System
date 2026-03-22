@@ -71,6 +71,14 @@ export const typeDefs = gql`
 			questionSetId: String!
 			answers: [QuestionAnswerInput!]!
 		): EvaluationSession!
+
+		createProject(
+			projectName: String!
+		): String!
+
+		deleteProject(
+			projectExId: String!
+		): Boolean!
 	}
 	"""
 	Type of AI Copilot being evaluated.

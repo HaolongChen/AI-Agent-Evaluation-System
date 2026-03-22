@@ -4,6 +4,7 @@ import type { CopilotType } from "../generated/resolvers-types.ts";
 // import type { CopilotType } from "../../../build/generated/prisma/enums.ts";
 import type { GoldenSetFilters } from "../generated/resolvers-types.ts";
 import { goldenSetService } from "../../services/GoldenSetService.ts";
+import { projectService } from "../../services/ProjectService.ts";
 // import { rubricService } from "../../services/RubricService.ts";
 
 export const goldenSetResolver = {
@@ -54,6 +55,19 @@ export const goldenSetResolver = {
 			return res;
 		},
 		
-		
+		createProject: async (
+			_: unknown,
+			args: { projectName: string },
+		) => {
+			const res = await projectService.createProject(args.projectName);
+			return res;
+		},
+		deleteProject: async (
+			_: unknown,
+			args: { projectExId: string },
+		) => {
+			await projectService.deleteProject(args.projectExId);
+			return true;
+		},
 	},
 };

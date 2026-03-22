@@ -149,12 +149,14 @@ export type GoldenSetFilters = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  createProject: Scalars['String']['output'];
   /**
    * Upsert golden set with a new user input (atomic operation).
    * Creates golden set if it doesn't exist, or adds input to existing one.
    * RECOMMENDED for adding test cases.
    */
   createUserInput: UserInput;
+  deleteProject: Scalars['Boolean']['output'];
   executeCopilot: CopilotOutput;
   generateQuestionSet: QuestionSet;
   initializeGoldenSet: GoldenSet;
@@ -163,10 +165,20 @@ export type Mutation = {
 };
 
 
+export type MutationCreateProjectArgs = {
+  projectName: Scalars['String']['input'];
+};
+
+
 export type MutationCreateUserInputArgs = {
   createdBy?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   query: Scalars['String']['input'];
+};
+
+
+export type MutationDeleteProjectArgs = {
+  projectExId: Scalars['String']['input'];
 };
 
 

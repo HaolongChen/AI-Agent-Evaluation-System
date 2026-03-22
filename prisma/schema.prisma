@@ -63,7 +63,7 @@ model copilotOutput {
 }
 
 model copilotOutput_questionSet {
-  copilotOutputId Int @map("copilot_output_id")
+  copilotOutputId Int    @map("copilot_output_id")
   questionSetId   String @map("question_set_id")
 
   copilotOutput      copilotOutput       @relation(fields: [copilotOutputId], references: [id])
@@ -78,11 +78,11 @@ model copilotOutput_questionSet {
 // Adaptive Rubrics (AI-generated evaluation questions - one question per row)
 model questionSet {
   id          String @id @default(uuid())
-  goldenSetId Int @map("golden_set_id")
-  userInputId Int @map("user_input_id")
+  goldenSetId Int    @map("golden_set_id")
+  userInputId Int    @map("user_input_id")
 
   copilotOutputs copilotOutput_questionSet[]
-  rubrics        question[]
+  questions      question[]
 
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -108,10 +108,10 @@ model question {
 
 // Execution Sessions (references copilot schema tables)
 model evaluationSession {
-  id              String           @id @default(uuid())
+  id              String        @id @default(uuid())
   evaluatorType   EvaluatorType @default(human)
   copilotOutputId Int           @map("copilot_output_id")
-  questionSetId   String           @map("question_set_id")
+  questionSetId   String        @map("question_set_id")
   evaluatorId     String        @map("evaluator_id") // could be agentId or "auto-evaluation" for agent evaluations
   modelName       String?       @map("model_name") // e.g., 'gpt-4', 'claude-3-opus' * only for evaluation agents *
   startedAt       DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
@@ -135,8 +135,8 @@ model evaluationRecord {
   id              Int           @id @default(autoincrement())
   copilotOutputId Int           @map("copilot_output_id")
   evaluatorType   EvaluatorType @map("evaluator_type") // human or agent
-  questionSetId   String           @map("question_set_id")
-  questionId      String           @map("question_id")
+  questionSetId   String        @map("question_set_id")
+  questionId      String        @map("question_id")
   evaluatorId     String        @map("evaluator_id") // humanId for human evaluations. otherwise, could be agentId or "auto-evaluation" for agent evaluations
   evaluatorAnswer Boolean       @map("evaluator_answer") // perhaps could be multiple choice question in the future
   feedback        String?       @map("feedback") // optional free-form feedback from the evaluator
@@ -153,7 +153,7 @@ model evaluationResult {
   id              Int           @id @default(autoincrement())
   evaluatorId     String        @map("evaluator_id") // humanId for human evaluations. otherwise, could be agentId or "auto-evaluation" for agent evaluations
   copilotOutputId Int           @map("copilot_output_id")
-  questionSetId   String           @map("question_set_id")
+  questionSetId   String        @map("question_set_id")
   evaluatorType   EvaluatorType @map("evaluator_type") // human or agent
 
   // FinalReport fields (matching LangGraph FinalReport interface)

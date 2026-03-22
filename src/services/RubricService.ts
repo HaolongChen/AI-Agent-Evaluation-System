@@ -1,13 +1,11 @@
 import { prisma } from "../config/prisma.ts";
 // import { REVIEW_STATUS } from "../config/constants.ts";
 import { logger } from "../utils/logger.ts";
-import type {
-	question,
-	questionSet,
-} from "../../build/generated/prisma/client.ts";
+import type { question } from "../../build/generated/prisma/client.ts";
 import { executionService } from "./ExecutionService.ts";
 import { generateRubrics } from "../deep-agents/rubricsGenerator/rubricsGenerator.ts";
 import { Decimal } from "@prisma/client/runtime/client";
+import type { QuestionSet } from "../graphql/generated/resolvers-types.ts";
 
 export class RubricService {
 	async initializeQuestionSetWithRubrics(
@@ -53,7 +51,7 @@ export class RubricService {
 		goldenSetId: number,
 		userInputId: number,
 		viewQuestions: boolean = false,
-	) {
+	): Promise<Array<QuestionSet>> {
 		try {
 			const questionSets = await prisma.questionSet.findMany({
 				where: {
@@ -61,33 +59,51 @@ export class RubricService {
 					userInputId,
 				},
 				include: {
-					rubrics: viewQuestions,
+					questions: viewQuestions,
 				},
 				orderBy: { id: "asc" },
 			});
-			return questionSets;
+			return questionSets.map((qs) => ({
+				...qs,
+				questions: qs.questions.map((q) => ({
+					...q,
+					weight: Number(q.weight),
+				})),
+			}));
 		} catch (error) {
 			logger.error("Error fetching question sets:", error);
 			throw new Error("Failed to fetch question sets");
 		}
 	}
 
-	async getQuestionSetById(id: string): Promise<questionSet | null> {
+	async getQuestionSetById(id: string): Promise<QuestionSet | null> {
 		try {
 			const questionSet = await prisma.questionSet.findUnique({
 				where: { id },
 				include: {
-					rubrics: true,
+					questions: true,
 				},
 			});
-			return questionSet;
+			if (!questionSet) {
+				return null;
+			}
+			return {
+				...questionSet,
+				questions: questionSet.questions.map((q) => ({
+					...q,
+					weight: Number(q.weight),
+				})),
+			};
 		} catch (error) {
 			logger.error("Error fetching question set by id:", error);
 			throw new Error("Failed to fetch question set by id");
 		}
 	}
 
-	async generateQuestionSet(goldenSetId: number, userInputId: number) {
+	async generateQuestionSet(
+		goldenSetId: number,
+		userInputId: number,
+	): Promise<QuestionSet> {
 		try {
 			const copilotInput = await prisma.goldenSet.findUnique({
 				where: { id: goldenSetId },
@@ -116,7 +132,10 @@ export class RubricService {
 				copilotInput.schemaId,
 				copilotInput.userInputs[0].content,
 			);
-			const overallWeight = rubrics.rubrics.reduce((sum, r) => sum + r.weight, 0);
+			const overallWeight = rubrics.rubrics.reduce(
+				(sum, r) => sum + r.weight,
+				0,
+			);
 			if (overallWeight === 0) {
 				throw new Error("Total weight of rubrics cannot be zero");
 			}
@@ -129,7 +148,13 @@ export class RubricService {
 				})),
 			);
 
-			return questionSet;
+			return {
+				...questionSet,
+				questions: questionSet.questions.map((q) => ({
+					...q,
+					weight: Number(q.weight),
+				})),
+			};
 		} catch (error) {
 			logger.error("Error generating question set:", error);
 			throw new Error("Failed to generate question set");
@@ -152,7 +177,7 @@ export class RubricService {
 				data: {
 					goldenSetId,
 					userInputId,
-					rubrics: {
+					questions: {
 						create: questions.map((question) => ({
 							version: question?.version || "1.0",
 							title: question.title,
@@ -163,7 +188,7 @@ export class RubricService {
 					},
 				},
 				include: {
-					rubrics: true,
+					questions: true,
 				},
 			});
 			return questionSet;

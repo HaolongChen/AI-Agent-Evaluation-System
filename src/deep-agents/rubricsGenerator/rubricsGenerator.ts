@@ -88,7 +88,7 @@ const rubricsGenerator = createDeepAgent({
 	contextSchema: contextSchema,
 	subagents: [schemaLookupAgent],
 	systemPrompt: rubricsGeneratorPrompt,
-	// checkpointer,
+	checkpointer,
 });
 
 export const generateRubrics = async (
@@ -122,7 +122,11 @@ export const generateRubrics = async (
 				context: {
 					schemaId,
 				},
+				configurable: {
+					thread_id: `rubrics-generator-${schemaId}-${Date.now()}`,
+				}
 			},
+			
 		);
 		logger.debug("Generated rubrics: " + JSON.stringify(response));
 		return response.structuredResponse;

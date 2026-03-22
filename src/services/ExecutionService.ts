@@ -16,6 +16,7 @@ import { EvaluationJobRunner } from "../jobs/EvaluationJobRunner.ts";
 import { TypeSystemStore } from "../utils/zed/TypeSystemStore.ts";
 import { projectService } from "./ProjectService.ts";
 import { rubricService } from "./RubricService.ts";
+import type { CopilotOutput } from "../graphql/generated/resolvers-types.ts";
 
 // const resolveDefaultModelName = (): string => {
 // 	// Prefer Azure deployment when Azure is configured; otherwise fall back to Gemini if available.
@@ -33,8 +34,6 @@ import { rubricService } from "./RubricService.ts";
 // };
 
 export class ExecutionService {
-
-
 	async getCopilotOutputs(goldenSetId: number, userInputId: number) {
 		try {
 			const copilotOutputs = await prisma.copilotOutput.findMany({
@@ -50,7 +49,10 @@ export class ExecutionService {
 		}
 	}
 
-	async executeCopilot(goldenSetId: number, userInputId: number) {
+	async executeCopilot(
+		goldenSetId: number,
+		userInputId: number,
+	): Promise<CopilotOutput> {
 		try {
 			const copilotInput = await prisma.goldenSet.findUnique({
 				where: { id: goldenSetId },
@@ -74,7 +76,7 @@ export class ExecutionService {
 			const typeSystemStore = new TypeSystemStore();
 			const results = await Promise.allSettled([
 				typeSystemStore.getAFCustomCodeTemplates(),
-				typeSystemStore.getSupportedCustomModelDescriptor()
+				typeSystemStore.getSupportedCustomModelDescriptor(),
 			]);
 			if (results.some((r) => r.status === "rejected")) {
 				logger.error(
@@ -109,7 +111,13 @@ export class ExecutionService {
 				editableText,
 			);
 
-			return copilotOutput;
+			return {
+				id: copilotOutput.id,
+				content: copilotOutput.content,
+				createdAt: copilotOutput.createdAt.toISOString(),
+				goldenSetId: copilotOutput.goldenSetId,
+				userInputId: copilotOutput.userInputId,
+			};
 		} catch (error) {
 			logger.error("Error executing copilot:", error);
 			throw new Error("Failed to execute copilot");

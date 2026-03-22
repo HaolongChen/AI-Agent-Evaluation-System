@@ -19,6 +19,8 @@ export const read_json_schema = tool(
 				error:
 					"Failed to execute jq query. Please check the query syntax and ensure it is valid against the target JSON schema.",
 			};
+		} finally {
+			logger.debug(`Finished executing jq query: ${query}\n`);
 		}
 	},
 	{
@@ -28,7 +30,7 @@ export const read_json_schema = tool(
 			query: z
 				.string()
 				.describe(
-					"The jq query used to search against the target JSON schema. It must be a valid jq query string without any decorators. For example, if you want to extract the 'name' field from a JSON object, your query should be '.name'.(without quotes) If you want to filter an array of objects where the 'age' field is greater than 30, your query should be '.[] | select(.age > 30)'.(without quotes) The query should be designed according to the structure of the JSON schema you are targeting. IMPORTANT: your query would be sent as a string, so make sure to escape any special characters properly. For example, if your query includes double quotes, you should escape them like this: '.[] | select(.name == \"John\")'.(without quotes) Always test your jq queries independently to ensure they return the expected results before using them in this tool.",
+					"The jq query used to search against the target JSON schema. It must be a valid jq query string without any decorators. For example, if you want to extract the 'name' field from a JSON object, your query should be '.name'.(without quotes) If you want to filter an array of objects where the 'age' field is greater than 30, your query should be '.[] | select(.age > 30)'.(without quotes) The query should be designed according to the structure of the JSON schema you are targeting. IMPORTANT: your query would be sent as a string, so make sure to escape any special characters properly. For example, if your query includes double quotes, you should escape them like this: '.[] | select(.name == \"John\")'.(without single quotes) Always test your jq queries independently to ensure they return the expected results before using them in this tool.",
 				),
 		}),
 	},

@@ -1,19 +1,23 @@
 import { prisma } from "../config/prisma.ts";
 import { logger } from "../utils/logger.ts";
 // import { COPILOT_TYPES } from "../config/constants.ts";
-import {
-	EvaluatorType,
-	// type Prisma,
-} from "../../build/generated/prisma/client.ts";
+import {} from // type Prisma,
+"../../build/generated/prisma/client.ts";
 // import { goldenSetService } from "./GoldenSetService.ts";
 import {
+	EvaluatorType,
+	type EvaluationResult,
+	type EvaluationSession,
 	type QuestionAnswerInput,
 	type ResultFilters,
 	type SessionFilters,
 } from "../graphql/generated/resolvers-types.ts";
+import { REVERSE_EVALUATOR, EVALUATOR } from "../config/constants.ts";
 
 export class AnalyticsService {
-	async getEvaluationSessions(filters?: SessionFilters) {
+	async getEvaluationSessions(
+		filters?: SessionFilters,
+	): Promise<Array<EvaluationSession> | null> {
 		try {
 			const sessions = await prisma.evaluationSession.findMany({
 				where: {
@@ -26,7 +30,8 @@ export class AnalyticsService {
 							evaluatorId: filters.evaluatorId,
 						}),
 					...(filters?.evaluatorType && {
-						evaluatorType: filters.evaluatorType.toLowerCase() as EvaluatorType,
+						evaluatorType:
+							filters.evaluatorType.toLowerCase() as (typeof EVALUATOR)[keyof typeof EVALUATOR],
 					}),
 				},
 				include: {
@@ -38,14 +43,28 @@ export class AnalyticsService {
 					startedAt: "desc",
 				},
 			});
-			return sessions;
+			return sessions.map((session) => ({
+				questionSetId: session.questionSetId,
+				evaluatorId: session.evaluatorId,
+				id: session.id,
+				copilotOutputId: session.copilotOutputId,
+				evaluatorType: REVERSE_EVALUATOR[
+					session.evaluatorType as keyof typeof REVERSE_EVALUATOR
+				] as EvaluatorType,
+				completedAt:
+					session.result?.generatedAt ?
+						session.result.generatedAt.toISOString()
+					:	null,
+			}));
 		} catch (error) {
 			logger.error("Error fetching evaluation sessions:", error);
 			throw new Error("Failed to fetch evaluation sessions");
 		}
 	}
 
-	async getEvaluationSessionById(id: string) {
+	async getEvaluationSessionById(
+		id: string,
+	): Promise<EvaluationSession | null> {
 		try {
 			const session = await prisma.evaluationSession.findUnique({
 				where: { id },
@@ -55,25 +74,56 @@ export class AnalyticsService {
 					questionSet: true,
 				},
 			});
-			return session;
+			if (!session) {
+				return null;
+			}
+			return {
+				questionSetId: session.questionSetId,
+				evaluatorId: session.evaluatorId,
+				id: session.id,
+				copilotOutputId: session.copilotOutputId,
+				evaluatorType: REVERSE_EVALUATOR[
+					session.evaluatorType as keyof typeof REVERSE_EVALUATOR
+				] as EvaluatorType,
+				completedAt:
+					session.result?.generatedAt ?
+						session.result.generatedAt.toISOString()
+					:	null,
+			};
 		} catch (error) {
 			logger.error("Error fetching evaluation session by ID:", error);
 			throw new Error("Failed to fetch evaluation session by ID");
 		}
 	}
 
-	async getEvaluationResultById(id: number) {
+	async getEvaluationResultById(id: number): Promise<EvaluationResult | null> {
 		try {
-			return prisma.evaluationResult.findUnique({
+			const result = await prisma.evaluationResult.findUnique({
 				where: { id },
 			});
+			if (!result) {
+				return null;
+			}
+			return {
+				id: result.id,
+				evaluatorId: result.evaluatorId,
+				copilotOutputId: result.copilotOutputId,
+				questionSetId: result.questionSetId,
+
+				overallScore: Number(result.overallScore),
+				summary: result.summary,
+				detailedAnalysis: result.detailedAnalysis,
+				auditTrace: result.auditTrace,
+			};
 		} catch (error) {
 			logger.error("Error fetching evaluation result:", error);
 			throw new Error("Failed to fetch evaluation result");
 		}
 	}
 
-	async getEvaluationResults(filters?: ResultFilters) {
+	async getEvaluationResults(
+		filters?: ResultFilters,
+	): Promise<Array<EvaluationResult> | null> {
 		try {
 			const results = await prisma.evaluationResult.findMany({
 				where: {
@@ -86,7 +136,17 @@ export class AnalyticsService {
 					}),
 				},
 			});
-			return results;
+			return results.map((result) => ({
+				id: result.id,
+				evaluatorId: result.evaluatorId,
+				copilotOutputId: result.copilotOutputId,
+				questionSetId: result.questionSetId,
+
+				overallScore: Number(result.overallScore),
+				summary: result.summary,
+				detailedAnalysis: result.detailedAnalysis,
+				auditTrace: result.auditTrace,
+			}));
 		} catch (error) {
 			logger.error("Error fetching evaluation results:", error);
 			throw new Error("Failed to fetch evaluation results");
@@ -106,7 +166,7 @@ export class AnalyticsService {
 				data: {
 					copilotOutputId,
 					evaluatorId,
-					evaluatorType,
+					evaluatorType: EVALUATOR[evaluatorType],
 					questionId,
 					questionSetId,
 					evaluatorAnswer: answer,
@@ -124,13 +184,13 @@ export class AnalyticsService {
 		evaluatorType: EvaluatorType,
 		questionSetId: string,
 		answers: QuestionAnswerInput[],
-	) {
+	): Promise<EvaluationSession> {
 		try {
 			const session = await prisma.evaluationSession.create({
 				data: {
 					copilotOutputId,
 					evaluatorId,
-					evaluatorType,
+					evaluatorType: EVALUATOR[evaluatorType],
 					questionSetId,
 					evaluationRecords: {
 						create: answers.map((answer) => ({
@@ -141,7 +201,14 @@ export class AnalyticsService {
 					},
 				},
 			});
-			return session;
+			return {
+				id: session.id,
+				questionSetId,
+				evaluatorId,
+				copilotOutputId,
+				evaluatorType,
+				completedAt: session.completedAt?.toISOString() ?? null,
+			};
 		} catch (error) {
 			logger.error("Error creating evaluation session:", error);
 			throw new Error("Failed to create evaluation session");

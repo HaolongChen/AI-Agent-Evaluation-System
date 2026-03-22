@@ -1,26 +1,33 @@
-
-// import type { EvaluatorType } from "../../../build/generated/prisma/enums.ts";
-import { EvaluatorType } from "../../../build/generated/prisma/enums.ts";
 import { analyticsService } from "../../services/AnalyticsService.ts";
-import type { QuestionAnswerInput, ResultFilters, SessionFilters } from "../generated/resolvers-types.ts";
+import {
+	EvaluatorType,
+	type EvaluationResult,
+	type EvaluationSession,
+	type QuestionAnswerInput,
+	type ResultFilters,
+	type SessionFilters,
+} from "../generated/resolvers-types.ts";
 
 export const sessionResolver = {
 	Query: {
-		getEvaluationSessionById: async (_: unknown, args: { id: string }) => {
+		getEvaluationSessionById: async (
+			_: unknown,
+			args: { id: string },
+		): Promise<EvaluationSession | null> => {
 			const res = await analyticsService.getEvaluationSessionById(args.id);
-      return res;
+			return res;
 		},
-		getEvaluationSessions: async (_: unknown, args: SessionFilters) => {
+		getEvaluationSessions: async (_: unknown, args: SessionFilters): Promise<EvaluationSession[] | null> => {
 			const res = await analyticsService.getEvaluationSessions(args);
-      return res;
+			return res;
 		},
-		getEvaluationResultById: async (_: unknown, args: { id: number }) => {
+		getEvaluationResultById: async (_: unknown, args: { id: number }): Promise<EvaluationResult | null> => {
 			const res = await analyticsService.getEvaluationResultById(args.id);
-      return res;
+			return res;
 		},
-		getEvaluationResults: async (_: unknown, args: ResultFilters) => {
-      const res = await analyticsService.getEvaluationResults(args);
-      return res;
+		getEvaluationResults: async (_: unknown, args: ResultFilters): Promise<EvaluationResult[] | null> => {
+			const res = await analyticsService.getEvaluationResults(args);
+			return res;
 		},
 	},
 
@@ -33,15 +40,15 @@ export const sessionResolver = {
 				questionSetId: string;
 				answers: QuestionAnswerInput[];
 			},
-		) => {
+		): Promise<EvaluationSession> => {
 			const res = await analyticsService.createEvaluationSession(
-        args.copilotOutputId,
-        args.evaluatorId,
-        EvaluatorType.human,
-        args.questionSetId,
-        args.answers,
-      );
-      return res;
+				args.copilotOutputId,
+				args.evaluatorId,
+				EvaluatorType.Human,
+				args.questionSetId,
+				args.answers,
+			);
+			return res;
 		},
 	},
 };

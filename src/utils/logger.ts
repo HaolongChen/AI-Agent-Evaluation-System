@@ -27,8 +27,15 @@ function getCallerInfo(): string {
 function formatArgs(args: unknown[]): string {
   return args
     .map((arg) => {
-      if (typeof arg === 'object' && arg !== null) {
+      if (typeof arg === 'object' || arg instanceof Error && arg !== null) {
         try {
+          if(arg instanceof Error) {
+            return JSON.stringify({
+              name: arg.name,
+              message: arg.message,
+              stack: arg.stack,
+            }, null, 2);
+          }
           return JSON.stringify(arg, null, 2);
         } catch {
           return String(arg);

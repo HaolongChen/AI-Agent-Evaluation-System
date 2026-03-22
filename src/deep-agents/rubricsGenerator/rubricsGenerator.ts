@@ -79,7 +79,7 @@ const rubricsGeneratorPrompt =
 const rubricsGenerator = createDeepAgent({
 	// model: `azure_openai:${OPENAI_MODEL}`,
 	responseFormat: toolStrategy(responseSchema),
-	model: `google_genai:${GEMINI_MODEL}`,
+	model: `google-genai:${GEMINI_MODEL}`,
 	tools: [read_json_schema],
 	backend: (config) => new StateBackend(config),
 	contextSchema: contextSchema,
@@ -91,24 +91,39 @@ export const generateRubrics = async (
 	schemaId: string,
 	query: string,
 ): Promise<z.infer<typeof responseSchema>> => {
-	const arrayBuffer = await getSchemaModel(schemaId);
-	const modelBinary = new Uint8Array(arrayBuffer);
+	try {
+		const arrayBuffer = await getSchemaModel(schemaId);
+		const modelBinary = new Uint8Array(arrayBuffer);
 
-	const binaryBase64 = fromUint8Array(modelBinary);
-	// Use Crdt.initModel which handles base64 conversion internally
-	const model = Crdt.initModel(binaryBase64);
+		const binaryBase64 = fromUint8Array(modelBinary);
+		// Use Crdt.initModel which handles base64 conversion internally
+		const model = Crdt.initModel(binaryBase64);
 
-	// 4. Get the schema JSON
-	const schemaJson = model.view();
-	await fs.writeFile(`./schemas/${schemaId}.json`, JSON.stringify(schemaJson));
+		// 4. Get the schema JSON
+		const schemaJson = model.view();
+		await fs.writeFile(
+			`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/${schemaId}.json`,
+			JSON.stringify(schemaJson),
+		);
 
-	const response = await rubricsGenerator.invoke({
-		messages: [
-			new HumanMessage(
-				`You are provided with the following user input: ${query}\n You may read the zion schema of current project by using the read_json_schema tool with jq queries to understand the schema and generate rubrics based on it. Remember that the zion schema is only accessible to you through the read_json_schema tool, and you can ask your sub-agent SchemaLookupAgent for help in understanding the zion schema better. Your ultimate goal is to generate clear, concise, and effective rubrics that outline the evaluation criteria and standards for the given JSON schema and user input.`,
-			),
-		],
-	});
-	logger.debug("Generated rubrics: " + JSON.stringify(response));
-	return response.structuredResponse;
+		const response = await rubricsGenerator.invoke(
+			{
+				messages: [
+					new HumanMessage(
+						`You are provided with the following user input: ${query}\n You may read the zion schema of current project by using the read_json_schema tool with jq queries to understand the schema and generate rubrics based on it. Remember that the zion schema is only accessible to you through the read_json_schema tool, and you can ask your sub-agent SchemaLookupAgent for help in understanding the zion schema better. Your ultimate goal is to generate clear, concise, and effective rubrics that outline the evaluation criteria and standards for the given JSON schema and user input.`,
+					),
+				],
+			},
+			{
+				context: {
+					schemaId,
+				},
+			},
+		);
+		logger.debug("Generated rubrics: " + JSON.stringify(response));
+		return response.structuredResponse;
+	} catch (error) {
+		logger.error("Error generating rubrics:", error);
+		throw error;
+	}
 };

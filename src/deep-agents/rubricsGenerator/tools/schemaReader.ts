@@ -7,15 +7,16 @@ export const read_json_schema = tool(
 	async ({ query }, config) => {
 		const filePath =
 			config?.context?.schemaId ?
-				`../schemas/${config.context.schemaId}.json`
-			:	"../schemas/zschema.json";
+				`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/${config.context.schemaId}.json`
+			:	`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/zschema.json`;
 
 		await jq
-			.run(query, filePath, { input: "file", output: "string" })
+			.run(query, filePath, { input: "file", output: "json" })
 			.then((output) => {
 				return output;
 			})
 			.catch((err) => {
+				logger.error("Error executing jq query:", err);
 				return `Error executing jq query: ${err.message}`;
 			});
 	},

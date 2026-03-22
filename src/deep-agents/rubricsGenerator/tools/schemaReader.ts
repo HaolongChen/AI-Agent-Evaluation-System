@@ -5,25 +5,21 @@ import { logger } from "../../../utils/logger.ts";
 
 export const read_json_schema = tool(
 	async ({ query }: { query: string }, config) => {
-		logger.debug(`Executing jq query: ${query}\n`);
-		const filePath =
-			config?.context?.schemaId ?
-				`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/${config.context.schemaId}.json`
-			:	`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/zschema.json`;
+		try {
+			logger.debug(`Executing jq query: ${query}\n`);
+			const filePath =
+				config?.context?.schemaId ?
+					`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/${config.context.schemaId}.json`
+				:	`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/zschema.json`;
 
-		await jq
-			.run(query, filePath, { input: "file", output: "json" })
-			.then((output) => {
-				return output;
-			})
-			.catch((err) => {
-				setTimeout(() => {
-					logger.error(`Error executing jq ${query}:`, err);
-					return `Error executing jq query: ${err.message}`.length > 100 ?
-						`Error executing jq query: ${err.message.substring(0, 97)}...`
-						: `Error executing jq query: ${err.message}`;
-				}, 5000); // Add a small delay to ensure the error is logged before returning
-			});
+			return await jq.run(query, filePath, { input: "file", output: "json" });
+		} catch (error) {
+			logger.error("Error executing jq query:", error);
+			return {
+				error:
+					"Failed to execute jq query. Please check the query syntax and ensure it is valid against the target JSON schema.",
+			};
+		}
 	},
 	{
 		name: "read_json_schema",
@@ -42,7 +38,7 @@ export const get_schema_structure = tool(
 	async () => {
 		try {
 			logger.debug("Fetching JSON schema structure from official URL");
-			const schemaUrl = "http://json-schema.org/draft-07/schema#";
+			const schemaUrl = "http://json-schema.org/draft-07/schema";
 			const response = await fetch(schemaUrl);
 			const schema = await response.json();
 			return schema;

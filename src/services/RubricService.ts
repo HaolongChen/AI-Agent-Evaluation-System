@@ -1,8 +1,13 @@
 import { prisma } from "../config/prisma.ts";
 // import { REVIEW_STATUS } from "../config/constants.ts";
 import { logger } from "../utils/logger.ts";
-import type { question, questionSet } from "../../build/generated/prisma/client.ts";
+import type {
+	question,
+	questionSet,
+} from "../../build/generated/prisma/client.ts";
 import { executionService } from "./ExecutionService.ts";
+import { generateRubrics } from "../deep-agents/rubricsGenerator/rubricsGenerator.ts";
+import { Decimal } from "@prisma/client/runtime/client";
 
 export class RubricService {
 	async initializeQuestionSetWithRubrics(
@@ -67,44 +72,62 @@ export class RubricService {
 		}
 	}
 
-  async getQuestionSetById(id: string): Promise<questionSet | null> {
-    try {
-      const questionSet = await prisma.questionSet.findUnique({
-        where: { id },
-        include: {
-          rubrics: true,
-        },
-      });
-      return questionSet;
-    } catch (error) {
-      logger.error("Error fetching question set by id:", error);
-      throw new Error("Failed to fetch question set by id");
-    }
-  }
+	async getQuestionSetById(id: string): Promise<questionSet | null> {
+		try {
+			const questionSet = await prisma.questionSet.findUnique({
+				where: { id },
+				include: {
+					rubrics: true,
+				},
+			});
+			return questionSet;
+		} catch (error) {
+			logger.error("Error fetching question set by id:", error);
+			throw new Error("Failed to fetch question set by id");
+		}
+	}
 
 	async generateQuestionSet(goldenSetId: number, userInputId: number) {
 		try {
-			// Call copilot to generate questions based on goldenSetId and userInputId
-			// const generatedQuestions = await executionService.generateQuestions(
-			// 	goldenSetId,
-			// 	userInputId,
-			// );
-
-			// Create a new question set and associate the generated questions
-			const questionSet = await prisma.questionSet.create({
-				data: {
-					goldenSetId,
-					userInputId,
-					// rubrics: {
-					// 	create: generatedQuestions.map((question) => ({
-					// 		questionText: question.questionText,
-					// 		weight: question.weight,
-					// 	})),
+			const copilotInput = await prisma.goldenSet.findUnique({
+				where: { id: goldenSetId },
+				select: {
+					schemaId: true,
+					userInputs: {
+						where: {
+							id: userInputId,
+						},
+						select: {
+							content: true,
+						},
 					},
-				})
-				// include: {
-				// 	rubrics: true,
-				// },
+				},
+			});
+			if (
+				!copilotInput ||
+				!copilotInput.userInputs ||
+				!copilotInput.userInputs[0]?.content
+			) {
+				throw new Error(
+					"No user input found for the given goldenSetId and userInputId",
+				);
+			}
+			const rubrics = await generateRubrics(
+				copilotInput.schemaId,
+				copilotInput.userInputs[0].content,
+			);
+			const overallWeight = rubrics.rubrics.reduce((sum, r) => sum + r.weight, 0);
+			if (overallWeight === 0) {
+				throw new Error("Total weight of rubrics cannot be zero");
+			}
+			const questionSet = await this.saveQuestionSet(
+				goldenSetId,
+				userInputId,
+				rubrics.rubrics.map((r) => ({
+					...r,
+					weight: Decimal(r.weight / overallWeight), // Normalize weights to sum up to 1
+				})),
+			);
 
 			return questionSet;
 		} catch (error) {
@@ -116,7 +139,13 @@ export class RubricService {
 	async saveQuestionSet(
 		goldenSetId: number,
 		userInputId: number,
-		questions: question[],
+		questions: Array<{
+			title: string;
+			content: string;
+			expectedAnswer: boolean;
+			weight: Decimal;
+			version?: string;
+		}>,
 	) {
 		try {
 			const questionSet = await prisma.questionSet.create({
@@ -125,7 +154,7 @@ export class RubricService {
 					userInputId,
 					rubrics: {
 						create: questions.map((question) => ({
-							version: question.version,
+							version: question?.version || "1.0",
 							title: question.title,
 							content: question.content,
 							expectedAnswer: question.expectedAnswer,

@@ -201,6 +201,10 @@ export class AnalyticsService {
 					},
 				},
 			});
+			if(!session){
+				logger.error("Failed to create evaluation session: No session returned from database");
+				throw new Error("Failed to create evaluation session");
+			}
 			return {
 				id: session.id,
 				questionSetId,

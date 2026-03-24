@@ -144,3 +144,5 @@ logs.txt
 prisma/migrations
 
 **/schemas
+
+**/momen_doc

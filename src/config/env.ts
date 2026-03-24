@@ -24,6 +24,8 @@ export const ORGANIZATION_EX_ID =
   process.env['ORGANIZATION_EX_ID'] || '';
 
 
+export const MOMEN_DOCS_URL = process.env['MOMEN_DOCS_URL'] || 'https://docs.momen.app';
+
 export const ALIYUN_OSS_BUCKET = process.env['ALIYUN_OSS_BUCKET'] || '';
 export const ALIYUN_ACCESS_KEY = process.env['ALIYUN_ACCESS_KEY'] || '';
 export const ALIYUN_ACCESS_SECRET = process.env['ALIYUN_ACCESS_SECRET'] || '';

@@ -141,8 +141,9 @@ vite.config.ts.timestamp-*
 
 logs.txt
 
-prisma/migrations
 
 **/schemas
 
 **/momen_doc
+
+pnpm-*.yaml

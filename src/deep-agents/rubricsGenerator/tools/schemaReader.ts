@@ -6,11 +6,10 @@ import { logger } from "../../../utils/logger.ts";
 export const read_json_schema = tool(
 	async ({ query }: { query: string }, config) => {
 		try {
-			logger.debug(`Executing jq query: ${query}\n`);
 			const filePath =
 				config?.context?.schemaId ?
-					`${process.cwd()}/schemas/${config.context.schemaId}.json`
-				:	`${process.cwd()}/schemas/zschema.json`;
+					`${process.cwd()}/local_shell/schemas/${config.context.schemaId}.json`
+				:	`${process.cwd()}/local_shell/schemas/zschema.json`;
 
 			return await jq.run(query, filePath, { input: "file", output: "json" });
 		} catch (error) {
@@ -20,7 +19,7 @@ export const read_json_schema = tool(
 					"Failed to execute jq query. Please check the query syntax and ensure it is valid against the target JSON schema.",
 			};
 		} finally {
-			logger.debug(`Finished executing jq query: ${query}\n`);
+			// logger.debug(`Finished executing jq query: ${query}\n`);
 		}
 	},
 	{
@@ -48,7 +47,6 @@ export class Schema {
 
 	private async loadSchema() {
 		try {
-			logger.debug("Loading JSON schema from official URL");
 			const response = await fetch(this.schemaUrl);
 			if (!response.ok) {
 				throw new Error(
@@ -71,18 +69,3 @@ export class Schema {
 		return this.schema;
 	}
 }
-export const get_schema_structure = async () => {
-	try {
-		logger.debug("Fetching JSON schema structure from official URL");
-		const schemaUrl = "http://json-schema.org/draft-07/schema";
-		const response = await fetch(schemaUrl);
-		const schema = await response.json();
-		return schema;
-	} catch (error) {
-		logger.error("failed to fetch schema structure", error);
-		return {
-			error:
-				"Failed to fetch schema structure. Stop and inform your developer immediately.",
-		};
-	}
-};

@@ -147,3 +147,5 @@ logs.txt
 **/momen_doc
 
 pnpm-*.yaml
+
+local_shell

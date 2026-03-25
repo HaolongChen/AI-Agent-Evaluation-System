@@ -119,13 +119,13 @@ const storeDocs = async (route: string, path: string): Promise<string> => {
 			);
 		}
 		const markdown = convertElementToMarkdown(article);
-		const dir = `${process.cwd()}/momen_docs${path}`
+		const dir = `${process.cwd()}/local_shell/momen_docs${path}`
 			.split("/")
 			.slice(0, -1)
 			.join("/");
 		await mkdir(dir, { recursive: true });
 		await writeFile(dir + `/${path.split("/").pop()}.md`, markdown, "utf-8");
-		return dir.slice(process.cwd().length) + `/${path.split("/").pop()}.md`;
+		return dir.slice(process.cwd().length + 12) + `/${path.split("/").pop()}.md`;
 	} catch (error) {
 		logger.error("Error occurred while testing read_momen_docs tool:", error);
 		throw new Error(

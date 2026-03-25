@@ -2,7 +2,7 @@ import {
 	CompositeBackend,
 	createDeepAgent,
 	FilesystemBackend,
-	StateBackend,
+	LocalShellBackend,
 	type SubAgent,
 } from "deepagents";
 import { GEMINI_API_KEY, GEMINI_MODEL } from "../../config/env.ts";
@@ -121,21 +121,27 @@ const rubricsGeneratorAgent = createDeepAgent({
 	responseFormat: toolStrategy(responseSchema),
 	model: `google-genai:${GEMINI_MODEL}`,
 	tools: [read_json_schema, save_agent_feedbacks],
-	backend: (config) =>
-		new CompositeBackend(new StateBackend(config), {
-			// "/schemas/": new FilesystemBackend({
-			// 	rootDir: `${process.cwd()}/schemas/`,
-			// 	virtualMode: true,
-			// }),
-			"/momen_docs/": new FilesystemBackend({
-				rootDir: `${process.cwd()}/momen_docs/`,
-				virtualMode: true,
-				// For documentation reader, we can directly read the files without parsing them into JSON, so we can use a simple filesystem backend without any special handling for JSON parsing.
-				// The documentation reader tool will handle the parsing of the documentation files as needed when it reads them.
-				// This allows us to keep the implementation of the documentation reader tool simpler and more focused on its specific task of reading and interpreting the documentation content.
-				// Additionally, since the documentation files are likely to be in a format that is not strictly JSON (e.g., markdown, HTML), using a simple filesystem backend allows us to read the raw content of the files without needing to worry about JSON parsing errors or complexities.
+	backend: () =>
+		new CompositeBackend(
+			new LocalShellBackend({
+				rootDir: `${process.cwd()}/local_shell/`,
+				inheritEnv: true,
 			}),
-		}),
+			{
+				// "/schemas/": new FilesystemBackend({
+				// 	rootDir: `${process.cwd()}/schemas/`,
+				// 	virtualMode: true,
+				// }),
+				"/momen_docs/": new FilesystemBackend({
+					rootDir: `${process.cwd()}/local_shell/momen_docs/`,
+					virtualMode: true,
+					// For documentation reader, we can directly read the files without parsing them into JSON, so we can use a simple filesystem backend without any special handling for JSON parsing.
+					// The documentation reader tool will handle the parsing of the documentation files as needed when it reads them.
+					// This allows us to keep the implementation of the documentation reader tool simpler and more focused on its specific task of reading and interpreting the documentation content.
+					// Additionally, since the documentation files are likely to be in a format that is not strictly JSON (e.g., markdown, HTML), using a simple filesystem backend allows us to read the raw content of the files without needing to worry about JSON parsing errors or complexities.
+				}),
+			},
+		),
 	contextSchema: contextSchema,
 	subagents: [schemaLookupAgent, docsLookupAgent],
 	systemPrompt: rubricsGeneratorPrompt,
@@ -163,7 +169,7 @@ export const generateRubrics = async (
 		// 4. Get the schema JSON
 		const schemaJson = model.view();
 		await fs.writeFile(
-			`${process.cwd()}/schemas/${schemaId}.json`,
+			`${process.cwd()}/local_shell/schemas/${schemaId}.json`,
 			JSON.stringify(schemaJson),
 		);
 

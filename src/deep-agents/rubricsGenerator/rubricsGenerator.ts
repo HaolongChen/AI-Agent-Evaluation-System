@@ -1,9 +1,12 @@
-import { createDeepAgent, StateBackend, type SubAgent } from "deepagents";
-import { GEMINI_API_KEY, GEMINI_MODEL } from "../../config/env.ts";
 import {
-	get_schema_structure,
-	read_json_schema,
-} from "./tools/schemaReader.ts";
+	CompositeBackend,
+	createDeepAgent,
+	FilesystemBackend,
+	StateBackend,
+	type SubAgent,
+} from "deepagents";
+import { GEMINI_API_KEY, GEMINI_MODEL } from "../../config/env.ts";
+import { read_json_schema, Schema } from "./tools/schemaReader.ts";
 import * as z from "zod";
 import { HumanMessage, toolStrategy } from "langchain";
 import { logger } from "../../utils/logger.ts";
@@ -18,6 +21,20 @@ if (!GEMINI_API_KEY) {
 		"GEMINI_API_KEY is not set in environment variables. Please set it to use the rubrics generator.",
 	);
 }
+
+const publicSchema = new Schema();
+const publicSchemaContent = JSON.stringify(await publicSchema.getSchema());
+
+const docsLookupAgent: SubAgent = {
+	name: "DocsLookupAgent",
+	tools: [],
+	systemPrompt:
+		"You are a helpful assistant and sub-agent specialized in looking up and explaining zion (momen) official documentation owned by your main agent called rubrics generator agent. You have access to the entire Momen official documentation, which is organized in a hierarchical structure with multiple levels of headings and sections. The documentation covers various topics related to Momen's products, features, and usage guidelines. \n" +
+		"Context/Why you are created: Your main agent is responsible for generating evaluation rubrics based on a provided zion schema and user input. However, the performance of copilot is not as good as expected. Therefore, your main agent wants to generate a series of evaluation rubrics with attached expected answers for evaluation before copilot works based on the zion schema and user input. To generate accurate and relevant rubrics, your main agent needs to refer to the Momen official documentation for information about the features, functionalities, and best practices related to the zion schema and copilot. Your role is to look up and explain the relevant sections of the Momen official documentation to assist your main agent in generating effective rubrics for evaluating copilot's performance.\n" +
+		"Input: You may be provided with inquiries related to the Momen official documentation by your main agent. Your responses should be based on the content of the documentation and should provide clear and concise explanations that directly address the inquiries. Always ensure that your explanations are accurate and relevant to the queries you receive. You may lookup the Momen official documentation by using your tools to read those markdown files under /momen_docs/ when needed.\n",
+	description:
+		"This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided zion schema and user input.",
+};
 
 const responseSchema = z.object({
 	rubrics: z
@@ -57,14 +74,16 @@ const contextSchema = z.object({
 });
 
 const schemaLookupPrompt =
-	"You are a helpful assistant and sub-agent specialized in looking up and explaining zion schema owned by your main agent called rubrics generator agent. You have access to a powerful tool called read_json_schema, which allows you to execute jq queries against a JSON schema to extract specific information. You also have access to a tool called get_schema_structure, which allows you to fetch the standard structure of of your schema(not the schema of your main agent). \n" +
-	"Context/Why you are created: Your main agent is provided with a json schema called zion schema in around 50KB but unaware of its structure, content, or information about any specific elements, which is tough for it to analyze it thoroughly. The zion schema your main agent owns is not accessible to you unless your main agent provides it. Luckily, you are provided with a static flattened json schema which is the reference of zion schemas and is all what you can refer to to understand the zion schema provided by your main agent in order to answer its questions and inquiries. Please note that the schema you own which is the reference of zion schemas has a specific structure and content that you may need to figure out by using a tool called get_schema_structure which always provides the entire fetched content of the $schema field in your reference schema. \n" +
-	"Input: You may be provided with inquiries related to the structure, content, or specific elements of the JSON schema by your main agent. However, the complete JSON schema is not visible to you unless your agent provides. Besides, you are able to access the reference information of zion schema that your main agent owns by but only by using the read_json_schema tool. \n" +
+	"You are a helpful assistant and sub-agent specialized in looking up and explaining zion schema owned by your main agent called rubrics generator agent. You have access to a powerful tool called read_json_schema, which allows you to execute jq queries against a JSON schema to extract specific information.\n" +
+	"Context/Why you are created: Your main agent is provided with a json schema called zion schema in around 50KB but unaware of its structure, content, or information about any specific elements, which is tough for it to analyze it thoroughly. The zion schema your main agent owns is not accessible to you unless your main agent provides it. Luckily, you are provided with a static flattened json schema which is the reference of zion schemas and is all what you can refer to to understand the zion schema provided by your main agent in order to answer its questions and inquiries. Please note that the schema you own which is the reference of zion schemas has a specific structure and content that you may need to figure out. We will get there later. \n" +
+	"Input: You may be provided with inquiries related to the structure, content, or specific elements of the JSON schema by your main agent. However, the complete JSON schema is not visible to you unless your agent provides. Besides, you are able to access the reference information of zion schema that your main agent owns. You may access the reference schema using the read_json_schema tool. Perhaps you may find your schema for reference is tricky to understand. However, as the $schema field in your reference schema shows, the structure of your reference schema is based on a public schema model, the complete content of which is showed below:\n" +
+	`<schema>\n${publicSchemaContent}\n</schema>` +
+	"\n" +
 	"Output: Your ultimate task is to respond to your main agent's queries though you may ask your main agent for more context when needed. Your responses should be clear, concise, and directly address the inquiries based on the JSON schema's structure and content. Always ensure that your explanations are accurate and relevant to the queries you receive.\n";
 
 const schemaLookupAgent: SubAgent = {
 	name: "SchemaLookupAgent",
-	tools: [read_json_schema, get_schema_structure],
+	tools: [read_json_schema],
 	systemPrompt: schemaLookupPrompt,
 	description:
 		"This sub-agent is responsible for explaining zion schemas that rubrics generator agent owns by looking up its own reference schema of zion schemas with jq queries.",
@@ -75,7 +94,7 @@ const rubricsGeneratorPrompt =
 	"Context: Zion (Momen) is a tech company that specializes in developing a no-code platform for building apps. Copilot is built and introduced as a specialized coding agent of zion to help users develop applications powered by AI Agent. Unlike claude code or opencode, it is specially designed to code for the zion schema that the current project relies on and compiles to programming language. Copilot works under a designated procedure where users send requests, aka user inputs, like 'build me a user table and a post table in database', to activate copilot's 'coding' process. Copilot can access to the zion schema of current project, which people call the existing code of the project, to figure out what it should build for users by modifying the zion schema. Somehow the performance of copilot is not as good as expected. Therefore, you are wanted to generate a series of evaluation rubrics with attached expected answers for evaluation before copilot works based on the zion schema and user input. After copilot completes its task, your rubrics will be used to evaluate its performance by telling if copilot products match the case that rubrics describe. Performance scoring depends on how evaluation results approach the expected answers and their weights.\n" +
 	"Input: You may be provided with a zion schema and user input. The zion schema is a large json schema sized around 50KB. You are only able to read the zion schema through the read_json_schema tool by providing jq queries. You may notice the zion schema is confusing and hard to understand. Luckily, one of your sub-agents called SchemaLookupAgent which owns the reference schema can help you understand your zion schema better. Please note that the zion schema is only accessible to you. You may want to pass some essential context to SchemaLookupAgent to help you understand the zion schema better.\n" +
 	"Output: Your primary task is to create clear, concise, and effective rubrics that outline the evaluation criteria and standards for the given JSON schema. Your responses should be structured in a way that is specially and uniquely designed for evaluation, which means it cannot be answered only with public information or common sense without referring to the provided zion schema and zion (momen) official documentation. And it can only be answered true or false and should avoid vagueness that narrows the disparity of true or false.\n" +
-	"Sub-agents: You have access to a sub-agent called SchemaLookupAgent, which has access to a reference schema of the zion schema you own. You can ask SchemaLookupAgent any questions related to the structure, content, specific elements, etc. of the zion schema to help you better understand your zion schema and generate accurate and relevant rubrics.\n";
+	"Sub-agents: You have access to a sub-agent called SchemaLookupAgent, which has access to a reference schema of the zion schema you own. You can ask SchemaLookupAgent any questions related to the structure, content, specific elements, etc. of the zion schema to help you better understand your zion schema and generate accurate and relevant rubrics. The other sub-agent you have is called docsLookupAgent, which has access to the entire zion (momen) official documentation. The local path /schemas/ is for SchemaLookupAgent to access the reference schema of your zion schema while the local path /momen_docs/ is for docsLookupAgent to access the official documentation. Since a huge quantity of data is stored there, manage your context well and leverage your sub-agents effectively.\n";
 
 const checkpointer = new MemorySaver();
 
@@ -84,9 +103,23 @@ const rubricsGenerator = createDeepAgent({
 	responseFormat: toolStrategy(responseSchema),
 	model: `google-genai:${GEMINI_MODEL}`,
 	tools: [read_json_schema],
-	backend: (config) => new StateBackend(config),
+	backend: (config) =>
+		new CompositeBackend(new StateBackend(config), {
+			// "/schemas/": new FilesystemBackend({
+			// 	rootDir: `${process.cwd()}/schemas/`,
+			// 	virtualMode: true,
+			// }),
+			"/momen_docs/": new FilesystemBackend({
+				rootDir: `${process.cwd()}/momen_docs/`,
+				virtualMode: true,
+				// For documentation reader, we can directly read the files without parsing them into JSON, so we can use a simple filesystem backend without any special handling for JSON parsing.
+				// The documentation reader tool will handle the parsing of the documentation files as needed when it reads them.
+				// This allows us to keep the implementation of the documentation reader tool simpler and more focused on its specific task of reading and interpreting the documentation content.
+				// Additionally, since the documentation files are likely to be in a format that is not strictly JSON (e.g., markdown, HTML), using a simple filesystem backend allows us to read the raw content of the files without needing to worry about JSON parsing errors or complexities.
+			}),
+		}),
 	contextSchema: contextSchema,
-	subagents: [schemaLookupAgent],
+	subagents: [schemaLookupAgent, docsLookupAgent],
 	systemPrompt: rubricsGeneratorPrompt,
 	checkpointer,
 });
@@ -106,7 +139,7 @@ export const generateRubrics = async (
 		// 4. Get the schema JSON
 		const schemaJson = model.view();
 		await fs.writeFile(
-			`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/${schemaId}.json`,
+			`${process.cwd()}/schemas/${schemaId}.json`,
 			JSON.stringify(schemaJson),
 		);
 
@@ -124,9 +157,8 @@ export const generateRubrics = async (
 				},
 				configurable: {
 					thread_id: `rubrics-generator-${schemaId}-${Date.now()}`,
-				}
+				},
 			},
-			
 		);
 		logger.debug("Generated rubrics: " + JSON.stringify(response));
 		return response.structuredResponse;

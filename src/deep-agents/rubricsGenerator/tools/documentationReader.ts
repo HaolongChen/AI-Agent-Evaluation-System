@@ -119,7 +119,7 @@ const storeDocs = async (route: string, path: string): Promise<string> => {
 			);
 		}
 		const markdown = convertElementToMarkdown(article);
-		const dir = `${process.cwd()}/momen_doc${path}`
+		const dir = `${process.cwd()}/momen_docs${path}`
 			.split("/")
 			.slice(0, -1)
 			.join("/");

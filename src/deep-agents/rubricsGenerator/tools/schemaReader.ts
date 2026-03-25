@@ -9,8 +9,8 @@ export const read_json_schema = tool(
 			logger.debug(`Executing jq query: ${query}\n`);
 			const filePath =
 				config?.context?.schemaId ?
-					`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/${config.context.schemaId}.json`
-				:	`${process.cwd()}/src/deep-agents/rubricsGenerator/schemas/zschema.json`;
+					`${process.cwd()}/schemas/${config.context.schemaId}.json`
+				:	`${process.cwd()}/schemas/zschema.json`;
 
 			return await jq.run(query, filePath, { input: "file", output: "json" });
 		} catch (error) {
@@ -36,26 +36,53 @@ export const read_json_schema = tool(
 	},
 );
 
-export const get_schema_structure = tool(
-	async () => {
+export class Schema {
+	readonly schemaUrl: string = "http://json-schema.org/draft-07/schema";
+	private schema: unknown = null;
+
+	private state: Promise<void>;
+
+	constructor() {
+		this.state = this.loadSchema();
+	}
+
+	private async loadSchema() {
 		try {
-			logger.debug("Fetching JSON schema structure from official URL");
-			const schemaUrl = "http://json-schema.org/draft-07/schema";
-			const response = await fetch(schemaUrl);
-			const schema = await response.json();
-			return schema;
+			logger.debug("Loading JSON schema from official URL");
+			const response = await fetch(this.schemaUrl);
+			if (!response.ok) {
+				throw new Error(
+					`Failed to fetch schema. Status: ${response.status} ${response.statusText}`,
+				);
+			}
+			this.schema = await response.json();
+			logger.debug("Successfully loaded JSON schema");
 		} catch (error) {
-			logger.error("failed to fetch schema structure", error);
-			return {
+			logger.error("Failed to load JSON schema", error);
+			this.schema = {
 				error:
-					"Failed to fetch schema structure. Stop and inform your developer immediately.",
+					"Failed to load JSON schema. Stop and inform your developer immediately.",
 			};
 		}
-	},
-	{
-		name: "get_schema_structure",
-		description:
-			"Fetch the JSON schema structure from the official URL. This tool is used to retrieve the standard structure of a JSON schema, which can be helpful for understanding how to formulate jq queries against the target JSON schema. The output will be the JSON schema structure in JSON format.",
-		schema: z.object({}),
-	},
-);
+	}
+
+	public async getSchema(): Promise<unknown> {
+		await this.state;
+		return this.schema;
+	}
+}
+export const get_schema_structure = async () => {
+	try {
+		logger.debug("Fetching JSON schema structure from official URL");
+		const schemaUrl = "http://json-schema.org/draft-07/schema";
+		const response = await fetch(schemaUrl);
+		const schema = await response.json();
+		return schema;
+	} catch (error) {
+		logger.error("failed to fetch schema structure", error);
+		return {
+			error:
+				"Failed to fetch schema structure. Stop and inform your developer immediately.",
+		};
+	}
+};

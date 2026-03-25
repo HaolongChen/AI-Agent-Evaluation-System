@@ -198,6 +198,19 @@ export class RubricService {
 		}
 	}
 
+	async saveAgentFeedbacks(
+		questionSetId: string,
+		agentName: string,
+		feedbacks: string[],
+	) {
+		try {
+			// save agents feedbacks for development use
+		} catch (error) {
+			logger.error("Error saving agent feedbacks:", error);
+			throw new Error("Failed to save agent feedbacks");
+		}
+	}
+
 	// async getQuestionsBySessionX(sessionId: number) {
 	// 	try {
 	// 		return prisma.adaptiveRubric.findMany({

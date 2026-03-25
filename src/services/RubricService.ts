@@ -128,7 +128,7 @@ export class RubricService {
 					"No user input found for the given goldenSetId and userInputId",
 				);
 			}
-			const rubrics = await generateRubrics(
+			const { rubrics, feedbacks } = await generateRubrics(
 				copilotInput.schemaId,
 				copilotInput.userInputs[0].content,
 			);
@@ -147,6 +147,8 @@ export class RubricService {
 					weight: Decimal(r.weight / overallWeight), // Normalize weights to sum up to 1
 				})),
 			);
+
+			await Promise.allSettled(feedbacks(questionSet.id));
 
 			return {
 				...questionSet,
@@ -205,6 +207,20 @@ export class RubricService {
 	) {
 		try {
 			// save agents feedbacks for development use
+			const questionSet = await prisma.questionSet.findUnique({
+				where: { id: questionSetId },
+			});
+			if (!questionSet) {
+				throw new Error("Question set not found for the given id");
+			}
+			const agentFeedback = await prisma.agentFeedbacks.create({
+				data: {
+					questionSetId,
+					agentName,
+					feedback: feedbacks,
+				},
+			});
+			return agentFeedback;
 		} catch (error) {
 			logger.error("Error saving agent feedbacks:", error);
 			throw new Error("Failed to save agent feedbacks");

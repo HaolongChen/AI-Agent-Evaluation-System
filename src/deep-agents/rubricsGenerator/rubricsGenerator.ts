@@ -15,6 +15,9 @@ import { fromUint8Array } from "js-base64";
 import { Crdt } from "@functorz/crdt-helper";
 import fs from "node:fs/promises";
 import { MemorySaver } from "@langchain/langgraph";
+import { Feedback, save_agent_feedbacks } from "./tools/feedback.ts";
+import { rubricService } from "../../services/RubricService.ts";
+import type { agentFeedbacks } from "../../../build/generated/prisma/client.ts";
 
 if (!GEMINI_API_KEY) {
 	throw new Error(
@@ -27,7 +30,7 @@ const publicSchemaContent = JSON.stringify(await publicSchema.getSchema());
 
 const docsLookupAgent: SubAgent = {
 	name: "DocsLookupAgent",
-	tools: [],
+	tools: [save_agent_feedbacks],
 	systemPrompt:
 		"You are a helpful assistant and sub-agent specialized in looking up and explaining zion (momen) official documentation owned by your main agent called rubrics generator agent. You have access to the entire Momen official documentation, which is organized in a hierarchical structure with multiple levels of headings and sections. The documentation covers various topics related to Momen's products, features, and usage guidelines. \n" +
 		"Context/Why you are created: Your main agent is responsible for generating evaluation rubrics based on a provided zion schema and user input. However, the performance of copilot is not as good as expected. Therefore, your main agent wants to generate a series of evaluation rubrics with attached expected answers for evaluation before copilot works based on the zion schema and user input. To generate accurate and relevant rubrics, your main agent needs to refer to the Momen official documentation for information about the features, functionalities, and best practices related to the zion schema and copilot. Your role is to look up and explain the relevant sections of the Momen official documentation to assist your main agent in generating effective rubrics for evaluating copilot's performance.\n" +
@@ -71,6 +74,21 @@ const contextSchema = z.object({
 		.describe(
 			"The unique identifier of the JSON schema for which the rubrics are being generated. This ID is used to fetch the corresponding JSON schema from the storage (e.g., Aliyun OSS) and is essential for generating relevant and accurate rubrics based on the specific structure and content of the JSON schema associated with this ID.",
 		),
+	rubricsGeneratorAgent: z
+		.instanceof(Feedback)
+		.describe(
+			"The feedback interface for the rubrics generator agent itself, which can be used to provide feedback on the performance of the rubrics generator agent in generating effective and relevant rubrics based on the provided JSON schema and user input. This feedback can include insights on the quality of the generated rubrics, their relevance to the JSON schema, and their effectiveness in evaluating copilot's performance.",
+		),
+	schemaLookupAgent: z
+		.instanceof(Feedback)
+		.describe(
+			"The feedback interface for the schema lookup agent, which can be used to provide feedback on the performance of the schema lookup agent in finding and explaining relevant information about the JSON schema. This feedback can include insights on the accuracy and completeness of the information provided by the schema lookup agent.",
+		),
+	docsLookupAgent: z
+		.instanceof(Feedback)
+		.describe(
+			"The feedback interface for the documentation lookup agent, which can be used to provide feedback on the performance of the documentation lookup agent in finding and explaining relevant information about the JSON schema. This feedback can include insights on the accuracy and completeness of the information provided by the documentation lookup agent.",
+		),
 });
 
 const schemaLookupPrompt =
@@ -83,7 +101,7 @@ const schemaLookupPrompt =
 
 const schemaLookupAgent: SubAgent = {
 	name: "SchemaLookupAgent",
-	tools: [read_json_schema],
+	tools: [read_json_schema, save_agent_feedbacks],
 	systemPrompt: schemaLookupPrompt,
 	description:
 		"This sub-agent is responsible for explaining zion schemas that rubrics generator agent owns by looking up its own reference schema of zion schemas with jq queries.",
@@ -98,11 +116,11 @@ const rubricsGeneratorPrompt =
 
 const checkpointer = new MemorySaver();
 
-const rubricsGenerator = createDeepAgent({
+const rubricsGeneratorAgent = createDeepAgent({
 	// model: `azure_openai:${OPENAI_MODEL}`,
 	responseFormat: toolStrategy(responseSchema),
 	model: `google-genai:${GEMINI_MODEL}`,
-	tools: [read_json_schema],
+	tools: [read_json_schema, save_agent_feedbacks],
 	backend: (config) =>
 		new CompositeBackend(new StateBackend(config), {
 			// "/schemas/": new FilesystemBackend({
@@ -127,7 +145,13 @@ const rubricsGenerator = createDeepAgent({
 export const generateRubrics = async (
 	schemaId: string,
 	query: string,
-): Promise<z.infer<typeof responseSchema>> => {
+): Promise<
+	{
+		rubrics: z.infer<typeof responseSchema>;
+	} & {
+		feedbacks: (questionSetId: string) => Promise<agentFeedbacks>[];
+	}
+> => {
 	try {
 		const arrayBuffer = await getSchemaModel(schemaId);
 		const modelBinary = new Uint8Array(arrayBuffer);
@@ -143,7 +167,11 @@ export const generateRubrics = async (
 			JSON.stringify(schemaJson),
 		);
 
-		const response = await rubricsGenerator.invoke(
+		const rubricsGeneratorFeedback = new Feedback("rubricsGeneratorAgent");
+		const schemaLookupAgentFeedback = new Feedback("schemaLookupAgent");
+		const docsLookupAgentFeedback = new Feedback("docsLookupAgent");
+
+		const response = await rubricsGeneratorAgent.invoke(
 			{
 				messages: [
 					new HumanMessage(
@@ -154,6 +182,9 @@ export const generateRubrics = async (
 			{
 				context: {
 					schemaId,
+					rubricsGeneratorAgent: rubricsGeneratorFeedback,
+					schemaLookupAgent: schemaLookupAgentFeedback,
+					docsLookupAgent: docsLookupAgentFeedback,
 				},
 				configurable: {
 					thread_id: `rubrics-generator-${schemaId}-${Date.now()}`,
@@ -161,7 +192,25 @@ export const generateRubrics = async (
 			},
 		);
 		logger.debug("Generated rubrics: " + JSON.stringify(response));
-		return response.structuredResponse;
+		const feedbacks = (questionSetId: string): Promise<agentFeedbacks>[] => [
+			rubricService.saveAgentFeedbacks(
+				questionSetId,
+				"rubrics_generator_agent",
+				rubricsGeneratorFeedback.getFeedbacks(),
+			),
+			rubricService.saveAgentFeedbacks(
+				questionSetId,
+				"schema_lookup_agent",
+				schemaLookupAgentFeedback.getFeedbacks(),
+			),
+			rubricService.saveAgentFeedbacks(
+				questionSetId,
+				"docs_lookup_agent",
+				docsLookupAgentFeedback.getFeedbacks(),
+			),
+		];
+
+		return { rubrics: response.structuredResponse, feedbacks: feedbacks };
 	} catch (error) {
 		logger.error("Error generating rubrics:", error);
 		throw error;

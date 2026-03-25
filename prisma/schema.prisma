@@ -83,6 +83,7 @@ model questionSet {
 
   copilotOutputs copilotOutput_questionSet[]
   questions      question[]
+  agentFeedbacks agentFeedbacks[]
 
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -104,6 +105,18 @@ model question {
   questionSet questionSet @relation(fields: [questionSetId], references: [id])
 
   @@unique([id, questionSetId], map: "unique_question_per_set")
+}
+
+model agentFeedbacks {
+  id            Int      @id @default(autoincrement())
+  questionSetId String   @map("question_set_id")
+  agentName     String   @map("agent_name") // could be agentId or "auto-evaluation" for agent evaluations
+  feedback      String[] @map("feedback") // free-form feedback from the evaluation agent
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  questionSet questionSet @relation(fields: [questionSetId], references: [id])
+
+  @@index([questionSetId, agentName], map: "idx_agent_feedback_scheme")
 }
 
 // Execution Sessions (references copilot schema tables)

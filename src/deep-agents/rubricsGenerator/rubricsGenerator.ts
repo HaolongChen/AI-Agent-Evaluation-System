@@ -5,7 +5,7 @@ import {
 	LocalShellBackend,
 	type SubAgent,
 } from "deepagents";
-import { GEMINI_API_KEY, GEMINI_MODEL } from "../../config/env.ts";
+import { GEMINI_API_KEY, GEMINI_MODEL, OPENAI_API_KEY, USES_AZURE_OPENAI } from "../../config/env.ts";
 import { read_json_schema, Schema } from "./tools/schemaReader.ts";
 import * as z from "zod";
 import { HumanMessage, toolStrategy } from "langchain";
@@ -18,12 +18,33 @@ import { MemorySaver } from "@langchain/langgraph";
 import { Feedback, save_agent_feedbacks } from "./tools/feedback.ts";
 import { rubricService } from "../../services/RubricService.ts";
 import type { agentFeedbacks } from "../../../build/generated/prisma/client.ts";
+import { traceable } from "langsmith/traceable";
+import { wrapOpenAI } from "langsmith/wrappers";
+import OpenAI from "openai";
 
 if (!GEMINI_API_KEY) {
 	throw new Error(
 		"GEMINI_API_KEY is not set in environment variables. Please set it to use the rubrics generator.",
 	);
 }
+
+// Wrapped OpenAI client for conditional backend use.
+// The agent currently runs on Gemini, but this client is ready when the backend
+// switches to OpenAI / Azure OpenAI and will be traced in LangSmith as well.
+export const openaiClient = OPENAI_API_KEY
+	? wrapOpenAI(
+			new OpenAI(
+				USES_AZURE_OPENAI
+					? {
+						apiKey: OPENAI_API_KEY,
+						baseURL: process.env["AZURE_OPENAI_ENDPOINT"],
+						defaultQuery: { "api-version": process.env["AZURE_OPENAI_API_VERSION"] || "2025-04-01-preview" },
+						defaultHeaders: { "api-key": OPENAI_API_KEY },
+					}
+					: { apiKey: OPENAI_API_KEY },
+			),
+		)
+	: null;
 
 const publicSchema = new Schema();
 const publicSchemaContent = JSON.stringify(await publicSchema.getSchema());
@@ -148,7 +169,7 @@ const rubricsGeneratorAgent = createDeepAgent({
 	checkpointer,
 });
 
-export const generateRubrics = async (
+const _generateRubricsImpl = async (
 	schemaId: string,
 	query: string,
 ): Promise<
@@ -222,3 +243,9 @@ export const generateRubrics = async (
 		throw error;
 	}
 };
+
+export const generateRubrics = traceable(_generateRubricsImpl, {
+	name: "generateRubrics",
+	run_type: "chain",
+	tags: ["deep-agent", "rubrics-generator"],
+});

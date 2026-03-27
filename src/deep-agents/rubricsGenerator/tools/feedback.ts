@@ -23,6 +23,7 @@ export class Feedback {
 export const save_agent_feedbacks = tool(
 	({ feedbacks }, options) => {
 		try {
+      logger.debug("option: ", options);
 			switch (options.metadata.lc_agent_name) {
 				case "rubrics_generator_agent":
 					options.context.rubricsGeneratorAgent.addFeedback(feedbacks);

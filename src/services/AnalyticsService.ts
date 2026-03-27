@@ -2,7 +2,7 @@ import { prisma } from "../config/prisma.ts";
 import { logger } from "../utils/logger.ts";
 // import { COPILOT_TYPES } from "../config/constants.ts";
 import {} from // type Prisma,
-"../../build/generated/prisma/client.ts";
+"../prisma/build/generated/prisma/client.ts";
 // import { goldenSetService } from "./GoldenSetService.ts";
 import {
 	EvaluatorType,

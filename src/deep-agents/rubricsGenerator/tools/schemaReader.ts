@@ -6,7 +6,7 @@ import { logger } from "../../../utils/logger.ts";
 export const read_json_schema = tool(
 	async ({ query }: { query: string }, config) => {
 		try {
-			const filePath =
+			const filePath = 
 				config?.context?.schemaId ?
 					`${process.cwd()}/local_shell/schemas/${config.context.schemaId}.json`
 				:	`${process.cwd()}/local_shell/schemas/zschema.json`;

@@ -7,7 +7,7 @@ import type {
 	userInput,
 	// copilotOutput,
 	// evaluationSession,
-} from "../../build/generated/prisma/client.ts";
+} from "../prisma/build/generated/prisma/client.ts";
 import type { GoldenSetFilters } from "../graphql/generated/resolvers-types.ts";
 // import type { GoldenSet, GoldenSetFilters } from "../graphql/generated/resolvers-types.ts";
 

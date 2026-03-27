@@ -1,40 +1,52 @@
 {
-  "compilerOptions": {
-    "rootDirs": ["src"],
-    "outDir": "dist",
+	"compilerOptions": {
+		"rootDirs": ["src"],
+		"outDir": "dist",
 
-    "module": "nodenext",
-    "target": "esnext",
+		"module": "nodenext",
+		"target": "esnext",
+		"moduleResolution": "nodenext",
 
-    "lib": ["ESNext"],
-    "types": ["node"],
+		"lib": ["ESNext"],
+		"allowArbitraryExtensions": true,
+		"allowUmdGlobalAccess": true,
 
-    "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
+		"sourceMap": true,
+		"declaration": true,
+		"declarationMap": true,
+		"allowJs": true,
 
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": true,
 
-    "preserveConstEnums": true,
-
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "noPropertyAccessFromIndexSignature": true,
-
-    "strict": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
-    "moduleDetection": "force",
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true
-  },
-  "include": ["src/**/*", "build/**/*"],
-  "exclude": ["node_modules", "dist", "test/**/*", "src/**/*.json"]
+		"preserveConstEnums": true,
+		"noImplicitReturns": true,
+		"noImplicitOverride": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noErrorTruncation": true,
+		"pretty": true,
+		"strict": true,
+		"verbatimModuleSyntax": true,
+		"isolatedModules": true,
+		"noUncheckedSideEffectImports": true,
+		"moduleDetection": "force",
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"rewriteRelativeImportExtensions": true
+	},
+	"include": ["src/**/*"],
+	"exclude": [
+		"node_modules",
+		"dist",
+		"test/**/*",
+		"src/**/*.json",
+		"src/langGraph/**/*",
+		"src/jobs/RubricGenerationJobRunner.ts",
+		"src/jobs/RubricReviewJobRunner.ts",
+		"src/jobs/HumanEvaluationJobRunner.ts",
+    "src/prisma/migrations/**/*",
+	]
 }

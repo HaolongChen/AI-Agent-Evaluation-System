@@ -1,4 +1,4 @@
-import type { CopilotType } from '../../build/generated/prisma/enums.ts';
+import type { CopilotType } from '../prisma/build/generated/prisma/enums.ts';
 
 export const COPILOT_TYPES = {
   DATA_MODEL_BUILDER: 'dataModel',

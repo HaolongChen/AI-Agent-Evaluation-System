@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"rootDirs": ["src"],
+		"rootDir": "src",
 		"outDir": "dist",
 
 		"module": "nodenext",
@@ -47,6 +47,6 @@
 		"src/jobs/RubricGenerationJobRunner.ts",
 		"src/jobs/RubricReviewJobRunner.ts",
 		"src/jobs/HumanEvaluationJobRunner.ts",
-    "src/prisma/migrations/**/*",
+		"src/prisma/migrations/**/*"
 	]
 }

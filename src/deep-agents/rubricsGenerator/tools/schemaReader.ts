@@ -11,7 +11,7 @@ export const read_json_schema = tool(
 					`${process.cwd()}/local_shell/schemas/${config.context.schemaId}.json`
 				:	`${process.cwd()}/local_shell/schemas/zschema.json`;
 
-			return await jq.run(query, filePath, { input: "file", output: "json" });
+			return await jq.run(query, filePath, { input: "file", output: "compact" });
 		} catch (error) {
 			logger.error("Error executing jq query:", error);
 			return {

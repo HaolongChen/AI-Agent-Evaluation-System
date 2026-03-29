@@ -6,17 +6,27 @@ import { logger } from "../../../utils/logger.ts";
 export const read_json_schema = tool(
 	async ({ query }: { query: string }, config) => {
 		try {
-			const filePath = 
-				config?.context?.schemaId ?
+			const filePath =
+				config?.metadata?.lc_agent_name === "RubricsGeneratorAgent" ?
 					`${process.cwd()}/local_shell/schemas/${config.context.schemaId}.json`
 				:	`${process.cwd()}/local_shell/schemas/zschema.json`;
 
-			return await jq.run(query, filePath, { input: "file", output: "compact" });
+			const result = await jq.run(query, filePath, {
+				input: "file",
+				output: "compact",
+			});
+			if (typeof result === "string" && result.length > 1000) {
+				return {
+					message:
+						"The result is too long to display. Please refine your query to get a more specific result.",
+				};
+			}
+			return result;
 		} catch (error) {
 			logger.error("Error executing jq query:", error);
 			return {
-				error:
-					"Failed to execute jq query. Please check the query syntax and ensure it is valid against the target JSON schema.",
+				message: "Failed to execute jq query. Reflect why you failed.",
+				error,
 			};
 		} finally {
 			// logger.debug(`Finished executing jq query: ${query}\n`);
@@ -24,7 +34,8 @@ export const read_json_schema = tool(
 	},
 	{
 		name: "read_json_schema",
-		description: "Using external jq tool to read (lazy load) JSON schema",
+		description:
+			"Using external jq tool to read (lazy load) the JSON schema you own",
 		schema: z.object({
 			query: z
 				.string()
@@ -54,12 +65,12 @@ export class Schema {
 				);
 			}
 			this.schema = await response.json();
-			logger.debug("Successfully loaded JSON schema");
 		} catch (error) {
 			logger.error("Failed to load JSON schema", error);
 			this.schema = {
-				error:
+				message:
 					"Failed to load JSON schema. Stop and inform your developer immediately.",
+				error,
 			};
 		}
 	}

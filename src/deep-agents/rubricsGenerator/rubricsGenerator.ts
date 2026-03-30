@@ -11,7 +11,7 @@ import {
 import { GEMINI_API_KEY } from "../../config/env.ts";
 import { Schema } from "./tools/schemaReader.ts";
 import * as z from "zod";
-import { HumanMessage, toolStrategy } from "langchain";
+import { createMiddleware, HumanMessage, toolStrategy } from "langchain";
 // import { logger } from "../../utils/logger.ts";
 import { getSchemaModel } from "../../utils/ali-oss.ts";
 import { fromUint8Array } from "js-base64";
@@ -58,11 +58,27 @@ const docsLookupPromptText = docsLookupPromptTemplate.replace(
 
 const docsLookupAgent: SubAgent = {
 	name: "docs_lookup_agent",
-	tools: [save_agent_feedbacks],
+	middleware: [
+		createMiddleware({
+			name: "docs_lookup_feedback_middleware",
+			wrapModelCall: async (request, handler) => {
+				return await handler({
+					...request,
+					...request.tools.concat([
+						save_agent_feedbacks(docsLookupAgentFeedback.addFeedback),
+					]),
+				});
+			},
+		}),
+	],
 	systemPrompt: docsLookupPromptText,
 	description:
 		"This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided zion schema and user input.",
 };
+
+const rubricsGeneratorFeedback = new Feedback("rubrics_generator_agent");
+const schemaLookupAgentFeedback = new Feedback("schema_lookup_agent");
+const docsLookupAgentFeedback = new Feedback("docs_lookup_agent");
 
 const responseSchema = z.object({
 	rubrics: z
@@ -95,23 +111,23 @@ const responseSchema = z.object({
 
 const contextSchema = z.object({
 	schemaId: z.string(),
-	rubricsGeneratorAgent: z.function({
-		input: z.tuple([z.string()]),
-		output: z.void(),
-	}),
-	schemaLookupAgent: z.function({
-		input: z.tuple([z.string()]),
-		output: z.void(),
-	}),
-	docsLookupAgent: z.function({
-		input: z.tuple([z.string()]),
-		output: z.void(),
-	}),
 });
 
 const schemaLookupAgent: SubAgent = {
 	name: "schema_lookup_agent",
-	tools: [save_agent_feedbacks],
+	middleware: [
+		createMiddleware({
+			name: "schema_lookup_feedback_middleware",
+			wrapModelCall: async (request, handler) => {
+				return await handler({
+					...request,
+					...request.tools.concat([
+						save_agent_feedbacks(schemaLookupAgentFeedback.addFeedback),
+					]),
+				});
+			},
+		}),
+	],
 	systemPrompt: schemaLookupPromptText,
 	description:
 		"This sub-agent is responsible for explaining zion schemas that rubrics_generator_agent owns by looking up its own reference schema of zion schemas with jq queries.",
@@ -126,7 +142,6 @@ const rubrics_generator_agent = (schemaId: string) =>
 		responseFormat: toolStrategy(responseSchema),
 		// model: `google-genai:${GEMINI_MODEL}`,
 		model: gemini(GEMINI_API_KEY as string),
-		tools: [save_agent_feedbacks],
 		backend: (rt) =>
 			new CompositeBackend(new StateBackend(rt), {
 				"/momen_docs/": new FilesystemBackend({
@@ -143,7 +158,19 @@ const rubrics_generator_agent = (schemaId: string) =>
 		subagents: [schemaLookupAgent, docsLookupAgent],
 		systemPrompt: rubricsGeneratorPromptText,
 		checkpointer,
-		middleware: [],
+		middleware: [
+			createMiddleware({
+				name: "feedback_middleware",
+				wrapModelCall: async (request, handler) => {
+					return await handler({
+						...request,
+						...request.tools.concat([
+							save_agent_feedbacks(rubricsGeneratorFeedback.addFeedback),
+						]),
+					});
+				},
+			}),
+		],
 	});
 
 export const generateRubrics = async (
@@ -196,9 +223,6 @@ export const generateRubrics = async (
 		);
 	}
 
-	const rubricsGeneratorFeedback = new Feedback("rubrics_generator_agent");
-	const schemaLookupAgentFeedback = new Feedback("schema_lookup_agent");
-	const docsLookupAgentFeedback = new Feedback("docs_lookup_agent");
 	const response = await rubrics_generator_agent(schemaId).invoke(
 		{
 			messages: [
@@ -212,9 +236,6 @@ export const generateRubrics = async (
 		{
 			context: {
 				schemaId,
-				rubricsGeneratorAgent: rubricsGeneratorFeedback.addFeedback,
-				schemaLookupAgent: schemaLookupAgentFeedback.addFeedback,
-				docsLookupAgent: docsLookupAgentFeedback.addFeedback,
 			},
 			configurable: {
 				thread_id: `rubrics-generator-${schemaId}-${Date.now()}`,

@@ -25,8 +25,6 @@ import { gemini } from "../llm/index.ts";
 import { fetchSideBar } from "./tools/documentationReader.ts";
 import { logger } from "../../utils/logger.ts";
 
-
-
 const promptsBasePath = new URL("./prompts/", import.meta.url);
 const feedbackPrompt = await fs.readFile(
 	new URL("feedbackPrompt.md", promptsBasePath),
@@ -121,31 +119,32 @@ const schemaLookupAgent: SubAgent = {
 
 const checkpointer = new MemorySaver();
 
-const rubrics_generator_agent = (schemaId: string) => createDeepAgent({
-	// model: `azure_openai:${OPENAI_MODEL}`,
-	name: "rubrics_generator_agent",
-	responseFormat: toolStrategy(responseSchema),
-	// model: `google-genai:${GEMINI_MODEL}`,
-	model: gemini(GEMINI_API_KEY as string),
-	tools: [save_agent_feedbacks],
-	backend: (rt) =>
-		new CompositeBackend(new StateBackend(rt), {
-			"/momen_docs/": new FilesystemBackend({
-				rootDir: `${process.cwd()}/local_shell/momen_docs`,
+const rubrics_generator_agent = (schemaId: string) =>
+	createDeepAgent({
+		// model: `azure_openai:${OPENAI_MODEL}`,
+		name: "rubrics_generator_agent",
+		responseFormat: toolStrategy(responseSchema),
+		// model: `google-genai:${GEMINI_MODEL}`,
+		model: gemini(GEMINI_API_KEY as string),
+		tools: [save_agent_feedbacks],
+		backend: (rt) =>
+			new CompositeBackend(new StateBackend(rt), {
+				"/momen_docs/": new FilesystemBackend({
+					rootDir: `${process.cwd()}/local_shell/momen_docs`,
+				}),
+				"/zion_schemas/": new FilesystemBackend({
+					rootDir: `${process.cwd()}/local_shell/zion/${schemaId}/`,
+				}),
+				"/schemas/": new FilesystemBackend({
+					rootDir: `${process.cwd()}/local_shell/schemas`,
+				}),
 			}),
-			"/zion_schemas/": new FilesystemBackend({
-				rootDir: `${process.cwd()}/local_shell/zion/${schemaId}/`,
-			}),
-			"/schemas/": new FilesystemBackend({
-				rootDir: `${process.cwd()}/local_shell/schemas`,
-			}),
-		}),
-	contextSchema: contextSchema,
-	subagents: [schemaLookupAgent, docsLookupAgent],
-	systemPrompt: rubricsGeneratorPromptText,
-	checkpointer,
-	middleware: [],
-});
+		contextSchema: contextSchema,
+		subagents: [schemaLookupAgent, docsLookupAgent],
+		systemPrompt: rubricsGeneratorPromptText,
+		checkpointer,
+		middleware: [],
+	});
 
 export const generateRubrics = async (
 	schemaId: string,
@@ -169,17 +168,32 @@ export const generateRubrics = async (
 			);
 		}),
 		fetchSideBar(),
-		(new Schema()).getSchema().then((schema) =>
-			fs.writeFile(
-				`${process.cwd()}/local_shell/schemas/public_schema.json`,
-				JSON.stringify(schema),
+		new Schema()
+			.getSchema()
+			.then((schema) =>
+				fs.writeFile(
+					`${process.cwd()}/local_shell/schemas/public_schema.json`,
+					JSON.stringify(schema),
+				),
 			),
-		),
-	])
+		fs
+			.readFile(`${process.cwd()}/ZSchema_Flattened.json`, "utf-8")
+			.then((content) =>
+				fs.writeFile(
+					`${process.cwd()}/local_shell/schemas/zschema.json`,
+					JSON.stringify({
+						...JSON.parse(content),
+						...{ $schema: "./public_schema.json" },
+					}),
+				),
+			),
+	]);
 
-	if(res.some((r) => r.status === "rejected")) {
+	if (res.some((r) => r.status === "rejected")) {
 		logger.error("Error preparing context data:", res);
-		throw new Error("Failed to prepare context data. Please check the logs for more details.");
+		throw new Error(
+			"Failed to prepare context data. Please check the logs for more details.",
+		);
 	}
 
 	const rubricsGeneratorFeedback = new Feedback("rubrics_generator_agent");

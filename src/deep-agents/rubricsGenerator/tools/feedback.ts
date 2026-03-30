@@ -24,13 +24,13 @@ export const save_agent_feedbacks = tool(
 	({ feedbacks }, options) => {
 		try {
 			switch (options?.metadata?.lc_agent_name ?? "unknown") {
-				case "RubricsGeneratorAgent":
+				case "rubrics_generator_agent":
 					options.context.rubricsGeneratorAgent.addFeedback(feedbacks);
 					break;
-				case "SchemaLookupAgent":
+				case "schema_lookup_agent":
 					options.context.schemaLookupAgent.addFeedback(feedbacks);
 					break;
-				case "DocsLookupAgent":
+				case "docs_lookup_agent":
 					options.context.docsLookupAgent.addFeedback(feedbacks);
 					break;
 				default:

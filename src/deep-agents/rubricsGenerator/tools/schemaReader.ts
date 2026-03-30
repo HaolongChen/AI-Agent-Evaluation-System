@@ -7,9 +7,9 @@ export const read_json_schema = tool(
 	async ({ query }: { query: string }, config) => {
 		try {
 			const filePath =
-				config?.metadata?.lc_agent_name === "SchemaLookupAgent" ?
+				config?.metadata?.lc_agent_name === "schema_lookup_agent" ?
 					`${process.cwd()}/local_shell/schemas/zschema.json`
-				:	`${process.cwd()}/local_shell/schemas/${config.context.schemaId}.json`;
+				:	`${process.cwd()}/local_shell/schemas/${config.context.schemaId}/${config.context.schemaId}.json`;
 
 			const result = await jq.run(query, filePath, {
 				input: "file",
@@ -23,7 +23,12 @@ export const read_json_schema = tool(
 			}
 			return result;
 		} catch (error) {
-			logger.error("Error executing jq query:", query, error, config.metadata.lc_agent_name);
+			logger.error(
+				"Error executing jq query:",
+				query,
+				error,
+				config.metadata.lc_agent_name,
+			);
 			return {
 				message: "Failed to execute jq query. Reflect why you failed.",
 				error,

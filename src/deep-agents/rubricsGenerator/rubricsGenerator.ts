@@ -73,7 +73,7 @@ const docsLookupAgent: SubAgent = {
 	],
 	systemPrompt: docsLookupPromptText,
 	description:
-		"This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided zion schema and user input.",
+		"This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided crdt schema model and user input.",
 };
 
 const rubricsGeneratorFeedback = new Feedback("rubrics_generator_agent");
@@ -88,12 +88,12 @@ const responseSchema = z.object({
 				content: z
 					.string()
 					.describe(
-						`The content of the rubric, which should be a markdown string that clearly describes the expected copilot's results referring to the zion schema and user input. The content should be structured in a way that is specially and uniquely designed for evaluation, which means it cannot be answered directly only with user input and (public information or common sense) without referring to the provided zion schema and zion (momen) official documentation. And it can only be answered true or false whether the copilot results match the expected outcome and should avoid vagueness that narrows the disparity of possible answers`,
+						`The content of the rubric, which should be a markdown string that clearly describes the expected copilot's results referring to the crdt schema model and user input. The content should be structured in a way that is specially and uniquely designed for evaluation, which means it cannot be answered directly only with user input and (public information or common sense) without referring to the provided crdt schema model and zion (momen) official documentation. And it can only be answered true or false whether the copilot results match the expected outcome and should avoid vagueness that narrows the disparity of possible answers`,
 					),
 				expectedAnswer: z
 					.boolean()
 					.describe(
-						`A boolean value indicating the expected answer of current rubric. This field would be used to evaluate the modifications that copilot will make by determining whether the copilot results match the phenomenon described in current rubric based on copilot's modifications. The expected answer should represent whether the outcome described in current rubric is desired, providing a clear and explicit benchmark for evaluation. This field is crucial for assessing the accuracies of the copilot's modifications in relation to the provided zion schema and zion (momen) official documentation.`,
+						`A boolean value indicating the expected answer of current rubric. This field would be used to evaluate the modifications that copilot will make by determining whether the copilot results match the phenomenon described in current rubric based on copilot's modifications. The expected answer should represent whether the outcome described in current rubric is desired, providing a clear and explicit benchmark for evaluation. This field is crucial for assessing the accuracies of the copilot's modifications in relation to the provided crdt schema model and zion (momen) official documentation.`,
 					),
 				weight: z
 					.number()
@@ -130,7 +130,7 @@ const schemaLookupAgent: SubAgent = {
 	],
 	systemPrompt: schemaLookupPromptText,
 	description:
-		"This sub-agent is responsible for explaining zion schemas that rubrics_generator_agent owns by looking up its own reference schema of zion schemas with jq queries.",
+		"This sub-agent is responsible for explaining crdt schema models that rubrics_generator_agent owns by looking up its own reference schema of crdt schema models with jq queries.",
 };
 
 const checkpointer = new MemorySaver();
@@ -147,7 +147,7 @@ const rubrics_generator_agent = (schemaId: string) =>
 				"/momen_docs/": new FilesystemBackend({
 					rootDir: `${process.cwd()}/local_shell/momen_docs`,
 				}),
-				"/zion_schemas/": new FilesystemBackend({
+				"/zion_schema/": new FilesystemBackend({
 					rootDir: `${process.cwd()}/local_shell/zion/${schemaId}/`,
 				}),
 				"/schemas/": new FilesystemBackend({
@@ -190,7 +190,7 @@ export const generateRubrics = async (
 			const model = Crdt.initModel(binaryBase64);
 			const schemaJson = model.view();
 			return fs.writeFile(
-				`${process.cwd()}/local_shell/zion/${schemaId}/${schemaId}.json`,
+				`${process.cwd()}/local_shell/zion/${schemaId}/crdt_schema.json`,
 				JSON.stringify(schemaJson),
 			);
 		}),
@@ -208,10 +208,10 @@ export const generateRubrics = async (
 			.then((content) =>
 				fs.writeFile(
 					`${process.cwd()}/local_shell/schemas/zschema.json`,
-					JSON.stringify({
-						...JSON.parse(content),
-						...{ $schema: "./public_schema.json" },
-					}),
+					content.replace(
+						"http://json-schema.org/draft-07/schema#",
+						"./public_schema.json",
+					),
 				),
 			),
 	]);

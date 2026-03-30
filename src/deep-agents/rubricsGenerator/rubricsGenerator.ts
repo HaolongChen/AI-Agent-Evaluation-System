@@ -20,6 +20,7 @@ import { Feedback, save_agent_feedbacks } from "./tools/feedback.ts";
 import { rubricService } from "../../services/RubricService.ts";
 import type { agentFeedbacks } from "../../prisma/build/generated/prisma/client.ts";
 import {} from "langsmith/wrappers";
+import { gemini } from "../llm/index.ts";
 if (!GEMINI_API_KEY) {
 	throw new Error(
 		"GEMINI_API_KEY is not set in environment variables. Please set it to use the rubrics generator.",
@@ -117,7 +118,7 @@ const rubricsGeneratorAgent = createDeepAgent({
 	// name: "RubricsGeneratorAgent",
 	responseFormat: toolStrategy(responseSchema),
 	// model: `google-genai:${GEMINI_MODEL}`,
-	model: "google-genai:gemini-2.5-flash-lite",
+	model: gemini(GEMINI_API_KEY),
 	tools: [read_json_schema, save_agent_feedbacks],
 	backend: (rt) =>
 		new CompositeBackend(

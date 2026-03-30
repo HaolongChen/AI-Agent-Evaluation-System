@@ -133,5 +133,3 @@ const storeDocs = async (route: string, path: string): Promise<string> => {
 		);
 	}
 };
-
-logger.info("contents", await fetchSideBar());

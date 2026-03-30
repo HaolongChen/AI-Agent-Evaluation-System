@@ -183,6 +183,7 @@ export const generateRubrics = async (
 		feedbacks: (questionSetId: string) => Promise<agentFeedbacks>[];
 	}
 > => {
+	await	fs.mkdir(`${process.cwd()}/local_shell/zion/${schemaId}`, { recursive: true });
 	const res = await Promise.allSettled([
 		getSchemaModel(schemaId).then((arrayBuffer) => {
 			const modelBinary = new Uint8Array(arrayBuffer);

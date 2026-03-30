@@ -49,7 +49,7 @@ import { logger } from "../../../utils/logger.ts";
 // 	},
 // );
 
-export class Schema {
+class Schema {
 	readonly schemaUrl: string = "http://json-schema.org/draft-07/schema";
 	private schema: unknown = null;
 
@@ -70,11 +70,7 @@ export class Schema {
 			this.schema = await response.json();
 		} catch (error) {
 			logger.error("Failed to load JSON schema", error);
-			this.schema = {
-				message:
-					"Failed to load JSON schema. Stop and inform your developer immediately.",
-				error,
-			};
+			throw new Error("Failed to load JSON schema. Please check the logs for more details.");
 		}
 	}
 
@@ -83,3 +79,5 @@ export class Schema {
 		return this.schema;
 	}
 }
+
+export const _schema = new Schema();

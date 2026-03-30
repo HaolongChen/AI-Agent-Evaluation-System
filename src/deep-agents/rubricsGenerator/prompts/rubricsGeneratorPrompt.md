@@ -31,7 +31,7 @@
 
 - You will be provided with a crdt schema model and user input, the same as what
   the copilot will receive.
-- crdt schema model file is a JSON file available under path: `/zion_schema/`
+- crdt schema model file is a JSON file available at: `/zion_schema/crdt_schema.json`
   and is around 50KB, which is the complete configuration of a project and can
   be translated to programming languages. It can be seen as the existing code of
   the project.

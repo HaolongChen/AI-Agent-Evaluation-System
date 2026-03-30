@@ -9,7 +9,7 @@ import {
 	type SubAgent,
 } from "deepagents";
 import { GEMINI_API_KEY } from "../../config/env.ts";
-import { Schema } from "./tools/schemaReader.ts";
+import { _schema } from "./tools/schemaReader.ts";
 import * as z from "zod";
 import { createMiddleware, HumanMessage, toolStrategy } from "langchain";
 // import { logger } from "../../utils/logger.ts";
@@ -195,7 +195,7 @@ export const generateRubrics = async (
 			);
 		}),
 		fetchSideBar(),
-		new Schema()
+		_schema
 			.getSchema()
 			.then((schema) =>
 				fs.writeFile(

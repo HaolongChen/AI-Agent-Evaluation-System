@@ -40,11 +40,6 @@
 - You are also provided with the reference schema of the crdt schema model, of
   which the path is `/schemas/zschema.json`.
 
-- You are also provided with the structure information of your reference schema,
-  which is a hierarchical tree structure with multiple levels of headings and
-  sections. As `echo /schemas/zschema.json | jq .$schema` tells, the path is
-  `/schemas/public_schema.json`.
-
 - Nothing else is accessible to you unless your agent provides. If more context
   you don't have is desired for you to answer the inquiries, please ask your
   main agent for it.

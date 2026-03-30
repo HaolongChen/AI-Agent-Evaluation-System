@@ -56,29 +56,24 @@ const docsLookupPromptText = docsLookupPromptTemplate.replace(
 	feedbackPrompt,
 );
 
+const rubricsGeneratorFeedback = new Feedback("rubrics_generator_agent");
+const schemaLookupAgentFeedback = new Feedback("schema_lookup_agent");
+const docsLookupAgentFeedback = new Feedback("docs_lookup_agent");
+
 const docsLookupAgent: SubAgent = {
 	name: "docs_lookup_agent",
 	middleware: [
 		createMiddleware({
 			name: "docs_lookup_feedback_middleware",
-			wrapModelCall: async (request, handler) => {
-				return await handler({
-					...request,
-					...request.tools.concat([
-						save_agent_feedbacks(docsLookupAgentFeedback.addFeedback),
-					]),
-				});
-			},
+			tools: [save_agent_feedbacks(docsLookupAgentFeedback.addFeedback)],
 		}),
 	],
+	tools: [],
 	systemPrompt: docsLookupPromptText,
 	description:
 		"This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided crdt schema model and user input.",
 };
 
-const rubricsGeneratorFeedback = new Feedback("rubrics_generator_agent");
-const schemaLookupAgentFeedback = new Feedback("schema_lookup_agent");
-const docsLookupAgentFeedback = new Feedback("docs_lookup_agent");
 
 const responseSchema = z.object({
 	rubrics: z
@@ -118,60 +113,16 @@ const schemaLookupAgent: SubAgent = {
 	middleware: [
 		createMiddleware({
 			name: "schema_lookup_feedback_middleware",
-			wrapModelCall: async (request, handler) => {
-				return await handler({
-					...request,
-					...request.tools.concat([
-						save_agent_feedbacks(schemaLookupAgentFeedback.addFeedback),
-					]),
-				});
-			},
+			tools: [save_agent_feedbacks(schemaLookupAgentFeedback.addFeedback)],
 		}),
 	],
+	tools: [],
 	systemPrompt: schemaLookupPromptText,
 	description:
 		"This sub-agent is responsible for explaining crdt schema models that rubrics_generator_agent owns by looking up its own reference schema of crdt schema models with jq queries.",
 };
 
 const checkpointer = new MemorySaver();
-
-const rubrics_generator_agent = (schemaId: string) =>
-	createDeepAgent({
-		// model: `azure_openai:${OPENAI_MODEL}`,
-		name: "rubrics_generator_agent",
-		responseFormat: toolStrategy(responseSchema),
-		// model: `google-genai:${GEMINI_MODEL}`,
-		model: gemini(GEMINI_API_KEY as string),
-		backend: (rt) =>
-			new CompositeBackend(new StateBackend(rt), {
-				"/momen_docs/": new FilesystemBackend({
-					rootDir: `${process.cwd()}/local_shell/momen_docs`,
-				}),
-				"/zion_schema/": new FilesystemBackend({
-					rootDir: `${process.cwd()}/local_shell/zion/${schemaId}/`,
-				}),
-				"/schemas/": new FilesystemBackend({
-					rootDir: `${process.cwd()}/local_shell/schemas`,
-				}),
-			}),
-		contextSchema: contextSchema,
-		subagents: [schemaLookupAgent, docsLookupAgent],
-		systemPrompt: rubricsGeneratorPromptText,
-		checkpointer,
-		middleware: [
-			createMiddleware({
-				name: "feedback_middleware",
-				wrapModelCall: async (request, handler) => {
-					return await handler({
-						...request,
-						...request.tools.concat([
-							save_agent_feedbacks(rubricsGeneratorFeedback.addFeedback),
-						]),
-					});
-				},
-			}),
-		],
-	});
 
 export const generateRubrics = async (
 	schemaId: string,
@@ -184,6 +135,7 @@ export const generateRubrics = async (
 	}
 > => {
 	await	fs.mkdir(`${process.cwd()}/local_shell/zion/${schemaId}`, { recursive: true });
+	await	fs.mkdir(`${process.cwd()}/local_shell/schemas`, { recursive: true });
 	const res = await Promise.allSettled([
 		getSchemaModel(schemaId).then((arrayBuffer) => {
 			const modelBinary = new Uint8Array(arrayBuffer);
@@ -196,23 +148,12 @@ export const generateRubrics = async (
 			);
 		}),
 		fetchSideBar(),
-		_schema
-			.getSchema()
-			.then((schema) =>
-				fs.writeFile(
-					`${process.cwd()}/local_shell/schemas/public_schema.json`,
-					JSON.stringify(schema),
-				),
-			),
 		fs
 			.readFile(`${process.cwd()}/ZSchema_Flattened.json`, "utf-8")
 			.then((content) =>
 				fs.writeFile(
 					`${process.cwd()}/local_shell/schemas/zschema.json`,
-					content.replace(
-						"http://json-schema.org/draft-07/schema#",
-						"./public_schema.json",
-					),
+					content
 				),
 			),
 	]);
@@ -224,7 +165,39 @@ export const generateRubrics = async (
 		);
 	}
 
-	const response = await rubrics_generator_agent(schemaId).invoke(
+	const rubrics_generator_agent = createDeepAgent({
+		// model: `azure_openai:${OPENAI_MODEL}`,
+		name: "rubrics_generator_agent",
+		responseFormat: toolStrategy(responseSchema),
+		// model: `google-genai:${GEMINI_MODEL}`,
+		model: gemini(GEMINI_API_KEY as string),
+		backend: (rt) =>
+			new CompositeBackend(new StateBackend(rt), {
+				"/momen_docs/": new FilesystemBackend({
+					rootDir: `${process.cwd()}/local_shell/momen_docs`,
+					virtualMode: true,
+				}),
+				"/zion_schema/": new FilesystemBackend({
+					rootDir: `${process.cwd()}/local_shell/zion/${schemaId}/`,
+					virtualMode: true,
+				}),
+				"/schemas/": new FilesystemBackend({
+					rootDir: `${process.cwd()}/local_shell/schemas`,
+					virtualMode: true,
+				}),
+			}),
+		contextSchema: contextSchema,
+		subagents: [schemaLookupAgent, docsLookupAgent],
+		systemPrompt: rubricsGeneratorPromptText,
+		checkpointer,
+		middleware: [
+			createMiddleware({
+				name: "feedback_middleware",
+				tools: [save_agent_feedbacks(rubricsGeneratorFeedback.addFeedback)],
+			}),
+		],});
+
+	const response = await rubrics_generator_agent.invoke(
 		{
 			messages: [
 				new HumanMessage(

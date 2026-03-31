@@ -1,361 +1,319 @@
-import { WebSocket } from 'ws';
-import { logger } from '../utils/logger.ts';
-import { appendFileSync } from 'fs';
+import { WebSocket } from "ws";
+import { logger } from "../utils/logger.ts";
 import {
-  CopilotMessageType,
-  type AIResponseMessage,
-  type CopilotMessage,
-  type EditableTextMessage,
-  type HumanInputMessage,
-  type InitialStateMessage,
-  type SystemStatusMessage,
-  type TaskMessage,
-  type ToolCall,
-  type ToolCallsMessage,
-} from '../utils/types.ts';
+	CopilotMessageType,
+	type AIResponseMessage,
+	type CopilotMessage,
+	type EditableTextMessage,
+	type HumanInputMessage,
+	type InitialStateMessage,
+	type SystemStatusMessage,
+	type TaskMessage,
+	type ToolCall,
+	type ToolCallsMessage,
+} from "../utils/types.ts";
 import {
-  ClientType,
-  CopilotJs,
-  Locale,
-  Product,
-  type CopilotApiResultJs,
-  type OpaqueSchemaGraph,
-} from '../utils/zed/TypeSystem.ts';
-// import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from '../utils/zed/ZSchema.ts';
-// import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from '../utils/zed/AfCustomCodeTemplates.ts';
-import { assertNotNull } from '../utils/zed/helpers.ts';
-import type { ToolResult } from '../utils/graph-states.ts';
+	ClientType,
+	CopilotJs,
+	Locale,
+	Product,
+	type CopilotApiResultJs,
+	type OpaqueSchemaGraph,
+} from "../utils/zed/TypeSystem.ts";
+import { assertNotNull } from "../utils/zed/helpers.ts";
+import type { ToolResult } from "../utils/graph-states.ts";
+import type { Data } from "ws";
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
 
 export class EvaluationJobRunner {
-  private projectExId: string;
-  private wsUrl: string;
-  private query: string;
-  private schemaGraph: OpaqueSchemaGraph | null = null;
-  response: string = '';
-  editableText: string = '';
-  rounds: number = 0;
-  tasks: TaskMessage[] | null = null;
-  private completionPromise: Promise<{
-    // response: string;
-    // tasks: TaskMessage[] | null;
-    editableText: string;
-  }>;
-  // private resolveCompletion:
-  //   | ((value: { response: string; tasks: TaskMessage[] | null }) => void)
-  //   | null = null;
-  private resolveCompletion:
-    | ((result: { editableText: string }) => void)
-    | null = null;
-  private rejectCompletion: ((reason: Error) => void) | null = null;
-  private isCompleted: boolean = false;
-  private timeoutId: NodeJS.Timeout | null = null;
-  // private isSchemaSaving: boolean = false;
+	private projectExId: string;
+	private wsUrl: string;
+	private query: string;
+	private schemaGraph: OpaqueSchemaGraph | null = null;
+	editableText: string = "";
+	rounds: number = 0;
+	tasks: TaskMessage[] | null = null;
+	private completionPromise: Promise<{
+		// response: string;
+		// tasks: TaskMessage[] | null;
+		editableText: string;
+	}>;
+	private resolveCompletion:
+		| ((result: { editableText: string }) => void)
+		| null = null;
+	private rejectCompletion: ((reason: Error) => void) | null = null;
+	private isCompleted: boolean = false;
+	private timeoutId: NodeJS.Timeout | null = null;
+	// private isSchemaSaving: boolean = false;
 
-  constructor(
-    projectExId: string,
-    wsUrl: string,
-    query: string,
-    // supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null,
-    // afCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[],
-    schemaGraph: OpaqueSchemaGraph | null,
-  ) {
-    this.projectExId = projectExId;
-    this.wsUrl = wsUrl;
-    this.query = query;
-    this.schemaGraph = schemaGraph;
-    // Create the completion promise in the constructor
-    this.completionPromise = new Promise<{
-      // response: string;
-      // tasks: TaskMessage[] | null;
-      editableText: string;
-      // schema: string;
-    }>((resolve, reject) => {
-      this.resolveCompletion = resolve;
-      this.rejectCompletion = reject;
-    });
-  }
+	constructor(
+		projectExId: string,
+		wsUrl: string,
+		query: string,
+		schemaGraph: OpaqueSchemaGraph | null,
+	) {
+		this.projectExId = projectExId;
+		this.wsUrl = wsUrl;
+		this.query = query;
+		this.schemaGraph = schemaGraph;
+		this.completionPromise = new Promise<{
+			editableText: string;
+		}>((resolve, reject) => {
+			this.resolveCompletion = resolve;
+			this.rejectCompletion = reject;
+		}).then((result) => {
+			this.stopJob();
+			return result;
+		});
+	}
 
-  socket: WebSocket | null = null;
+	socket: WebSocket | null = null;
 
-  connect(): void {
-    this.socket = new WebSocket(this.wsUrl);
+	async connect(): Promise<void> {
+		this.socket = new WebSocket(this.wsUrl);
 
+		this.socket.addEventListener("open", () => {
+			logger.info("WebSocket connection opened.");
+		});
 
-    this.socket.on('open', () => {
-      logger.info('WebSocket connection established.');
-    });
+		this.socket.addEventListener("message", (event) => {
+			this.handleMessage(event.data);
+		});
 
-    this.socket.on('message', (data) => {
-      void this.handleMessage(data).catch((err: unknown) => {
-        logger.error('Unhandled error in message handler:', err);
-      });
-    });
+		this.socket.addEventListener("close", () => {
+			logger.info("WebSocket connection closed.");
+			if (!this.isCompleted && this.rejectCompletion) {
+				this.rejectCompletion(
+					new Error("WebSocket connection closed before job completion"),
+				);
+			}
+		});
 
-    this.socket.on('close', () => {
-      logger.info('WebSocket connection closed.');
-      if (!this.isCompleted && this.rejectCompletion) {
-        this.clearTimeout();
-        this.isCompleted = true;
-        this.rejectCompletion(
-          new Error('WebSocket connection closed before job completion'),
-        );
-      }
-    });
+		this.socket.addEventListener("error", (error) => {
+			logger.error("WebSocket error:", error);
+			if (!this.isCompleted && this.rejectCompletion) {
+				this.rejectCompletion(
+					error instanceof Error ? error : new Error(String(error)),
+				);
+			}
+		});
+	}
 
-    this.socket.on('error', (error) => {
-      logger.error('WebSocket error:', error);
-      if (!this.isCompleted && this.rejectCompletion) {
-        this.clearTimeout();
-        this.isCompleted = true;
-        this.rejectCompletion(
-          error instanceof Error ? error : new Error(String(error)),
-        );
-      }
-    });
-  }
+	send(data: CopilotMessage): void {
+		if (this.isCompleted) {
+			logger.warn(
+				"Attempted to send message after job completion. Ignoring.",
+				data,
+			);
+			return;
+		}
+		if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+			logger.info(`Sending message: ${JSON.stringify(data)}`);
+			this.socket.send(JSON.stringify(data));
+		} else {
+			logger.error("WebSocket is not open. Cannot send message:", data);
+		}
+	}
 
-  send(data: CopilotMessage): void {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      logger.info(`Sending message: ${JSON.stringify(data)}`);
-      this.socket.send(JSON.stringify(data));
-      if (data.type === CopilotMessageType.TERMINATE) {
-        this.rejectCompletion?.(new Error('Job terminated by user'));
-        this.clearTimeout();
-        this.socket.close();
-      }
-    } else {
-      logger.error('WebSocket is not open. Cannot send message:', data);
-    }
-  }
+	terminate(): void {
+		if (this.isCompleted) return;
+		this.send({ type: CopilotMessageType.TERMINATE });
+		this.isCompleted = true;
+		this.socket?.close();
+	}
 
-  terminate(): void {
-    this.send({ type: CopilotMessageType.TERMINATE });
-  }
+	handleMessage(message: Data): void {
+		const data: CopilotMessage[] = JSON.parse(message.toString());
+		logger.info(`Received message: ${JSON.stringify(data)}`);
+		if (this.isCompleted) return;
+		switch (data[0]?.type) {
+			case CopilotMessageType.INITIAL_STATE:
+				this.handleInitialStateMessage(data[0] as InitialStateMessage);
+				break;
+			case CopilotMessageType.SYSTEM_STATUS:
+				this.handleSystemStatusMessage(data[0] as SystemStatusMessage);
+				break;
+			case CopilotMessageType.TOOL_CALLS:
+				this.handleToolCallsMessage(data[0] as ToolCallsMessage);
+				break;
+			case CopilotMessageType.AI_RESPONSE:
+				this.handleAIResponseMessage(data[0] as AIResponseMessage);
+				break;
+			case CopilotMessageType.TASK:
+				this.tasks?.push(data[0] as TaskMessage);
+				break;
+			case CopilotMessageType.ERROR:
+				if (!this.isCompleted && this.rejectCompletion) {
+					this.rejectCompletion(
+						new Error(
+							`Job execution error: ${(data[0] as { content: string }).content}`,
+						),
+					);
+				}
+				break;
+			case CopilotMessageType.EDITABLE_TEXT:
+				this.handleEditableTextMessage(data[0] as EditableTextMessage);
+				break;
+			case CopilotMessageType.STATE_CHANGE:
+				if (data[0]?.currentJobIsRunning === false) {
+					logger.info(
+						`Job for project ${this.projectExId} has stopped running.`,
+					);
+					if (!this.isCompleted && this.rejectCompletion) {
+						logger.error("Job has stopped running unexpectedly");
+						this.rejectCompletion(
+							new Error("Job has stopped running unexpectedly"),
+						);
+					}
+				}
+				break;
+			default:
+				logger.info(
+					`Received message of type ${data[0]?.type} for project ${this.projectExId}.`,
+				);
+		}
+	}
 
-  async handleMessage(message: WebSocket.RawData): Promise<void> {
-    const data: CopilotMessage[] = JSON.parse(message.toString());
-    const logEntry = `${new Date().toISOString()} - Job Update: ${JSON.stringify(
-      data,
-      null,
-      2,
-    )}\n`;
-    logger.info(`Received message: ${JSON.stringify(data)}`);
-    appendFileSync('logs.txt', logEntry);
-    switch (data[0]?.type) {
-      case CopilotMessageType.INITIAL_STATE:
-        this.handleInitialStateMessage(data[0] as InitialStateMessage);
-        break;
-      case CopilotMessageType.SYSTEM_STATUS:
-        this.handleSystemStatusMessage(data[0] as SystemStatusMessage);
-        break;
-      case CopilotMessageType.TOOL_CALLS:
-        this.handleToolCallsMessage(data[0] as ToolCallsMessage);
-        break;
-      case CopilotMessageType.AI_RESPONSE:
-        this.handleAIResponseMessage(data[0] as AIResponseMessage);
-        break;
-      case CopilotMessageType.TASK:
-        this.tasks?.push(data[0] as TaskMessage);
-        break;
-      case CopilotMessageType.ERROR:
-        if (!this.isCompleted && this.rejectCompletion) {
-          this.clearTimeout();
-          this.isCompleted = true;
-          this.rejectCompletion(
-            new Error(
-              `Job execution error: ${(data[0] as { content: string }).content}`,
-            ),
-          );
-        }
-        this.stopJob();
-        break;
-      case CopilotMessageType.EDITABLE_TEXT:
-        this.handleEditableTextMessage(data[0] as EditableTextMessage);
-        break;
-      case CopilotMessageType.STATE_CHANGE:
-        if (data[0]?.currentJobIsRunning === false) {
-          logger.info(
-            `Job for project ${this.projectExId} has stopped running.`,
-          );
-          if (!this.isCompleted && this.rejectCompletion) {
-            logger.error('Job has stopped running unexpectedly');
-            this.clearTimeout();
-            this.isCompleted = true;
-            this.rejectCompletion(
-              new Error('Job has stopped running unexpectedly'),
-            );
-            this.stopJob();
-          }
-        }
-        break;
-      default:
-        logger.info(
-          `Received message of type ${data[0]?.type} for project ${this.projectExId}.`,
-        );
-    }
-  }
+	handleEditableTextMessage(message: EditableTextMessage) {
+		this.editableText = message.content;
+		if (!this.isCompleted && this.resolveCompletion) {
+			this.resolveCompletion({
+				editableText: this.editableText,
+			});
+		} else {
+			logger.warn(
+				"Received editable text message but job is already completed. Ignoring.",
+			);
+		}
+	}
 
-  handleEditableTextMessage(message: EditableTextMessage) {
-    this.editableText = message.content;
-    // this.isSchemaSaving = true;
-    // const schema = await SchemaDownloaderForTest(this.projectExId);
-    if (!this.isCompleted && this.resolveCompletion) {
-      this.clearTimeout();
-      this.isCompleted = true;
-      this.resolveCompletion({
-        editableText: this.editableText,
-        // schema: schema as unknown as string,
-      });
-    }
-    this.stopJob();
-  }
+	handleInitialStateMessage(message: InitialStateMessage): void {
+		if (message.terminated) {
+			if (!this.isCompleted && this.rejectCompletion) {
+				this.rejectCompletion(new Error("Job has terminated"));
+			}
+			return;
+		}
+		if (message.currentJobIsRunning === true) {
+			logger.info(`Job for project ${this.projectExId} is running.`);
+		}
+		const response: HumanInputMessage = {
+			type: CopilotMessageType.HUMAN_INPUT,
+			content: this.query,
+		};
+		this.send(response);
+	}
 
-  handleInitialStateMessage(message: InitialStateMessage): void {
-    if (message.terminated) {
-      if (!this.isCompleted && this.rejectCompletion) {
-        this.clearTimeout();
-        this.isCompleted = true;
-        this.rejectCompletion(new Error('Job has terminated'));
-      }
-      this.clearTimeout();
-      this.socket?.close();
-      return;
-    }
-    if (message.currentJobIsRunning === true) {
-      logger.info(`Job for project ${this.projectExId} is running.`);
-    }
-    const response: HumanInputMessage = {
-      type: CopilotMessageType.HUMAN_INPUT,
-      content: this.query,
-    };
-    this.send(response);
-  }
+	//eslint-disable-next-line @typescript-eslint/no-unused-vars
+	handleSystemStatusMessage(_message: SystemStatusMessage): void {
+		// TODO: Handle system status message as needed
+	}
 
-  //eslint-disable-next-line @typescript-eslint/no-unused-vars
-  handleSystemStatusMessage(_message: SystemStatusMessage): void {
-    // TODO: Handle system status message as needed
-  }
+	handleToolCallsMessage(message: ToolCallsMessage) {
+		const { result, successful, errorMessage } = this.runToolCalls(
+			message.toolCalls,
+		);
+		if (successful) {
+			this.send({
+				type: CopilotMessageType.TOOL_RESPONSE,
+				toolCallsId: message.toolCallsId,
+				result: result!,
+			});
+		} else {
+			logger.error(
+				`Tool calls failed for project ${this.projectExId}: ${errorMessage}.`,
+			);
+			if (!this.isCompleted && this.rejectCompletion) {
+				this.rejectCompletion(new Error(`Tool calls failed: ${errorMessage}`));
+			}
+		}
+	}
 
-  handleToolCallsMessage(message: ToolCallsMessage) {
-    const { result, successful, errorMessage } = this.runToolCalls(
-      message.toolCalls,
-    );
-    if (successful) {
-      this.send({
-        type: CopilotMessageType.TOOL_RESPONSE,
-        toolCallsId: message.toolCallsId,
-        result: result!,
-      });
-    } else {
-      // this.send({
-      //   type: CopilotMessageType.EXEC_ERROR,
-      //   error: errorMessage,
-      //   context: {
-      //     schemaExId: this.schemaExId,
-      //     lastPatch
-      //   }
-      // })
-      logger.error(
-        `Tool calls failed for project ${this.projectExId}: ${errorMessage}.`,
-      );
-    }
-  }
+	handleAIResponseMessage(message: AIResponseMessage) {
+		this.editableText = message.content;
+		if (!this.isCompleted && this.resolveCompletion) {
+			this.resolveCompletion({
+				editableText: this.editableText,
+				// schema: schema as unknown as string,
+			});
+		} else {
+			logger.warn(
+				"Received AI response message but job is already completed. Ignoring.",
+			);
+		}
+	}
 
-  handleAIResponseMessage(message: AIResponseMessage) {
-    this.editableText = message.content;
-    // this.isSchemaSaving = true;
-    // const schema = await SchemaDownloaderForTest(this.projectExId);
-    if (!this.isCompleted && this.resolveCompletion) {
-      this.clearTimeout();
-      this.isCompleted = true;
-      this.resolveCompletion({
-        editableText: this.editableText,
-        // schema: schema as unknown as string,
-      });
-    }
-    this.stopJob();
-  }
+	runToolCalls = (toolCalls: ToolCall[]) => {
+		const product = Product.ZION;
+		const clientType = ClientType.WEB;
+		const locale = Locale.ZH;
+		this.rounds++;
+		try {
+			const result: CopilotApiResultJs = CopilotJs.toolCalls(
+				assertNotNull(this.schemaGraph),
+				null,
+				product,
+				clientType,
+				"WEB", // clientExId: wechat mini program, web, etc.
+				locale,
+				toolCalls,
+			);
+			// probably not necessary to apply schema diff in evaluation job runner
+			return { result: result as unknown as ToolResult, successful: true };
+		} catch (error: unknown) {
+			logger.error("toolCall---error:", error, toolCalls);
+			return {
+				successful: false,
+				errorMessage: error instanceof Error ? error.message : String(error),
+				result: (error as { result?: ToolResult }).result,
+			};
+		}
+	};
 
-  runToolCalls = (toolCalls: ToolCall[]) => {
-    const product = Product.ZION;
-    const clientType = ClientType.WEB;
-    const locale = Locale.ZH;
-    this.rounds++;
-    try {
-      const result: CopilotApiResultJs = CopilotJs.toolCalls(
-        assertNotNull(this.schemaGraph),
-        null,
-        product,
-        clientType,
-        'WEB', // clientExId: wechat mini program, web, etc.
-        locale,
-        toolCalls,
-      );
-      // probably not necessary to apply schema diff in evaluation job runner
-      return { result: result as unknown as ToolResult, successful: true };
-    } catch (error: unknown) {
-      logger.error('toolCall---error:', error, toolCalls);
-      return {
-        successful: false,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        result: (error as { result?: ToolResult }).result,
-      };
-    }
-  };
+	startJob(): void {
+		this.connect();
+		// this.socket?.send(JSON.stringify({ action: "start", jobId }));
+	}
 
-  startJob(): void {
-    this.connect();
-    // this.socket?.send(JSON.stringify({ action: "start", jobId }));
-  }
+	/**
+	 * Clear the timeout if set
+	 */
+	private clearTimeout(): void {
+		if (this.timeoutId) {
+			clearTimeout(this.timeoutId);
+			this.timeoutId = null;
+		}
+	}
 
-  /**
-   * Clear the timeout if set
-   */
-  private clearTimeout(): void {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-      this.timeoutId = null;
-    }
-  }
+	/**
+	 * Wait for the job to complete with an optional timeout.
+	 * Can be called multiple times; all calls will receive the same promise.
+	 * If called after completion, returns the already resolved/rejected promise.
+	 * @param timeoutMs Optional timeout in milliseconds (default: 5 minutes)
+	 * @returns Promise that resolves with the response when job completes
+	 */
+	async waitForCompletion(
+		timeoutMs: number = DEFAULT_TIMEOUT_MS,
+	): Promise<{ editableText: string }> {
+		// Clear any existing timeout before setting a new one (for multiple calls)
+		this.clearTimeout();
 
-  /**
-   * Wait for the job to complete with an optional timeout.
-   * Can be called multiple times; all calls will receive the same promise.
-   * If called after completion, returns the already resolved/rejected promise.
-   * @param timeoutMs Optional timeout in milliseconds (default: 5 minutes)
-   * @returns Promise that resolves with the response when job completes
-   */
-  async waitForCompletion(
-    timeoutMs: number = DEFAULT_TIMEOUT_MS,
-  ): Promise<{ editableText: string }> {
-    // Clear any existing timeout before setting a new one (for multiple calls)
-    this.clearTimeout();
+		// Add timeout handling
+		this.timeoutId = setTimeout(() => {
+			if (!this.isCompleted && this.rejectCompletion) {
+				this.rejectCompletion(
+					new Error(`Job execution timeout after ${timeoutMs}ms`),
+				);
+			}
+		}, timeoutMs);
 
-    // Add timeout handling
-    this.timeoutId = setTimeout(() => {
-      if (!this.isCompleted && this.rejectCompletion) {
-        this.timeoutId = null;
-        this.isCompleted = true;
-        this.rejectCompletion(
-          new Error(`Job execution timeout after ${timeoutMs}ms`),
-        );
-      }
-    }, timeoutMs);
+		return await this.completionPromise;
+	}
 
-    try {
-      return await this.completionPromise;
-    } finally {
-      if (this.timeoutId) {
-        clearTimeout(this.timeoutId);
-        this.timeoutId = null;
-      }
-    }
-  }
+	stopJob(): void {
+		this.terminate();
+		this.clearTimeout();
+	}
 
-  stopJob(): void {
-    this.terminate();
-  }
 }
-

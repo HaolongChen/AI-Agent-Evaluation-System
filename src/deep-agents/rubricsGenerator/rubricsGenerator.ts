@@ -7,9 +7,8 @@ import {
 	// LocalShellBackend,
 	// StateBackend,
 	type SubAgent,
-} from "deepagents";
+} from "@HaolongChen/deepagents";
 import { GEMINI_API_KEY } from "../../config/env.ts";
-import { _schema } from "./tools/schemaReader.ts";
 import * as z from "zod";
 import { createMiddleware, HumanMessage, toolStrategy } from "langchain";
 // import { logger } from "../../utils/logger.ts";
@@ -56,15 +55,15 @@ const docsLookupPromptText = docsLookupPromptTemplate.replace(
 	feedbackPrompt,
 );
 
-const rubricsGeneratorFeedback = new Feedback("rubrics_generator_agent");
-const schemaLookupAgentFeedback = new Feedback("schema_lookup_agent");
-const docsLookupAgentFeedback = new Feedback("docs_lookup_agent");
+const rubricsGeneratorFeedback = new Feedback("rubrics-generator-agent");
+const schemaLookupAgentFeedback = new Feedback("schema-lookup-agent");
+const docsLookupAgentFeedback = new Feedback("docs-lookup-agent");
 
 const docsLookupAgent: SubAgent = {
-	name: "docs_lookup_agent",
+	name: "docs-lookup-agent",
 	middleware: [
 		createMiddleware({
-			name: "docs_lookup_feedback_middleware",
+			name: "docsLookupFeedbackMiddleware",
 			tools: [save_agent_feedbacks(docsLookupAgentFeedback.addFeedback)],
 		}),
 	],
@@ -109,17 +108,17 @@ const contextSchema = z.object({
 });
 
 const schemaLookupAgent: SubAgent = {
-	name: "schema_lookup_agent",
+	name: "schema-lookup-agent",
 	middleware: [
 		createMiddleware({
-			name: "schema_lookup_feedback_middleware",
+			name: "schemaLookupFeedbackMiddleware",
 			tools: [save_agent_feedbacks(schemaLookupAgentFeedback.addFeedback)],
 		}),
 	],
 	tools: [],
 	systemPrompt: schemaLookupPromptText,
 	description:
-		"This sub-agent is responsible for explaining crdt schema models that rubrics_generator_agent owns by looking up its own reference schema of crdt schema models with jq queries.",
+		"This sub-agent is responsible for explaining crdt schema models that rubrics-generator-agent owns by looking up its own reference schema of crdt schema models with jq queries.",
 };
 
 const checkpointer = new MemorySaver();
@@ -192,7 +191,7 @@ export const generateRubrics = async (
 		checkpointer,
 		middleware: [
 			createMiddleware({
-				name: "feedback_middleware",
+				name: "feedbackMiddleware",
 				tools: [save_agent_feedbacks(rubricsGeneratorFeedback.addFeedback)],
 			}),
 		],});
@@ -200,12 +199,8 @@ export const generateRubrics = async (
 	const response = await rubrics_generator_agent.invoke(
 		{
 			messages: [
-				new HumanMessage(
-					`<UserInput>
-					${query}
-					</UserInput>`,
-				),
-			],
+				new HumanMessage(`You are provided with following user input: \`${query}\``),
+			]
 		},
 		{
 			context: {
@@ -220,17 +215,17 @@ export const generateRubrics = async (
 	const feedbacks = (questionSetId: string): Promise<agentFeedbacks>[] => [
 		rubricService.saveAgentFeedbacks(
 			questionSetId,
-			"rubrics_generator_agent",
+			"rubrics-generator-agent",
 			rubricsGeneratorFeedback.getFeedbacks(),
 		),
 		rubricService.saveAgentFeedbacks(
 			questionSetId,
-			"schema_lookup_agent",
+			"schema-lookup-agent",
 			schemaLookupAgentFeedback.getFeedbacks(),
 		),
 		rubricService.saveAgentFeedbacks(
 			questionSetId,
-			"docs_lookup_agent",
+			"docs-lookup-agent",
 			docsLookupAgentFeedback.getFeedbacks(),
 		),
 	];

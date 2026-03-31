@@ -68,6 +68,7 @@
     "uniqid": "^5.4.0"
   },
   "dependencies": {
+    "@HaolongChen/deepagents": "^1.8.99999",
     "@apollo/server": "^5.2.0",
     "@as-integrations/express5": "^1.1.2",
     "@functorz/crdt-helper": "2.7.0",
@@ -84,7 +85,6 @@
     "axios": "^1.13.2",
     "cheerio": "^1.2.0",
     "cors": "^2.8.5",
-    "deepagents": "^1.8.6",
     "dom-to-semantic-markdown": "^1.5.0",
     "domhandler": "^6.0.1",
     "dotenv": "^17.2.3",

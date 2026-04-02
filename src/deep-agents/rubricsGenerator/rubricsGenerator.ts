@@ -73,7 +73,6 @@ const docsLookupAgent: SubAgent = {
 		"This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided crdt schema model and user input.",
 };
 
-
 const responseSchema = z.object({
 	rubrics: z
 		.array(
@@ -133,8 +132,10 @@ export const generateRubrics = async (
 		feedbacks: (questionSetId: string) => Promise<agentFeedbacks>[];
 	}
 > => {
-	await	fs.mkdir(`${process.cwd()}/local_shell/zion/${schemaId}`, { recursive: true });
-	await	fs.mkdir(`${process.cwd()}/local_shell/schemas`, { recursive: true });
+	await fs.mkdir(`${process.cwd()}/local_shell/zion/${schemaId}`, {
+		recursive: true,
+	});
+	await fs.mkdir(`${process.cwd()}/local_shell/schemas`, { recursive: true });
 	const res = await Promise.allSettled([
 		getSchemaModel(schemaId).then((arrayBuffer) => {
 			const modelBinary = new Uint8Array(arrayBuffer);
@@ -152,7 +153,7 @@ export const generateRubrics = async (
 			.then((content) =>
 				fs.writeFile(
 					`${process.cwd()}/local_shell/schemas/zschema.json`,
-					content
+					content,
 				),
 			),
 	]);
@@ -194,13 +195,16 @@ export const generateRubrics = async (
 				name: "feedbackMiddleware",
 				tools: [save_agent_feedbacks(rubricsGeneratorFeedback.addFeedback)],
 			}),
-		],});
+		],
+	});
 
 	const response = await rubrics_generator_agent.invoke(
 		{
 			messages: [
-				new HumanMessage(`You are provided with following user input: \`${query}\``),
-			]
+				new HumanMessage(
+					`You are provided with following user input: \`${query}\`\nnow work on generating rubrics based on the user input and the crdt schema model and zion official documentation that you own by looking up with your sub-agents.`,
+				),
+			],
 		},
 		{
 			context: {

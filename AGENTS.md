@@ -1,39 +1,28 @@
-# AGENTS.md - AI Agent Evaluation System
+# PROJECT KNOWLEDGE BASE (AI Agent Evaluation System)
 
-> **Generated:** 2026-03-02 | **Commit:** bc61d57 | **Branch:** main
+**Generated:** 2026-04-02 | **Commit:** 8a9944d | **Branch:** main
 
-Guidelines for agentic coding systems operating in this repository.
+## OVERVIEW
+An end-to-end evaluation framework for Copilot-style agents orchestrating HITL workflows with LangGraph, PostgreSQL (Prisma), and GraphQL.
 
-## Project Overview
-
-AI Agent Evaluation System - An end-to-end evaluation framework for Copilot-style agents. It orchestrates Human-in-the-Loop (HITL) workflows with LangGraph, stores structured results in PostgreSQL via Prisma, and exposes a GraphQL API for golden set management, evaluations, and analytics.
-
-**Tech Stack**: TypeScript (ESM), Node.js 18+, GraphQL (Apollo Server), LangGraph + LangChain, Prisma, PostgreSQL, Kubernetes (optional)
-
-## Structure
-
+## STRUCTURE
 ```
 AI-Agent-Evaluation-System/
 ├── src/
 │   ├── index.ts              # Express + ApolloServer entry
 │   ├── langGraph/            # LangGraph HITL workflow (see langGraph/AGENTS.md)
-│   │   ├── nodes/            # 10 active workflow nodes (pure functions)
-│   │   ├── state/            # rubricAnnotation (state machine)
-│   │   ├── llm/              # Azure/Gemini provider abstraction
-│   │   └── tools/            # Schema download tool
 │   ├── services/             # Business logic, DB ops (see services/AGENTS.md)
 │   ├── jobs/                 # CLI job runners (see jobs/AGENTS.md)
 │   ├── graphql/              # GraphQL API layer (see graphql/resolvers/AGENTS.md)
 │   ├── utils/                # Pure utilities, logger (see utils/AGENTS.md)
-│   └── config/               # Environment, constants, prisma
-│   ├── langchain/            # LangChain rubric generation chain
+│   ├── config/               # Environment, constants, prisma
+│   └── deep-agents/          # Local deep-agent implementation
 ├── tests/                    # Script-based tests (tsx execution)
 ├── prisma/                   # Schema + migrations
 └── scripts/                  # DB setup/seed utilities
 ```
 
-## Where to Look
-
+## WHERE TO LOOK
 | Task | Location | Notes |
 |------|----------|-------|
 | Add evaluation workflow node | `src/langGraph/nodes/` | Pure functions, return partial state |
@@ -47,249 +36,33 @@ AI-Agent-Evaluation-System/
 | Make Functorz backend GQL request | `src/utils/graphql-client.ts` | Use `gqlRequest()` + `backendClient` |
 | Add tests | `tests/` | Script-based, use tsx (not Jest/Vitest) |
 
-**See also**: `src/langGraph/AGENTS.md` for HITL workflow architecture details.
+## CONVENTIONS
+- **ESM Only**: Use `"type": "module"`. ALWAYS include `.ts` in import paths.
+- **Strict TypeScript**: All strict flags enabled. Explicit types for all signatures.
+- **Naming**: PascalCase for classes/types, camelCase for functions/files (utils), UPPER_SNAKE_CASE for constants.
+- **Partial Updates**: Use `questionPatches`/`answerPatches` for HITL instead of full replacement.
+- **Logger**: Use `logger` instead of `console.log` for structured logging.
 
-## Build, Test, and Lint Commands
+## ANTI-PATTERNS (THIS PROJECT)
+- **`any` type**: Forbidden. Use `unknown` or proper types.
+- **Promise chaining**: Forbidden. Use `async/await`.
+- **Default exports**: Forbidden. Use named exports only.
+- **Direct LLM calls**: Forbidden. Use `invokeWithRetry()`.
+- **Mutating state**: Forbidden in LangGraph nodes; return partial state updates.
+- **Generated files**: Never hand-edit files in `src/prisma/build/generated/prisma/` or `src/utils/zed/index.ts`.
+- **Duplicate logic**: Avoid duplicating `deep-agents` logic between local and package deps.
 
-### Build
+## COMMANDS
 ```bash
-pnpm build          # Development build
-pnpm build:bundle   # Production bundle (esbuild)
-pnpm dev            # Hot reload development
-pnpm start          # Production start
+pnpm install          # Install dependencies
+pnpm dev              # Start dev server
+pnpm build            # Production build
+pnpm test:lg          # Run LangGraph tests
+pnpm db:generate      # Generate Prisma client
+pnpm db:push          # Push schema to dev DB
 ```
 
-### Test
-```bash
-pnpm test:lg              # LangGraph workflow tests
-pnpm test:graphql         # GraphQL API tests
-pnpm test:partial-update  # Partial update functionality
-pnpm test:e2e             # End-to-end full flow
-```
-
-**Test Convention**: Script-based (not Jest/Vitest), executed via `tsx`, may require `.env` and seeded DB.
-
-### Database
-```bash
-pnpm db:setup      # Initial database setup
-pnpm db:seed       # Seed golden set data
-pnpm db:push       # Push schema changes (dev)
-pnpm db:generate   # Generate Prisma client
-pnpm db:migrate    # Run migrations (prod)
-pnpm db:studio     # Open Prisma Studio
-```
-
-## Code Style Guidelines
-
-### Import Organization
-- **Order**: External packages → Internal modules → Type-only imports
-- **Style**: Named imports; `import type` for types
-- **Paths**: Relative imports with `.ts` extension (ALWAYS)
-- **Example**:
-  ```typescript
-  import { prisma } from '../config/prisma.ts';
-  import { REVIEW_STATUS } from '../config/constants.ts';
-  import type { Rubric, FinalReport } from '../langGraph/state/state.ts';
-  ```
-
-### TypeScript Usage
-- **Strictness**: All strict flags enabled (`tsconfig.json`)
-- **Type Annotations**: Explicitly type all function parameters and return values
-- **Never** use `any` - use `unknown` or proper types
-- **Prefer** `as const` objects over enums
-- **Constants**: UPPER_SNAKE_CASE for exported constants
-
-### Naming Conventions
-
-| Element | Convention | Example |
-|---------|-----------|---------|
-| Files | PascalCase (classes), camelCase (utilities) | `EvaluationPersistenceService.ts`, `logger.ts` |
-| Classes | PascalCase | `EvaluationPersistenceService` |
-| Functions | camelCase | `saveRubric`, `getCallerInfo` |
-| Constants | UPPER_SNAKE_CASE | `REVIEW_STATUS`, `SESSION_STATUS` |
-| Types/Interfaces | PascalCase | `Rubric`, `FinalReport` |
-
-### Error Handling
-**Pattern**: Try-catch with structured logging and user-friendly errors
-
-```typescript
-try {
-  const result = await prisma.adaptiveRubric.create({ data: {...} });
-  return result;
-} catch (error) {
-  logger.error('Error saving rubric to database:', error);
-  throw new Error('Failed to save rubric');
-}
-```
-
-### Async Patterns
-**Prefer**: `async/await` over promise chaining
-
-```typescript
-// ✓ GOOD
-async function processData() {
-  const data = await fetchData();
-  return await processData(data);
-}
-
-// ✗ AVOID
-function processData() {
-  return fetchData().then(data => processData(data));
-}
-```
-
-## Architecture Patterns
-
-### Service Layer (`src/services/`)
-- Export class + singleton instance
-- Encapsulate business logic and DB operations
-- Use dependency injection via constructor when needed
-- **Example**: `export const evaluationPersistenceService = new EvaluationPersistenceService();`
-
-### GraphQL Resolvers (`src/graphql/resolvers/`)
-- Keep resolvers thin - delegate to services
-- Structure: `{ Query: {...}, Mutation: {...} }`
-- Use partial update pattern (`questionPatches`, `answerPatches`) for HITL
-
-### LangGraph Nodes (`src/langGraph/nodes/`)
-- Pure functions that accept state and config
-- Return partial state updates (never mutate)
-- Always append to `auditTrace`
-- Use `invokeWithRetry()` for LLM calls
-- Validate I/O with Zod schemas
-
-### Job Runners (`src/jobs/`)
-- Implement start/wait/stop lifecycle pattern
-- Embed CLI parsing with Zod
-- Handle timeouts and Promise-based completion
-- Support Kubernetes execution
-
-## Database and Prisma
-
-### Schema Management
-- Schema: `prisma/schema.prisma`
-- **Always** run `pnpm db:generate` after schema changes
-- Use `db:migrate` for production, `db:push` for development
-- **Never** edit files in `build/generated/prisma/`
-
-### Query Patterns
-- Import client from `src/config/prisma.ts`
-- Use transactions for multi-table operations
-- Handle null/undefined returns explicitly
-- Use `select` to limit returned fields
-
-## Anti-Patterns (THIS PROJECT)
-
-| Forbidden | Why | Alternative |
-|-----------|-----|-------------|
-| `any` type | Breaks type safety | Use `unknown` or proper types |
-| Promise chaining | Less readable | Use `async/await` |
-| Default exports | Harder to refactor | Use named exports |
-| Omitting `.ts` in imports | ESM requirement | Always include `.ts` extension |
-| Editing `build/generated/prisma/` | Auto-generated code | Modify `prisma/schema.prisma` instead |
-| `console.log` | No structured logging | Use `logger.info/error/debug()` |
-| Direct LLM calls | No retry, no logging | Use `invokeWithRetry()` |
-| Mutating state in nodes | LangGraph expects immutable | Return partial state updates |
-| Full replacement in HITL | Verbose, error-prone | Use patch arrays (`questionPatches`, `answerPatches`) |
-| `import from 'graphql-utils.ts'` in new code | Deprecated shim | Import from `graphql-client.ts` directly |
-| String interpolation for GQL | Not type-safe, error-prone | Use `GoldenSetDocuments` + `gqlRequest()` from `graphql-client.ts` |
-
-## Partial Update Pattern (HITL)
-
-**Problem**: Users shouldn't need to copy and resubmit entire objects when reviewing rubrics or evaluations.
-
-**Solution**: Use `questionPatches` for rubric reviews and `answerPatches` for evaluations.
-
-### Rubric Review with Patches
-```typescript
-await graphExecutionService.submitRubricReview(
-  sessionId,
-  threadId,
-  false,
-  undefined,  // No full rubric replacement
-  [
-    { questionId: 123, weight: 0.6, title: 'Correctness - Enhanced' },
-    { questionId: 124, expectedAnswer: false }
-  ],
-  'Adjusted based on project priorities',
-  'reviewer-123'
-);
-```
-
-### Human Evaluation with Patches
-```typescript
-await graphExecutionService.submitHumanEvaluation(
-  sessionId,
-  threadId,
-  undefined,  // No full answers array
-  [
-    { questionId: 123, answer: true, explanation: 'Nearly perfect' },
-    { questionId: 125, answer: false, explanation: 'Needs improvement' }
-  ],
-  'Minor corrections',
-  'evaluator-456'
-);
-```
-
-**Benefits**: Less data transfer, clearer intent, automatic merging, validation.
-
-## Common Patterns
-
-### Logger Usage
-```typescript
-import { logger } from '../utils/logger.ts';
-
-logger.info('Processing evaluation', { sessionId });
-logger.error('Failed to save rubric', error);
-logger.debug('Detailed debug info');  // Only in development
-```
-
-### LLM Calls with Retry
-```typescript
-import { getLLM, invokeWithRetry } from '../langGraph/llm/index.ts';
-
-const llm = getLLM({ provider: 'azure', model: 'gpt-4o' });
-const response = await invokeWithRetry(
-  () => llm.invoke([new HumanMessage(prompt)], config),
-  'azure',
-  { operationName: 'RubricDrafter.invoke' }
-);
-```
-
-### GraphQL Requests (Functorz backend)
-```typescript
-import { backendClient, gqlRequest, authState } from '../utils/graphql-client.ts';
-import { GoldenSetDocuments } from '../utils/graphql-builder.ts';
-
-// Set auth token before requests
-authState.setToken(accessToken);
-
-// Typed request
-const data = await gqlRequest<ResponseType, VariablesType>(
-  backendClient,
-  GoldenSetDocuments.getGoldenSets,
-  { projectExId: 'proj-123' },
-);
-```
-
-- `localClient` → our own Apollo Server (`URL/graphql`)
-- `backendClient` → Functorz backend (`BACKEND_GRAPHQL_URL`, requires Bearer token)
-
-## Important Notes
-
-1. **ESM Only**: This project uses ES modules (`"type": "module"`)
-2. **Strict TypeScript**: All strict flags enabled
-3. **File Extensions**: Always include `.ts` in import paths
-4. **Logger Everywhere**: Use `logger` instead of `console.log`
-5. **No CI/CD**: No GitHub Actions or automated deployment (npm scripts only)
-6. **Test Runner**: Scripts executed via `tsx` (not Jest/Vitest)
-
-## When Making Changes
-
-1. ✓ Run `pnpm lint` before committing
-2. ✓ Check types: `pnpm tsc --noEmit`
-3. ✓ Test affected functionality
-4. ✓ Update Prisma client if schema changed: `pnpm db:generate`
-5. ✓ Follow existing patterns in similar files
-6. ✓ Add proper error handling and logging
-7. ✓ Use explicit types for all function signatures
+## NOTES
+- **TSConfig Excludes**: Core sources in `src/langGraph` and `src/jobs` are currently excluded from `tsc` (handled by `tsx` or bundle).
+- **Prisma Client**: Generated client is committed in `src/prisma/build/generated/prisma/`.
+- **Zed Types**: `src/utils/zed/index.ts` is a massive (~10k line) generated file. Do not hand-edit.

@@ -23,6 +23,7 @@ import type { agentFeedbacks } from "../../prisma/build/generated/prisma/client.
 import { gemini } from "../llm/index.ts";
 import { fetchSideBar } from "./tools/documentationReader.ts";
 import { logger } from "../../utils/logger.ts";
+import { inspectMiddleware } from "./middleware/inspect.ts";
 
 const promptsBasePath = new URL("./prompts/", import.meta.url);
 const feedbackPrompt = await fs.readFile(
@@ -66,6 +67,7 @@ const docsLookupAgent: SubAgent = {
 			name: "docsLookupFeedbackMiddleware",
 			tools: [save_agent_feedbacks(docsLookupAgentFeedback.addFeedback)],
 		}),
+		inspectMiddleware,
 	],
 	tools: [],
 	systemPrompt: docsLookupPromptText,
@@ -113,6 +115,7 @@ const schemaLookupAgent: SubAgent = {
 			name: "schemaLookupFeedbackMiddleware",
 			tools: [save_agent_feedbacks(schemaLookupAgentFeedback.addFeedback)],
 		}),
+		inspectMiddleware,
 	],
 	tools: [],
 	systemPrompt: schemaLookupPromptText,
@@ -129,7 +132,7 @@ export const generateRubrics = async (
 	{
 		rubrics: z.infer<typeof responseSchema>;
 	} & {
-		feedbacks: (questionSetId: string) => Promise<agentFeedbacks>[];
+		feedbacks: (questionSetId: string) => Promise<agentFeedbacks | undefined>[];
 	}
 > => {
 	await fs.mkdir(`${process.cwd()}/local_shell/zion/${schemaId}`, {
@@ -195,6 +198,7 @@ export const generateRubrics = async (
 				name: "feedbackMiddleware",
 				tools: [save_agent_feedbacks(rubricsGeneratorFeedback.addFeedback)],
 			}),
+			inspectMiddleware,
 		],
 	});
 
@@ -216,7 +220,7 @@ export const generateRubrics = async (
 			// recursionLimit: 100,
 		},
 	);
-	const feedbacks = (questionSetId: string): Promise<agentFeedbacks>[] => [
+	const feedbacks = (questionSetId: string) => [
 		rubricService.saveAgentFeedbacks(
 			questionSetId,
 			"rubrics-generator-agent",

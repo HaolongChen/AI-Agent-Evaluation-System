@@ -10,14 +10,14 @@ export class Feedback {
 		this.agentName = agentName;
 	}
 
-	addFeedback(feedback: string) {
+	addFeedback = (feedback: string) => {
 		this.feedbacks.push(feedback);
 		logger.debug(`Added feedback: ${feedback}`);
-	}
+	};
 
-	getFeedbacks(): string[] {
+	getFeedbacks = (): string[] => {
 		return this.feedbacks;
-	}
+	};
 }
 
 export const save_agent_feedbacks = (fn: (feedback: string) => void) =>

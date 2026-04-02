@@ -214,6 +214,9 @@ export class RubricService {
 		feedbacks: string[],
 	) {
 		try {
+			if(feedbacks.length === 0) {
+				return;
+			}
 			// save agents feedbacks for development use
 			const questionSet = await prisma.questionSet.findUnique({
 				where: { id: questionSetId },

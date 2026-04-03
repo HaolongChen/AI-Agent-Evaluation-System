@@ -260,3 +260,88 @@ export const generateRubrics = async (
 
 	return { rubrics: response.structuredResponse, feedbacks: feedbacks };
 };
+
+// Validation utilities for rubric quality assurance
+
+const REASSURANCE_PATTERNS = [
+	/looks good/i,
+	/works fine/i,
+	/no issue/i,
+	/as expected/i,
+	/all clear/i,
+	/perfect/i,
+	/correct/i,
+];
+
+const FALSIFIABILITY_KEYWORDS = [
+	/then TRUE/i,
+	/then FALSE/i,
+	/YES|NO/,
+	/PASS|FAIL/i,
+	/should|must|if.*then/i,
+];
+
+export type RubricForValidation = {
+	content: string;
+	expectedAnswer: boolean;
+	failureScenario: string;
+	verificationTarget: string;
+	verificationRule: string;
+};
+
+/**
+ * Validates rubric quality by checking:
+ * 1. No reassurance language (mirrored assumptions)
+ * 2. Falsifiable verification rules
+ * 3. Concrete verification targets
+ */
+export function validateRubricQuality(rubrics: RubricForValidation[]): void {
+	for (const rubric of rubrics) {
+		// Check for reassurance language
+		const hasReassurance = REASSURANCE_PATTERNS.some((pattern) =>
+			pattern.test(rubric.content),
+		);
+		if (hasReassurance) {
+			throw new Error(
+				`Rubric contains reassurance language: "${rubric.content}"`,
+			);
+		}
+
+		// Check for falsifiability in verification rule
+		const isFalsifiable = FALSIFIABILITY_KEYWORDS.some((pattern) =>
+			pattern.test(rubric.verificationRule),
+		);
+		if (!isFalsifiable) {
+			throw new Error(
+				`Verification rule is not falsifiable: "${rubric.verificationRule}"`,
+			);
+		}
+
+		// Check for concrete verification target (not generic prose)
+		const hasGenericTarget =
+			rubric.verificationTarget.length < 3 ||
+			!/[\/\[\]#\.]/.test(rubric.verificationTarget);
+		if (hasGenericTarget) {
+			throw new Error(
+				`Verification target is too generic: "${rubric.verificationTarget}"`,
+			);
+		}
+	}
+}
+
+/**
+ * Counts adversarial or edge-case rubrics based on failure scenarios
+ */
+export function parseAdversarialRubricCount(
+	rubrics: RubricForValidation[],
+): number {
+	const ADVERSARIAL_KEYWORDS = [
+		/fail|error|break|missing|invalid|conflict|contradict|inconsistent|unsafe|edge case/i,
+	];
+
+	return rubrics.filter((rubric) =>
+		ADVERSARIAL_KEYWORDS.some((pattern) =>
+			pattern.test(rubric.failureScenario),
+		),
+	).length;
+}

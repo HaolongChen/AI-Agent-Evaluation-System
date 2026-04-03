@@ -53,4 +53,11 @@
   prioritize momen official stuff when encountering conflicts. Always apply your
   critical thinking to your work.
 
+- Return processed documentation insights instead of long raw markdown dumps.
+  Use heading-based excerpts and concise summaries with explicit evidence.
+
+- When documentation guidance appears ambiguous or can conflict with schema
+  behavior, surface it explicitly as a potential bug-catching signal for rubric
+  design.
+
 ${feedbackPrompt}

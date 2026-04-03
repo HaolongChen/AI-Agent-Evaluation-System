@@ -24,6 +24,8 @@ import { gemini } from "../llm/index.ts";
 import { fetchSideBar } from "./tools/documentationReader.ts";
 import { logger } from "../../utils/logger.ts";
 import { inspectMiddleware } from "./middleware/inspect.ts";
+import { read_json_schema } from "./tools/schemaReader.ts";
+import { read_markdown_docs } from "./tools/markdownReader.ts";
 
 const promptsBasePath = new URL("./prompts/", import.meta.url);
 const feedbackPrompt = await fs.readFile(
@@ -69,7 +71,7 @@ const docsLookupAgent: SubAgent = {
 		}),
 		inspectMiddleware,
 	],
-	tools: [],
+	tools: [read_markdown_docs],
 	systemPrompt: docsLookupPromptText,
 	description:
 		"This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided crdt schema model and user input.",
@@ -97,6 +99,21 @@ const responseSchema = z.object({
 					.describe(
 						`The weight of the rubric, which indicates the importance or significance of current rubric in the overall evaluation process among all rubrics being generated The weight should be a positive number ranging from 0 to 1, and higher values indicate greater importance. This value should not be restricted assuming that the sum of all weights equals 1. The weights will be re-calculated to ensure the sum equals 1 after generation. This field is used to calculate the overall score when multiple rubrics are applied.`,
 					),
+				failureScenario: z
+					.string()
+					.describe(
+						"A concrete bug or misbehavior scenario this rubric is intended to catch.",
+					),
+				verificationTarget: z
+					.string()
+					.describe(
+						"Where to verify this rubric (field/path/snippet) in candidate output or schema.",
+					),
+				verificationRule: z
+					.string()
+					.describe(
+						"How to decide true/false using evidence from verification target.",
+					),
 			}),
 		)
 		.describe(
@@ -117,7 +134,7 @@ const schemaLookupAgent: SubAgent = {
 		}),
 		inspectMiddleware,
 	],
-	tools: [],
+	tools: [read_json_schema],
 	systemPrompt: schemaLookupPromptText,
 	description:
 		"This sub-agent is responsible for explaining crdt schema models that rubrics-generator-agent owns by looking up its own reference schema of crdt schema models with jq queries.",
@@ -135,10 +152,12 @@ export const generateRubrics = async (
 		feedbacks: (questionSetId: string) => Promise<agentFeedbacks | undefined>[];
 	}
 > => {
-	await fs.mkdir(`${process.cwd()}/local_shell/zion/${schemaId}`, {
-		recursive: true,
-	});
-	await fs.mkdir(`${process.cwd()}/local_shell/schemas`, { recursive: true });
+	await Promise.all([
+		fs.mkdir(`${process.cwd()}/local_shell/zion/${schemaId}`, {
+			recursive: true,
+		}),
+		fs.mkdir(`${process.cwd()}/local_shell/schemas`, { recursive: true }),
+	]);
 	const res = await Promise.allSettled([
 		getSchemaModel(schemaId).then((arrayBuffer) => {
 			const modelBinary = new Uint8Array(arrayBuffer);
@@ -206,7 +225,8 @@ export const generateRubrics = async (
 		{
 			messages: [
 				new HumanMessage(
-					`You are provided with following user input: \`${query}\`\nnow work on generating rubrics based on the user input and the crdt schema model and zion official documentation that you own by looking up with your sub-agents.`,
+					`You are provided with following user input: \`${query}\`\n
+					Now work on generating rubrics based on the user input and the crdt schema model and zion official documentation that you own by looking up with your sub-agents. Prioritize failure detection, bug-catching checks, and edge cases over cosmetic quality criteria.`,
 				),
 			],
 		},

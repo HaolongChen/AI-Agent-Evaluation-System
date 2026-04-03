@@ -16,6 +16,8 @@
     "debug": "tsx --inspect src/index.ts",
     "mytest": "tsx ./src/deep-agents/rubricsGenerator/tools/documentationReader.ts",
     "test:unit": "tsx ./tests/unit.test.ts",
+    "test:rubric-quality": "tsx ./tests/rubric-quality.test.ts",
+    "test:tooling-context": "tsx ./tests/tooling-context.test.ts",
     "test:db": "tsx ./tests/verify-patch-persistence.ts",
     "test:partial-update": "tsx ./tests/partial-update-test.ts",
     "test:jq": "tsx ./tests/jq.test.ts",

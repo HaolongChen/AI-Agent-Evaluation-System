@@ -61,4 +61,11 @@
   schema model provided by your main agent when encountering conflicts. Always
   apply your critical thinking to your work.
 
+- Prefer targeted jq queries and return concise, structured findings. Do not
+  dump large raw JSON blocks unless explicitly requested.
+
+- Explicitly flag high-risk failure points in schema interpretation, including
+  required-field mismatches, inconsistent defaults, conflicting constraints,
+  and cross-reference issues.
+
 ${feedbackPrompt}

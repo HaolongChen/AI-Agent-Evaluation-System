@@ -1,60 +1,87 @@
-import { prisma } from "../config/prisma.ts";
 import { logger } from "../external/logger.ts";
-// import { COPILOT_TYPES } from "../config/constants.ts";
-import {} from // type Prisma,
-"../prisma/build/generated/prisma/client.ts";
-// import { goldenSetService } from "./GoldenSetService.ts";
 import {
 	EvaluatorType,
+	type EvaluationInput,
+	type EvaluationRecord,
 	type EvaluationResult,
 	type EvaluationSession,
-	type QuestionAnswerInput,
 	type ResultFilters,
 	type SessionFilters,
 } from "../graphql/generated/resolvers-types.ts";
 import { REVERSE_EVALUATOR, EVALUATOR } from "../config/constants.ts";
+import { EvaluationRecordInterface } from "@src/interface/evaluationRecordInterface";
+import { EvaluationResultInterface } from "@src/interface/evaluationResultInterface";
+import { EvaluationSessionInterface } from "@src/interface/evaluationSessionInterface";
+import type {
+	evaluationRecord,
+	evaluationSession,
+} from "../prisma/build/generated/prisma/client.ts";
+
+type EvaluationSessionWithRecords = evaluationSession & {
+	evaluationRecords: evaluationRecord[];
+};
 
 export class AnalyticsService {
+	private toGraphqlEvaluationRecord(
+		record: evaluationRecord,
+	): EvaluationRecord {
+		return {
+			id: record.id,
+			copilotOutputId: record.copilotOutputId,
+			rubricId: record.rubricId,
+			criteriaId: record.criteriaId,
+			evaluatorId: record.evaluatorId,
+			evaluation: record.evaluation,
+			feedback: record.feedback,
+		};
+	}
+
 	async getEvaluationSessions(
 		filters?: SessionFilters,
 	): Promise<Array<EvaluationSession> | null> {
 		try {
-			const sessions = await prisma.evaluationSession.findMany({
-				where: {
-					...(filters?.copilotOutputId &&
-						filters.copilotOutputId && {
+			const evaluationSessionInterface = new EvaluationSessionInterface(
+				"findMany",
+			);
+			const sessions =
+				(await evaluationSessionInterface.getEvaluationSessionAdapter({
+					where: {
+						...(filters?.copilotOutputId && {
 							copilotOutputId: filters.copilotOutputId,
 						}),
-					...(filters?.evaluatorId &&
-						filters.evaluatorId && {
+						...(filters?.rubricId && {
+							rubricId: filters.rubricId,
+						}),
+						...(filters?.evaluatorId && {
 							evaluatorId: filters.evaluatorId,
 						}),
-					...(filters?.evaluatorType && {
-						evaluatorType:
-							filters.evaluatorType.toLowerCase() as (typeof EVALUATOR)[keyof typeof EVALUATOR],
-					}),
-				},
-				include: {
-					result: true,
-					evaluationRecords: true,
-					questionSet: true,
-				},
-				orderBy: {
-					startedAt: "desc",
-				},
-			});
+						...(filters?.evaluatorType && {
+							evaluatorType:
+								EVALUATOR[filters.evaluatorType as keyof typeof EVALUATOR],
+						}),
+					},
+					include: {
+						evaluationRecords: true,
+					},
+					orderBy: {
+						startedAt: "desc",
+					},
+				})) as EvaluationSessionWithRecords[];
+
 			return sessions.map((session) => ({
-				questionSetId: session.questionSetId,
-				evaluatorId: session.evaluatorId,
 				id: session.id,
 				copilotOutputId: session.copilotOutputId,
+				rubricId: session.rubricId,
+				evaluatorId: session.evaluatorId,
 				evaluatorType: REVERSE_EVALUATOR[
 					session.evaluatorType as keyof typeof REVERSE_EVALUATOR
 				] as EvaluatorType,
-				completedAt:
-					session.result?.generatedAt ?
-						session.result.generatedAt.toISOString()
-					:	null,
+				modelName: session.modelName,
+				startedAt: session.startedAt.toISOString(),
+				completedAt: session.completedAt?.toISOString() ?? null,
+				evaluations: session.evaluationRecords.map((record) =>
+					this.toGraphqlEvaluationRecord(record),
+				),
 			}));
 		} catch (error) {
 			logger.error("Error fetching evaluation sessions:", error);
@@ -66,29 +93,35 @@ export class AnalyticsService {
 		id: string,
 	): Promise<EvaluationSession | null> {
 		try {
-			const session = await prisma.evaluationSession.findUnique({
-				where: { id },
-				include: {
-					result: true,
-					evaluationRecords: true,
-					questionSet: true,
-				},
-			});
+			const evaluationSessionInterface = new EvaluationSessionInterface(
+				"findUnique",
+			);
+			const session =
+				(await evaluationSessionInterface.getEvaluationSessionAdapter({
+					where: { id },
+					include: {
+						evaluationRecords: true,
+					},
+				})) as EvaluationSessionWithRecords | null;
+
 			if (!session) {
 				return null;
 			}
+
 			return {
-				questionSetId: session.questionSetId,
-				evaluatorId: session.evaluatorId,
 				id: session.id,
 				copilotOutputId: session.copilotOutputId,
+				rubricId: session.rubricId,
+				evaluatorId: session.evaluatorId,
 				evaluatorType: REVERSE_EVALUATOR[
 					session.evaluatorType as keyof typeof REVERSE_EVALUATOR
 				] as EvaluatorType,
-				completedAt:
-					session.result?.generatedAt ?
-						session.result.generatedAt.toISOString()
-					:	null,
+				modelName: session.modelName,
+				startedAt: session.startedAt.toISOString(),
+				completedAt: session.completedAt?.toISOString() ?? null,
+				evaluations: session.evaluationRecords.map((record) =>
+					this.toGraphqlEvaluationRecord(record),
+				),
 			};
 		} catch (error) {
 			logger.error("Error fetching evaluation session by ID:", error);
@@ -96,11 +129,16 @@ export class AnalyticsService {
 		}
 	}
 
-	async getEvaluationResultById(id: number): Promise<EvaluationResult | null> {
+	async getEvaluationResultById(id: string): Promise<EvaluationResult | null> {
 		try {
-			const result = await prisma.evaluationResult.findUnique({
-				where: { id },
-			});
+			const evaluationResultInterface = new EvaluationResultInterface(
+				"findUnique",
+			);
+			const result = await evaluationResultInterface.getEvaluationResultAdapter(
+				{
+					where: { id },
+				},
+			);
 			if (!result) {
 				return null;
 			}
@@ -108,8 +146,7 @@ export class AnalyticsService {
 				id: result.id,
 				evaluatorId: result.evaluatorId,
 				copilotOutputId: result.copilotOutputId,
-				questionSetId: result.questionSetId,
-
+				rubricId: result.rubricId,
 				overallScore: Number(result.overallScore),
 				summary: result.summary,
 				detailedAnalysis: result.detailedAnalysis,
@@ -125,23 +162,24 @@ export class AnalyticsService {
 		filters?: ResultFilters,
 	): Promise<Array<EvaluationResult> | null> {
 		try {
-			const results = await prisma.evaluationResult.findMany({
-				where: {
-					...(filters?.copilotOutputId && {
-						copilotOutputId: filters.copilotOutputId,
-					}),
-					...(filters?.evaluatorId && { evaluatorId: filters.evaluatorId }),
-					...(filters?.questionSetId && {
-						questionSetId: filters.questionSetId,
-					}),
-				},
-			});
+			const evaluationResultInterface = new EvaluationResultInterface(
+				"findMany",
+			);
+			const results =
+				await evaluationResultInterface.getEvaluationResultAdapter({
+					where: {
+						...(filters?.copilotOutputId && {
+							copilotOutputId: filters.copilotOutputId,
+						}),
+						...(filters?.evaluatorId && { evaluatorId: filters.evaluatorId }),
+						...(filters?.rubricId && { rubricId: filters.rubricId }),
+					},
+				});
 			return results.map((result) => ({
 				id: result.id,
 				evaluatorId: result.evaluatorId,
 				copilotOutputId: result.copilotOutputId,
-				questionSetId: result.questionSetId,
-
+				rubricId: result.rubricId,
 				overallScore: Number(result.overallScore),
 				summary: result.summary,
 				detailedAnalysis: result.detailedAnalysis,
@@ -154,22 +192,25 @@ export class AnalyticsService {
 	}
 
 	async createEvaluationRecord(
-		copilotOutputId: number,
+		copilotOutputId: string,
 		evaluatorId: string,
 		evaluatorType: EvaluatorType,
-		questionId: string,
-		questionSetId: string,
-		answer: boolean,
+		rubricId: string,
+		criteriaId: string,
+		evaluation: boolean,
+		feedback?: string,
 	) {
 		try {
-			return await prisma.evaluationRecord.create({
+			const evaluationRecordInterface = new EvaluationRecordInterface("create");
+			return await evaluationRecordInterface.getEvaluationRecordAdapter({
 				data: {
 					copilotOutputId,
 					evaluatorId,
 					evaluatorType: EVALUATOR[evaluatorType],
-					questionId,
-					questionSetId,
-					evaluatorAnswer: answer,
+					rubricId,
+					criteriaId,
+					evaluation,
+					feedback,
 				},
 			});
 		} catch (error) {
@@ -179,105 +220,54 @@ export class AnalyticsService {
 	}
 
 	async createEvaluationSession(
-		copilotOutputId: number,
+		copilotOutputId: string,
 		evaluatorId: string,
 		evaluatorType: EvaluatorType,
-		questionSetId: string,
-		answers: QuestionAnswerInput[],
+		rubricId: string,
+		evaluations: EvaluationInput[],
 	): Promise<EvaluationSession> {
 		try {
-			const session = await prisma.evaluationSession.create({
-				data: {
-					copilotOutputId,
-					evaluatorId,
-					evaluatorType: EVALUATOR[evaluatorType],
-					questionSetId,
-					evaluationRecords: {
-						create: answers.map((answer) => ({
-							questionId: answer.questionId,
-							evaluatorAnswer: answer.answer,
-							...(answer.feedback && { feedback: answer.feedback }),
-						})),
+			const evaluationSessionInterface = new EvaluationSessionInterface(
+				"create",
+			);
+			const session =
+				(await evaluationSessionInterface.getEvaluationSessionAdapter({
+					data: {
+						copilotOutputId,
+						evaluatorId,
+						evaluatorType: EVALUATOR[evaluatorType],
+						rubricId,
+						evaluationRecords: {
+							create: evaluations.map((answer) => ({
+								criteriaId: answer.criteriaId,
+								evaluation: answer.evaluation,
+								feedback: answer.feedback ?? null,
+							})),
+						},
 					},
-				},
-			});
-			if (!session) {
-				logger.error(
-					"Failed to create evaluation session: No session returned from database",
-				);
-				throw new Error("Failed to create evaluation session");
-			}
+					include: {
+						evaluationRecords: true,
+					},
+				})) as EvaluationSessionWithRecords;
+
 			return {
 				id: session.id,
-				questionSetId,
-				evaluatorId,
-				copilotOutputId,
+				copilotOutputId: session.copilotOutputId,
+				rubricId: session.rubricId,
+				evaluatorId: session.evaluatorId,
 				evaluatorType,
+				modelName: session.modelName,
+				startedAt: session.startedAt.toISOString(),
 				completedAt: session.completedAt?.toISOString() ?? null,
+				evaluations: session.evaluationRecords.map((record) =>
+					this.toGraphqlEvaluationRecord(record),
+				),
 			};
 		} catch (error) {
 			logger.error("Error creating evaluation session:", error);
 			throw new Error("Failed to create evaluation session");
 		}
 	}
-
-	// async createEvaluationResult(
-	// 	sessionId: string,
-	// 	copilotType: (typeof COPILOT_TYPES)[keyof typeof COPILOT_TYPES],
-	// 	modelName: string,
-	// 	reportData: {
-	// 		summary?: string;
-	// 		detailedAnalysis?: string;
-	// 		auditTrace?: string[];
-	// 	},
-	// 	overallScore: number,
-	// ) {
-	// 	try {
-	// 		return prisma.evaluationResult.create({
-	// 			data: {
-	// 				sessionId: parseInt(sessionId),
-	// 				copilotType: copilotType,
-	// 				modelName: modelName,
-	// 				overallScore: overallScore,
-	// 				summary: reportData.summary ?? "",
-	// 				detailedAnalysis: reportData.detailedAnalysis ?? "",
-	// 				auditTrace: reportData.auditTrace ?? [],
-	// 			},
-	// 		});
-	// 	} catch (error) {
-	// 		logger.error("Error creating evaluation result:", error);
-	// 		throw new Error("Failed to create evaluation result");
-	// 	}
-	// }
-
-	// async createEvaluationSession(
-	// 	goldenSetId: number,
-	// 	modelName: string,
-	// 	duration: number,
-	// 	candidateOutput: string,
-	// 	status: "pending" | "running" | "completed" | "failed",
-	// 	metadata: Prisma.InputJsonValue,
-	// ) {
-	// 	try {
-	// 		const goldenSet =
-	// 			await goldenSetService.updateGoldenSetOutputAndInitSession(
-	// 				goldenSetId,
-	// 				candidateOutput,
-	// 				duration,
-	// 				modelName,
-	// 				status,
-	// 				metadata,
-	// 			);
-	// 		const session = goldenSet.evaluationSessions?.at(-1);
-	// 		if (!session) {
-	// 			throw new Error("Failed to create evaluation session");
-	// 		}
-	// 		return session;
-	// 	} catch (error) {
-	// 		logger.error("Error creating evaluation session:", error);
-	// 		throw new Error("Failed to create evaluation session");
-	// 	}
-	// }
 }
 
 export const analyticsService = new AnalyticsService();

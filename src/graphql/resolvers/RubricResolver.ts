@@ -1,58 +1,72 @@
 import { executionService } from "../../services/ExecutionService.ts";
 import { rubricService } from "../../services/RubricService.ts";
-// import { REVERSE_REVIEW_STATUS, REVIEW_STATUS } from '../../config/constants.ts';
 import { logger } from "../../external/logger.ts";
 import type {
 	CopilotOutput,
-	QuestionSet,
+	MutationExecuteCopilotArgs,
+	MutationGenerateRubricArgs,
+	QueryGetRubricByContextArgs,
+	QueryGetRubricByIdArgs,
+	Rubric,
 } from "../generated/resolvers-types.ts";
 
 export const rubricResolver = {
 	Query: {
-		getQuestionSetById: async (
+		getRubricById: async (
 			_: unknown,
-			args: { id: string },
-		): Promise<QuestionSet | null> => {
+			args: QueryGetRubricByIdArgs,
+		): Promise<Rubric | null> => {
 			try {
-				const questionSet = await rubricService.getQuestionSetById(args.id);
-				return questionSet;
+				return await rubricService.getRubricById(args.id);
 			} catch (error) {
-				logger.error("Error fetching rubrics by sessionId:", error);
-				throw new Error("Failed to fetch rubrics by sessionId");
+				logger.error("Error fetching rubric by id:", error);
+				throw new Error("Failed to fetch rubric by id");
 			}
 		},
-		getQuestionSetByContext: async (
+		getRubricByContext: async (
 			_: unknown,
-			args: { goldenSetId: number; userInputId: number },
-		): Promise<QuestionSet[] | null> => {
-			const res = await rubricService.getQuestionSets(
-				args.goldenSetId,
-				args.userInputId,
-			);
-			return res;
+			args: QueryGetRubricByContextArgs,
+		): Promise<Rubric[] | null> => {
+			try {
+				return await rubricService.getRubrics(
+					args.context.goldenSetId,
+					args.context.userInputId,
+				);
+			} catch (error) {
+				logger.error("Error fetching rubrics by context:", error);
+				throw new Error("Failed to fetch rubrics by context");
+			}
 		},
 	},
 
 	Mutation: {
 		executeCopilot: async (
 			_: unknown,
-			args: { goldenSetId: number; userInputId: number },
+			args: MutationExecuteCopilotArgs,
 		): Promise<CopilotOutput> => {
-			const res = await executionService.executeCopilot(
-				args.goldenSetId,
-				args.userInputId,
-			);
-			return res;
+			try {
+				return await executionService.executeCopilot(
+					args.context.goldenSetId,
+					args.context.userInputId,
+				);
+			} catch (error) {
+				logger.error("Error executing copilot:", error);
+				throw new Error("Failed to execute copilot");
+			}
 		},
-		generateQuestionSet: async (
+		generateRubric: async (
 			_: unknown,
-			args: { goldenSetId: number; userInputId: number },
-		): Promise<QuestionSet> => {
-			const res = await rubricService.generateQuestionSet(
-				args.goldenSetId,
-				args.userInputId,
-			);
-			return res;
+			args: MutationGenerateRubricArgs,
+		): Promise<Rubric> => {
+			try {
+				return await rubricService.generateRubric(
+					args.context.goldenSetId,
+					args.context.userInputId,
+				);
+			} catch (error) {
+				logger.error("Error generating rubric:", error);
+				throw new Error("Failed to generate rubric");
+			}
 		},
 	},
 };

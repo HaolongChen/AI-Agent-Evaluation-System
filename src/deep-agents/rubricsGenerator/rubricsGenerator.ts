@@ -179,7 +179,7 @@ export const generateRubrics = async (
 	{
 		rubrics: z.infer<typeof responseSchema>;
 	} & {
-		feedbacks: (questionSetId: string) => Promise<agentFeedbacks | undefined>[];
+		feedbacks: (rubricId: string) => Promise<agentFeedbacks | undefined>[];
 	}
 > => {
 	await Promise.all([
@@ -256,19 +256,19 @@ export const generateRubrics = async (
 			// recursionLimit: 100,
 		},
 	);
-	const feedbacks = (questionSetId: string) => [
+	const feedbacks = (rubricId: string) => [
 		rubricService.saveAgentFeedbacks(
-			questionSetId,
+			rubricId,
 			"rubrics-generator-agent",
 			rubricsGeneratorFeedback.getFeedbacks(),
 		),
 		rubricService.saveAgentFeedbacks(
-			questionSetId,
+			rubricId,
 			"schema-lookup-agent",
 			schemaLookupAgentFeedback.getFeedbacks(),
 		),
 		rubricService.saveAgentFeedbacks(
-			questionSetId,
+			rubricId,
 			"docs-lookup-agent",
 			docsLookupAgentFeedback.getFeedbacks(),
 		),

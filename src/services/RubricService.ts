@@ -1,119 +1,101 @@
-import { prisma } from "../config/prisma.ts";
-// import { REVIEW_STATUS } from "../config/constants.ts";
-import { logger } from "../external/logger.ts";
-import type { question } from "../prisma/build/generated/prisma/client.ts";
-import { executionService } from "./ExecutionService.ts";
-import { generateRubrics } from "../deep-agents/rubricsGenerator/rubricsGenerator.ts";
 import { Decimal } from "@prisma/client/runtime/client";
-import type { QuestionSet } from "../graphql/generated/resolvers-types.ts";
+import { logger } from "../external/logger.ts";
+import { generateRubrics } from "../deep-agents/rubricsGenerator/rubricsGenerator.ts";
+import type { Criteria, Rubric } from "../graphql/generated/resolvers-types.ts";
+import type {
+	agentFeedbacks,
+	criteria,
+	rubric,
+} from "../prisma/build/generated/prisma/client.ts";
+import { AgentFeedbacksInterface } from "@src/interface/agentFeedbacksInterface";
+import { GoldenSetInterface } from "@src/interface/goldenSetInterface";
+import { RubricInterface } from "@src/interface/rubricInterface";
+
+type RubricWithCriteria = rubric & {
+	criterion: criteria[];
+};
+
+type RubricCriterionInput = {
+	title: string;
+	content: string;
+	expectedAnswer: boolean;
+	weight: Decimal;
+	version?: string;
+};
 
 export class RubricService {
-	async initializeQuestionSetWithRubrics(
-		goldenSetId: number,
-		userInputId: number,
-		rubrics: Array<question>,
-	) {
-		try {
-			const copilotOutputs = await executionService.getCopilotOutputs(
-				goldenSetId,
-				userInputId,
-			);
-			const questionSet = await prisma.$transaction(async (tx) => {
-				const newQuestionSet = await tx.questionSet.create({
-					data: {
-						goldenSetId,
-						userInputId,
-						copilotOutputs: {
-							create: copilotOutputs.map((output) => ({
-								copilotOutputId: output.id,
-							})),
-						},
-					},
-				});
-
-				const rubricData = rubrics.map((rubric) => ({
-					...rubric,
-					questionSetId: newQuestionSet.id,
-				}));
-
-				await tx.question.createMany({
-					data: rubricData,
-				});
-
-				return newQuestionSet;
-			});
-			return questionSet;
-		} catch (error) {
-			logger.error("Error initializing question set:", error);
-			throw new Error("Failed to initialize question set");
-		}
+	private toGraphqlCriteria(criteriaItem: criteria): Criteria {
+		return {
+			id: criteriaItem.id,
+			rubricId: criteriaItem.rubricId,
+			version: criteriaItem.version,
+			title: criteriaItem.title,
+			content: criteriaItem.content,
+			expectedEvaluation: criteriaItem.expectedAnswer,
+			weight: Number(criteriaItem.weight),
+		};
 	}
 
-	async getQuestionSets(
-		goldenSetId: number,
-		userInputId: number,
-		viewQuestions: boolean = false,
-	): Promise<Array<QuestionSet>> {
+	private toGraphqlRubric(rubricItem: RubricWithCriteria): Rubric {
+		return {
+			id: rubricItem.id,
+			goldenSetId: rubricItem.goldenSetId,
+			userInputId: rubricItem.userInputId,
+			criterion: rubricItem.criterion.map((item) =>
+				this.toGraphqlCriteria(item),
+			),
+		};
+	}
+
+	async getRubrics(
+		goldenSetId: string,
+		userInputId: string,
+	): Promise<Rubric[]> {
 		try {
-			const questionSets = await prisma.questionSet.findMany({
+			const rubricInterface = new RubricInterface("findMany");
+			const rubrics = (await rubricInterface.getRubricAdapter({
 				where: {
 					goldenSetId,
 					userInputId,
 				},
 				include: {
-					questions: viewQuestions,
+					criterion: true,
 				},
-				orderBy: { id: "asc" },
-			});
-			if (!questionSets || questionSets.length === 0) {
-				return [];
-			}
-			return questionSets.map((qs) => ({
-				...qs,
-				questions:
-					qs.questions ?
-						qs.questions.map((q) => ({
-							...q,
-							weight: Number(q.weight),
-						}))
-					:	[],
-			}));
+				orderBy: { createdAt: "asc" },
+			})) as RubricWithCriteria[];
+			return rubrics.map((item) => this.toGraphqlRubric(item));
 		} catch (error) {
-			logger.error("Error fetching question sets:", error);
-			throw new Error("Failed to fetch question sets");
+			logger.error("Error fetching rubrics:", error);
+			throw new Error("Failed to fetch rubrics");
 		}
 	}
 
-	async getQuestionSetById(id: string): Promise<QuestionSet | null> {
+	async getRubricById(id: string): Promise<Rubric | null> {
 		try {
-			const questionSet = await prisma.questionSet.findUnique({
+			const rubricInterface = new RubricInterface("findUnique");
+			const rubricItem = (await rubricInterface.getRubricAdapter({
 				where: { id },
 				include: {
-					questions: true,
+					criterion: true,
 				},
-			});
-			if (!questionSet) {
+			})) as RubricWithCriteria | null;
+			if (!rubricItem) {
 				return null;
 			}
-			return {
-				...questionSet,
-				questions: questionSet.questions.map((q) => ({
-					...q,
-					weight: Number(q.weight),
-				})),
-			};
+			return this.toGraphqlRubric(rubricItem);
 		} catch (error) {
-			logger.error("Error fetching question set by id:", error);
-			throw new Error("Failed to fetch question set by id");
+			logger.error("Error fetching rubric by id:", error);
+			throw new Error("Failed to fetch rubric by id");
 		}
 	}
 
-	async generateQuestionSet(
-		goldenSetId: number,
-		userInputId: number,
-	): Promise<QuestionSet> {
+	async generateRubric(
+		goldenSetId: string,
+		userInputId: string,
+	): Promise<Rubric> {
 		try {
-			const copilotInput = await prisma.goldenSet.findUnique({
+			const goldenSetInterface = new GoldenSetInterface("findUnique");
+			const copilotInput = (await goldenSetInterface.getGoldenSetAdapter({
 				where: { id: goldenSetId },
 				select: {
 					schemaId: true,
@@ -126,7 +108,11 @@ export class RubricService {
 						},
 					},
 				},
-			});
+			})) as {
+				schemaId: string;
+				userInputs: Array<{ content: string }>;
+			} | null;
+
 			if (
 				!copilotInput ||
 				!copilotInput.userInputs ||
@@ -136,184 +122,101 @@ export class RubricService {
 					"No user input found for the given goldenSetId and userInputId",
 				);
 			}
+
 			const { rubrics, feedbacks } = await generateRubrics(
 				copilotInput.schemaId,
 				copilotInput.userInputs[0].content,
 			);
 			const overallWeight = rubrics.rubrics.reduce(
-				(sum, r) => sum + r.weight,
+				(sum, item) => sum + item.weight,
 				0,
 			);
 			if (overallWeight === 0) {
 				throw new Error("Total weight of rubrics cannot be zero");
 			}
-			const questionSet = await this.saveQuestionSet(
+
+			const savedRubric = await this.saveRubric(
 				goldenSetId,
 				userInputId,
-				rubrics.rubrics.map((r) => ({
-					...r,
-					weight: Decimal(r.weight / overallWeight), // Normalize weights to sum up to 1
+				rubrics.rubrics.map((item) => ({
+					title: item.title,
+					content: item.content,
+					expectedAnswer: item.expectedAnswer,
+					weight: new Decimal(item.weight / overallWeight),
 				})),
 			);
 
-			await Promise.allSettled(feedbacks(questionSet.id));
-
-			return {
-				...questionSet,
-				questions: questionSet.questions.map((q) => ({
-					...q,
-					weight: Number(q.weight),
-				})),
-			};
+			await Promise.allSettled(feedbacks(savedRubric.id));
+			return this.toGraphqlRubric(savedRubric);
 		} catch (error) {
-			logger.error("Error generating question set:", error);
-			throw new Error("Failed to generate question set");
+			logger.error("Error generating rubric:", error);
+			throw new Error("Failed to generate rubric");
 		}
 	}
 
-	async saveQuestionSet(
-		goldenSetId: number,
-		userInputId: number,
-		questions: Array<{
-			title: string;
-			content: string;
-			expectedAnswer: boolean;
-			weight: Decimal;
-			version?: string;
-		}>,
-	) {
+	async saveRubric(
+		goldenSetId: string,
+		userInputId: string,
+		criteriaItems: RubricCriterionInput[],
+	): Promise<RubricWithCriteria> {
 		try {
-			const questionSet = await prisma.questionSet.create({
+			const rubricInterface = new RubricInterface("create");
+			return (await rubricInterface.getRubricAdapter({
 				data: {
 					goldenSetId,
 					userInputId,
-					questions: {
-						create: questions.map((question) => ({
-							version: question?.version || "1.0",
-							title: question.title,
-							content: question.content,
-							expectedAnswer: question.expectedAnswer,
-							weight: question.weight,
+					criterion: {
+						create: criteriaItems.map((item) => ({
+							version: item.version || "1.0",
+							title: item.title,
+							content: item.content,
+							expectedAnswer: item.expectedAnswer,
+							weight: item.weight,
 						})),
 					},
 				},
 				include: {
-					questions: true,
+					criterion: true,
 				},
-			});
-			return questionSet;
+			})) as RubricWithCriteria;
 		} catch (error) {
-			logger.error("Error saving question set:", error);
-			throw new Error("Failed to save question set");
+			logger.error("Error saving rubric:", error);
+			throw new Error("Failed to save rubric");
 		}
 	}
 
 	async saveAgentFeedbacks(
-		questionSetId: string,
+		rubricId: string,
 		agentName: string,
 		feedbacks: string[],
-	) {
+	): Promise<agentFeedbacks | undefined> {
 		try {
 			if (feedbacks.length === 0) {
-				return;
+				return undefined;
 			}
-			// save agents feedbacks for development use
-			const questionSet = await prisma.questionSet.findUnique({
-				where: { id: questionSetId },
+
+			const rubricInterface = new RubricInterface("findUnique");
+			const rubricItem = await rubricInterface.getRubricAdapter({
+				where: { id: rubricId },
+				select: { id: true },
 			});
-			if (!questionSet) {
-				throw new Error("Question set not found for the given id");
+			if (!rubricItem) {
+				throw new Error("Rubric not found for the given id");
 			}
-			const agentFeedback = await prisma.agentFeedbacks.create({
+
+			const agentFeedbacksInterface = new AgentFeedbacksInterface("create");
+			return await agentFeedbacksInterface.getAgentFeedbacksAdapter({
 				data: {
-					questionSetId,
+					rubricId,
 					agentName,
 					feedback: feedbacks,
 				},
 			});
-			return agentFeedback;
 		} catch (error) {
 			logger.error("Error saving agent feedbacks:", error);
 			throw new Error("Failed to save agent feedbacks");
 		}
 	}
-
-	// async getQuestionsBySessionX(sessionId: number) {
-	// 	try {
-	// 		return prisma.adaptiveRubric.findMany({
-	// 			where: {
-	// 				sessionId,
-	// 				isActive: true,
-	// 			},
-	// 			include: {
-	// 				judgeRecord: true,
-	// 			},
-	// 			orderBy: { id: "asc" },
-	// 		});
-	// 	} catch (error) {
-	// 		logger.error("Error fetching questions by sessionId:", error);
-	// 		throw new Error("Failed to fetch questions by sessionId");
-	// 	}
-	// }
-
-	// async getQuestionsForReviewX(
-	// 	sessionId?: number,
-	// 	reviewStatus?: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS],
-	// ) {
-	// 	try {
-	// 		return prisma.adaptiveRubric.findMany({
-	// 			where: {
-	// 				isActive: true,
-	// 				...(reviewStatus && { reviewStatus }),
-	// 				...(sessionId && { sessionId }),
-	// 			},
-	// 			include: {
-	// 				judgeRecord: true,
-	// 				session: true,
-	// 			},
-	// 			orderBy: { createdAt: "desc" },
-	// 		});
-	// 	} catch (error) {
-	// 		logger.error("Error fetching questions for review:", error);
-	// 		throw new Error("Failed to fetch questions for review");
-	// 	}
-	// }
-
-	// async getQuestionsTotalWeight(sessionId: number) {
-	// 	try {
-	// 		const questions = await prisma.adaptiveRubric.findMany({
-	// 			where: { sessionId, isActive: true },
-	// 			select: { id: true, weight: true },
-	// 		});
-
-	// 		return {
-	// 			totalWeight: questions.reduce((sum, q) => sum + Number(q.weight), 0),
-	// 		};
-	// 	} catch (error) {
-	// 		logger.error("Error getting total weight:", error);
-	// 		throw new Error("Failed to get total weight");
-	// 	}
-	// }
-
-	// async updateRubricsReviewStatusX(
-	// 	sessionId: number,
-	// 	reviewStatus: (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS],
-	// 	reviewedBy: string,
-	// ) {
-	// 	try {
-	// 		return prisma.adaptiveRubric.updateMany({
-	// 			where: { sessionId },
-	// 			data: {
-	// 				reviewStatus,
-	// 				reviewedAt: new Date(),
-	// 				reviewedBy,
-	// 			},
-	// 		});
-	// 	} catch (error) {
-	// 		logger.error("Error updating rubrics review status:", error);
-	// 		throw new Error("Failed to update rubrics review status");
-	// 	}
-	// }
 }
 
 export const rubricService = new RubricService();

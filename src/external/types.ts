@@ -1,9 +1,9 @@
 import type { JobState, ToolResult } from "./graph-states.ts";
 
 export type copilotType =
-	| "dataModel"
+	| "dataModelBuilder"
 	| "uiBuilder"
-	| "actionflow"
+	| "actionFlowBuilder"
 	| "logAnalyzer"
 	| "agentBuilder";
 

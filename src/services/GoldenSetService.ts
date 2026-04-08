@@ -1,16 +1,32 @@
-import { prisma } from "../config/prisma.ts";
-import { COPILOT_TYPES } from "../config/constants.ts";
 import { logger } from "../external/logger.ts";
 import type {
-	// Prisma,
+	GoldenSetFilters,
+	CopilotType,
+} from "../graphql/generated/resolvers-types.ts";
+import type {
 	goldenSet,
 	userInput,
-	// copilotOutput,
-	// evaluationSession,
 } from "../prisma/build/generated/prisma/client.ts";
-import type { GoldenSetFilters } from "../graphql/generated/resolvers-types.ts";
+import type { CopilotType as PrismaCopilotType } from "../prisma/build/generated/prisma/enums.ts";
 import { GoldenSetInterface } from "@src/interface/goldenSetInterface";
-// import type { GoldenSet, GoldenSetFilters } from "../graphql/generated/resolvers-types.ts";
+import { UserInputInterface } from "@src/interface/userInputInterface";
+
+const toPrismaCopilotType = (copilotType: CopilotType): PrismaCopilotType => {
+	switch (copilotType) {
+		case "DATA_MODEL_BUILDER":
+			return "dataModelBuilder";
+		case "UI_BUILDER":
+			return "uiBuilder";
+		case "ACTION_FLOW_BUILDER":
+			return "actionFlowBuilder";
+		case "LOG_ANALYZER":
+			return "logAnalyzer";
+		case "AGENT_BUILDER":
+			return "agentBuilder";
+	}
+
+	throw new Error(`Unsupported copilot type: ${copilotType}`);
+};
 
 export class GoldenSetService {
 	async getGoldenSetById(id: string): Promise<goldenSet | null> {
@@ -28,15 +44,17 @@ export class GoldenSetService {
 
 	async getGoldenSets(filters?: GoldenSetFilters): Promise<Array<goldenSet>> {
 		try {
-			const goldenSets = await prisma.goldenSet.findMany({
+			const copilotType =
+				filters?.copilotType ?
+					toPrismaCopilotType(filters.copilotType)
+				:	undefined;
+			const goldenSetInterface = new GoldenSetInterface("findMany");
+			const goldenSets = await goldenSetInterface.getGoldenSetAdapter({
 				where: {
 					...(filters?.schemaId && { schemaId: filters.schemaId }),
-					...(filters?.copilotType && {
-						copilotType: COPILOT_TYPES[filters.copilotType],
-					}),
+					...(copilotType && { copilotType }),
 					...(filters?.modelName && { modelName: filters.modelName }),
 				},
-				// orderBy: { createdAt: "desc" },
 			});
 			return goldenSets;
 		} catch (error) {
@@ -44,17 +62,19 @@ export class GoldenSetService {
 			throw new Error("Failed to fetch golden sets");
 		}
 	}
+
 	async createUserInput(
 		description: string,
 		content: string,
 		createdBy: string,
 	): Promise<userInput> {
 		try {
-			const userInput = await prisma.userInput.create({
+			const userInputInterface = new UserInputInterface("create");
+			const userInput = await userInputInterface.getUserInputAdapter({
 				data: {
-					description,
+					description: description || null,
 					content,
-					createdBy,
+					createdBy: createdBy || null,
 				},
 			});
 			return userInput;
@@ -66,12 +86,13 @@ export class GoldenSetService {
 
 	async createGoldenSet(
 		schemaId: string,
-		copilotType: keyof typeof COPILOT_TYPES,
+		copilotType: CopilotType,
 		modelName: string,
 	): Promise<goldenSet> {
 		try {
-			const copilotTypeValue = COPILOT_TYPES[copilotType];
-			const goldenSet = await prisma.goldenSet.create({
+			const copilotTypeValue = toPrismaCopilotType(copilotType);
+			const goldenSetInterface = new GoldenSetInterface("create");
+			const goldenSet = await goldenSetInterface.getGoldenSetAdapter({
 				data: {
 					schemaId,
 					copilotType: copilotTypeValue,
@@ -90,7 +111,8 @@ export class GoldenSetService {
 		userInputId: string,
 	): Promise<goldenSet> {
 		try {
-			const goldenSet = await prisma.goldenSet.update({
+			const goldenSetInterface = new GoldenSetInterface("update");
+			const goldenSet = await goldenSetInterface.getGoldenSetAdapter({
 				where: { id: goldenSetId },
 				data: {
 					userInputs: {
@@ -107,130 +129,6 @@ export class GoldenSetService {
 			throw new Error("Failed to link golden set to user input");
 		}
 	}
-
-	// async updateGoldenSetInputX(
-	// 	schemaId: string,
-	// 	copilotType: keyof typeof COPILOT_TYPES,
-	// 	description: string,
-	// 	query: string,
-	// ): Promise<GoldenSetWithRelations> {
-	// 	try {
-	// 		const copilotTypeValue = COPILOT_TYPES[copilotType];
-	// 		const goldenSet = await prisma.goldenSet.upsert({
-	// 			where: {
-	// 				schemaExId,
-	// 			},
-	// 			update: {
-	// 				userInput: {
-	// 					create: {
-	// 						description,
-	// 						content: query,
-	// 					},
-	// 				},
-	// 			},
-	// 			create: {
-	// 				schemaExId,
-	// 				copilotType: copilotTypeValue,
-	// 				userInput: {
-	// 					create: {
-	// 						description,
-	// 						content: query,
-	// 					},
-	// 				},
-	// 				isProjectExisting: schemaExId !== "N/A", // Mark as existing if schemaExId is provided, otherwise it's a new golden set
-	// 			},
-	// 			include: {
-	// 				userInput: true,
-	// 				copilotOutput: true,
-	// 			},
-	// 		});
-	// 		logger.debug("Upserted golden set project:", goldenSet);
-	// 		return goldenSet;
-	// 	} catch (error) {
-	// 		logger.error("Error updating golden set project:", error);
-	// 		throw new Error("Failed to update golden set project");
-	// 	}
-	// }
-
-	// async updateGoldenSetOutputAndInitSessionX(
-	// 	goldenSetId: number,
-	// 	output: string,
-	// 	duration: number,
-	// 	modelName: string,
-	// 	status: "pending" | "running" | "completed" | "failed",
-	// 	metadata: Prisma.InputJsonValue,
-	// ): Promise<GoldenSetWithRelations> {
-	// 	try {
-	// 		const goldenSet = await prisma.goldenSet.update({
-	// 			where: {
-	// 				id: goldenSetId,
-	// 			},
-	// 			data: {
-	// 				copilotOutput: {
-	// 					create: {
-	// 						content: output,
-	// 						totalLatencyMs: duration,
-	// 					},
-	// 				},
-	// 				evaluationSessions: {
-	// 					create: {
-	// 						modelName,
-	// 						status,
-	// 						metadata,
-	// 					},
-	// 				},
-	// 			},
-	// 			include: {
-	// 				userInput: true,
-	// 				copilotOutput: true,
-	// 				evaluationSessions: true,
-	// 			},
-	// 		});
-
-	// 		logger.debug("Upserted golden set project:", goldenSet);
-	// 		return goldenSet;
-	// 	} catch (error) {
-	// 		logger.error("Error updating golden set project:", error);
-	// 		throw new Error("Failed to update golden set project");
-	// 	}
-	// }
-
-	// async getGoldenSetById(id: number): Promise<GoldenSet | null> {
-	// 	try {
-	// 		const goldenSet = await prisma.goldenSet.findUnique({
-	// 			where: {
-	// 				id
-	// 			},
-	// 		});
-	// 		return goldenSet ? null : goldenSet; // Transform to match GraphQL type if needed
-	// 	} catch (error) {
-	// 		logger.error("Error fetching golden sets:", error);
-	// 		throw new Error("Failed to fetch golden sets");
-	// 	}
-	// }
-
-	// async getGoldenSets(
-	// 	filters: GoldenSetFilters,
-	// ): Promise<Array<goldenSet>> {
-	// 	try {
-	// 		const goldenSets = await prisma.goldenSet.findMany({
-	// 			where: {
-	// 				...(filters?.schemaExId && { schemaExId: filters.schemaExId }),
-	// 				...(filters?.copilotType && {
-	// 					copilotType: COPILOT_TYPES[filters.copilotType],
-	// 				}),
-	// 				...(filters?.modelName && { modelName: filters.modelName }),
-	// 			},
-	// 			// orderBy: { createdAt: "desc" },
-	// 		});
-
-	// 		logger.debug("Fetched golden sets:", goldenSets);
-	// 		return goldenSets;
-	// 	} catch (error) {
-	// 		logger.error("Error fetching golden sets:", error);
-	// 		throw new Error("Failed to fetch golden sets");
-	// 	}
-	// }
 }
 
 export const goldenSetService = new GoldenSetService();

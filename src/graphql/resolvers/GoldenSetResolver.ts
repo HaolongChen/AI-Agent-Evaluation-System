@@ -1,113 +1,140 @@
-// import { prisma } from "../../config/prisma.ts";
-// import { REVERSE_COPILOT_TYPES } from "../../config/constants.ts";
-// import type { CopilotType } from "../../../build/generated/prisma/enums.ts";
 import {
 	CopilotType,
 	type GoldenSet,
-	type GoldenSetFilters,
+	type MutationCreateUserInputArgs,
+	type MutationInitializeGoldenSetArgs,
+	type MutationLinkGoldenSetToUserInputArgs,
+	type QueryGetGoldenSetByIdArgs,
+	type QueryGetGoldenSetsArgs,
 	type UserInput,
 } from "../generated/resolvers-types.ts";
 import { goldenSetService } from "../../services/GoldenSetService.ts";
 import { projectService } from "../../services/ProjectService.ts";
-import {
-	COPILOT_TYPES,
-	REVERSE_COPILOT_TYPES,
-} from "../../config/constants.ts";
-// import { rubricService } from "../../services/RubricService.ts";
+import { REVERSE_COPILOT_TYPES } from "../../config/constants.ts";
+import { logger } from "../../external/logger.ts";
 
 export const goldenSetResolver = {
 	Query: {
 		getGoldenSetById: async (
 			_: unknown,
-			args: { id: number },
+			args: QueryGetGoldenSetByIdArgs,
 		): Promise<GoldenSet | null> => {
-			const res = await goldenSetService.getGoldenSetById(args.id);
-			if (!res) return null;
-			return {
-				...res,
-				copilotType: REVERSE_COPILOT_TYPES[
-					res.copilotType as keyof typeof REVERSE_COPILOT_TYPES
-				] as CopilotType,
-			};
-			// return res;
+			try {
+				const res = await goldenSetService.getGoldenSetById(args.id);
+				if (!res) return null;
+				return {
+					...res,
+					copilotType: REVERSE_COPILOT_TYPES[
+						res.copilotType as keyof typeof REVERSE_COPILOT_TYPES
+					] as CopilotType,
+				};
+			} catch (error) {
+				logger.error("Error fetching golden set by id:", error);
+				throw new Error("Failed to fetch golden set by id");
+			}
 		},
 		getGoldenSets: async (
 			_: unknown,
-			args: { filters?: GoldenSetFilters },
+			args: QueryGetGoldenSetsArgs,
 		): Promise<GoldenSet[]> => {
-			const res = await goldenSetService.getGoldenSets(args.filters);
-			return res.map((gs) => ({
-				...gs,
-				copilotType: REVERSE_COPILOT_TYPES[
-					gs.copilotType as keyof typeof REVERSE_COPILOT_TYPES
-				] as CopilotType,
-			}));
-			// return res;
+			try {
+				const res = await goldenSetService.getGoldenSets(
+					args.filters ?? undefined,
+				);
+				return res.map((gs) => ({
+					...gs,
+					copilotType: REVERSE_COPILOT_TYPES[
+						gs.copilotType as keyof typeof REVERSE_COPILOT_TYPES
+					] as CopilotType,
+				}));
+			} catch (error) {
+				logger.error("Error fetching golden sets:", error);
+				throw new Error("Failed to fetch golden sets");
+			}
 		},
 	},
 
 	Mutation: {
 		initializeGoldenSet: async (
 			_: unknown,
-			args: {
-				schemaId: string;
-				copilotType: keyof typeof COPILOT_TYPES;
-				modelName: string;
-			},
+			args: MutationInitializeGoldenSetArgs,
 		): Promise<GoldenSet> => {
-			const res = await goldenSetService.createGoldenSet(
-				args.schemaId,
-				args.copilotType,
-				args.modelName,
-			);
-			return {
-				...res,
-				copilotType: REVERSE_COPILOT_TYPES[
-					res.copilotType as keyof typeof REVERSE_COPILOT_TYPES
-				] as CopilotType,
-			};
-			// return res;
+			try {
+				const res = await goldenSetService.createGoldenSet(
+					args.input.schemaId,
+					args.input.copilotType,
+					args.input.modelName ?? "undefined",
+				);
+				return {
+					...res,
+					copilotType: REVERSE_COPILOT_TYPES[
+						res.copilotType as keyof typeof REVERSE_COPILOT_TYPES
+					] as CopilotType,
+				};
+			} catch (error) {
+				logger.error("Error initializing golden set:", error);
+				throw new Error("Failed to initialize golden set");
+			}
 		},
 		createUserInput: async (
 			_: unknown,
-			args: { description?: string; query: string; createdBy?: string },
+			args: MutationCreateUserInputArgs,
 		): Promise<UserInput> => {
-			const res = await goldenSetService.createUserInput(
-				args.description || "",
-				args.query,
-				args.createdBy || "",
-			);
-			return { ...res, createdAt: res.createdAt.toISOString() };
+			try {
+				const res = await goldenSetService.createUserInput(
+					args.input.description ?? "",
+					args.input.query,
+					args.input.createdBy ?? "",
+				);
+				return { ...res, createdAt: res.createdAt.toISOString() };
+			} catch (error) {
+				logger.error("Error creating user input:", error);
+				throw new Error("Failed to create user input");
+			}
 		},
 		linkGoldenSetToUserInput: async (
 			_: unknown,
-			args: { goldenSetId: number; userInputId: number },
+			args: MutationLinkGoldenSetToUserInputArgs,
 		): Promise<GoldenSet> => {
-			const res = await goldenSetService.linkGoldenSetToUserInput(
-				args.goldenSetId,
-				args.userInputId,
-			);
-			return {
-				...res,
-				copilotType: REVERSE_COPILOT_TYPES[
-					res.copilotType as keyof typeof REVERSE_COPILOT_TYPES
-				] as CopilotType,
-			};
+			try {
+				const res = await goldenSetService.linkGoldenSetToUserInput(
+					args.context.goldenSetId,
+					args.context.userInputId,
+				);
+				return {
+					...res,
+					copilotType: REVERSE_COPILOT_TYPES[
+						res.copilotType as keyof typeof REVERSE_COPILOT_TYPES
+					] as CopilotType,
+				};
+			} catch (error) {
+				logger.error("Error linking golden set to user input:", error);
+				throw new Error("Failed to link golden set to user input");
+			}
 		},
 
 		createProject: async (
 			_: unknown,
 			args: { projectName: string },
 		): Promise<string> => {
-			const res = await projectService.createProject(args.projectName);
-			return res;
+			try {
+				return await projectService.createProject(args.projectName);
+			} catch (error) {
+				logger.error("Error creating project:", error);
+				throw new Error("Failed to create project");
+			}
 		},
 		deleteProject: async (
 			_: unknown,
 			args: { projectExId: string },
 		): Promise<boolean> => {
-			await projectService.deleteProject(args.projectExId);
-			return true;
+			try {
+				await projectService.deleteProject(args.projectExId);
+				return true;
+			} catch (error) {
+				logger.error("Error deleting project:", error);
+				throw new Error("Failed to delete project");
+			}
 		},
 	},
 };

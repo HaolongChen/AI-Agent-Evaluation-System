@@ -79,8 +79,9 @@ export const read_json_schema = tool(
         : DEFAULT_RESULT_CHAR_LIMIT;
 
     const schemaId = config?.context?.schemaId;
+    const agentName = config?.metadata?.lc_agent_name;
     const filePath =
-      config?.metadata?.lc_agent_name === "schema-lookup-agent"
+      agentName === "schema-lookup-agent" || agentName === "schema-query-worker"
         ? `${process.cwd()}/local_shell/schemas/zschema.json`
         : schemaId
           ? `${process.cwd()}/local_shell/zion/${schemaId}/crdt_schema.json`

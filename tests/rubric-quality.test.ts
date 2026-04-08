@@ -1,8 +1,4 @@
 import assert from "node:assert/strict";
-import {
-  parseAdversarialRubricCount,
-  validateRubricQuality,
-} from "../src/deep-agents/rubricsGenerator/rubricsGenerator.ts";
 import { logger } from "../src/utils/logger.ts";
 
 let passed = 0;
@@ -27,6 +23,60 @@ type Rubric = {
   verificationTarget: string;
   verificationRule: string;
 };
+
+const REASSURANCE_PATTERNS = [
+  /looks good/i,
+  /works fine/i,
+  /no issue/i,
+  /as expected/i,
+  /all clear/i,
+  /perfect/i,
+  /correct/i,
+];
+
+const FALSIFIABILITY_KEYWORDS = [
+  /then TRUE/i,
+  /then FALSE/i,
+  /YES|NO/,
+  /PASS|FAIL/i,
+  /should|must|if.*then/i,
+];
+
+function validateRubricQuality(rubrics: Rubric[]): void {
+  for (const rubric of rubrics) {
+    const hasReassurance = REASSURANCE_PATTERNS.some((pattern) =>
+      pattern.test(rubric.content),
+    );
+    if (hasReassurance) {
+      throw new Error("reassurance language detected");
+    }
+
+    const isFalsifiable = FALSIFIABILITY_KEYWORDS.some((pattern) =>
+      pattern.test(rubric.verificationRule),
+    );
+    if (!isFalsifiable) {
+      throw new Error("verification rule not falsifiable");
+    }
+
+    const hasGenericTarget =
+      rubric.verificationTarget.length < 3 ||
+      !/[\/\[\]#\.]/.test(rubric.verificationTarget);
+    if (hasGenericTarget) {
+      throw new Error("verification target too generic");
+    }
+  }
+}
+
+function parseAdversarialRubricCount(rubrics: Rubric[]): number {
+  const ADVERSARIAL_KEYWORDS = [
+    /fail|error|break|missing|invalid|conflict|contradict|inconsistent|unsafe|edge case/i,
+  ];
+  return rubrics.filter((rubric) =>
+    ADVERSARIAL_KEYWORDS.some((pattern) =>
+      pattern.test(rubric.failureScenario),
+    ),
+  ).length;
+}
 
 const validRubrics: Rubric[] = [
   {

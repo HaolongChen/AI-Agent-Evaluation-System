@@ -5,7 +5,7 @@ export const typeDefs = gql`
 	"""
 	Retrieve a single golden set by ID.
 	"""
-	getGoldenSetById(id: Int!): GoldenSet!
+	getGoldenSetById(id: String!): GoldenSet!
 
 	"""
 	List golden sets with optional filtering.
@@ -36,7 +36,7 @@ export const typeDefs = gql`
 	"""
 	Get final evaluation result for a completed session.
 	"""
-	getEvaluationResultById(id: Int!): EvaluationResult!
+	getEvaluationResultById(id: String!): EvaluationResult!
 
 	getEvaluationResults(filters: ResultFilters): [EvaluationResult]!
 }
@@ -86,7 +86,7 @@ Identified uniquely by (schemaId, copilotType, modelName).
 """
 type GoldenSet {
 	"Unique database identifier"
-	id: Int!
+	id: String!
 	"External project identifier from Functorz"
 	schemaId: String!
 	"Type of copilot being evaluated"
@@ -101,7 +101,7 @@ to the copilot being evaluated.
 """
 type UserInput {
 	"Unique identifier"
-	id: Int!
+	id: String!
 	"Optional description of what this input tests"
 	description: String
 	"The actual prompt or query content"
@@ -118,33 +118,22 @@ including performance metrics (latency, tokens, context usage).
 """
 type CopilotOutput {
 	"Unique identifier"
-	id: Int!
+	id: String!
 	"Parent golden set ID"
-	goldenSetId: Int!
+	goldenSetId: String!
 	"Associated user input ID"
-	userInputId: Int!
+	userInputId: String!
 	"The copilot's generated output content"
 	content: String!
 	"Timestamp when output was captured"
 	createdAt: String
 
-	"Total end-to-end latency in milliseconds"
-	totalLatencyMs: Int
-	roundtripCount: Int
-	"Number of input tokens consumed"
-	inputTokens: Int
-	"Number of output tokens generated"
-	outputTokens: Int
-	"Total tokens used (input + output)"
-	totalTokens: Int
-	"Percentage of context window utilized"
-	contextPercentage: Float
 }
 
 type Rubric {
 	id: String!
-	goldenSetId: Int!
-	userInputId: Int!
+	goldenSetId: String!
+	userInputId: String!
 	criterion: [Criteria!]!
 }
 
@@ -170,7 +159,7 @@ against a golden set, producing rubric criteria and scored results.
 type EvaluationSession {
 	"Unique session identifier"
 	id: String!
-	copilotOutputId: Int!
+	copilotOutputId: String!
 	rubricId: String!
 	evaluatorId: String!
 	evaluatorType: EvaluatorType!
@@ -189,9 +178,9 @@ of a single rubric criterion.
 """
 type EvaluationRecord {
 	"Unique evaluation record identifier"
-	id: Int!
+	id: String!
 	"Parent rubric criterion session ID"
-	copilotOutputId: Int!
+	copilotOutputId: String!
 	rubricId: String!
 	criteriaId: String!
 	evaluatorId: String!
@@ -207,9 +196,9 @@ and generating a comprehensive report.
 """
 type EvaluationResult {
 	"Unique result identifier"
-	id: Int!
+	id: String!
 	evaluatorId: String!
-	copilotOutputId: Int!
+	copilotOutputId: String!
 	rubricId: String!
 
 	"Aggregated score across all weighted criteria (0 - 100)"
@@ -230,14 +219,14 @@ input GoldenSetFilters {
 
 input SessionFilters {
 	evaluatorId: String
-	copilotOutputId: Int
+	copilotOutputId: String
 	rubricId: String
 	evaluatorType: EvaluatorType
 }
 
 input ResultFilters {
 	evaluatorId: String
-	copilotOutputId: Int
+	copilotOutputId: String
 	rubricId: String
 }
 
@@ -250,13 +239,13 @@ input EvaluationInput {
 }
 
 input CopilotInput {
-	goldenSetId: Int!
-	userInputId: Int!
+	goldenSetId: String!
+	userInputId: String!
 }
 
 input HumanEvaluationInput {
 	evaluatorId: String!
-	copilotOutputId: Int!
+	copilotOutputId: String!
 	rubricId: String!
 	evaluations: [EvaluationInput!]!
 }

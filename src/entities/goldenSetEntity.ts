@@ -1,23 +1,46 @@
-import { Prisma } from "../prisma/build/generated/prisma/client.ts";
-import type { GoldenSet, MutationInitializeGoldenSetArgs, QueryGetGoldenSetByIdArgs, QueryGetGoldenSetsArgs } from "../graphql/generated/resolvers-types.ts";
+import type {
+	GoldenSet,
+	MutationInitializeGoldenSetArgs,
+	QueryGetGoldenSetByIdArgs,
+	QueryGetGoldenSetsArgs,
+} from "../graphql/generated/resolvers-types.ts";
+import type { Prisma } from "@db/client";
+import type {
+	DbMethodArgContract,
+	GraphqlActionContract,
+} from "./bundleTypes.ts";
 
-export interface GoldenSetGraphQL {
-  GetGoldenSetById: {
-    input: QueryGetGoldenSetByIdArgs;
-    output: GoldenSet;
-  };
-  GetGoldenSets: {
-    input: QueryGetGoldenSetsArgs;
-    output: Array<GoldenSet | undefined | null>;
-  };
-  InitializeGoldenSet: {
-    input: MutationInitializeGoldenSetArgs;
-    output: GoldenSet;
-  }
-  
-}
+export type GoldenSetGraphql = {
+	GetGoldenSetById: GraphqlActionContract<QueryGetGoldenSetByIdArgs, GoldenSet>;
+	GetGoldenSets: GraphqlActionContract<
+		QueryGetGoldenSetsArgs,
+		Array<GoldenSet | undefined | null>
+	>;
+	InitializeGoldenSet: GraphqlActionContract<
+		MutationInitializeGoldenSetArgs,
+		GoldenSet
+	>;
+	GoldenSet: GoldenSet;
+};
 
-export interface GoldenSetPrisma {
-  GoldenSetInbound: Prisma.goldenSetCreateInput;
-  GoldenSetOutbound: Prisma.goldenSetModel;
-}
+type GoldenSetDbMethodArgs = {
+	aggregate: Prisma.GoldenSetAggregateArgs;
+	count: Prisma.goldenSetCountArgs;
+	create: Prisma.goldenSetCreateArgs;
+	createMany: Prisma.goldenSetCreateManyArgs;
+	createManyAndReturn: Prisma.goldenSetCreateManyAndReturnArgs;
+	delete: Prisma.goldenSetDeleteArgs;
+	deleteMany: Prisma.goldenSetDeleteManyArgs;
+	findFirst: Prisma.goldenSetFindFirstArgs;
+	findFirstOrThrow: Prisma.goldenSetFindFirstOrThrowArgs;
+	findMany: Prisma.goldenSetFindManyArgs;
+	findUnique: Prisma.goldenSetFindUniqueArgs;
+	findUniqueOrThrow: Prisma.goldenSetFindUniqueOrThrowArgs;
+	groupBy: Prisma.goldenSetGroupByArgs;
+	update: Prisma.goldenSetUpdateArgs;
+	updateMany: Prisma.goldenSetUpdateManyArgs;
+	updateManyAndReturn: Prisma.goldenSetUpdateManyAndReturnArgs;
+	upsert: Prisma.goldenSetUpsertArgs;
+};
+
+export type GoldenSetPrisma = DbMethodArgContract<GoldenSetDbMethodArgs>;

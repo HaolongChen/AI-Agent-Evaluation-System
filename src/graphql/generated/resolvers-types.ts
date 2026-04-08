@@ -15,8 +15,8 @@ export type Scalars = {
 };
 
 export type CopilotInput = {
-  goldenSetId: Scalars['Int']['input'];
-  userInputId: Scalars['Int']['input'];
+  goldenSetId: Scalars['String']['input'];
+  userInputId: Scalars['String']['input'];
 };
 
 /**
@@ -27,25 +27,14 @@ export type CopilotOutput = {
   __typename?: 'CopilotOutput';
   /** The copilot's generated output content */
   content: Scalars['String']['output'];
-  /** Percentage of context window utilized */
-  contextPercentage?: Maybe<Scalars['Float']['output']>;
   /** Timestamp when output was captured */
   createdAt?: Maybe<Scalars['String']['output']>;
   /** Parent golden set ID */
-  goldenSetId: Scalars['Int']['output'];
+  goldenSetId: Scalars['String']['output'];
   /** Unique identifier */
-  id: Scalars['Int']['output'];
-  /** Number of input tokens consumed */
-  inputTokens?: Maybe<Scalars['Int']['output']>;
-  /** Number of output tokens generated */
-  outputTokens?: Maybe<Scalars['Int']['output']>;
-  roundtripCount?: Maybe<Scalars['Int']['output']>;
-  /** Total end-to-end latency in milliseconds */
-  totalLatencyMs?: Maybe<Scalars['Int']['output']>;
-  /** Total tokens used (input + output) */
-  totalTokens?: Maybe<Scalars['Int']['output']>;
+  id: Scalars['String']['output'];
   /** Associated user input ID */
-  userInputId: Scalars['Int']['output'];
+  userInputId: Scalars['String']['output'];
 };
 
 /** Type of AI Copilot being evaluated. */
@@ -88,7 +77,7 @@ export type EvaluationInput = {
 export type EvaluationRecord = {
   __typename?: 'EvaluationRecord';
   /** Parent rubric criterion session ID */
-  copilotOutputId: Scalars['Int']['output'];
+  copilotOutputId: Scalars['String']['output'];
   criteriaId: Scalars['String']['output'];
   /** Binary evaluation to the criterion question */
   evaluation: Scalars['Boolean']['output'];
@@ -96,7 +85,7 @@ export type EvaluationRecord = {
   /** Optional explanation or reasoning for the evaluation */
   feedback?: Maybe<Scalars['String']['output']>;
   /** Unique evaluation record identifier */
-  id: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
   rubricId: Scalars['String']['output'];
 };
 
@@ -108,12 +97,12 @@ export type EvaluationResult = {
   __typename?: 'EvaluationResult';
   /** Audit trail of workflow steps and decisions */
   auditTrace?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
-  copilotOutputId: Scalars['Int']['output'];
+  copilotOutputId: Scalars['String']['output'];
   /** Detailed analysis with per-criterion breakdown */
   detailedAnalysis: Scalars['String']['output'];
   evaluatorId: Scalars['String']['output'];
   /** Unique result identifier */
-  id: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
   /** Aggregated score across all weighted criteria (0 - 100) */
   overallScore: Scalars['Float']['output'];
   rubricId: Scalars['String']['output'];
@@ -129,7 +118,7 @@ export type EvaluationSession = {
   __typename?: 'EvaluationSession';
   /** Timestamp when session completed (null if still running) */
   completedAt?: Maybe<Scalars['String']['output']>;
-  copilotOutputId: Scalars['Int']['output'];
+  copilotOutputId: Scalars['String']['output'];
   evaluations?: Maybe<Array<Maybe<EvaluationRecord>>>;
   evaluatorId: Scalars['String']['output'];
   evaluatorType: EvaluatorType;
@@ -157,7 +146,7 @@ export type GoldenSet = {
   /** Type of copilot being evaluated */
   copilotType: CopilotType;
   /** Unique database identifier */
-  id: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
   /** Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro') */
   modelName?: Maybe<Scalars['String']['output']>;
   /** External project identifier from Functorz */
@@ -177,7 +166,7 @@ export type GoldenSetInput = {
 };
 
 export type HumanEvaluationInput = {
-  copilotOutputId: Scalars['Int']['input'];
+  copilotOutputId: Scalars['String']['input'];
   evaluations: Array<EvaluationInput>;
   evaluatorId: Scalars['String']['input'];
   rubricId: Scalars['String']['input'];
@@ -264,7 +253,7 @@ export type Query = {
 
 
 export type QueryGetEvaluationResultByIdArgs = {
-  id: Scalars['Int']['input'];
+  id: Scalars['String']['input'];
 };
 
 
@@ -284,7 +273,7 @@ export type QueryGetEvaluationSessionsArgs = {
 
 
 export type QueryGetGoldenSetByIdArgs = {
-  id: Scalars['Int']['input'];
+  id: Scalars['String']['input'];
 };
 
 
@@ -303,7 +292,7 @@ export type QueryGetRubricByIdArgs = {
 };
 
 export type ResultFilters = {
-  copilotOutputId?: InputMaybe<Scalars['Int']['input']>;
+  copilotOutputId?: InputMaybe<Scalars['String']['input']>;
   evaluatorId?: InputMaybe<Scalars['String']['input']>;
   rubricId?: InputMaybe<Scalars['String']['input']>;
 };
@@ -311,13 +300,13 @@ export type ResultFilters = {
 export type Rubric = {
   __typename?: 'Rubric';
   criterion: Array<Criteria>;
-  goldenSetId: Scalars['Int']['output'];
+  goldenSetId: Scalars['String']['output'];
   id: Scalars['String']['output'];
-  userInputId: Scalars['Int']['output'];
+  userInputId: Scalars['String']['output'];
 };
 
 export type SessionFilters = {
-  copilotOutputId?: InputMaybe<Scalars['Int']['input']>;
+  copilotOutputId?: InputMaybe<Scalars['String']['input']>;
   evaluatorId?: InputMaybe<Scalars['String']['input']>;
   evaluatorType?: InputMaybe<EvaluatorType>;
   rubricId?: InputMaybe<Scalars['String']['input']>;
@@ -338,7 +327,7 @@ export type UserInput = {
   /** Optional description of what this input tests */
   description?: Maybe<Scalars['String']['output']>;
   /** Unique identifier */
-  id: Scalars['Int']['output'];
+  id: Scalars['String']['output'];
 };
 
 export type UserInputInput = {

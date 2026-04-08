@@ -1,52 +1,19 @@
 {
+	"extends": "@tsconfig/node-ts/tsconfig.json",
 	"compilerOptions": {
-		"rootDir": "src",
-		"outDir": "dist",
-
-		"module": "nodenext",
-		"target": "esnext",
-		"moduleResolution": "nodenext",
-
-		"lib": ["ESNext"],
-		"allowArbitraryExtensions": true,
-		"allowUmdGlobalAccess": true,
-
-		"sourceMap": true,
-		"declaration": true,
-		"declarationMap": true,
-		"allowJs": true,
-
-		"noUncheckedIndexedAccess": true,
-		"exactOptionalPropertyTypes": true,
-
-		"preserveConstEnums": true,
-		"noImplicitReturns": true,
-		"noImplicitOverride": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"noFallthroughCasesInSwitch": true,
-		"noPropertyAccessFromIndexSignature": true,
-		"noErrorTruncation": true,
+		"rootDir": "./",
+		"paths": {
+			"@src/*": ["./src/*"],
+			"@entities/*": ["./src/entities/*"],
+			"@interface/*": ["./src/interface/*"],
+			"@services/*": ["./src/services/*"],
+			"@graphql/*": ["./src/graphql/*"],
+			"@config/*": ["./src/config/*"],
+			"@db/*": ["./src/prisma/build/generated/prisma/*.ts"]
+		},
 		"pretty": true,
-		"strict": true,
-		"verbatimModuleSyntax": true,
-		"isolatedModules": true,
-		"noUncheckedSideEffectImports": true,
-		"moduleDetection": "force",
-		"skipLibCheck": true,
-		"esModuleInterop": true,
-		"rewriteRelativeImportExtensions": true
+		"typeRoots": ["./node_modules/@types"],
+		"erasableSyntaxOnly": false
 	},
-	"include": ["src/**/*"],
-	"exclude": [
-		"node_modules",
-		"dist",
-		"test/**/*",
-		"src/**/*.json",
-		"src/langGraph/**/*",
-		"src/jobs/RubricGenerationJobRunner.ts",
-		"src/jobs/RubricReviewJobRunner.ts",
-		"src/jobs/HumanEvaluationJobRunner.ts",
-		"src/prisma/migrations/**/*"
-	]
+	"include": ["src", "./*.ts"]
 }

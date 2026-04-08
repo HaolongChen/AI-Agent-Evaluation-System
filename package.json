@@ -3,8 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "scripts": {
     "initialize": "rm -rf node_modules dist pnpm-*.yaml && pnpm install",
     "clean": "rm -rf dist",
@@ -35,8 +33,7 @@
     "db:format": "pnpm dlx prisma format",
     "eval": "tsx src/jobs/EvaluationJobRunner.ts",
     "codegen": "pnpm run gql:schema:sync && graphql-codegen --config codegen.yml",
-    "gql:schema:sync": "tsx scripts/graphql-schema-sync.ts",
-    "gen:all": "ts-to-zod --all && pretty-quick"
+    "gql:schema:sync": "tsx scripts/graphql-schema-sync.ts"
   },
   "keywords": [],
   "author": "",
@@ -85,6 +82,8 @@
     "@langchain/openai": "^1.4.1",
     "@prisma/adapter-pg": "7.5.0",
     "@prisma/client": "7.5.0",
+    "@tsconfig/node-ts": "^23.6.4",
+    "@tsconfig/recommended": "^1.0.13",
     "ali-oss": "^6.23.0",
     "axios": "^1.14.0",
     "cheerio": "^1.2.0",
@@ -107,7 +106,6 @@
     "mobx": "^6.15.0",
     "node-jq": "6.3.1",
     "pg": "^8.20.0",
-    "ts-to-zod": "^5.1.0",
     "uuid": "^13.0.0",
     "ws": "^8.20.0",
     "zod": "^4.3.6"

@@ -9,15 +9,15 @@ import type {
 	// evaluationSession,
 } from "../prisma/build/generated/prisma/client.ts";
 import type { GoldenSetFilters } from "../graphql/generated/resolvers-types.ts";
+import { GoldenSetInterface } from "@src/interface/goldenSetInterface";
 // import type { GoldenSet, GoldenSetFilters } from "../graphql/generated/resolvers-types.ts";
 
 export class GoldenSetService {
-	async getGoldenSetById(id: number): Promise<goldenSet | null> {
+	async getGoldenSetById(id: string): Promise<goldenSet | null> {
 		try {
-			const goldenSet = await prisma.goldenSet.findUnique({
-				where: {
-					id,
-				},
+			const goldenSetInterface = new GoldenSetInterface("findUnique");
+			const goldenSet = await goldenSetInterface.getGoldenSetAdapter({
+				where: { id },
 			});
 			return goldenSet;
 		} catch (error) {
@@ -86,8 +86,8 @@ export class GoldenSetService {
 	}
 
 	async linkGoldenSetToUserInput(
-		goldenSetId: number,
-		userInputId: number,
+		goldenSetId: string,
+		userInputId: string,
 	): Promise<goldenSet> {
 		try {
 			const goldenSet = await prisma.goldenSet.update({

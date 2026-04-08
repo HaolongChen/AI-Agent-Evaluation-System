@@ -36,4 +36,5 @@ type CopilotOutputDbMethodArgs = {
 	upsert: Prisma.copilotOutputUpsertArgs;
 };
 
-export type CopilotOutputPrisma = DbMethodArgContract<CopilotOutputDbMethodArgs>;
+export type CopilotOutputPrisma =
+	DbMethodArgContract<CopilotOutputDbMethodArgs>;

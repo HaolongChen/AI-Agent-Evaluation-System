@@ -8,7 +8,11 @@ import {
 
 export class CopilotOutputInterface<
 	M extends DBClientMethod = DBClientMethod,
-> extends PrismaEntityInterface<typeof prisma.copilotOutput, CopilotOutputPrisma, M> {
+> extends PrismaEntityInterface<
+	typeof prisma.copilotOutput,
+	CopilotOutputPrisma,
+	M
+> {
 	constructor(method: M) {
 		super(prisma.copilotOutput, method);
 	}

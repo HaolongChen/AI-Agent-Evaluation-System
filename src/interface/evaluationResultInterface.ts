@@ -8,7 +8,11 @@ import {
 
 export class EvaluationResultInterface<
 	M extends DBClientMethod = DBClientMethod,
-> extends PrismaEntityInterface<typeof prisma.evaluationResult, EvaluationResultPrisma, M> {
+> extends PrismaEntityInterface<
+	typeof prisma.evaluationResult,
+	EvaluationResultPrisma,
+	M
+> {
 	constructor(method: M) {
 		super(prisma.evaluationResult, method);
 	}

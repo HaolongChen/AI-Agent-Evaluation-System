@@ -21,4 +21,5 @@ type AgentFeedbacksDbMethodArgs = {
 	upsert: Prisma.agentFeedbacksUpsertArgs;
 };
 
-export type AgentFeedbacksPrisma = DbMethodArgContract<AgentFeedbacksDbMethodArgs>;
+export type AgentFeedbacksPrisma =
+	DbMethodArgContract<AgentFeedbacksDbMethodArgs>;

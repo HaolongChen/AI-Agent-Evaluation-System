@@ -8,7 +8,11 @@ import {
 
 export class AgentFeedbacksInterface<
 	M extends DBClientMethod = DBClientMethod,
-> extends PrismaEntityInterface<typeof prisma.agentFeedbacks, AgentFeedbacksPrisma, M> {
+> extends PrismaEntityInterface<
+	typeof prisma.agentFeedbacks,
+	AgentFeedbacksPrisma,
+	M
+> {
 	constructor(method: M) {
 		super(prisma.agentFeedbacks, method);
 	}

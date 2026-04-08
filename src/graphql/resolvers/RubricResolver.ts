@@ -1,12 +1,18 @@
 import { executionService } from "../../services/ExecutionService.ts";
 import { rubricService } from "../../services/RubricService.ts";
 // import { REVERSE_REVIEW_STATUS, REVIEW_STATUS } from '../../config/constants.ts';
-import { logger } from "../../utils/logger.ts";
-import type { CopilotOutput, QuestionSet } from "../generated/resolvers-types.ts";
+import { logger } from "../../external/logger.ts";
+import type {
+	CopilotOutput,
+	QuestionSet,
+} from "../generated/resolvers-types.ts";
 
 export const rubricResolver = {
 	Query: {
-		getQuestionSetById: async (_: unknown, args: { id: string }): Promise<QuestionSet | null> => {
+		getQuestionSetById: async (
+			_: unknown,
+			args: { id: string },
+		): Promise<QuestionSet | null> => {
 			try {
 				const questionSet = await rubricService.getQuestionSetById(args.id);
 				return questionSet;
@@ -32,21 +38,21 @@ export const rubricResolver = {
 			_: unknown,
 			args: { goldenSetId: number; userInputId: number },
 		): Promise<CopilotOutput> => {
-      const res = await executionService.executeCopilot(
-        args.goldenSetId,
-        args.userInputId,
-      );
-      return res;
-    },
+			const res = await executionService.executeCopilot(
+				args.goldenSetId,
+				args.userInputId,
+			);
+			return res;
+		},
 		generateQuestionSet: async (
 			_: unknown,
 			args: { goldenSetId: number; userInputId: number },
 		): Promise<QuestionSet> => {
-      const res = await rubricService.generateQuestionSet(
-        args.goldenSetId,
-        args.userInputId,
-      );
-      return res;
-    },
+			const res = await rubricService.generateQuestionSet(
+				args.goldenSetId,
+				args.userInputId,
+			);
+			return res;
+		},
 	},
 };

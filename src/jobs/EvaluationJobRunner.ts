@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { logger } from "../utils/logger.ts";
+import { logger } from "../external/logger.ts";
 import {
 	CopilotMessageType,
 	type AIResponseMessage,
@@ -11,7 +11,7 @@ import {
 	type TaskMessage,
 	type ToolCall,
 	type ToolCallsMessage,
-} from "../utils/types.ts";
+} from "../external/types.ts";
 import {
 	ClientType,
 	CopilotJs,
@@ -19,9 +19,9 @@ import {
 	Product,
 	type CopilotApiResultJs,
 	type OpaqueSchemaGraph,
-} from "../utils/zed/TypeSystem.ts";
-import { assertNotNull } from "../utils/zed/helpers.ts";
-import type { ToolResult } from "../utils/graph-states.ts";
+} from "../external/zed/TypeSystem.ts";
+import { assertNotNull } from "../external/zed/helpers.ts";
+import type { ToolResult } from "../external/graph-states.ts";
 import type { Data } from "ws";
 
 const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
@@ -315,5 +315,4 @@ export class EvaluationJobRunner {
 		this.terminate();
 		this.clearTimeout();
 	}
-
 }

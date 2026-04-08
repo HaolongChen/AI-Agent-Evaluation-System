@@ -1,7 +1,7 @@
 import { prisma } from "../config/prisma.ts";
 // import { SESSION_STATUS } from "../config/constants.ts";
 // import type { CopilotType } from "../../build/generated/prisma/enums.ts";
-import { logger } from "../utils/logger.ts";
+import { logger } from "../external/logger.ts";
 // import { goldenSetService } from "./GoldenSetService.ts";
 import {
 	// AZURE_OPENAI_DEPLOYMENT,
@@ -13,7 +13,7 @@ import {
 } from "../config/env.ts";
 import { EvaluationJobRunner } from "../jobs/EvaluationJobRunner.ts";
 // import { RubricGenerationJobRunner } from "../jobs/RubricGenerationJobRunner.ts";
-import { TypeSystemStore } from "../utils/zed/TypeSystemStore.ts";
+import { TypeSystemStore } from "../external/zed/TypeSystemStore.ts";
 import { projectService } from "./ProjectService.ts";
 import { rubricService } from "./RubricService.ts";
 import type { CopilotOutput } from "../graphql/generated/resolvers-types.ts";

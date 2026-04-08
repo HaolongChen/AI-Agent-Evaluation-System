@@ -1,6 +1,6 @@
 import { prisma } from "../config/prisma.ts";
 import { COPILOT_TYPES } from "../config/constants.ts";
-import { logger } from "../utils/logger.ts";
+import { logger } from "../external/logger.ts";
 import type {
 	// Prisma,
 	goldenSet,

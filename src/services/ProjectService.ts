@@ -1,9 +1,9 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
-export { ProjectNameDuplicateError } from '../utils/zed/createProject.ts';
-import { ORGANIZATION_EX_ID } from '../config/env.ts';
-import { logger } from '../utils/logger.ts';
-import { backendClient, gqlRequest } from '../utils/graphql-client.ts';
+export { ProjectNameDuplicateError } from "../external/zed/createProject.ts";
+import { ORGANIZATION_EX_ID } from "../config/env.ts";
+import { logger } from "../external/logger.ts";
+import { backendClient, gqlRequest } from "../external/graphql-client.ts";
 import {
 	GQL_CHECK_PROJECT_NAME_DUPLICATE,
 	GQL_CREATE_PROJECT_IN_ORGANIZATION,
@@ -13,7 +13,7 @@ import {
 	ProjectNameDuplicateError,
 	openApolloSubscription,
 	subscribeViaModernProtocol,
-} from '../utils/zed/createProject.ts';
+} from "../external/zed/createProject.ts";
 import type {
 	ProjectCreationStatus,
 	CheckProjectNameDuplicateResponse,
@@ -22,7 +22,7 @@ import type {
 	CreateProjectMutationVariables,
 	DeleteProjectResponse,
 	DeleteProjectVariables,
-} from '../utils/zed/createProject.ts';
+} from "../external/zed/createProject.ts";
 
 export class ProjectService {
 	async createProject(
@@ -31,10 +31,10 @@ export class ProjectService {
 	): Promise<string> {
 		const organizationExId = ORGANIZATION_EX_ID;
 		if (!organizationExId) {
-			throw new Error('ORGANIZATION_EX_ID env var is not set');
+			throw new Error("ORGANIZATION_EX_ID env var is not set");
 		}
 
-		logger.info('Checking project name availability', { projectName });
+		logger.info("Checking project name availability", { projectName });
 		const nameCheckData = await gqlRequest<
 			CheckProjectNameDuplicateResponse,
 			CheckProjectNameDuplicateVariables
@@ -44,37 +44,42 @@ export class ProjectService {
 			throw new ProjectNameDuplicateError(projectName);
 		}
 
-		logger.info('Creating project', { projectName, organizationExId });
+		logger.info("Creating project", { projectName, organizationExId });
 		const mutationData = await gqlRequest<
 			CreateProjectMutationResponse,
 			CreateProjectMutationVariables
 		>(backendClient, GQL_CREATE_PROJECT_IN_ORGANIZATION, {
 			projectName,
-			platform: 'WEB',
-			projectSpaceType: 'PERSONAL',
+			platform: "WEB",
+			projectSpaceType: "PERSONAL",
 			organizationExId,
-			category: 'OTHERS',
+			category: "OTHERS",
 		});
 
 		const taskId = mutationData.createProjectInOrganizationAsync;
-		logger.info('Project creation task started', { taskId, projectName });
+		logger.info("Project creation task started", { taskId, projectName });
 
 		// No DB upsert — project table has been removed.
 		const onProjectCreated = async (projectExId: string): Promise<void> => {
-			logger.info('Project creation completed', { projectExId, projectName });
+			logger.info("Project creation completed", { projectExId, projectName });
 		};
 
 		if (useModernProtocol) {
-			logger.info('Using modern graphql-ws subscription path', { taskId });
-			return subscribeViaModernProtocol(
-				taskId,
-				onProjectCreated,
-				(tid) => logger.error('Project creation failed on server', { taskId: tid, projectName }),
+			logger.info("Using modern graphql-ws subscription path", { taskId });
+			return subscribeViaModernProtocol(taskId, onProjectCreated, (tid) =>
+				logger.error("Project creation failed on server", {
+					taskId: tid,
+					projectName,
+				}),
 			);
 		}
 
-		logger.info('Using legacy Apollo WS subscription path', { taskId });
-		return this.subscribeViaLegacyProtocol(taskId, projectName, onProjectCreated);
+		logger.info("Using legacy Apollo WS subscription path", { taskId });
+		return this.subscribeViaLegacyProtocol(
+			taskId,
+			projectName,
+			onProjectCreated,
+		);
 	}
 
 	private subscribeViaLegacyProtocol(
@@ -95,12 +100,18 @@ export class ProjectService {
 
 			cleanup = openApolloSubscription(
 				subscriptionId,
-				'OnProjectCreationStatusChanged',
+				"OnProjectCreationStatusChanged",
 				GQL_ON_PROJECT_CREATION_STATUS_CHANGED,
 				{ uniqueId: taskId },
-				(statusPayload: { projectExId: string; status: ProjectCreationStatus }) => {
+				(statusPayload: {
+					projectExId: string;
+					status: ProjectCreationStatus;
+				}) => {
 					const { projectExId, status } = statusPayload;
-					logger.info('Project creation status update', { projectExId, status });
+					logger.info("Project creation status update", {
+						projectExId,
+						status,
+					});
 
 					if (status === PROJECT_CREATION_STATUS.COMPLETED) {
 						onProjectCreated(projectExId)
@@ -109,14 +120,20 @@ export class ProjectService {
 								settle(() => resolve(projectExId));
 							})
 							.catch((err: unknown) => {
-								logger.error('Project creation callback failed', { projectExId, err });
+								logger.error("Project creation callback failed", {
+									projectExId,
+									err,
+								});
 								cleanup?.();
 								settle(() =>
 									reject(err instanceof Error ? err : new Error(String(err))),
 								);
 							});
 					} else if (status === PROJECT_CREATION_STATUS.FAILED) {
-						logger.error('Project creation failed on server', { taskId, projectName });
+						logger.error("Project creation failed on server", {
+							taskId,
+							projectName,
+						});
 						cleanup?.();
 						settle(() =>
 							reject(new Error(`Project creation failed for task ${taskId}`)),
@@ -125,9 +142,11 @@ export class ProjectService {
 					// PROCESSING → keep waiting
 				},
 				(err) => {
-					logger.error('Project creation subscription error', { taskId, err });
+					logger.error("Project creation subscription error", { taskId, err });
 					settle(() =>
-						reject(err instanceof Error ? err : new Error('Subscription error')),
+						reject(
+							err instanceof Error ? err : new Error("Subscription error"),
+						),
 					);
 				},
 				() => {
@@ -144,13 +163,13 @@ export class ProjectService {
 	}
 
 	async deleteProject(projectExId: string): Promise<void> {
-		logger.info('Deleting project', { projectExId });
+		logger.info("Deleting project", { projectExId });
 		await gqlRequest<DeleteProjectResponse, DeleteProjectVariables>(
 			backendClient,
 			GQL_DELETE_PROJECT,
 			{ projectExId },
 		);
-		logger.info('Project deleted', { projectExId });
+		logger.info("Project deleted", { projectExId });
 	}
 }
 

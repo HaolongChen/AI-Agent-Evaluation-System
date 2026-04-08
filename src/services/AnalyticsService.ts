@@ -1,5 +1,5 @@
 import { prisma } from "../config/prisma.ts";
-import { logger } from "../utils/logger.ts";
+import { logger } from "../external/logger.ts";
 // import { COPILOT_TYPES } from "../config/constants.ts";
 import {} from // type Prisma,
 "../prisma/build/generated/prisma/client.ts";
@@ -201,8 +201,10 @@ export class AnalyticsService {
 					},
 				},
 			});
-			if(!session){
-				logger.error("Failed to create evaluation session: No session returned from database");
+			if (!session) {
+				logger.error(
+					"Failed to create evaluation session: No session returned from database",
+				);
 				throw new Error("Failed to create evaluation session");
 			}
 			return {

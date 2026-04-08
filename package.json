@@ -34,7 +34,9 @@
     "db:delete": "tsx scripts/delete-golden-sets.ts",
     "db:format": "pnpm dlx prisma format",
     "eval": "tsx src/jobs/EvaluationJobRunner.ts",
-    "codegen": "graphql-codegen --config codegen.yml"
+    "codegen": "pnpm run gql:schema:sync && graphql-codegen --config codegen.yml",
+    "gql:schema:sync": "tsx scripts/graphql-schema-sync.ts",
+    "gen:all": "ts-to-zod --all && pretty-quick"
   },
   "keywords": [],
   "author": "",
@@ -105,6 +107,7 @@
     "mobx": "^6.15.0",
     "node-jq": "6.3.1",
     "pg": "^8.20.0",
+    "ts-to-zod": "^5.1.0",
     "uuid": "^13.0.0",
     "ws": "^8.20.0",
     "zod": "^4.3.6"

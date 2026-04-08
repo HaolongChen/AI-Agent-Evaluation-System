@@ -2,72 +2,59 @@ type Query {
 	"""
 	Retrieve a single golden set by ID.
 	"""
-	getGoldenSetById(id: Int!): GoldenSet
+	getGoldenSetById(id: Int!): GoldenSet!
 
 	"""
 	List golden sets with optional filtering.
 	"""
-	getGoldenSets(filters: GoldenSetFilters): [GoldenSet]
+	getGoldenSets(filters: GoldenSetFilters): [GoldenSet]!
 
 	"""
 	Retrieve a single evaluation session by ID.
 	"""
-	getEvaluationSessionById(id: String!): EvaluationSession
+	getEvaluationSessionById(id: String!): EvaluationSession!
 
 	"""
 	List evaluation sessions with optional filtering.
 	"""
-	getEvaluationSessions(filters: SessionFilters): [EvaluationSession]
+	getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!
 
 	"""
 	Get all rubric criteria for a specific session.
 	"""
-	getQuestionSetById(id: String!): QuestionSet
+	getRubricById(id: String!): Rubric!
 
 	"""
 	Get rubric criteria filtered by review parameters.
 	Useful for finding criteria pending human review.
 	"""
-	getQuestionSetByContext(goldenSetId: Int, userInputId: Int): [QuestionSet!]!
+	getRubricByContext(context: CopilotInput!): [Rubric]!
 
 	"""
 	Get final evaluation result for a completed session.
 	"""
-	getEvaluationResultById(id: Int!): EvaluationResult
+	getEvaluationResultById(id: Int!): EvaluationResult!
 
-	getEvaluationResults(filters: ResultFilters): [EvaluationResult!]!
+	getEvaluationResults(filters: ResultFilters): [EvaluationResult]!
 }
 
 type Mutation {
-	initializeGoldenSet(
-		schemaId: String!
-		copilotType: CopilotType!
-		modelName: String
-	): GoldenSet!
+	initializeGoldenSet(input: GoldenSetInput!): GoldenSet!
 
 	"""
 	Upsert golden set with a new user input (atomic operation).
 	Creates golden set if it doesn't exist, or adds input to existing one.
 	RECOMMENDED for adding test cases.
 	"""
-	createUserInput(
-		description: String
-		query: String!
-		createdBy: String
-	): UserInput!
+	createUserInput(input: UserInputInput!): UserInput!
 
-	linkGoldenSetToUserInput(goldenSetId: Int!, userInputId: Int!): GoldenSet!
+	linkGoldenSetToUserInput(context: CopilotInput!): GoldenSet!
 
-	generateQuestionSet(goldenSetId: Int!, userInputId: Int!): QuestionSet!
+	generateRubric(context: CopilotInput!): Rubric!
 
-	executeCopilot(goldenSetId: Int!, userInputId: Int!): CopilotOutput!
+	executeCopilot(context: CopilotInput!): CopilotOutput!
 
-	submitHumanEvaluation(
-		evaluatorId: String!
-		copilotOutputId: Int!
-		questionSetId: String!
-		answers: [QuestionAnswerInput!]!
-	): EvaluationSession!
+	submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
 
 	createProject(projectName: String!): String!
 
@@ -82,7 +69,7 @@ enum CopilotType {
 	"UI component builder for frontend development"
 	UI_BUILDER
 	"Workflow builder for action flows"
-	ACTIONFLOW_BUILDER
+	ACTION_FLOW_BUILDER
 	"Log analysis assistant"
 	LOG_ANALYZER
 	"General agent builder"
@@ -140,7 +127,6 @@ type CopilotOutput {
 
 	"Total end-to-end latency in milliseconds"
 	totalLatencyMs: Int
-	"Number of request/response roundtrips"
 	roundtripCount: Int
 	"Number of input tokens consumed"
 	inputTokens: Int
@@ -152,20 +138,20 @@ type CopilotOutput {
 	contextPercentage: Float
 }
 
-type QuestionSet {
+type Rubric {
 	id: String!
 	goldenSetId: Int!
 	userInputId: Int!
-	questions: [Question!]!
+	criterion: [Criteria!]!
 }
 
-type Question {
+type Criteria {
 	id: String!
-	questionSetId: String!
+	rubricId: String!
 	version: String!
 	title: String
 	content: String!
-	expectedAnswer: Boolean!
+	expectedEvaluation: Boolean!
 	weight: Float!
 }
 
@@ -182,12 +168,12 @@ type EvaluationSession {
 	"Unique session identifier"
 	id: String!
 	copilotOutputId: Int!
-	questionSetId: String!
+	rubricId: String!
 	evaluatorId: String!
 	evaluatorType: EvaluatorType!
 	"LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')"
 	modelName: String
-	answers: [EvaluationRecord]
+	evaluations: [EvaluationRecord]
 	"Timestamp when session started"
 	startedAt: String
 	"Timestamp when session completed (null if still running)"
@@ -203,12 +189,12 @@ type EvaluationRecord {
 	id: Int!
 	"Parent rubric criterion session ID"
 	copilotOutputId: Int!
-	questionSetId: String!
-	questionId: String!
+	rubricId: String!
+	criteriaId: String!
 	evaluatorId: String!
-	"Binary answer to the criterion question"
-	answer: Boolean!
-	"Optional explanation or reasoning for the answer"
+	"Binary evaluation to the criterion question"
+	evaluation: Boolean!
+	"Optional explanation or reasoning for the evaluation"
 	feedback: String
 }
 
@@ -221,7 +207,7 @@ type EvaluationResult {
 	id: Int!
 	evaluatorId: String!
 	copilotOutputId: Int!
-	questionSetId: String!
+	rubricId: String!
 
 	"Aggregated score across all weighted criteria (0 - 100)"
 	overallScore: Float!
@@ -242,21 +228,44 @@ input GoldenSetFilters {
 input SessionFilters {
 	evaluatorId: String
 	copilotOutputId: Int
-	questionSetId: String
+	rubricId: String
 	evaluatorType: EvaluatorType
 }
 
 input ResultFilters {
 	evaluatorId: String
 	copilotOutputId: Int
-	questionSetId: String
+	rubricId: String
 }
 
-input QuestionAnswerInput {
-	"Question being answered"
-	questionId: String!
-	"Binary answer"
-	answer: Boolean!
-	"Detailed explanation of the answer"
+input EvaluationInput {
+	criteriaId: String!
+	"Binary evaluation"
+	evaluation: Boolean!
+	"Detailed explanation of the evaluation"
 	feedback: String
+}
+
+input CopilotInput {
+	goldenSetId: Int!
+	userInputId: Int!
+}
+
+input HumanEvaluationInput {
+	evaluatorId: String!
+	copilotOutputId: Int!
+	rubricId: String!
+	evaluations: [EvaluationInput!]!
+}
+
+input GoldenSetInput {
+	schemaId: String!
+	copilotType: CopilotType!
+	modelName: String
+}
+
+input UserInputInput {
+	description: String
+	query: String!
+	createdBy: String
 }

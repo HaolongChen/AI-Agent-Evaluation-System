@@ -1,5 +1,5 @@
 import { createMiddleware } from "langchain";
-import { logger } from "../../../utils/logger.ts";
+import { logger } from "../../../external/logger.ts";
 
 export const inspectMiddleware = createMiddleware({
 	name: "inspectMiddleware",

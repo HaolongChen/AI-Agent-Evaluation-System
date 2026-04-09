@@ -1,12 +1,12 @@
 import { executionService } from "../../services/ExecutionService.ts";
-import { rubricService } from "../../services/RubricService.ts";
+import { rubricService } from "../../services/rubric-service.ts";
 
 import type {
 	CopilotOutput,
-	MutationExecuteCopilotArgs,
-	MutationGenerateRubricArgs,
-	QueryGetRubricByContextArgs,
-	QueryGetRubricByIdArgs,
+	MutationExecuteCopilotArgs as MutationExecuteCopilotArguments,
+	MutationGenerateRubricArgs as MutationGenerateRubricArguments,
+	QueryGetRubricByContextArgs as QueryGetRubricByContextArguments,
+	QueryGetRubricByIdArgs as QueryGetRubricByIdArguments,
 	Rubric,
 } from "../generated/resolvers-types.ts";
 
@@ -14,10 +14,10 @@ export const rubricResolver = {
 	Query: {
 		getRubricById: async (
 			_: unknown,
-			args: QueryGetRubricByIdArgs,
+			arguments_: QueryGetRubricByIdArguments,
 		): Promise<Rubric | null> => {
 			try {
-				return await rubricService.getRubricById(args.id);
+				return await rubricService.getRubricById(arguments_.id);
 			} catch (error) {
 				console.error("Error fetching rubric by id:", error);
 				throw new Error("Failed to fetch rubric by id");
@@ -25,12 +25,12 @@ export const rubricResolver = {
 		},
 		getRubricByContext: async (
 			_: unknown,
-			args: QueryGetRubricByContextArgs,
+			arguments_: QueryGetRubricByContextArguments,
 		): Promise<Rubric[] | null> => {
 			try {
 				return await rubricService.getRubrics(
-					args.context.goldenSetId,
-					args.context.userInputId,
+					arguments_.context.goldenSetId,
+					arguments_.context.userInputId,
 				);
 			} catch (error) {
 				console.error("Error fetching rubrics by context:", error);
@@ -42,12 +42,12 @@ export const rubricResolver = {
 	Mutation: {
 		executeCopilot: async (
 			_: unknown,
-			args: MutationExecuteCopilotArgs,
+			arguments_: MutationExecuteCopilotArguments,
 		): Promise<CopilotOutput> => {
 			try {
 				return await executionService.executeCopilot(
-					args.context.goldenSetId,
-					args.context.userInputId,
+					arguments_.context.goldenSetId,
+					arguments_.context.userInputId,
 				);
 			} catch (error) {
 				console.error("Error executing copilot:", error);
@@ -56,12 +56,12 @@ export const rubricResolver = {
 		},
 		generateRubric: async (
 			_: unknown,
-			args: MutationGenerateRubricArgs,
+			arguments_: MutationGenerateRubricArguments,
 		): Promise<Rubric> => {
 			try {
 				return await rubricService.generateRubric(
-					args.context.goldenSetId,
-					args.context.userInputId,
+					arguments_.context.goldenSetId,
+					arguments_.context.userInputId,
 				);
 			} catch (error) {
 				console.error("Error generating rubric:", error);

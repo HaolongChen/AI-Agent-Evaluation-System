@@ -1,7 +1,7 @@
 import { goldenSetResolver } from "./resolvers/GoldenSetResolver.ts";
 import { rubricResolver } from "./resolvers/RubricResolver.ts";
 import { sessionResolver } from "./resolvers/SessionResolver.ts";
-import { typeDefs } from './type/TypeDefs.ts';
+
 
 const resolvers = {
 	Query: {
@@ -16,4 +16,6 @@ const resolvers = {
 	},
 };
 
-export { typeDefs, resolvers };
+export {  resolvers };
+
+export {typeDefs} from './type/TypeDefs.ts';

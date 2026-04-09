@@ -3,11 +3,11 @@ import {
 	EvaluatorType,
 	type EvaluationResult,
 	type EvaluationSession,
-	type MutationSubmitHumanEvaluationArgs,
-	type QueryGetEvaluationResultByIdArgs,
-	type QueryGetEvaluationResultsArgs,
-	type QueryGetEvaluationSessionByIdArgs,
-	type QueryGetEvaluationSessionsArgs,
+	type MutationSubmitHumanEvaluationArgs as MutationSubmitHumanEvaluationArguments,
+	type QueryGetEvaluationResultByIdArgs as QueryGetEvaluationResultByIdArguments,
+	type QueryGetEvaluationResultsArgs as QueryGetEvaluationResultsArguments,
+	type QueryGetEvaluationSessionByIdArgs as QueryGetEvaluationSessionByIdArguments,
+	type QueryGetEvaluationSessionsArgs as QueryGetEvaluationSessionsArguments,
 } from "../generated/resolvers-types.ts";
 
 
@@ -15,10 +15,10 @@ export const sessionResolver = {
 	Query: {
 		getEvaluationSessionById: async (
 			_: unknown,
-			args: QueryGetEvaluationSessionByIdArgs,
+			arguments_: QueryGetEvaluationSessionByIdArguments,
 		): Promise<EvaluationSession | null> => {
 			try {
-				return await analyticsService.getEvaluationSessionById(args.id);
+				return await analyticsService.getEvaluationSessionById(arguments_.id);
 			} catch (error) {
 				console.error("Error fetching evaluation session by id:", error);
 				throw new Error("Failed to fetch evaluation session by id");
@@ -26,11 +26,11 @@ export const sessionResolver = {
 		},
 		getEvaluationSessions: async (
 			_: unknown,
-			args: QueryGetEvaluationSessionsArgs,
+			arguments_: QueryGetEvaluationSessionsArguments,
 		): Promise<EvaluationSession[] | null> => {
 			try {
 				return await analyticsService.getEvaluationSessions(
-					args.filters ?? undefined,
+					arguments_.filters ?? undefined,
 				);
 			} catch (error) {
 				console.error("Error fetching evaluation sessions:", error);
@@ -39,10 +39,10 @@ export const sessionResolver = {
 		},
 		getEvaluationResultById: async (
 			_: unknown,
-			args: QueryGetEvaluationResultByIdArgs,
+			arguments_: QueryGetEvaluationResultByIdArguments,
 		): Promise<EvaluationResult | null> => {
 			try {
-				return await analyticsService.getEvaluationResultById(args.id);
+				return await analyticsService.getEvaluationResultById(arguments_.id);
 			} catch (error) {
 				console.error("Error fetching evaluation result by id:", error);
 				throw new Error("Failed to fetch evaluation result by id");
@@ -50,11 +50,11 @@ export const sessionResolver = {
 		},
 		getEvaluationResults: async (
 			_: unknown,
-			args: QueryGetEvaluationResultsArgs,
+			arguments_: QueryGetEvaluationResultsArguments,
 		): Promise<EvaluationResult[] | null> => {
 			try {
 				return await analyticsService.getEvaluationResults(
-					args.filters ?? undefined,
+					arguments_.filters ?? undefined,
 				);
 			} catch (error) {
 				console.error("Error fetching evaluation results:", error);
@@ -66,15 +66,15 @@ export const sessionResolver = {
 	Mutation: {
 		submitHumanEvaluation: async (
 			_: unknown,
-			args: MutationSubmitHumanEvaluationArgs,
+			arguments_: MutationSubmitHumanEvaluationArguments,
 		): Promise<EvaluationSession> => {
 			try {
 				return await analyticsService.createEvaluationSession(
-					args.input.copilotOutputId,
-					args.input.evaluatorId,
+					arguments_.input.copilotOutputId,
+					arguments_.input.evaluatorId,
 					EvaluatorType.Human,
-					args.input.rubricId,
-					args.input.evaluations,
+					arguments_.input.rubricId,
+					arguments_.input.evaluations,
 				);
 			} catch (error) {
 				console.error("Error submitting human evaluation:", error);

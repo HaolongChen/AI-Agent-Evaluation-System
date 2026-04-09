@@ -1,7 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 
 export { ProjectNameDuplicateError } from "../external/zed/createProject.ts";
-import { ORGANIZATION_EX_ID } from "../config/env.ts";
 
 import { backendClient, gqlRequest } from "../external/graphql-client.ts";
 import {
@@ -29,7 +28,7 @@ export class ProjectService {
 		projectName: string,
 		{ useModernProtocol = false }: { useModernProtocol?: boolean } = {},
 	): Promise<string> {
-		const organizationExId = ORGANIZATION_EX_ID;
+		const organizationExId = process.env.ORGANIZATION_EX_ID;
 		if (!organizationExId) {
 			throw new Error("ORGANIZATION_EX_ID env var is not set");
 		}
@@ -89,13 +88,13 @@ export class ProjectService {
 	): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
 			const subscriptionId = uuidv4();
-			let cleanup: (() => void) | null = null;
+			let cleanup: (() => void) | undefined;
 			let settled = false;
 
-			const settle = (fn: () => void): void => {
+			const settle = (function_: () => void): void => {
 				if (settled) return;
 				settled = true;
-				fn();
+				function_();
 			};
 
 			cleanup = openApolloSubscription(
@@ -119,14 +118,14 @@ export class ProjectService {
 								cleanup?.();
 								settle(() => resolve(projectExId));
 							})
-							.catch((err: unknown) => {
+							.catch((error: unknown) => {
 								console.error("Project creation callback failed", {
 									projectExId,
-									err,
+									err: error,
 								});
 								cleanup?.();
 								settle(() =>
-									reject(err instanceof Error ? err : new Error(String(err))),
+									reject(error instanceof Error ? error : new Error(String(error))),
 								);
 							});
 					} else if (status === PROJECT_CREATION_STATUS.FAILED) {
@@ -141,11 +140,11 @@ export class ProjectService {
 					}
 					// PROCESSING → keep waiting
 				},
-				(err) => {
-					console.error("Project creation subscription error", { taskId, err });
+				(error) => {
+					console.error("Project creation subscription error", { taskId, err: error });
 					settle(() =>
 						reject(
-							err instanceof Error ? err : new Error("Subscription error"),
+							error instanceof Error ? error : new Error("Subscription error"),
 						),
 					);
 				},

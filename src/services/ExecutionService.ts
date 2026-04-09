@@ -1,5 +1,4 @@
 
-import { buildWsUrl } from "../config/env.ts";
 import { EvaluationJobRunner } from "../jobs/EvaluationJobRunner.ts";
 import { TypeSystemStore } from "../external/zed/TypeSystemStore.ts";
 import { projectService } from "./ProjectService.ts";
@@ -63,7 +62,7 @@ export class ExecutionService {
 
 			const projectName = `temp-project-${goldenSetId}-${userInputId}-${Date.now()}`;
 			const projectExId = await projectService.createProject(projectName);
-			const wsUrl = buildWsUrl(projectExId);
+			const wsUrl = `${process.env.BACKEND_WS_URL}projectExId=${projectExId}&userToken=${process.env.userToken}&clientType=${process.env.clientType}`;
 
 			const evalJobRunner = new EvaluationJobRunner(
 				projectExId,

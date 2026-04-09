@@ -1,4 +1,3 @@
-import { MOMEN_DOCS_URL } from "../../../config/env.ts";
 import * as cheerio from "cheerio";
 
 import { Element } from "domhandler";
@@ -9,7 +8,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 const DOCUMENT_SUMMARY_CHAR_LIMIT = 1200;
 
 const summarizeMarkdown = (markdown: string): string => {
-	const normalized = markdown.replace(/\s+/g, " ").trim();
+	const normalized = markdown.replaceAll(/\s+/g, " ").trim();
 	if (!normalized) {
 		return "No content extracted from the documentation page.";
 	}
@@ -23,7 +22,7 @@ const summarizeMarkdown = (markdown: string): string => {
 
 const patch = async (
 	dom: cheerio.Cheerio<Element>,
-	fn: cheerio.CheerioAPI,
+	function_: cheerio.CheerioAPI,
 ): Promise<unknown> => {
 	const length = dom.length;
 	if (!length) return;
@@ -33,8 +32,8 @@ const patch = async (
 			const resolvedHref = await storeDocs(
 				href.at(-1) === "/" ? href.slice(0, -1) : href,
 				href === "/" ? "/introduction"
-				: href.at(-1) === "/" ? href.slice(0, -1)
-				: href,
+				: (href.at(-1) === "/" ? href.slice(0, -1)
+				: href),
 			);
 			return {
 				name: dom.first().text(),
@@ -50,14 +49,14 @@ const patch = async (
 				.find("ul:first > li")
 				.toArray()
 				.map(async (child) => {
-					if (fn(child).children().length === 0) {
+					if (function_(child).children().length === 0) {
 						return {
-							name: fn(child).text(),
+							name: function_(child).text(),
 							description:
 								"This is block. Next siblings until the next block are represented as children",
 						};
 					}
-					return await patch(fn(child).children(), fn);
+					return await patch(function_(child).children(), function_);
 				}),
 		);
 		return {
@@ -76,7 +75,7 @@ const patch = async (
 
 export const fetchSideBar = async () => {
 	try {
-		const response = await fetch(MOMEN_DOCS_URL);
+		const response = await fetch(process.env.MOMEN_DOCS_URL);
 		if (!response.ok) {
 			console.error(
 				`Failed to fetch Momen docs. Status: ${response.status} ${response.statusText}`,
@@ -113,7 +112,7 @@ export const fetchSideBar = async () => {
 
 const storeDocs = async (route: string, path: string): Promise<string> => {
 	try {
-		const response = await fetch(MOMEN_DOCS_URL + route);
+		const response = await fetch(process.env.MOMEN_DOCS_URL + route);
 		if (!response.ok) {
 			console.error(
 				`Failed to fetch Momen docs. Status: ${response.status} ${response.statusText}`,

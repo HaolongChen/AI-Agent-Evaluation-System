@@ -10,7 +10,7 @@ const DEFAULT_MAX_FILES = 20;
 const MAX_REASONING_HEADINGS = 6;
 
 const normalizeText = (value: string): string =>
-	value.replace(/\s+/g, " ").trim();
+	value.replaceAll(/\s+/g, " ").trim();
 
 const collectMarkdownFiles = async (
 	dir: string,
@@ -68,9 +68,9 @@ const extractHeadings = (markdown: string): string[] => {
 };
 
 const extractByHeading = (markdown: string, heading: string): string => {
-	const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const escapedHeading = heading.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 	const regex = new RegExp(
-		`(^#{1,6}\\s+${escapedHeading}\\s*$)([\\s\\S]*?)(?=^#{1,6}\\s+|$)`,
+		String.raw`(^#{1,6}\s+${escapedHeading}\s*$)([\s\S]*?)(?=^#{1,6}\s+|$)`,
 		"im",
 	);
 	const matched = markdown.match(regex);
@@ -88,13 +88,13 @@ const extractByKeyword = (markdown: string, keyword: string): string => {
 	const target = keyword.toLowerCase();
 	const windows: string[] = [];
 
-	for (let i = 0; i < lines.length; i += 1) {
-		if (!lines[i]?.toLowerCase().includes(target)) {
+	for (let index = 0; index < lines.length; index += 1) {
+		if (!lines[index]?.toLowerCase().includes(target)) {
 			continue;
 		}
 
-		const start = Math.max(0, i - 3);
-		const end = Math.min(lines.length, i + 4);
+		const start = Math.max(0, index - 3);
+		const end = Math.min(lines.length, index + 4);
 		windows.push(lines.slice(start, end).join("\n").trim());
 		if (windows.length >= 3) {
 			break;
@@ -275,8 +275,8 @@ export const read_markdown_docs = tool(
 
 			const selectedSection =
 				heading && heading.trim() ? extractByHeading(markdown, heading.trim())
-				: keyword && keyword.trim() ? extractByKeyword(markdown, keyword.trim())
-				: markdown;
+				: (keyword && keyword.trim() ? extractByKeyword(markdown, keyword.trim())
+				: markdown);
 
 			const normalizedExcerpt = normalizeText(selectedSection || markdown);
 			const { excerpt, truncated } = truncateContent(

@@ -1,8 +1,6 @@
 import { GraphQLClient, ClientError } from 'graphql-request';
 import { createClient as createWsClient } from 'graphql-ws';
 import { WebSocket } from 'ws';
-import { URL, BACKEND_GRAPHQL_URL, SUBSCRIPTION_GRAPHQL_URL } from '../config/env.ts';
-
 
 // ---------------------------------------------------------------------------
 // Auth state — token with 1-hour TTL
@@ -57,11 +55,11 @@ function makeHeaders(): Record<string, string> {
 //   backendClient → Functorz backend (requires Bearer token)
 // ---------------------------------------------------------------------------
 
-export const localClient = new GraphQLClient(`${URL}/graphql`, {
+export const localClient = new GraphQLClient(`${process.env.URL}/graphql`, {
   headers: makeHeaders,
 });
 
-export const backendClient = new GraphQLClient(BACKEND_GRAPHQL_URL, {
+export const backendClient = new GraphQLClient(process.env.BACKEND_GRAPHQL_URL, {
   headers: makeHeaders,
 });
 
@@ -122,7 +120,7 @@ function getWsClient(): WsClient {
   }
 
   _wsClient = createWsClient({
-    url: SUBSCRIPTION_GRAPHQL_URL,
+    url: process.env.SUBSCRIPTION_GRAPHQL_URL,
     webSocketImpl: WebSocket,
     connectionParams: () => {
       const token = authState.getToken();

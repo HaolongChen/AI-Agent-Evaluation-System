@@ -1,11 +1,11 @@
 import {
 	CopilotType,
 	type GoldenSet,
-	type MutationCreateUserInputArgs,
-	type MutationInitializeGoldenSetArgs,
-	type MutationLinkGoldenSetToUserInputArgs,
-	type QueryGetGoldenSetByIdArgs,
-	type QueryGetGoldenSetsArgs,
+	type MutationCreateUserInputArgs as MutationCreateUserInputArguments,
+	type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
+	type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
+	type QueryGetGoldenSetByIdArgs as QueryGetGoldenSetByIdArguments,
+	type QueryGetGoldenSetsArgs as QueryGetGoldenSetsArguments,
 	type UserInput,
 } from "../generated/resolvers-types.ts";
 import { goldenSetService } from "../../services/GoldenSetService.ts";
@@ -17,10 +17,10 @@ export const goldenSetResolver = {
 	Query: {
 		getGoldenSetById: async (
 			_: unknown,
-			args: QueryGetGoldenSetByIdArgs,
+			arguments_: QueryGetGoldenSetByIdArguments,
 		): Promise<GoldenSet | null> => {
 			try {
-				const res = await goldenSetService.getGoldenSetById(args.id);
+				const res = await goldenSetService.getGoldenSetById(arguments_.id);
 				if (!res) return null;
 				return {
 					...res,
@@ -35,11 +35,11 @@ export const goldenSetResolver = {
 		},
 		getGoldenSets: async (
 			_: unknown,
-			args: QueryGetGoldenSetsArgs,
+			arguments_: QueryGetGoldenSetsArguments,
 		): Promise<GoldenSet[]> => {
 			try {
 				const res = await goldenSetService.getGoldenSets(
-					args.filters ?? undefined,
+					arguments_.filters ?? undefined,
 				);
 				return res.map((gs) => ({
 					...gs,
@@ -57,13 +57,13 @@ export const goldenSetResolver = {
 	Mutation: {
 		initializeGoldenSet: async (
 			_: unknown,
-			args: MutationInitializeGoldenSetArgs,
+			arguments_: MutationInitializeGoldenSetArguments,
 		): Promise<GoldenSet> => {
 			try {
 				const res = await goldenSetService.createGoldenSet(
-					args.input.schemaId,
-					args.input.copilotType,
-					args.input.modelName ?? "undefined",
+					arguments_.input.schemaId,
+					arguments_.input.copilotType,
+					arguments_.input.modelName ?? "undefined",
 				);
 				return {
 					...res,
@@ -78,13 +78,13 @@ export const goldenSetResolver = {
 		},
 		createUserInput: async (
 			_: unknown,
-			args: MutationCreateUserInputArgs,
+			arguments_: MutationCreateUserInputArguments,
 		): Promise<UserInput> => {
 			try {
 				const res = await goldenSetService.createUserInput(
-					args.input.description ?? "",
-					args.input.query,
-					args.input.createdBy ?? "",
+					arguments_.input.description ?? "",
+					arguments_.input.query,
+					arguments_.input.createdBy ?? "",
 				);
 				return { ...res, createdAt: res.createdAt.toISOString() };
 			} catch (error) {
@@ -94,12 +94,12 @@ export const goldenSetResolver = {
 		},
 		linkGoldenSetToUserInput: async (
 			_: unknown,
-			args: MutationLinkGoldenSetToUserInputArgs,
+			arguments_: MutationLinkGoldenSetToUserInputArguments,
 		): Promise<GoldenSet> => {
 			try {
 				const res = await goldenSetService.linkGoldenSetToUserInput(
-					args.context.goldenSetId,
-					args.context.userInputId,
+					arguments_.context.goldenSetId,
+					arguments_.context.userInputId,
 				);
 				return {
 					...res,
@@ -115,10 +115,10 @@ export const goldenSetResolver = {
 
 		createProject: async (
 			_: unknown,
-			args: { projectName: string },
+			arguments_: { projectName: string },
 		): Promise<string> => {
 			try {
-				return await projectService.createProject(args.projectName);
+				return await projectService.createProject(arguments_.projectName);
 			} catch (error) {
 				console.error("Error creating project:", error);
 				throw new Error("Failed to create project");
@@ -126,10 +126,10 @@ export const goldenSetResolver = {
 		},
 		deleteProject: async (
 			_: unknown,
-			args: { projectExId: string },
+			arguments_: { projectExId: string },
 		): Promise<boolean> => {
 			try {
-				await projectService.deleteProject(args.projectExId);
+				await projectService.deleteProject(arguments_.projectExId);
 				return true;
 			} catch (error) {
 				console.error("Error deleting project:", error);

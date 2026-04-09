@@ -5,7 +5,7 @@ import * as z from "zod";
 const FEEDBACK_MAX_LENGTH = 900;
 
 const sanitizeFeedback = (value: string): string => {
-	const normalized = value.replace(/\s+/g, " ").trim();
+	const normalized = value.replaceAll(/\s+/g, " ").trim();
 	if (!normalized) {
 		return "";
 	}
@@ -18,8 +18,8 @@ const sanitizeFeedback = (value: string): string => {
 		.length;
 	const codeFenceCount = (normalized.match(/```/g) || []).length;
 	const pathTokenCount = (
-		normalized.match(/[A-Za-z0-9_./\[\]#-]{8,}/g) || []
-	).filter((token) => /[./\[\]#]/.test(token)).length;
+		normalized.match(/[A-Za-z0-9_./\]#-]{8,}/g) || []
+	).filter((token) => /[./\]#]/.test(token)).length;
 	const looksRawLargePayload =
 		normalized.length > 500 ||
 		markdownHeadingCount >= 2 ||
@@ -52,7 +52,7 @@ export class Feedback {
 			return;
 		}
 
-		const previousFeedback = this.feedbacks[this.feedbacks.length - 1];
+		const previousFeedback = this.feedbacks.at(-1);
 		if (previousFeedback === normalizedFeedback) {
 			return;
 		}
@@ -70,10 +70,10 @@ export class Feedback {
 	};
 }
 
-export const save_agent_feedbacks = (fn: (feedback: string) => void) =>
+export const save_agent_feedbacks = (function_: (feedback: string) => void) =>
 	tool(
 		({ feedbacks }) => {
-			fn(feedbacks);
+			function_(feedbacks);
 			return "Feedback saved successfully.";
 		},
 		{

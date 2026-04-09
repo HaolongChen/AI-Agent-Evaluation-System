@@ -4,7 +4,6 @@ import { ZTypeSystem, type OpaqueSchemaGraph } from "./TypeSystem.ts";
 import { authState, backendClient, gqlRequest } from "../graphql-client.ts";
 import { Crdt } from "@functorz/crdt-helper";
 import { login } from "../login.ts";
-import { FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD } from "../../config/env.ts";
 import { fromUint8Array } from "js-base64";
 import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from "./AfCustomCodeTemplates.ts";
 import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from "./ZSchema.ts";
@@ -161,13 +160,13 @@ export class TypeSystemStore {
 
 		console.info("Access token expired or missing, logging in...");
 
-		if (!FUNCTORZ_PHONE_NUMBER || !FUNCTORZ_PASSWORD) {
+		if (!process.env.FUNCTORZ_PHONE_NUMBER || !process.env.FUNCTORZ_PASSWORD) {
 			throw new Error(
 				"Missing FUNCTORZ_PHONE_NUMBER or FUNCTORZ_PASSWORD in environment variables",
 			);
 		}
 
-		const accessToken = await login(FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD);
+		const accessToken = await login(process.env.FUNCTORZ_PHONE_NUMBER, process.env.FUNCTORZ_PASSWORD);
 		authState.setToken(accessToken);
 		console.info("Successfully authenticated");
 	}

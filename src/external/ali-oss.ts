@@ -1,15 +1,9 @@
 import OSS from "ali-oss";
-import {
-	ALIYUN_ACCESS_KEY,
-	ALIYUN_ACCESS_SECRET,
-	ALIYUN_OSS_BUCKET,
-} from "../config/env.ts";
-
 export const client = new OSS({
 	region: "oss-cn-shanghai",
-	accessKeyId: ALIYUN_ACCESS_KEY,
-	accessKeySecret: ALIYUN_ACCESS_SECRET,
-	bucket: ALIYUN_OSS_BUCKET,
+	accessKeyId: process.env.ALIYUN_ACCESS_KEY,
+	accessKeySecret: process.env.ALIYUN_ACCESS_SECRET,
+	bucket: process.env.ALIYUN_OSS_BUCKET,
 	authorizationV4: true,
 	endpoint: "oss-cn-shanghai.aliyuncs.com",
 });

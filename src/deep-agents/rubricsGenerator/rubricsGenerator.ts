@@ -4,17 +4,16 @@ import {
 	StateBackend,
 	type SubAgent,
 } from "@HaolongChen/deepagents";
-import { GEMINI_API_KEY } from "../../config/env.ts";
 import * as z from "zod";
 import { createMiddleware, HumanMessage, toolStrategy } from "langchain";
-// 
+//
 import { getSchemaModel } from "../../external/ali-oss.ts";
 import { fromUint8Array } from "js-base64";
 import { Crdt } from "@functorz/crdt-helper";
 import fs from "node:fs/promises";
 import { MemorySaver } from "@langchain/langgraph";
 import { Feedback, save_agent_feedbacks } from "./tools/feedback.ts";
-import { rubricService } from "../../services/RubricService.ts";
+import { rubricService } from "../../services/rubric-service.ts";
 import type { agentFeedbacks } from "../../prisma/build/generated/prisma/client.ts";
 import { gemini } from "../llm/index.ts";
 import { fetchSideBar } from "./tools/documentationReader.ts";
@@ -23,23 +22,23 @@ import { inspectMiddleware } from "./middleware/inspect.ts";
 import { read_json_schema } from "./tools/schemaReader.ts";
 import { read_markdown_docs } from "./tools/markdownReader.ts";
 
-const promptsBasePath = new URL("./prompts/", import.meta.url);
+const promptsBasePath = new URL("prompts/", import.meta.url);
 const feedbackPrompt = await fs.readFile(
 	new URL("feedbackPrompt.md", promptsBasePath),
-	"utf-8",
+	"utf8",
 );
 const schemaLookupPromptTemplate = await fs.readFile(
 	new URL("schemaLookupPrompt.md", promptsBasePath),
-	"utf-8",
+	"utf8",
 );
 const rubricsGeneratorPromptTemplate = await fs.readFile(
 	new URL("rubricsGeneratorPrompt.md", promptsBasePath),
-	"utf-8",
+	"utf8",
 );
 
 const docsLookupPromptTemplate = await fs.readFile(
 	new URL("docsLookupPrompt.md", promptsBasePath),
-	"utf-8",
+	"utf8",
 );
 const schemaLookupPromptText = schemaLookupPromptTemplate.replace(
 	"${feedbackPrompt}",
@@ -84,7 +83,7 @@ const docsLookupAgent: SubAgent = {
 			tools: [save_agent_feedbacks(docsLookupAgentFeedback.addFeedback)],
 		}),
 		createSubAgentMiddleware({
-			defaultModel: gemini(GEMINI_API_KEY as string),
+			defaultModel: gemini(process.env.GOOGLE_API_KEY),
 			defaultTools: [read_markdown_docs],
 			subagents: [docsExcerptWorker],
 			generalPurposeAgent: false,
@@ -155,7 +154,7 @@ const schemaLookupAgent: SubAgent = {
 			tools: [save_agent_feedbacks(schemaLookupAgentFeedback.addFeedback)],
 		}),
 		createSubAgentMiddleware({
-			defaultModel: gemini(GEMINI_API_KEY as string),
+			defaultModel: gemini(process.env.GOOGLE_API_KEY),
 			defaultTools: [read_json_schema],
 			subagents: [schemaQueryWorker],
 			generalPurposeAgent: false,
@@ -201,7 +200,7 @@ export const generateRubrics = async (
 		}),
 		fetchSideBar(),
 		fs
-			.readFile(`${process.cwd()}/ZSchema_Flattened.json`, "utf-8")
+			.readFile(`${process.cwd()}/ZSchema_Flattened.json`, "utf8")
 			.then((content) =>
 				fs.writeFile(
 					`${process.cwd()}/local_shell/schemas/zschema.json`,
@@ -222,7 +221,7 @@ export const generateRubrics = async (
 		name: "rubrics_generator_agent",
 		responseFormat: toolStrategy(responseSchema),
 		// model: `google-genai:${GEMINI_MODEL}`,
-		model: gemini(GEMINI_API_KEY as string),
+		model: gemini(process.env.GOOGLE_API_KEY),
 		backend: (rt) => new StateBackend(rt),
 		contextSchema: contextSchema,
 		subagents: [schemaLookupAgent, docsLookupAgent],

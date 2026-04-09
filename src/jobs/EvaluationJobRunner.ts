@@ -24,7 +24,7 @@ import { assertNotNull } from "../external/zed/helpers.ts";
 import type { ToolResult } from "../external/graph-states.ts";
 import type { Data } from "ws";
 
-const DEFAULT_TIMEOUT_MS = 300000; // 5 minutes
+const DEFAULT_TIMEOUT_MS = 300_000; // 5 minutes
 
 export class EvaluationJobRunner {
 	private projectExId: string;
@@ -128,22 +128,27 @@ export class EvaluationJobRunner {
 		console.info(`Received message: ${JSON.stringify(data)}`);
 		if (this.isCompleted) return;
 		switch (data[0]?.type) {
-			case CopilotMessageType.INITIAL_STATE:
+			case CopilotMessageType.INITIAL_STATE: {
 				this.handleInitialStateMessage(data[0] as InitialStateMessage);
 				break;
-			case CopilotMessageType.SYSTEM_STATUS:
+			}
+			case CopilotMessageType.SYSTEM_STATUS: {
 				this.handleSystemStatusMessage(data[0] as SystemStatusMessage);
 				break;
-			case CopilotMessageType.TOOL_CALLS:
+			}
+			case CopilotMessageType.TOOL_CALLS: {
 				this.handleToolCallsMessage(data[0] as ToolCallsMessage);
 				break;
-			case CopilotMessageType.AI_RESPONSE:
+			}
+			case CopilotMessageType.AI_RESPONSE: {
 				this.handleAIResponseMessage(data[0] as AIResponseMessage);
 				break;
-			case CopilotMessageType.TASK:
+			}
+			case CopilotMessageType.TASK: {
 				this.tasks?.push(data[0] as TaskMessage);
 				break;
-			case CopilotMessageType.ERROR:
+			}
+			case CopilotMessageType.ERROR: {
 				if (!this.isCompleted && this.rejectCompletion) {
 					this.rejectCompletion(
 						new Error(
@@ -152,10 +157,12 @@ export class EvaluationJobRunner {
 					);
 				}
 				break;
-			case CopilotMessageType.EDITABLE_TEXT:
+			}
+			case CopilotMessageType.EDITABLE_TEXT: {
 				this.handleEditableTextMessage(data[0] as EditableTextMessage);
 				break;
-			case CopilotMessageType.STATE_CHANGE:
+			}
+			case CopilotMessageType.STATE_CHANGE: {
 				if (data[0]?.currentJobIsRunning === false) {
 					console.info(
 						`Job for project ${this.projectExId} has stopped running.`,
@@ -168,10 +175,12 @@ export class EvaluationJobRunner {
 					}
 				}
 				break;
-			default:
+			}
+			default: {
 				console.info(
 					`Received message of type ${data[0]?.type} for project ${this.projectExId}.`,
 				);
+			}
 		}
 	}
 

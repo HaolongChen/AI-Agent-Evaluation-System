@@ -4,7 +4,6 @@ import { expressMiddleware } from "@as-integrations/express5";
 import express from "express";
 import cors from "cors";
 import { typeDefs, resolvers } from "./graphql/schema.ts";
-import { PORT } from "./config/env.ts";
 
 import { login } from "./external/login.ts";
 import { authState } from "./external/graphql-client.ts";
@@ -25,28 +24,27 @@ app.use(
 	express.urlencoded({ extended: true }),
 	expressMiddleware(server),
 );
-app.get("/health", (_req: express.Request, res: express.Response) => {
+app.get("/health", (_request: express.Request, res: express.Response) => {
 	res.send("server is healthy");
 });
 
-app.listen({ port: PORT }, () => {
-	console.info(`🚀 Server ready at http://localhost:${PORT}/graphql`);
+app.listen({ port: process.env.PORT }, () => {
+	console.info(`🚀 Server ready at http://localhost:${process.env.PORT}/graphql`);
 });
 
-import { FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD } from "./config/env.ts";
 
 try {
-	if (!FUNCTORZ_PHONE_NUMBER || !FUNCTORZ_PASSWORD) {
+	if (!process.env.FUNCTORZ_PHONE_NUMBER || !process.env.FUNCTORZ_PASSWORD) {
 		throw new Error(
 			"FUNCTORZ_PHONE_NUMBER and FUNCTORZ_PASSWORD are required for initial login",
 		);
 	}
-	const token = await login(FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD);
+	const token = await login(process.env.FUNCTORZ_PHONE_NUMBER, process.env.FUNCTORZ_PASSWORD);
 	console.info("Initial login successful, token obtained");
 	authState.setToken(token);
-} catch (err) {
+} catch (error) {
 	console.error(
 		"Initial login failed — server will continue, TypeSystemStore will re-auth on demand",
-		err,
+		error,
 	);
 }

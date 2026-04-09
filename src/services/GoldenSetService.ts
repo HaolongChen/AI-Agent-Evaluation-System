@@ -12,16 +12,21 @@ import type { CopilotType as PrismaCopilotType } from "../prisma/build/generated
 
 const toPrismaCopilotType = (copilotType: CopilotType): PrismaCopilotType => {
 	switch (copilotType) {
-		case "DATA_MODEL_BUILDER":
+		case "DATA_MODEL_BUILDER": {
 			return "dataModelBuilder";
-		case "UI_BUILDER":
+		}
+		case "UI_BUILDER": {
 			return "uiBuilder";
-		case "ACTION_FLOW_BUILDER":
+		}
+		case "ACTION_FLOW_BUILDER": {
 			return "actionFlowBuilder";
-		case "LOG_ANALYZER":
+		}
+		case "LOG_ANALYZER": {
 			return "logAnalyzer";
-		case "AGENT_BUILDER":
+		}
+		case "AGENT_BUILDER": {
 			return "agentBuilder";
+		}
 	}
 
 	throw new Error(`Unsupported copilot type: ${copilotType}`);

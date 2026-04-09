@@ -21,4 +21,4 @@ async function setupDatabase() {
   }
 }
 
-setupDatabase();
+await setupDatabase();

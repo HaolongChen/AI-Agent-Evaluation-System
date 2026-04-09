@@ -1,7 +1,7 @@
 {
 	"extends": "@tsconfig/node-ts/tsconfig.json",
 	"compilerOptions": {
-		"rootDir": "./src",
+		"rootDir": "./",
 		"outDir": "./dist",
 		"module": "nodenext",
 		"target": "esnext",
@@ -17,10 +17,20 @@
 		"importHelpers": true,
 		"strictNullChecks": true,
 		"strictFunctionTypes": true,
-		"lib": [
-			"ESNext"
-		]
+		"allowJs": true,
+		"lib": ["ESNext"]
 	},
-	"include": ["src/**/*"],
-	"exclude": ["node_modules", "local_shell", "dist"]
+	"include": [
+		"src/**/*",
+		"scripts/**/*",
+		"tests/**/*",
+		"*.config.ts",
+		"env.d.ts"
+	],
+	"exclude": [
+		"node_modules/**/*",
+		"local_shell/**/*",
+		"dist/**/*",
+		"**/generated/**"
+	]
 }

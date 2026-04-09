@@ -1,15 +1,14 @@
 import { projectService } from "../services/ProjectService.ts";
 import { TypeSystemStore } from "./zed/TypeSystemStore.ts";
-import { FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD } from '../config/env.ts';
 import { authState } from "./graphql-client.ts";
 import { login } from "./login.ts";
 
 
 try {
-  if (!FUNCTORZ_PHONE_NUMBER || !FUNCTORZ_PASSWORD) {
+  if (!process.env.FUNCTORZ_PHONE_NUMBER || !process.env.FUNCTORZ_PASSWORD) {
     throw new Error('FUNCTORZ_PHONE_NUMBER and FUNCTORZ_PASSWORD are required for initial login');
   }
-  const token = await login(FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD);
+  const token = await login(process.env.FUNCTORZ_PHONE_NUMBER, process.env.FUNCTORZ_PASSWORD);
   console.info('Initial login successful, token obtained');
   authState.setToken(token);
 } catch (err) {

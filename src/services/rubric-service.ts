@@ -1,5 +1,4 @@
 import { Decimal } from "@prisma/client/runtime/client";
-
 import { generateRubrics } from "../deep-agents/rubricsGenerator/rubricsGenerator.ts";
 import type { Criteria, Rubric } from "../graphql/generated/resolvers-types.ts";
 import type {
@@ -75,7 +74,7 @@ export class RubricService {
 				},
 			})) as RubricWithCriteria | null;
 			if (!rubricItem) {
-				return null;
+				throw new Error("Rubric not found for the given id");
 			}
 			return this.toGraphqlRubric(rubricItem);
 		} catch (error) {

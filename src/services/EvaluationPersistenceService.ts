@@ -7,7 +7,7 @@
 //   EvaluationQuestion,
 // } from '../langGraph/state/state.ts';
 // import { CopilotType } from '../../build/generated/prisma/enums.ts';
-// import { logger } from '../utils/logger.ts';
+// 
 // import type { adaptiveRubricJudgeRecord } from '../../build/generated/prisma/client.ts';
 
 export class EvaluationPersistenceService {
@@ -38,14 +38,14 @@ export class EvaluationPersistenceService {
   //     );
 
   //     if (res.some((r) => r.status === 'rejected')) {
-  //       logger.error(
+  //       console.error(
   //         'Error saving some questions to database:',
   //         res.filter((r) => r.status === 'rejected'),
   //       );
   //       throw new Error('Failed to save some questions');
   //     }
   //   } catch (error) {
-  //     logger.error('Error saving questions to database:', error);
+  //     console.error('Error saving questions to database:', error);
   //     throw new Error('Failed to save questions');
   //   }
   // }
@@ -69,14 +69,14 @@ export class EvaluationPersistenceService {
   //     );
 
   //     if (res.some((r) => r.status === 'rejected')) {
-  //       logger.error(
+  //       console.error(
   //         'Error saving some agent evaluation answers to database:',
   //         res.filter((r) => r.status === 'rejected'),
   //       );
   //       throw new Error('Failed to save some agent evaluation answers');
   //     }
   //   } catch (error) {
-  //     logger.error('Error saving agent evaluation answers:', error);
+  //     console.error('Error saving agent evaluation answers:', error);
   //     throw new Error('Failed to save agent evaluation answers');
   //   }
   // }
@@ -99,7 +99,7 @@ export class EvaluationPersistenceService {
   //       },
   //     });
   //   } catch (error) {
-  //     logger.error('Error overriding evaluation answer:', error);
+  //     console.error('Error overriding evaluation answer:', error);
   //     throw new Error('Failed to override evaluation answer');
   //   }
   // }
@@ -124,12 +124,12 @@ export class EvaluationPersistenceService {
   //       )
   //     );
 
-  //     logger.info('Rubric questions updated successfully', {
+  //     console.info('Rubric questions updated successfully', {
   //       sessionId,
   //       questionCount: questions.length,
   //     });
   //   } catch (error) {
-  //     logger.error('Error updating rubric questions:', error);
+  //     console.error('Error updating rubric questions:', error);
   //     throw new Error('Failed to update rubric questions');
   //   }
   // }
@@ -155,7 +155,7 @@ export class EvaluationPersistenceService {
   //       },
   //     });
   //   } catch (error) {
-  //     logger.error('Error saving final report:', error);
+  //     console.error('Error saving final report:', error);
   //     throw new Error('Failed to save final report');
   //   }
   // }
@@ -199,7 +199,7 @@ export class EvaluationPersistenceService {
   //       judgeRecord: r.judgeRecord,
   //     }));
   //   } catch (error) {
-  //     logger.error('Error getting questions by session ID:', error);
+  //     console.error('Error getting questions by session ID:', error);
   //     return null;
   //   }
   // }

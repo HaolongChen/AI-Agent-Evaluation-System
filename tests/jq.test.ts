@@ -1,5 +1,5 @@
 import * as jq from "node-jq";
-import { logger } from "../src/utils/logger";
+
 
 const res = await jq.run(
 	".properties.server.properties.dataModel.properties.tableMetadata.items.properties | keys",
@@ -10,4 +10,4 @@ const res = await jq.run(
 	},
 );
 
-logger.debug("jq result", res);
+console.debug("jq result", res);

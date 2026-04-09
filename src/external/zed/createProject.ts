@@ -1,7 +1,7 @@
 import { gql } from 'graphql-request';
 import { WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../logger.ts';
+
 import { authState, gqlSubscribe } from '../graphql-client.ts';
 import type { SubscriptionHandlers } from '../graphql-client.ts';
 import { SUBSCRIPTION_GRAPHQL_URL } from '../../config/env.ts';
@@ -213,7 +213,7 @@ export function openApolloSubscription(
 	};
 
 	ws.on('open', () => {
-		logger.info('Subscription WS open — sending connection_init', { operationName });
+		console.info('Subscription WS open — sending connection_init', { operationName });
 
 		const initPayload: ApolloConnectionInitPayload = {
 			authToken: token,
@@ -229,7 +229,7 @@ export function openApolloSubscription(
 		try {
 			msg = JSON.parse(raw.toString()) as ApolloServerMessage;
 		} catch (err) {
-			logger.error('Subscription WS: failed to parse message', {
+			console.error('Subscription WS: failed to parse message', {
 				raw: raw.toString(),
 				err,
 			});
@@ -237,7 +237,7 @@ export function openApolloSubscription(
 		}
 
 		if (msg.type === 'connection_ack') {
-			logger.info('Subscription WS: connection_ack received — sending start', {
+			console.info('Subscription WS: connection_ack received — sending start', {
 				operationName,
 				subscriptionId,
 			});
@@ -251,7 +251,7 @@ export function openApolloSubscription(
 		}
 
 		if (!ackReceived) {
-			logger.warn('Subscription WS: received message before ack', { msg });
+			console.warn('Subscription WS: received message before ack', { msg });
 			return;
 		}
 
@@ -264,27 +264,27 @@ export function openApolloSubscription(
 		}
 
 		if (msg.type === 'error' && msg.id === subscriptionId) {
-			logger.error('Subscription WS: error message', { payload: msg.payload });
+			console.error('Subscription WS: error message', { payload: msg.payload });
 			onError(msg.payload);
 			cleanup();
 			return;
 		}
 
 		if (msg.type === 'complete' && msg.id === subscriptionId) {
-			logger.info('Subscription WS: complete', { operationName });
+			console.info('Subscription WS: complete', { operationName });
 			onComplete();
 			cleanup();
 		}
 	});
 
 	ws.on('error', (err) => {
-		logger.error('Subscription WS: socket error', { operationName, err });
+		console.error('Subscription WS: socket error', { operationName, err });
 		onError(err);
 		cleanup();
 	});
 
 	ws.on('close', (code, reason) => {
-		logger.info('Subscription WS: closed', {
+		console.info('Subscription WS: closed', {
 			operationName,
 			code,
 			reason: reason.toString(),
@@ -315,7 +315,7 @@ export function subscribeViaModernProtocol(
 		const handlers: SubscriptionHandlers<OnProjectCreationStatusChangedData> = {
 			next: (data) => {
 				const { projectExId, status } = data.onProjectCreationStatusChanged;
-				logger.info('Project creation status update (modern)', { projectExId, status, taskId });
+				console.info('Project creation status update (modern)', { projectExId, status, taskId });
 
 				if (status === PROJECT_CREATION_STATUS.COMPLETED) {
 					onCompleted(projectExId)
@@ -339,7 +339,7 @@ export function subscribeViaModernProtocol(
 				// PROCESSING → keep waiting
 			},
 			error: (err) => {
-				logger.error('Project creation subscription error (modern)', { taskId, err });
+				console.error('Project creation subscription error (modern)', { taskId, err });
 				settle(() =>
 					reject(err instanceof Error ? err : new Error('Subscription error')),
 				);

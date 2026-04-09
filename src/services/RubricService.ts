@@ -1,5 +1,5 @@
 import { Decimal } from "@prisma/client/runtime/client";
-import { logger } from "../external/logger.ts";
+
 import { generateRubrics } from "../deep-agents/rubricsGenerator/rubricsGenerator.ts";
 import type { Criteria, Rubric } from "../graphql/generated/resolvers-types.ts";
 import type {
@@ -7,10 +7,7 @@ import type {
 	criteria,
 	rubric,
 } from "../prisma/build/generated/prisma/client.ts";
-import { AgentFeedbacksInterface } from "@src/interface/agentFeedbacksInterface";
-import { GoldenSetInterface } from "@src/interface/goldenSetInterface";
-import { RubricInterface } from "@src/interface/rubricInterface";
-
+import { prisma } from "../config/prisma.ts";
 type RubricWithCriteria = rubric & {
 	criterion: criteria[];
 };
@@ -52,8 +49,7 @@ export class RubricService {
 		userInputId: string,
 	): Promise<Rubric[]> {
 		try {
-			const rubricInterface = new RubricInterface("findMany");
-			const rubrics = (await rubricInterface.getRubricAdapter({
+			const rubrics = (await prisma.rubric.findMany({
 				where: {
 					goldenSetId,
 					userInputId,
@@ -65,15 +61,14 @@ export class RubricService {
 			})) as RubricWithCriteria[];
 			return rubrics.map((item) => this.toGraphqlRubric(item));
 		} catch (error) {
-			logger.error("Error fetching rubrics:", error);
+			console.error("Error fetching rubrics:", error);
 			throw new Error("Failed to fetch rubrics");
 		}
 	}
 
 	async getRubricById(id: string): Promise<Rubric | null> {
 		try {
-			const rubricInterface = new RubricInterface("findUnique");
-			const rubricItem = (await rubricInterface.getRubricAdapter({
+			const rubricItem = (await prisma.rubric.findUnique({
 				where: { id },
 				include: {
 					criterion: true,
@@ -84,7 +79,7 @@ export class RubricService {
 			}
 			return this.toGraphqlRubric(rubricItem);
 		} catch (error) {
-			logger.error("Error fetching rubric by id:", error);
+			console.error("Error fetching rubric by id:", error);
 			throw new Error("Failed to fetch rubric by id");
 		}
 	}
@@ -94,8 +89,7 @@ export class RubricService {
 		userInputId: string,
 	): Promise<Rubric> {
 		try {
-			const goldenSetInterface = new GoldenSetInterface("findUnique");
-			const copilotInput = (await goldenSetInterface.getGoldenSetAdapter({
+			const copilotInput = await prisma.goldenSet.findUnique({
 				where: { id: goldenSetId },
 				select: {
 					schemaId: true,
@@ -108,7 +102,7 @@ export class RubricService {
 						},
 					},
 				},
-			})) as {
+			}) as {
 				schemaId: string;
 				userInputs: Array<{ content: string }>;
 			} | null;
@@ -149,7 +143,7 @@ export class RubricService {
 			await Promise.allSettled(feedbacks(savedRubric.id));
 			return this.toGraphqlRubric(savedRubric);
 		} catch (error) {
-			logger.error("Error generating rubric:", error);
+			console.error("Error generating rubric:", error);
 			throw new Error("Failed to generate rubric");
 		}
 	}
@@ -160,8 +154,7 @@ export class RubricService {
 		criteriaItems: RubricCriterionInput[],
 	): Promise<RubricWithCriteria> {
 		try {
-			const rubricInterface = new RubricInterface("create");
-			return (await rubricInterface.getRubricAdapter({
+			return (await prisma.rubric.create({
 				data: {
 					goldenSetId,
 					userInputId,
@@ -180,7 +173,7 @@ export class RubricService {
 				},
 			})) as RubricWithCriteria;
 		} catch (error) {
-			logger.error("Error saving rubric:", error);
+			console.error("Error saving rubric:", error);
 			throw new Error("Failed to save rubric");
 		}
 	}
@@ -195,17 +188,14 @@ export class RubricService {
 				return undefined;
 			}
 
-			const rubricInterface = new RubricInterface("findUnique");
-			const rubricItem = await rubricInterface.getRubricAdapter({
+			const rubricItem = await prisma.rubric.findUnique({
 				where: { id: rubricId },
 				select: { id: true },
 			});
 			if (!rubricItem) {
 				throw new Error("Rubric not found for the given id");
 			}
-
-			const agentFeedbacksInterface = new AgentFeedbacksInterface("create");
-			return await agentFeedbacksInterface.getAgentFeedbacksAdapter({
+			return await prisma.agentFeedbacks.create({
 				data: {
 					rubricId,
 					agentName,
@@ -213,7 +203,7 @@ export class RubricService {
 				},
 			});
 		} catch (error) {
-			logger.error("Error saving agent feedbacks:", error);
+			console.error("Error saving agent feedbacks:", error);
 			throw new Error("Failed to save agent feedbacks");
 		}
 	}

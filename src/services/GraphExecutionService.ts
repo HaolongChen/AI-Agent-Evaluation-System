@@ -1,7 +1,7 @@
 // import { prisma } from '../config/prisma.ts';
 // import { SESSION_STATUS, REVIEW_STATUS } from '../config/constants.ts';
 // import type { Prisma } from '../../build/generated/prisma/client.ts';
-// import { logger } from '../utils/logger.ts';
+// 
 // import type {
 //   QuestionSet,
 //   QuestionEvaluation,
@@ -79,7 +79,7 @@
 
 //   //     // Handle partial updates via questionPatches
 //   //     if (questionPatches && questionPatches.length > 0) {
-//   //       logger.info('Applying question patches', {
+//   //       console.info('Applying question patches', {
 //   //         sessionId,
 //   //         patchCount: questionPatches.length,
 //   //       });
@@ -148,7 +148,7 @@
 //   //         questionsUpdating,
 //   //       );
 
-//   //       logger.info('Question patches applied successfully', {
+//   //       console.info('Question patches applied successfully', {
 //   //         sessionId,
 //   //         totalQuestions: questions.length,
 //   //         totalWeight,
@@ -162,7 +162,7 @@
 //   //         sessionId,
 //   //         modifiedQuestionSet.questions,
 //   //       );
-//   //       logger.info('Human-provided example questions saved to DB (approved=false)', {
+//   //       console.info('Human-provided example questions saved to DB (approved=false)', {
 //   //         sessionId,
 //   //         questionCount: modifiedQuestionSet.questions.length,
 //   //       });
@@ -180,7 +180,7 @@
 //   //     );
 //   //     reviewJobRunner.startJob();
 //   //     const result = await reviewJobRunner.waitForCompletion();
-//   //     logger.info('Question set review completed:', result);
+//   //     console.info('Question set review completed:', result);
 //   //     return {
 //   //       sessionId,
 //   //       threadId,
@@ -190,7 +190,7 @@
 //   //         result.message || 'Question set review completed successfully',
 //   //     };
 //   //   } catch (error) {
-//   //     logger.error('Error submitting question set review:', error);
+//   //     console.error('Error submitting question set review:', error);
 //   //     throw new Error(
 //   //       `Failed to submit question set review: ${
 //   //         error instanceof Error ? error.message : 'Unknown error'
@@ -242,7 +242,7 @@
 //   //     });
 
 //   //     if (counter !== (answers?.length ?? 0)) {
-//   //       logger.warn('Some provided answers did not match existing questions', {
+//   //       console.warn('Some provided answers did not match existing questions', {
 //   //         sessionId,
 //   //         threadId,
 //   //         providedAnswerIds: answers?.map((a) => a.id) ?? [],
@@ -266,7 +266,7 @@
 //   //       );
 //   //       const failed = res.filter((r) => r.status === 'rejected');
 //   //       if (failed.length > 0) {
-//   //         logger.warn('Some evaluation answers failed to be overridden', {
+//   //         console.warn('Some evaluation answers failed to be overridden', {
 //   //           sessionId,
 //   //           failedCount: failed.length,
 //   //         });
@@ -281,7 +281,7 @@
 //   //     );
 //   //     evaluationJobRunner.startJob();
 //   //     const result = await evaluationJobRunner.waitForCompletion();
-//   //     logger.info('Human evaluation completed:', result);
+//   //     console.info('Human evaluation completed:', result);
 //   //     return {
 //   //       sessionId,
 //   //       threadId,
@@ -290,7 +290,7 @@
 //   //       message: result.message || 'Evaluation completed successfully',
 //   //     };
 //   //   } catch (error) {
-//   //     logger.error('Error submitting human evaluation:', error);
+//   //     console.error('Error submitting human evaluation:', error);
 //   //     throw new Error(
 //   //       `Failed to submit human evaluation: ${
 //   //         error instanceof Error ? error.message : 'Unknown error'

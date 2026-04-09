@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export { ProjectNameDuplicateError } from "../external/zed/createProject.ts";
 import { ORGANIZATION_EX_ID } from "../config/env.ts";
-import { logger } from "../external/logger.ts";
+
 import { backendClient, gqlRequest } from "../external/graphql-client.ts";
 import {
 	GQL_CHECK_PROJECT_NAME_DUPLICATE,
@@ -34,7 +34,7 @@ export class ProjectService {
 			throw new Error("ORGANIZATION_EX_ID env var is not set");
 		}
 
-		logger.info("Checking project name availability", { projectName });
+		console.info("Checking project name availability", { projectName });
 		const nameCheckData = await gqlRequest<
 			CheckProjectNameDuplicateResponse,
 			CheckProjectNameDuplicateVariables
@@ -44,7 +44,7 @@ export class ProjectService {
 			throw new ProjectNameDuplicateError(projectName);
 		}
 
-		logger.info("Creating project", { projectName, organizationExId });
+		console.info("Creating project", { projectName, organizationExId });
 		const mutationData = await gqlRequest<
 			CreateProjectMutationResponse,
 			CreateProjectMutationVariables
@@ -57,24 +57,24 @@ export class ProjectService {
 		});
 
 		const taskId = mutationData.createProjectInOrganizationAsync;
-		logger.info("Project creation task started", { taskId, projectName });
+		console.info("Project creation task started", { taskId, projectName });
 
 		// No DB upsert — project table has been removed.
 		const onProjectCreated = async (projectExId: string): Promise<void> => {
-			logger.info("Project creation completed", { projectExId, projectName });
+			console.info("Project creation completed", { projectExId, projectName });
 		};
 
 		if (useModernProtocol) {
-			logger.info("Using modern graphql-ws subscription path", { taskId });
+			console.info("Using modern graphql-ws subscription path", { taskId });
 			return subscribeViaModernProtocol(taskId, onProjectCreated, (tid) =>
-				logger.error("Project creation failed on server", {
+				console.error("Project creation failed on server", {
 					taskId: tid,
 					projectName,
 				}),
 			);
 		}
 
-		logger.info("Using legacy Apollo WS subscription path", { taskId });
+		console.info("Using legacy Apollo WS subscription path", { taskId });
 		return this.subscribeViaLegacyProtocol(
 			taskId,
 			projectName,
@@ -108,7 +108,7 @@ export class ProjectService {
 					status: ProjectCreationStatus;
 				}) => {
 					const { projectExId, status } = statusPayload;
-					logger.info("Project creation status update", {
+					console.info("Project creation status update", {
 						projectExId,
 						status,
 					});
@@ -120,7 +120,7 @@ export class ProjectService {
 								settle(() => resolve(projectExId));
 							})
 							.catch((err: unknown) => {
-								logger.error("Project creation callback failed", {
+								console.error("Project creation callback failed", {
 									projectExId,
 									err,
 								});
@@ -130,7 +130,7 @@ export class ProjectService {
 								);
 							});
 					} else if (status === PROJECT_CREATION_STATUS.FAILED) {
-						logger.error("Project creation failed on server", {
+						console.error("Project creation failed on server", {
 							taskId,
 							projectName,
 						});
@@ -142,7 +142,7 @@ export class ProjectService {
 					// PROCESSING → keep waiting
 				},
 				(err) => {
-					logger.error("Project creation subscription error", { taskId, err });
+					console.error("Project creation subscription error", { taskId, err });
 					settle(() =>
 						reject(
 							err instanceof Error ? err : new Error("Subscription error"),
@@ -163,13 +163,13 @@ export class ProjectService {
 	}
 
 	async deleteProject(projectExId: string): Promise<void> {
-		logger.info("Deleting project", { projectExId });
+		console.info("Deleting project", { projectExId });
 		await gqlRequest<DeleteProjectResponse, DeleteProjectVariables>(
 			backendClient,
 			GQL_DELETE_PROJECT,
 			{ projectExId },
 		);
-		logger.info("Project deleted", { projectExId });
+		console.info("Project deleted", { projectExId });
 	}
 }
 

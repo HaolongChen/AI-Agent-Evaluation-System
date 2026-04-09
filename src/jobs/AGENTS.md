@@ -18,7 +18,7 @@ CLI job runners wrapping LangGraph workflows for batch and Kubernetes-orchestrat
 - **K8s Integration**: Guarded by `RUN_KUBERNETES_JOBS` environment flag
 - **Standard Output**: Successful results emitted as `JOB_RESULT_JSON: {...}` for log parsing
 - **Exit Codes**: Zero on success, `1` on timeout, error, or WebSocket disconnection
-- **Logging**: Uses structured `logger` with job-specific metadata and file-based `logs.txt` persistence
+- **Logging**: Uses structured `console` with job-specific metadata and file-based `logs.txt` persistence
 
 ## LIFECYCLE PATTERN
 All runners implement a standard start-wait-stop orchestration pattern:

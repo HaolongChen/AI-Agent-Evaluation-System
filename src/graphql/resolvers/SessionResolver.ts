@@ -9,7 +9,7 @@ import {
 	type QueryGetEvaluationSessionByIdArgs,
 	type QueryGetEvaluationSessionsArgs,
 } from "../generated/resolvers-types.ts";
-import { logger } from "../../external/logger.ts";
+
 
 export const sessionResolver = {
 	Query: {
@@ -20,7 +20,7 @@ export const sessionResolver = {
 			try {
 				return await analyticsService.getEvaluationSessionById(args.id);
 			} catch (error) {
-				logger.error("Error fetching evaluation session by id:", error);
+				console.error("Error fetching evaluation session by id:", error);
 				throw new Error("Failed to fetch evaluation session by id");
 			}
 		},
@@ -33,7 +33,7 @@ export const sessionResolver = {
 					args.filters ?? undefined,
 				);
 			} catch (error) {
-				logger.error("Error fetching evaluation sessions:", error);
+				console.error("Error fetching evaluation sessions:", error);
 				throw new Error("Failed to fetch evaluation sessions");
 			}
 		},
@@ -44,7 +44,7 @@ export const sessionResolver = {
 			try {
 				return await analyticsService.getEvaluationResultById(args.id);
 			} catch (error) {
-				logger.error("Error fetching evaluation result by id:", error);
+				console.error("Error fetching evaluation result by id:", error);
 				throw new Error("Failed to fetch evaluation result by id");
 			}
 		},
@@ -57,7 +57,7 @@ export const sessionResolver = {
 					args.filters ?? undefined,
 				);
 			} catch (error) {
-				logger.error("Error fetching evaluation results:", error);
+				console.error("Error fetching evaluation results:", error);
 				throw new Error("Failed to fetch evaluation results");
 			}
 		},
@@ -77,7 +77,7 @@ export const sessionResolver = {
 					args.input.evaluations,
 				);
 			} catch (error) {
-				logger.error("Error submitting human evaluation:", error);
+				console.error("Error submitting human evaluation:", error);
 				throw new Error("Failed to submit human evaluation");
 			}
 		},

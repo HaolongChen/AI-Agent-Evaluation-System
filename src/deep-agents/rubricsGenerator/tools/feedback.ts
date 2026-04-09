@@ -1,5 +1,5 @@
 import { tool } from "langchain";
-import { logger } from "../../../external/logger.ts";
+
 import * as z from "zod";
 
 const FEEDBACK_MAX_LENGTH = 900;
@@ -58,7 +58,7 @@ export class Feedback {
 		}
 
 		this.feedbacks.push(normalizedFeedback);
-		logger.debug(`Added feedback: ${normalizedFeedback}`);
+		console.debug(`Added feedback: ${normalizedFeedback}`);
 	};
 
 	getFeedbacks = (): string[] => {

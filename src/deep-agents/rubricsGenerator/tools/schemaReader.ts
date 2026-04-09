@@ -1,7 +1,7 @@
 import { tool } from "langchain";
 import * as z from "zod";
 import * as jq from "node-jq";
-import { logger } from "../../../external/logger.ts";
+
 
 const DEFAULT_RESULT_CHAR_LIMIT = 1800;
 const DEFAULT_RESULT_ITEM_LIMIT = 200;
@@ -187,7 +187,7 @@ export const read_json_schema = tool(
 					reasoningArtifacts,
 				};
 			} catch (fallbackError) {
-				logger.error(
+				console.error(
 					"Error executing jq query:",
 					query,
 					jsonError,
@@ -238,7 +238,7 @@ class Schema {
 			}
 			this.schema = await response.json();
 		} catch (error) {
-			logger.error("Failed to load JSON schema", error);
+			console.error("Failed to load JSON schema", error);
 			throw new Error(
 				"Failed to load JSON schema. Please check the logs for more details.",
 			);

@@ -1,6 +1,6 @@
 import { MOMEN_DOCS_URL } from "../../../config/env.ts";
 import * as cheerio from "cheerio";
-import { logger } from "../../../external/logger.ts";
+
 import { Element } from "domhandler";
 import { convertElementToMarkdown } from "dom-to-semantic-markdown";
 import { JSDOM } from "jsdom";
@@ -65,7 +65,7 @@ const patch = async (
 			children,
 		};
 	} else {
-		logger.warn(
+		console.warn(
 			`Unexpected number of children: ${length}. The structure of the Momen docs might have changed. Please check the logs for more details.`,
 		);
 		throw new Error(
@@ -78,7 +78,7 @@ export const fetchSideBar = async () => {
 	try {
 		const response = await fetch(MOMEN_DOCS_URL);
 		if (!response.ok) {
-			logger.error(
+			console.error(
 				`Failed to fetch Momen docs. Status: ${response.status} ${response.statusText}`,
 			);
 			throw new Error(
@@ -90,7 +90,7 @@ export const fetchSideBar = async () => {
 
 		const contentElements = $("aside ul:first > li").toArray();
 		if (!contentElements || contentElements.length === 0) {
-			logger.error(
+			console.error(
 				"Failed to extract contents from Momen docs. The structure of the page might have changed.",
 			);
 			throw new Error(
@@ -104,7 +104,7 @@ export const fetchSideBar = async () => {
 		);
 		return contents;
 	} catch (error) {
-		logger.error("Error occurred while testing read_momen_docs tool:", error);
+		console.error("Error occurred while testing read_momen_docs tool:", error);
 		throw new Error(
 			"An error occurred while testing read_momen_docs tool. Please check the logs for more details.",
 		);
@@ -115,7 +115,7 @@ const storeDocs = async (route: string, path: string): Promise<string> => {
 	try {
 		const response = await fetch(MOMEN_DOCS_URL + route);
 		if (!response.ok) {
-			logger.error(
+			console.error(
 				`Failed to fetch Momen docs. Status: ${response.status} ${response.statusText}`,
 			);
 			throw new Error(
@@ -126,7 +126,7 @@ const storeDocs = async (route: string, path: string): Promise<string> => {
 		const { document } = new JSDOM(html).window;
 		const article = document.querySelector("main");
 		if (!article) {
-			logger.error(
+			console.error(
 				"Failed to find the main article element in Momen docs. The structure of the page might have changed.",
 			);
 			throw new Error(
@@ -150,7 +150,7 @@ const storeDocs = async (route: string, path: string): Promise<string> => {
 			dir.slice(process.cwd().length + 12) + `/${path.split("/").pop()}.md`
 		);
 	} catch (error) {
-		logger.error("Error occurred while testing read_momen_docs tool:", error);
+		console.error("Error occurred while testing read_momen_docs tool:", error);
 		throw new Error(
 			"An error occurred while testing read_momen_docs tool. Please check the logs for more details.",
 		);

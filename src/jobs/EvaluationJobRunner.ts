@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { logger } from "../external/logger.ts";
+
 import {
 	CopilotMessageType,
 	type AIResponseMessage,
@@ -74,7 +74,7 @@ export class EvaluationJobRunner {
 		this.socket = new WebSocket(this.wsUrl);
 
 		this.socket.addEventListener("open", () => {
-			logger.info("WebSocket connection opened.");
+			console.info("WebSocket connection opened.");
 		});
 
 		this.socket.addEventListener("message", (event) => {
@@ -82,7 +82,7 @@ export class EvaluationJobRunner {
 		});
 
 		this.socket.addEventListener("close", () => {
-			logger.info("WebSocket connection closed.");
+			console.info("WebSocket connection closed.");
 			if (!this.isCompleted && this.rejectCompletion) {
 				this.rejectCompletion(
 					new Error("WebSocket connection closed before job completion"),
@@ -91,7 +91,7 @@ export class EvaluationJobRunner {
 		});
 
 		this.socket.addEventListener("error", (error) => {
-			logger.error("WebSocket error:", error);
+			console.error("WebSocket error:", error);
 			if (!this.isCompleted && this.rejectCompletion) {
 				this.rejectCompletion(
 					error instanceof Error ? error : new Error(String(error)),
@@ -102,17 +102,17 @@ export class EvaluationJobRunner {
 
 	send(data: CopilotMessage): void {
 		if (this.isCompleted) {
-			logger.warn(
+			console.warn(
 				"Attempted to send message after job completion. Ignoring.",
 				data,
 			);
 			return;
 		}
 		if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-			logger.info(`Sending message: ${JSON.stringify(data)}`);
+			console.info(`Sending message: ${JSON.stringify(data)}`);
 			this.socket.send(JSON.stringify(data));
 		} else {
-			logger.error("WebSocket is not open. Cannot send message:", data);
+			console.error("WebSocket is not open. Cannot send message:", data);
 		}
 	}
 
@@ -125,7 +125,7 @@ export class EvaluationJobRunner {
 
 	handleMessage(message: Data): void {
 		const data: CopilotMessage[] = JSON.parse(message.toString());
-		logger.info(`Received message: ${JSON.stringify(data)}`);
+		console.info(`Received message: ${JSON.stringify(data)}`);
 		if (this.isCompleted) return;
 		switch (data[0]?.type) {
 			case CopilotMessageType.INITIAL_STATE:
@@ -157,11 +157,11 @@ export class EvaluationJobRunner {
 				break;
 			case CopilotMessageType.STATE_CHANGE:
 				if (data[0]?.currentJobIsRunning === false) {
-					logger.info(
+					console.info(
 						`Job for project ${this.projectExId} has stopped running.`,
 					);
 					if (!this.isCompleted && this.rejectCompletion) {
-						logger.error("Job has stopped running unexpectedly");
+						console.error("Job has stopped running unexpectedly");
 						this.rejectCompletion(
 							new Error("Job has stopped running unexpectedly"),
 						);
@@ -169,7 +169,7 @@ export class EvaluationJobRunner {
 				}
 				break;
 			default:
-				logger.info(
+				console.info(
 					`Received message of type ${data[0]?.type} for project ${this.projectExId}.`,
 				);
 		}
@@ -182,7 +182,7 @@ export class EvaluationJobRunner {
 				editableText: this.editableText,
 			});
 		} else {
-			logger.warn(
+			console.warn(
 				"Received editable text message but job is already completed. Ignoring.",
 			);
 		}
@@ -196,7 +196,7 @@ export class EvaluationJobRunner {
 			return;
 		}
 		if (message.currentJobIsRunning === true) {
-			logger.info(`Job for project ${this.projectExId} is running.`);
+			console.info(`Job for project ${this.projectExId} is running.`);
 		}
 		const response: HumanInputMessage = {
 			type: CopilotMessageType.HUMAN_INPUT,
@@ -221,7 +221,7 @@ export class EvaluationJobRunner {
 				result: result!,
 			});
 		} else {
-			logger.error(
+			console.error(
 				`Tool calls failed for project ${this.projectExId}: ${errorMessage}.`,
 			);
 			if (!this.isCompleted && this.rejectCompletion) {
@@ -238,7 +238,7 @@ export class EvaluationJobRunner {
 				// schema: schema as unknown as string,
 			});
 		} else {
-			logger.warn(
+			console.warn(
 				"Received AI response message but job is already completed. Ignoring.",
 			);
 		}
@@ -262,7 +262,7 @@ export class EvaluationJobRunner {
 			// probably not necessary to apply schema diff in evaluation job runner
 			return { result: result as unknown as ToolResult, successful: true };
 		} catch (error: unknown) {
-			logger.error("toolCall---error:", error, toolCalls);
+			console.error("toolCall---error:", error, toolCalls);
 			return {
 				successful: false,
 				errorMessage: error instanceof Error ? error.message : String(error),

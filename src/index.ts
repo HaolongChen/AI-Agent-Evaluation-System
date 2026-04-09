@@ -5,12 +5,12 @@ import express from "express";
 import cors from "cors";
 import { typeDefs, resolvers } from "./graphql/schema.ts";
 import { PORT } from "./config/env.ts";
-import { logger } from "./external/logger.ts";
+
 import { login } from "./external/login.ts";
 import { authState } from "./external/graphql-client.ts";
 
 const app = express();
-logger.info("Starting server...");
+console.info("Starting server...");
 const server = new ApolloServer({
 	typeDefs,
 	resolvers,
@@ -30,7 +30,7 @@ app.get("/health", (_req: express.Request, res: express.Response) => {
 });
 
 app.listen({ port: PORT }, () => {
-	logger.info(`🚀 Server ready at http://localhost:${PORT}/graphql`);
+	console.info(`🚀 Server ready at http://localhost:${PORT}/graphql`);
 });
 
 import { FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD } from "./config/env.ts";
@@ -42,10 +42,10 @@ try {
 		);
 	}
 	const token = await login(FUNCTORZ_PHONE_NUMBER, FUNCTORZ_PASSWORD);
-	logger.info("Initial login successful, token obtained");
+	console.info("Initial login successful, token obtained");
 	authState.setToken(token);
 } catch (err) {
-	logger.error(
+	console.error(
 		"Initial login failed — server will continue, TypeSystemStore will re-auth on demand",
 		err,
 	);

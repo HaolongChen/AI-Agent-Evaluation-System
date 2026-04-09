@@ -1,10 +1,10 @@
 import { createMiddleware } from "langchain";
-import { logger } from "../../../external/logger.ts";
+
 
 export const inspectMiddleware = createMiddleware({
 	name: "inspectMiddleware",
 	wrapToolCall: (request, handler) => {
-		logger.debug(
+		console.debug(
 			"Inspect Middleware - Request:",
 			request.toolCall.name,
 			request.toolCall.args,

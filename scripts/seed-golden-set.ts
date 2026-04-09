@@ -1,9 +1,9 @@
 import { prisma } from '../src/config/prisma.ts';
-import { logger } from '../src/utils/logger.ts';
+
 
 async function seedGoldenSet() {
   try {
-    logger.info('Seeding golden set...');
+    console.info('Seeding golden set...');
 
     // Example seed data
     const goldenSetData = [
@@ -50,9 +50,9 @@ async function seedGoldenSet() {
       });
     }
 
-    logger.info(`✓ Seeded ${goldenSetData.length} golden set entries`);
+    console.info(`✓ Seeded ${goldenSetData.length} golden set entries`);
   } catch (error) {
-    logger.error('Seeding failed:', error);
+    console.error('Seeding failed:', error);
     throw error;
   } finally {
     await prisma.$disconnect();

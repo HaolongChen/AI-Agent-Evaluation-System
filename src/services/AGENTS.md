@@ -29,7 +29,7 @@ Core business logic and database orchestration layer, delegating from GraphQL re
 - **Circular Dependencies**: Services importing each other in a loop; refactor common logic to `src/utils/`.
 - **Logic Leaks**: Writing business validation or DB queries directly in GraphQL resolvers or LangGraph nodes.
 - **State Mismanagement**: Modifying LangGraph state outside of `GraphExecutionService` or node functions.
-- **Silencing Prisma**: Catching DB errors without logging context-specific metadata via `logger`.
+- **Silencing Prisma**: Catching DB errors without logging context-specific metadata via `console`.
 
 ## ProjectService
 

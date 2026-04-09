@@ -27,7 +27,7 @@ Thin resolver layer that delegates business logic to services while ensuring con
 
 ### Error Handling
 - **Consistent Wrapper**: Always use `try-catch` blocks for all resolver functions.
-- **Logging**: Log detailed errors via `logger.error('context message', error)`.
+- **Logging**: Log detailed errors via `console.error('context message', error)`.
 - **User Errors**: Throw generic user-friendly `Error('Public message')` to the client.
 
 ### HITL Partial Updates (Patches)

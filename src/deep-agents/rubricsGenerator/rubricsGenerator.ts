@@ -7,7 +7,7 @@ import {
 import { GEMINI_API_KEY } from "../../config/env.ts";
 import * as z from "zod";
 import { createMiddleware, HumanMessage, toolStrategy } from "langchain";
-// import { logger } from "../../utils/logger.ts";
+// 
 import { getSchemaModel } from "../../external/ali-oss.ts";
 import { fromUint8Array } from "js-base64";
 import { Crdt } from "@functorz/crdt-helper";
@@ -18,7 +18,7 @@ import { rubricService } from "../../services/RubricService.ts";
 import type { agentFeedbacks } from "../../prisma/build/generated/prisma/client.ts";
 import { gemini } from "../llm/index.ts";
 import { fetchSideBar } from "./tools/documentationReader.ts";
-import { logger } from "../../external/logger.ts";
+
 import { inspectMiddleware } from "./middleware/inspect.ts";
 import { read_json_schema } from "./tools/schemaReader.ts";
 import { read_markdown_docs } from "./tools/markdownReader.ts";
@@ -211,7 +211,7 @@ export const generateRubrics = async (
 	]);
 
 	if (res.some((r) => r.status === "rejected")) {
-		logger.error("Error preparing context data:", res);
+		console.error("Error preparing context data:", res);
 		throw new Error(
 			"Failed to prepare context data. Please check the logs for more details.",
 		);

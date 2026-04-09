@@ -2,7 +2,7 @@ import { tool } from "langchain";
 import * as z from "zod";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { logger } from "../../../external/logger.ts";
+
 
 const DEFAULT_MAX_CHARS = 1800;
 const DOCS_ROOT = `${process.cwd()}/local_shell/momen_docs`;
@@ -308,7 +308,7 @@ export const read_markdown_docs = tool(
 				},
 			};
 		} catch (error) {
-			logger.error("Error reading markdown docs:", error);
+			console.error("Error reading markdown docs:", error);
 			return {
 				message: "Failed to read markdown docs.",
 				error: error instanceof Error ? error.message : String(error),

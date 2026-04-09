@@ -1,19 +1,26 @@
 {
 	"extends": "@tsconfig/node-ts/tsconfig.json",
 	"compilerOptions": {
-		"rootDir": "./",
-		"paths": {
-			"@src/*": ["./src/*"],
-			"@entities/*": ["./src/entities/*"],
-			"@interface/*": ["./src/interface/*"],
-			"@services/*": ["./src/services/*"],
-			"@graphql/*": ["./src/graphql/*"],
-			"@config/*": ["./src/config/*"],
-			"@db/*": ["./src/prisma/build/generated/prisma/*.ts"]
-		},
+		"rootDir": "./src",
+		"outDir": "./dist",
+		"module": "nodenext",
+		"target": "esnext",
+		"resolvePackageJsonImports": false,
+		"moduleResolution": "nodenext",
 		"pretty": true,
-		"typeRoots": ["./node_modules/@types"],
-		"erasableSyntaxOnly": false
+		"erasableSyntaxOnly": false,
+		"skipDefaultLibCheck": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"importHelpers": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true,
+		"lib": [
+			"ESNext"
+		]
 	},
-	"include": ["src", "./*.ts"]
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "local_shell", "dist"]
 }

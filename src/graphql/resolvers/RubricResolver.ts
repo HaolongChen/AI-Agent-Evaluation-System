@@ -1,6 +1,6 @@
 import { executionService } from "../../services/ExecutionService.ts";
 import { rubricService } from "../../services/RubricService.ts";
-import { logger } from "../../external/logger.ts";
+
 import type {
 	CopilotOutput,
 	MutationExecuteCopilotArgs,
@@ -19,7 +19,7 @@ export const rubricResolver = {
 			try {
 				return await rubricService.getRubricById(args.id);
 			} catch (error) {
-				logger.error("Error fetching rubric by id:", error);
+				console.error("Error fetching rubric by id:", error);
 				throw new Error("Failed to fetch rubric by id");
 			}
 		},
@@ -33,7 +33,7 @@ export const rubricResolver = {
 					args.context.userInputId,
 				);
 			} catch (error) {
-				logger.error("Error fetching rubrics by context:", error);
+				console.error("Error fetching rubrics by context:", error);
 				throw new Error("Failed to fetch rubrics by context");
 			}
 		},
@@ -50,7 +50,7 @@ export const rubricResolver = {
 					args.context.userInputId,
 				);
 			} catch (error) {
-				logger.error("Error executing copilot:", error);
+				console.error("Error executing copilot:", error);
 				throw new Error("Failed to execute copilot");
 			}
 		},
@@ -64,7 +64,7 @@ export const rubricResolver = {
 					args.context.userInputId,
 				);
 			} catch (error) {
-				logger.error("Error generating rubric:", error);
+				console.error("Error generating rubric:", error);
 				throw new Error("Failed to generate rubric");
 			}
 		},

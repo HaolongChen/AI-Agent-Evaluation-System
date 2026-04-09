@@ -2,7 +2,7 @@ import { GraphQLClient, ClientError } from 'graphql-request';
 import { createClient as createWsClient } from 'graphql-ws';
 import { WebSocket } from 'ws';
 import { URL, BACKEND_GRAPHQL_URL, SUBSCRIPTION_GRAPHQL_URL } from '../config/env.ts';
-import { logger } from './logger.ts';
+
 
 // ---------------------------------------------------------------------------
 // Auth state — token with 1-hour TTL
@@ -16,7 +16,7 @@ class AuthState {
   setToken(token: string): void {
     this.token = token;
     this.expiry = Date.now() + this.TTL_MS;
-    logger.info('Access token set, expires in', this.TTL_MS / 1000, 'seconds');
+    console.info('Access token set, expires in', this.TTL_MS / 1000, 'seconds');
   }
 
   clearToken(): void {
@@ -96,9 +96,9 @@ export async function gqlRequest<TData>(
     return await client.request<TData>(document);
   } catch (error) {
     if (error instanceof ClientError) {
-      logger.error('GraphQL error:', { errors: error.response.errors });
+      console.error('GraphQL error:', { errors: error.response.errors });
     } else {
-      logger.error('GraphQL request failed:', error);
+      console.error('GraphQL request failed:', error);
     }
     throw error;
   }
@@ -129,9 +129,9 @@ function getWsClient(): WsClient {
       return token ? { Authorization: `Bearer ${token}` } : {};
     },
     on: {
-      connected: () => logger.info('GraphQL subscription WS connected'),
-      closed: () => logger.info('GraphQL subscription WS closed'),
-      error: (err) => logger.error('GraphQL subscription WS error:', err),
+      connected: () => console.info('GraphQL subscription WS connected'),
+      closed: () => console.info('GraphQL subscription WS closed'),
+      error: (err) => console.error('GraphQL subscription WS error:', err),
     },
   });
 
@@ -161,9 +161,9 @@ export interface SubscriptionHandlers<TData> {
 //     MY_SUBSCRIPTION,
 //     { id: '123' },
 //     {
-//       next:     (data)  => logger.info('event', data),
-//       error:    (err)   => logger.error('sub error', err),
-//       complete: ()      => logger.info('done'),
+//       next:     (data)  => console.info('event', data),
+//       error:    (err)   => console.error('sub error', err),
+//       complete: ()      => console.info('done'),
 //     },
 //   );
 //
@@ -207,7 +207,7 @@ export function gqlSubscribe<TData>(
         }
       },
       error: (err) => {
-        logger.error('GraphQL subscription error:', err);
+        console.error('GraphQL subscription error:', err);
         handlers.error(err);
       },
       complete: () => {

@@ -11,7 +11,7 @@ import {
 import { goldenSetService } from "../../services/GoldenSetService.ts";
 import { projectService } from "../../services/ProjectService.ts";
 import { REVERSE_COPILOT_TYPES } from "../../config/constants.ts";
-import { logger } from "../../external/logger.ts";
+
 
 export const goldenSetResolver = {
 	Query: {
@@ -29,7 +29,7 @@ export const goldenSetResolver = {
 					] as CopilotType,
 				};
 			} catch (error) {
-				logger.error("Error fetching golden set by id:", error);
+				console.error("Error fetching golden set by id:", error);
 				throw new Error("Failed to fetch golden set by id");
 			}
 		},
@@ -48,7 +48,7 @@ export const goldenSetResolver = {
 					] as CopilotType,
 				}));
 			} catch (error) {
-				logger.error("Error fetching golden sets:", error);
+				console.error("Error fetching golden sets:", error);
 				throw new Error("Failed to fetch golden sets");
 			}
 		},
@@ -72,7 +72,7 @@ export const goldenSetResolver = {
 					] as CopilotType,
 				};
 			} catch (error) {
-				logger.error("Error initializing golden set:", error);
+				console.error("Error initializing golden set:", error);
 				throw new Error("Failed to initialize golden set");
 			}
 		},
@@ -88,7 +88,7 @@ export const goldenSetResolver = {
 				);
 				return { ...res, createdAt: res.createdAt.toISOString() };
 			} catch (error) {
-				logger.error("Error creating user input:", error);
+				console.error("Error creating user input:", error);
 				throw new Error("Failed to create user input");
 			}
 		},
@@ -108,7 +108,7 @@ export const goldenSetResolver = {
 					] as CopilotType,
 				};
 			} catch (error) {
-				logger.error("Error linking golden set to user input:", error);
+				console.error("Error linking golden set to user input:", error);
 				throw new Error("Failed to link golden set to user input");
 			}
 		},
@@ -120,7 +120,7 @@ export const goldenSetResolver = {
 			try {
 				return await projectService.createProject(args.projectName);
 			} catch (error) {
-				logger.error("Error creating project:", error);
+				console.error("Error creating project:", error);
 				throw new Error("Failed to create project");
 			}
 		},
@@ -132,7 +132,7 @@ export const goldenSetResolver = {
 				await projectService.deleteProject(args.projectExId);
 				return true;
 			} catch (error) {
-				logger.error("Error deleting project:", error);
+				console.error("Error deleting project:", error);
 				throw new Error("Failed to delete project");
 			}
 		},

@@ -14,7 +14,7 @@ AI-Agent-Evaluation-System/
 │   ├── services/             # Business logic, DB ops (see services/AGENTS.md)
 │   ├── jobs/                 # CLI job runners (see jobs/AGENTS.md)
 │   ├── graphql/              # GraphQL API layer (see graphql/resolvers/AGENTS.md)
-│   ├── utils/                # Pure utilities, logger (see utils/AGENTS.md)
+│   ├── utils/                # Pure utilities, console (see utils/AGENTS.md)
 │   ├── config/               # Environment, constants, prisma
 │   └── deep-agents/          # Local deep-agent implementation
 ├── tests/                    # Script-based tests (tsx execution)
@@ -41,7 +41,7 @@ AI-Agent-Evaluation-System/
 - **Strict TypeScript**: All strict flags enabled. Explicit types for all signatures.
 - **Naming**: PascalCase for classes/types, camelCase for functions/files (utils), UPPER_SNAKE_CASE for constants.
 - **Partial Updates**: Use `questionPatches`/`answerPatches` for HITL instead of full replacement.
-- **Logger**: Use `logger` instead of `console.log` for structured logging.
+- **Logger**: Use `console` instead of `console.log` for structured logging.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 - **`any` type**: Forbidden. Use `unknown` or proper types.

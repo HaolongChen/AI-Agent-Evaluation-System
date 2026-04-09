@@ -12,7 +12,7 @@ Shared utilities and cross-cutting concerns used across all layers.
 | `graphql-builder.ts` | Typed GQL documents (`GoldenSetDocuments`) + legacy string builders | Tests, job runners |
 | ~~`graphql-utils.ts`~~ | **Deleted** — was a deprecated shim; use `graphql-client.ts` directly | — |
 | `login.ts` | `login(phone, password)` — authenticates and returns `accessToken` | Job runners, zed/ |
-| `logger.ts` | Structured logging (console + caller location) | All modules |
+| `console.ts` | Structured logging (console + caller location) | All modules |
 | `types.ts` | Domain types: `CopilotMessage` union, `copilotType`, `SessionState`, enums | Services, jobs, state |
 | `graph-states.ts` | Copilot job runtime types: `JobState`, `Task`, `JobStateType`, `RuntimeContext` | Job runners |
 | `validators.ts` | Zod validators for common input fields | Services |
@@ -47,9 +47,9 @@ const unsubscribe = gqlSubscribe<MyEventData, MyVars>(
   MY_SUBSCRIPTION_DOCUMENT,
   { id: '123' },          // optional variables
   {
-    next:     (data) => logger.info('event', data),
-    error:    (err)  => logger.error('sub error', err),
-    complete: ()     => logger.info('subscription ended'),
+    next:     (data) => console.info('event', data),
+    error:    (err)  => console.error('sub error', err),
+    complete: ()     => console.info('subscription ended'),
   },
 );
 
@@ -76,19 +76,19 @@ Two tiers:
 ## LOGGER
 
 ```typescript
-import { logger } from '../utils/logger.ts';
 
-logger.info('Processing evaluation', { sessionId });
-logger.error('Failed operation', error);
-logger.debug('Trace info');  // Only in development (NODE_ENV check)
+
+console.info('Processing evaluation', { sessionId });
+console.error('Failed operation', error);
+console.debug('Trace info');  // Only in development (NODE_ENV check)
 ```
 
-- **Never** `console.log` — always use `logger`
+- **Never** `console.log` — always use `console`
 - Each call auto-includes `[FILE:LINE]` caller info from stack trace
 
 ## CONVENTIONS
 
-- Pure functions only (no side effects, except logger I/O and WebSocket state)
+- Pure functions only (no side effects, except console I/O and WebSocket state)
 - `graph-states.ts` types are used by job runners (`EvaluationJobRunner`) for WebSocket message parsing
 - `validators.ts` uses Zod — validators are named `<field>Validator` (e.g., `copilotTypeValidator`)
 - `formatters.ts` — stateless; safe to import anywhere

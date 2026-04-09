@@ -34,7 +34,7 @@ Exposes the evaluation engine via Apollo Server. Orchestrates Golden Set managem
 ### Resolver Guidelines
 - **Zero Logic**: No business logic or Prisma calls in resolvers. Use Services.
 - **Transformation**: Map Prisma models to GQL types (e.g., date to string, enum conversion).
-- **Error Handling**: Wrap in try-catch; use `logger.error` for internals, throw clean errors for clients.
+- **Error Handling**: Wrap in try-catch; use `console.error` for internals, throw clean errors for clients.
 - **Context**: Use the `context` argument for authentication and common utilities.
 
 ### Partial Updates (HITL)

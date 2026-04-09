@@ -1,25 +1,21 @@
-import { logger } from "../external/logger.ts";
+
 import { buildWsUrl } from "../config/env.ts";
 import { EvaluationJobRunner } from "../jobs/EvaluationJobRunner.ts";
 import { TypeSystemStore } from "../external/zed/TypeSystemStore.ts";
 import { projectService } from "./ProjectService.ts";
 import type { CopilotOutput } from "../graphql/generated/resolvers-types.ts";
-import { CopilotOutputInterface } from "@src/interface/copilotOutputInterface";
-import { GoldenSetInterface } from "@src/interface/goldenSetInterface";
-import { RubricInterface } from "@src/interface/rubricInterface";
-
+import { prisma } from "../config/prisma.ts";
 export class ExecutionService {
 	async getCopilotOutputs(goldenSetId: string, userInputId: string) {
 		try {
-			const copilotOutputInterface = new CopilotOutputInterface("findMany");
-			return await copilotOutputInterface.getCopilotOutputAdapter({
+			return await prisma.copilotOutput.findMany({
 				where: {
 					goldenSetId,
 					userInputId,
 				},
 			});
 		} catch (error) {
-			logger.error("Error fetching copilot outputs:", error);
+			console.error("Error fetching copilot outputs:", error);
 			throw new Error("Failed to fetch copilot outputs");
 		}
 	}
@@ -29,19 +25,14 @@ export class ExecutionService {
 		userInputId: string,
 	): Promise<CopilotOutput> {
 		try {
-			const goldenSetInterface = new GoldenSetInterface("findUnique");
-			const copilotInput = (await goldenSetInterface.getGoldenSetAdapter({
+			const copilotInput = await prisma.goldenSet.findUnique({
 				where: { id: goldenSetId },
 				include: {
 					userInputs: {
 						where: { id: userInputId },
 					},
 				},
-			})) as {
-				schemaId: string;
-				userInputs: Array<{ content: string }>;
-			} | null;
-
+			});
 			if (
 				!copilotInput ||
 				!copilotInput.userInputs ||
@@ -59,7 +50,7 @@ export class ExecutionService {
 				typeSystemStore.getSupportedCustomModelDescriptor(),
 			]);
 			if (results.some((r) => r.status === "rejected")) {
-				logger.error(
+				console.error(
 					"Error initializing type system store:",
 					results
 						.filter((r) => r.status === "rejected")
@@ -99,7 +90,7 @@ export class ExecutionService {
 				userInputId: copilotOutput.userInputId,
 			};
 		} catch (error) {
-			logger.error("Error executing copilot:", error);
+			console.error("Error executing copilot:", error);
 			throw new Error("Failed to execute copilot");
 		}
 	}
@@ -110,8 +101,7 @@ export class ExecutionService {
 		content: string,
 	) {
 		try {
-			const rubricInterface = new RubricInterface("findMany");
-			const rubrics = await rubricInterface.getRubricAdapter({
+			const rubrics = await prisma.rubric.findMany({
 				where: {
 					goldenSetId,
 					userInputId,
@@ -121,9 +111,8 @@ export class ExecutionService {
 				},
 			});
 
-			const copilotOutputInterface = new CopilotOutputInterface("create");
 			if (rubrics.length === 0) {
-				return await copilotOutputInterface.getCopilotOutputAdapter({
+				return await prisma.copilotOutput.create({
 					data: {
 						goldenSetId,
 						userInputId,
@@ -132,7 +121,7 @@ export class ExecutionService {
 				});
 			}
 
-			return await copilotOutputInterface.getCopilotOutputAdapter({
+			return await prisma.copilotOutput.create({
 				data: {
 					goldenSetId,
 					userInputId,
@@ -143,7 +132,7 @@ export class ExecutionService {
 				},
 			});
 		} catch (error) {
-			logger.error("Error saving copilot output:", error);
+			console.error("Error saving copilot output:", error);
 			throw new Error("Failed to save copilot output");
 		}
 	}

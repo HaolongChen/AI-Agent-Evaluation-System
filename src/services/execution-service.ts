@@ -1,9 +1,10 @@
 
-import { EvaluationJobRunner } from "../jobs/EvaluationJobRunner.ts";
+import { EvaluationJobRunner } from "../jobs/evaluation-job.ts";
 import { TypeSystemStore } from "../external/zed/TypeSystemStore.ts";
-import { projectService } from "./ProjectService.ts";
+import { projectService } from "./project-service.ts";
 import type { CopilotOutput } from "../graphql/generated/resolvers-types.ts";
 import { prisma } from "../config/prisma.ts";
+import { assertNotNull } from "../external/zed/helpers.ts";
 export class ExecutionService {
 	async getCopilotOutputs(goldenSetId: string, userInputId: string) {
 		try {
@@ -68,7 +69,7 @@ export class ExecutionService {
 				projectExId,
 				wsUrl,
 				copilotInput.userInputs[0].content,
-				typeSystemStore.schemaGraph,
+				assertNotNull(typeSystemStore.schemaGraph),
 			);
 			evalJobRunner.startJob();
 			const { editableText } = await evalJobRunner.waitForCompletion();

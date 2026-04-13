@@ -29,7 +29,7 @@ const patch = async (
 	if (length === 1) {
 		const href = dom.first().attr("href") || dom.first().attr("data-href");
 		if (href) {
-			const resolvedHref = await storeDocs(
+			const resolvedHref = await storeDocumentations(
 				href.at(-1) === "/" ? href.slice(0, -1) : href,
 				href === "/" ? "/introduction"
 				: (href.at(-1) === "/" ? href.slice(0, -1)
@@ -39,8 +39,9 @@ const patch = async (
 				name: dom.first().text(),
 				href: resolvedHref,
 			};
-		} else {
-			return null;
+		} else
+		{
+			throw new Error("Unexpected document structure: link element without href.");
 		}
 	} else if (length === 2) {
 		const children = await Promise.all(
@@ -110,7 +111,7 @@ export const fetchSideBar = async () => {
 	}
 };
 
-const storeDocs = async (route: string, path: string): Promise<string> => {
+const storeDocumentations = async (route: string, path: string): Promise<string> => {
 	try {
 		const response = await fetch(process.env.MOMEN_DOCS_URL + route);
 		if (!response.ok) {
@@ -133,20 +134,20 @@ const storeDocs = async (route: string, path: string): Promise<string> => {
 			);
 		}
 		const markdown = convertElementToMarkdown(article);
-		const dir = `${process.cwd()}/local_shell/momen_docs${path}`
+		const directory = `${process.cwd()}/local_shell/momen_docs${path}`
 			.split("/")
 			.slice(0, -1)
 			.join("/");
-		await mkdir(dir, { recursive: true });
+		await mkdir(directory, { recursive: true });
 		const fileBaseName = path.split("/").pop() ?? "index";
-		const markdownPath = `${dir}/${fileBaseName}.md`;
-		const summaryPath = `${dir}/${fileBaseName}.summary.md`;
+		const markdownPath = `${directory}/${fileBaseName}.md`;
+		const summaryPath = `${directory}/${fileBaseName}.summary.md`;
 		await Promise.all([
-			writeFile(markdownPath, markdown, "utf-8"),
-			writeFile(summaryPath, summarizeMarkdown(markdown), "utf-8"),
+			writeFile(markdownPath, markdown, "utf8"),
+			writeFile(summaryPath, summarizeMarkdown(markdown), "utf8"),
 		]);
 		return (
-			dir.slice(process.cwd().length + 12) + `/${path.split("/").pop()}.md`
+			directory.slice(process.cwd().length + 12) + `/${path.split("/").pop()}.md`
 		);
 	} catch (error) {
 		console.error("Error occurred while testing read_momen_docs tool:", error);

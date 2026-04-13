@@ -1,4 +1,4 @@
-import { analyticsService } from "../../services/AnalyticsService.ts";
+import { analyticsService } from "../../services/analytics-service.ts";
 import {
 	EvaluatorType,
 	type EvaluationResult,

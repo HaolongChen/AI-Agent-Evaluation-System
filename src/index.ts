@@ -24,8 +24,8 @@ app.use(
 	express.urlencoded({ extended: true }),
 	expressMiddleware(server),
 );
-app.get("/health", (_request: express.Request, res: express.Response) => {
-	res.send("server is healthy");
+app.get("/health", (_request: express.Request, result: express.Response) => {
+	result.send("server is healthy");
 });
 
 app.listen({ port: process.env.PORT }, () => {

@@ -1,4 +1,4 @@
-import { projectService } from "../services/ProjectService.ts";
+import { projectService } from "../services/project-service.ts";
 import { TypeSystemStore } from "./zed/TypeSystemStore.ts";
 import { authState } from "./graphql-client.ts";
 import { login } from "./login.ts";

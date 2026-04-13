@@ -30,28 +30,28 @@ export class EvaluationJobRunner {
 	private projectExId: string;
 	private wsUrl: string;
 	private query: string;
-	private schemaGraph: OpaqueSchemaGraph | null = null;
-	editableText: string = "";
-	rounds: number = 0;
-	tasks: TaskMessage[] | null = null;
+	private schemaGraph: OpaqueSchemaGraph;
+	private editableText: string = "";
+	private rounds: number = 0;
+	private tasks: TaskMessage[] | undefined = undefined;
 	private completionPromise: Promise<{
 		// response: string;
 		// tasks: TaskMessage[] | null;
 		editableText: string;
 	}>;
 	private resolveCompletion:
-		| ((result: { editableText: string }) => void)
-		| null = null;
-	private rejectCompletion: ((reason: Error) => void) | null = null;
+		| ( ( result: { editableText: string; } ) => void )
+		| undefined = undefined;
+	private rejectCompletion: ((reason: Error) => void) | undefined = undefined;
 	private isCompleted: boolean = false;
-	private timeoutId: NodeJS.Timeout | null = null;
+	private timeoutId: NodeJS.Timeout | undefined = undefined;
 	// private isSchemaSaving: boolean = false;
 
 	constructor(
 		projectExId: string,
 		wsUrl: string,
 		query: string,
-		schemaGraph: OpaqueSchemaGraph | null,
+		schemaGraph: OpaqueSchemaGraph,
 	) {
 		this.projectExId = projectExId;
 		this.wsUrl = wsUrl;
@@ -68,8 +68,7 @@ export class EvaluationJobRunner {
 		});
 	}
 
-	socket: WebSocket | null = null;
-
+	private socket: WebSocket | undefined;
 	async connect(): Promise<void> {
 		this.socket = new WebSocket(this.wsUrl);
 
@@ -261,7 +260,7 @@ export class EvaluationJobRunner {
 		try {
 			const result: CopilotApiResultJs = CopilotJs.toolCalls(
 				assertNotNull(this.schemaGraph),
-				null,
+				undefined,
 				product,
 				clientType,
 				"WEB", // clientExId: wechat mini program, web, etc.
@@ -291,7 +290,7 @@ export class EvaluationJobRunner {
 	private clearTimeout(): void {
 		if (this.timeoutId) {
 			clearTimeout(this.timeoutId);
-			this.timeoutId = null;
+			this.timeoutId = undefined;
 		}
 	}
 

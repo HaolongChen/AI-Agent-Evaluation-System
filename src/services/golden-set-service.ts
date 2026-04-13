@@ -33,11 +33,14 @@ const toPrismaCopilotType = (copilotType: CopilotType): PrismaCopilotType => {
 };
 
 export class GoldenSetService {
-	async getGoldenSetById(id: string): Promise<goldenSet | null> {
+	async getGoldenSetById(id: string): Promise<goldenSet> {
 		try {
 			const goldenSet = await prisma.goldenSet.findUnique({
 				where: { id },
-			})
+			} )
+			if (!goldenSet) {
+				throw new Error(`Golden set with ID ${id} not found`);
+			}
 			return goldenSet;
 		} catch (error) {
 			console.error("Error fetching golden set by ID:", error);
@@ -73,9 +76,9 @@ export class GoldenSetService {
 		try {
 			const userInput = await prisma.userInput.create({
 				data: {
-					description: description || null,
+					description: description,
 					content,
-					createdBy: createdBy || null,
+					createdBy: createdBy,
 				},
 			});
 			return userInput;

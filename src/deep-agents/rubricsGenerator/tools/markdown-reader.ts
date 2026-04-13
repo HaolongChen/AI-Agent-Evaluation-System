@@ -1,7 +1,7 @@
 import { tool } from "langchain";
 import * as z from "zod";
 import { readdir, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import path from "node:path";
 
 
 const DEFAULT_MAX_CHARS = 1800;
@@ -13,7 +13,7 @@ const normalizeText = (value: string): string =>
 	value.replaceAll(/\s+/g, " ").trim();
 
 const collectMarkdownFiles = async (
-	dir: string,
+	directory: string,
 	maxFiles: number,
 	includeSummaryFiles: boolean,
 	collector: string[] = [],
@@ -22,13 +22,13 @@ const collectMarkdownFiles = async (
 		return collector;
 	}
 
-	const entries = await readdir(dir, { withFileTypes: true });
+	const entries = await readdir(directory, { withFileTypes: true });
 	for (const entry of entries) {
 		if (collector.length >= maxFiles) {
 			break;
 		}
 
-		const fullPath = join(dir, entry.name);
+		const fullPath = path.join(directory, entry.name);
 		if (entry.isDirectory()) {
 			await collectMarkdownFiles(
 				fullPath,
@@ -113,13 +113,13 @@ const hasHeading = (markdown: string, heading: string): boolean => {
 	return extractByHeading(markdown, heading).length > 0;
 };
 
-const loadCandidateDocs = async (
-	path?: string,
+const loadCandidateDocumentations = async (
+	filePath?: string,
 ): Promise<{ files: string[]; usingSummaryFiles: boolean }> => {
-	if (path && path.trim()) {
-		const targetPath = join(
+	if (filePath && filePath.trim()) {
+		const targetPath = path.join(
 			DOCS_ROOT,
-			path.startsWith("/") ? path.slice(1) : path,
+			filePath.startsWith("/") ? filePath.slice(1) : filePath,
 		);
 		return { files: [targetPath], usingSummaryFiles: false };
 	}
@@ -157,7 +157,7 @@ const selectBestFile = async (
 	if (!term) {
 		return {
 			selectedFile: firstFile,
-			markdown: await readFile(firstFile, "utf-8"),
+			markdown: await readFile(firstFile, "utf8"),
 		};
 	}
 
@@ -177,13 +177,13 @@ const selectBestFile = async (
 			return 0;
 		};
 
-		const rankedByPath = [...files].sort(
+		const rankedByPath = [...files].toSorted(
 			(a, b) => filenameScore(b) - filenameScore(a),
 		);
 		const selectedFile = rankedByPath[0] ?? firstFile;
 		return {
 			selectedFile,
-			markdown: await readFile(selectedFile, "utf-8"),
+			markdown: await readFile(selectedFile, "utf8"),
 		};
 	}
 
@@ -191,9 +191,9 @@ const selectBestFile = async (
 		selectedFile: string;
 		markdown: string;
 		score: number;
-	} | null = null;
+	} | undefined;
 	for (const filePath of files) {
-		const markdown = await readFile(filePath, "utf-8");
+		const markdown = await readFile(filePath, "utf8");
 		const headingScore =
 			heading && heading.trim() && hasHeading(markdown, heading.trim()) ? 2 : 0;
 		const keywordScore =
@@ -217,7 +217,7 @@ const selectBestFile = async (
 
 	return {
 		selectedFile: bestMatch?.selectedFile ?? firstFile,
-		markdown: bestMatch?.markdown ?? (await readFile(firstFile, "utf-8")),
+		markdown: bestMatch?.markdown ?? (await readFile(firstFile, "utf8")),
 	};
 };
 
@@ -235,14 +235,14 @@ const truncateContent = (
 	};
 };
 
-export const read_markdown_docs = tool(
+export const read_markdown_documentations = tool(
 	async ({
-		path,
+		filePath,
 		heading,
 		keyword,
 		maxChars,
 	}: {
-		path?: string;
+		filePath?: string;
 		heading?: string;
 		keyword?: string;
 		maxChars?: number;
@@ -257,7 +257,7 @@ export const read_markdown_docs = tool(
 					Math.floor(maxChars)
 				:	DEFAULT_MAX_CHARS;
 
-			const { files, usingSummaryFiles } = await loadCandidateDocs(path);
+			const { files, usingSummaryFiles } = await loadCandidateDocumentations(filePath);
 
 			if (files.length === 0) {
 				return {
@@ -287,15 +287,15 @@ export const read_markdown_docs = tool(
 			return {
 				file: selectedFile.slice(DOCS_ROOT.length),
 				usingSummaryFiles,
-				headingFilter: heading ?? null,
-				keywordFilter: keyword ?? null,
+				headingFilter: heading,
+				keywordFilter: keyword,
 				headings: headings.slice(0, 20),
 				resultSummary: `Loaded documentation excerpt from ${selectedFile.slice(DOCS_ROOT.length)} after scanning ${files.length} file(s).`,
 				truncated,
 				charLimit: resolvedMaxChars,
 				excerpt,
 				reasoningArtifacts: {
-					source: "read_markdown_docs",
+					source: "read_markdown_documentations",
 					focus: heading?.trim() || keyword?.trim() || "document_overview",
 					keyHeadings: headings.slice(0, MAX_REASONING_HEADINGS),
 					evidenceTargets: [
@@ -308,19 +308,19 @@ export const read_markdown_docs = tool(
 				},
 			};
 		} catch (error) {
-			console.error("Error reading markdown docs:", error);
+			console.error("Error reading markdown documentations:", error);
 			return {
-				message: "Failed to read markdown docs.",
+				message: "Failed to read markdown documentations.",
 				error: error instanceof Error ? error.message : String(error),
 			};
 		}
 	},
 	{
-		name: "read_markdown_docs",
+		name: "read_markdown_documentations",
 		description:
-			"Read large markdown docs lazily by heading or keyword with bounded output.",
+			"Read large markdown documentations lazily by heading or keyword with bounded output.",
 		schema: z.object({
-			path: z
+			filePath: z
 				.string()
 				.optional()
 				.describe(

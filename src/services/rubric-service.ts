@@ -1,5 +1,5 @@
 import { Decimal } from "@prisma/client/runtime/client";
-import { generateRubrics } from "../deep-agents/rubricsGenerator/rubricsGenerator.ts";
+import { generateRubrics } from "../deep-agents/rubricsGenerator/rubrics-generator.ts";
 import type { Criteria, Rubric } from "../graphql/generated/resolvers-types.ts";
 import type {
 	agentFeedbacks,

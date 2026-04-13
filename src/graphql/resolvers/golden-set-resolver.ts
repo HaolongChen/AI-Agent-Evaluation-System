@@ -8,8 +8,8 @@ import {
 	type QueryGetGoldenSetsArgs as QueryGetGoldenSetsArguments,
 	type UserInput,
 } from "../generated/resolvers-types.ts";
-import { goldenSetService } from "../../services/GoldenSetService.ts";
-import { projectService } from "../../services/ProjectService.ts";
+import { goldenSetService } from "../../services/golden-set-service.ts";
+import { projectService } from "../../services/project-service.ts";
 import { REVERSE_COPILOT_TYPES } from "../../config/constants.ts";
 
 
@@ -18,14 +18,13 @@ export const goldenSetResolver = {
 		getGoldenSetById: async (
 			_: unknown,
 			arguments_: QueryGetGoldenSetByIdArguments,
-		): Promise<GoldenSet | null> => {
+		): Promise<GoldenSet> => {
 			try {
-				const res = await goldenSetService.getGoldenSetById(arguments_.id);
-				if (!res) return null;
+				const result = await goldenSetService.getGoldenSetById(arguments_.id);
 				return {
-					...res,
+					...result,
 					copilotType: REVERSE_COPILOT_TYPES[
-						res.copilotType as keyof typeof REVERSE_COPILOT_TYPES
+						result.copilotType as keyof typeof REVERSE_COPILOT_TYPES
 					] as CopilotType,
 				};
 			} catch (error) {
@@ -38,10 +37,10 @@ export const goldenSetResolver = {
 			arguments_: QueryGetGoldenSetsArguments,
 		): Promise<GoldenSet[]> => {
 			try {
-				const res = await goldenSetService.getGoldenSets(
+				const result = await goldenSetService.getGoldenSets(
 					arguments_.filters ?? undefined,
 				);
-				return res.map((gs) => ({
+				return result.map((gs) => ({
 					...gs,
 					copilotType: REVERSE_COPILOT_TYPES[
 						gs.copilotType as keyof typeof REVERSE_COPILOT_TYPES
@@ -60,15 +59,15 @@ export const goldenSetResolver = {
 			arguments_: MutationInitializeGoldenSetArguments,
 		): Promise<GoldenSet> => {
 			try {
-				const res = await goldenSetService.createGoldenSet(
+				const result = await goldenSetService.createGoldenSet(
 					arguments_.input.schemaId,
 					arguments_.input.copilotType,
 					arguments_.input.modelName ?? "undefined",
 				);
 				return {
-					...res,
+					...result,
 					copilotType: REVERSE_COPILOT_TYPES[
-						res.copilotType as keyof typeof REVERSE_COPILOT_TYPES
+						result.copilotType as keyof typeof REVERSE_COPILOT_TYPES
 					] as CopilotType,
 				};
 			} catch (error) {
@@ -81,12 +80,12 @@ export const goldenSetResolver = {
 			arguments_: MutationCreateUserInputArguments,
 		): Promise<UserInput> => {
 			try {
-				const res = await goldenSetService.createUserInput(
+				const result = await goldenSetService.createUserInput(
 					arguments_.input.description ?? "",
 					arguments_.input.query,
 					arguments_.input.createdBy ?? "",
 				);
-				return { ...res, createdAt: res.createdAt.toISOString() };
+				return { ...result, createdAt: result.createdAt.toISOString() };
 			} catch (error) {
 				console.error("Error creating user input:", error);
 				throw new Error("Failed to create user input");
@@ -97,14 +96,14 @@ export const goldenSetResolver = {
 			arguments_: MutationLinkGoldenSetToUserInputArguments,
 		): Promise<GoldenSet> => {
 			try {
-				const res = await goldenSetService.linkGoldenSetToUserInput(
+				const result = await goldenSetService.linkGoldenSetToUserInput(
 					arguments_.context.goldenSetId,
 					arguments_.context.userInputId,
 				);
 				return {
-					...res,
+					...result,
 					copilotType: REVERSE_COPILOT_TYPES[
-						res.copilotType as keyof typeof REVERSE_COPILOT_TYPES
+						result.copilotType as keyof typeof REVERSE_COPILOT_TYPES
 					] as CopilotType,
 				};
 			} catch (error) {

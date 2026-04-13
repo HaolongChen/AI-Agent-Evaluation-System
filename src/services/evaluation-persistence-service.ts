@@ -7,7 +7,7 @@
 //   EvaluationQuestion,
 // } from '../langGraph/state/state.ts';
 // import { CopilotType } from '../../build/generated/prisma/enums.ts';
-// 
+//
 // import type { adaptiveRubricJudgeRecord } from '../../build/generated/prisma/client.ts';
 
 export class EvaluationPersistenceService {
@@ -20,7 +20,7 @@ export class EvaluationPersistenceService {
   //       where: { sessionId },
   //     });
 
-  //     const res = await Promise.allSettled(
+  //     const result = await Promise.allSettled(
   //       questionSet.questions.map((question) =>
   //         prisma.adaptiveRubric.create({
   //           data: {
@@ -37,10 +37,10 @@ export class EvaluationPersistenceService {
   //       ),
   //     );
 
-  //     if (res.some((r) => r.status === 'rejected')) {
+  //     if (result.some((r) => r.status === 'rejected')) {
   //       console.error(
   //         'Error saving some questions to database:',
-  //         res.filter((r) => r.status === 'rejected'),
+  //         result.filter((r) => r.status === 'rejected'),
   //       );
   //       throw new Error('Failed to save some questions');
   //     }
@@ -55,7 +55,7 @@ export class EvaluationPersistenceService {
   //   agentEvaluation: QuestionEvaluation,
   // ): Promise<void> {
   //   try {
-  //     const res = await Promise.allSettled(
+  //     const result = await Promise.allSettled(
   //       agentEvaluation.answers.map((answer) =>
   //         prisma.adaptiveRubricJudgeRecord.create({
   //           data: {
@@ -68,10 +68,10 @@ export class EvaluationPersistenceService {
   //       ),
   //     );
 
-  //     if (res.some((r) => r.status === 'rejected')) {
+  //     if (result.some((r) => r.status === 'rejected')) {
   //       console.error(
   //         'Error saving some agent evaluation answers to database:',
-  //         res.filter((r) => r.status === 'rejected'),
+  //         result.filter((r) => r.status === 'rejected'),
   //       );
   //       throw new Error('Failed to save some agent evaluation answers');
   //     }

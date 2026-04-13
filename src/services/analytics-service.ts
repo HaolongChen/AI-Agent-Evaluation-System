@@ -72,7 +72,7 @@ export class AnalyticsService {
 				] as EvaluatorType,
 				modelName: session.modelName,
 				startedAt: session.startedAt.toISOString(),
-				completedAt: session.completedAt?.toISOString() ?? null,
+				completedAt: session.completedAt?.toISOString(),
 				evaluations: session.evaluationRecords.map((record) =>
 					this.toGraphqlEvaluationRecord(record),
 				),
@@ -96,7 +96,7 @@ export class AnalyticsService {
 				})) as EvaluationSessionWithRecords | null;
 
 			if (!session) {
-				return null;
+				throw new Error(`Evaluation session with ID ${id} not found`);
 			}
 
 			return {
@@ -109,7 +109,7 @@ export class AnalyticsService {
 				] as EvaluatorType,
 				modelName: session.modelName,
 				startedAt: session.startedAt.toISOString(),
-				completedAt: session.completedAt?.toISOString() ?? null,
+				completedAt: session.completedAt?.toISOString(),
 				evaluations: session.evaluationRecords.map((record) =>
 					this.toGraphqlEvaluationRecord(record),
 				),
@@ -126,7 +126,7 @@ export class AnalyticsService {
 				where: { id },
 			});
 			if (!result) {
-				return null;
+				throw new Error(`Evaluation result with ID ${id} not found`);
 			}
 			return {
 				id: result.id,
@@ -219,7 +219,7 @@ export class AnalyticsService {
 							create: evaluations.map((answer) => ({
 								criteriaId: answer.criteriaId,
 								evaluation: answer.evaluation,
-								feedback: answer.feedback ?? null,
+								feedback: answer.feedback,
 							})),
 						},
 					},
@@ -236,7 +236,7 @@ export class AnalyticsService {
 				evaluatorType,
 				modelName: session.modelName,
 				startedAt: session.startedAt.toISOString(),
-				completedAt: session.completedAt?.toISOString() ?? null,
+				completedAt: session.completedAt?.toISOString(),
 				evaluations: session.evaluationRecords.map((record) =>
 					this.toGraphqlEvaluationRecord(record),
 				),

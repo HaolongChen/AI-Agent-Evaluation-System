@@ -88,7 +88,6 @@ export class ProjectService {
 	): Promise<string> {
 		return new Promise<string>((resolve, reject) => {
 			const subscriptionId = uuidv4();
-			let cleanup: (() => void) | undefined;
 			let settled = false;
 
 			const settle = (function_: () => void): void => {
@@ -97,7 +96,7 @@ export class ProjectService {
 				function_();
 			};
 
-			cleanup = openApolloSubscription(
+			const cleanup = openApolloSubscription(
 				subscriptionId,
 				"OnProjectCreationStatusChanged",
 				GQL_ON_PROJECT_CREATION_STATUS_CHANGED,

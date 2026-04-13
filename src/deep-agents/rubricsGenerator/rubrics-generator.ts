@@ -16,11 +16,11 @@ import { Feedback, save_agent_feedbacks } from "./tools/feedback.ts";
 import { rubricService } from "../../services/rubric-service.ts";
 import type { agentFeedbacks } from "../../prisma/build/generated/prisma/client.ts";
 import { gemini } from "../llm/index.ts";
-import { fetchSideBar } from "./tools/documentationReader.ts";
+import { fetchSideBar } from "./tools/documentation-reader.ts";
 
 import { inspectMiddleware } from "./middleware/inspect.ts";
-import { read_json_schema } from "./tools/schemaReader.ts";
-import { read_markdown_docs } from "./tools/markdownReader.ts";
+import { read_json_schema } from "./tools/schema-reader.ts";
+import { read_markdown_documentations } from "./tools/markdown-reader.ts";
 
 const promptsBasePath = new URL("prompts/", import.meta.url);
 const feedbackPrompt = await fs.readFile(
@@ -36,8 +36,8 @@ const rubricsGeneratorPromptTemplate = await fs.readFile(
 	"utf8",
 );
 
-const docsLookupPromptTemplate = await fs.readFile(
-	new URL("docsLookupPrompt.md", promptsBasePath),
+const documentationsLookupPromptTemplate = await fs.readFile(
+	new URL("documentationsLookupPrompt.md", promptsBasePath),
 	"utf8",
 );
 const schemaLookupPromptText = schemaLookupPromptTemplate.replace(
@@ -48,14 +48,14 @@ const rubricsGeneratorPromptText = rubricsGeneratorPromptTemplate.replace(
 	"${feedbackPrompt}",
 	feedbackPrompt,
 );
-const docsLookupPromptText = docsLookupPromptTemplate.replace(
+const documentationsLookupPromptText = documentationsLookupPromptTemplate.replace(
 	"${feedbackPrompt}",
 	feedbackPrompt,
 );
 
 const rubricsGeneratorFeedback = new Feedback("rubrics-generator-agent");
 const schemaLookupAgentFeedback = new Feedback("schema-lookup-agent");
-const docsLookupAgentFeedback = new Feedback("docs-lookup-agent");
+const documentationsLookupAgentFeedback = new Feedback("documentations-lookup-agent");
 
 const schemaQueryWorker: SubAgent = {
 	name: "schema-query-worker",
@@ -66,34 +66,34 @@ const schemaQueryWorker: SubAgent = {
 	tools: [read_json_schema],
 };
 
-const docsExcerptWorker: SubAgent = {
-	name: "docs-excerpt-worker",
+const documentationsExcerptWorker: SubAgent = {
+	name: "documentations-excerpt-worker",
 	description:
 		"Specialized worker for focused markdown evidence extraction by heading/keyword.",
 	systemPrompt:
-		"You are docs-excerpt-worker. Split complex documentation requests into small heading/keyword extraction tasks and return concise evidence only.",
-	tools: [read_markdown_docs],
+		"You are documentations-excerpt-worker. Split complex documentation requests into small heading/keyword extraction tasks and return concise evidence only.",
+	tools: [read_markdown_documentations],
 };
 
-const docsLookupAgent: SubAgent = {
-	name: "docs-lookup-agent",
+const documentationsLookupAgent: SubAgent = {
+	name: "documentations-lookup-agent",
 	middleware: [
 		createMiddleware({
-			name: "docsLookupFeedbackMiddleware",
-			tools: [save_agent_feedbacks(docsLookupAgentFeedback.addFeedback)],
+			name: "documentationsLookupFeedbackMiddleware",
+			tools: [save_agent_feedbacks(documentationsLookupAgentFeedback.addFeedback)],
 		}),
 		createSubAgentMiddleware({
 			defaultModel: gemini(process.env.GOOGLE_API_KEY),
-			defaultTools: [read_markdown_docs],
-			subagents: [docsExcerptWorker],
+			defaultTools: [read_markdown_documentations],
+			subagents: [documentationsExcerptWorker],
 			generalPurposeAgent: false,
 			taskDescription:
-				"Delegate complicated docs lookup into smaller evidence extraction subtasks.",
+				"Delegate complicated documentations lookup into smaller evidence extraction subtasks.",
 		}),
 		inspectMiddleware,
 	],
-	tools: [read_markdown_docs],
-	systemPrompt: docsLookupPromptText,
+	tools: [read_markdown_documentations],
+	systemPrompt: documentationsLookupPromptText,
 	description:
 		"This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided crdt schema model and user input.",
 };
@@ -187,7 +187,7 @@ export const generateRubrics = async (
 		}),
 		fs.mkdir(`${process.cwd()}/local_shell/schemas`, { recursive: true }),
 	]);
-	const res = await Promise.allSettled([
+	const result = await Promise.allSettled([
 		getSchemaModel(schemaId).then((arrayBuffer) => {
 			const modelBinary = new Uint8Array(arrayBuffer);
 			const binaryBase64 = fromUint8Array(modelBinary);
@@ -209,8 +209,8 @@ export const generateRubrics = async (
 			),
 	]);
 
-	if (res.some((r) => r.status === "rejected")) {
-		console.error("Error preparing context data:", res);
+	if (result.some((r) => r.status === "rejected")) {
+		console.error("Error preparing context data:", result);
 		throw new Error(
 			"Failed to prepare context data. Please check the logs for more details.",
 		);
@@ -224,7 +224,7 @@ export const generateRubrics = async (
 		model: gemini(process.env.GOOGLE_API_KEY),
 		backend: (rt) => new StateBackend(rt),
 		contextSchema: contextSchema,
-		subagents: [schemaLookupAgent, docsLookupAgent],
+		subagents: [schemaLookupAgent, documentationsLookupAgent],
 		systemPrompt: rubricsGeneratorPromptText,
 		checkpointer,
 		middleware: [
@@ -268,8 +268,8 @@ export const generateRubrics = async (
 		),
 		rubricService.saveAgentFeedbacks(
 			rubricId,
-			"docs-lookup-agent",
-			docsLookupAgentFeedback.getFeedbacks(),
+			"documentations-lookup-agent",
+			documentationsLookupAgentFeedback.getFeedbacks(),
 		),
 	];
 

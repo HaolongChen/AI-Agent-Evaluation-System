@@ -1,6 +1,6 @@
-import { goldenSetResolver } from "./resolvers/GoldenSetResolver.ts";
-import { rubricResolver } from "./resolvers/RubricResolver.ts";
-import { sessionResolver } from "./resolvers/SessionResolver.ts";
+import { goldenSetResolver } from "./resolvers/golden-set-resolver.ts";
+import { rubricResolver } from "./resolvers/rubric-resolver.ts";
+import { sessionResolver } from "./resolvers/session-resolver.ts";
 
 
 const resolvers = {

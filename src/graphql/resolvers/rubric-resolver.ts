@@ -1,4 +1,4 @@
-import { executionService } from "../../services/ExecutionService.ts";
+import { executionService } from "../../services/execution-service.ts";
 import { rubricService } from "../../services/rubric-service.ts";
 
 import type {

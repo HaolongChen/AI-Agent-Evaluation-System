@@ -220,7 +220,7 @@ export const read_json_schema = tool(
 
 class Schema {
 	readonly schemaUrl: string = "http://json-schema.org/draft-07/schema";
-	private schema: unknown = null;
+	private schema: unknown;
 
 	private state: Promise<void>;
 

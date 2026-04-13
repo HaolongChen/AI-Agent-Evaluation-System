@@ -36,7 +36,7 @@ export class AnalyticsService {
 
 	async getEvaluationSessions(
 		filters?: SessionFilters,
-	): Promise<Array<EvaluationSession> | null> {
+	): Promise<Array<EvaluationSession>> {
 		try {
 			const sessions = await prisma.evaluationSession.findMany({
 				where: {
@@ -85,7 +85,7 @@ export class AnalyticsService {
 
 	async getEvaluationSessionById(
 		id: string,
-	): Promise<EvaluationSession | null> {
+	): Promise<EvaluationSession> {
 		try {
 			const session =
 				(await prisma.evaluationSession.findUnique({
@@ -120,7 +120,7 @@ export class AnalyticsService {
 		}
 	}
 
-	async getEvaluationResultById(id: string): Promise<EvaluationResult | null> {
+	async getEvaluationResultById(id: string): Promise<EvaluationResult> {
 		try {
 			const result = await prisma.evaluationResult.findUnique({
 				where: { id },
@@ -146,7 +146,7 @@ export class AnalyticsService {
 
 	async getEvaluationResults(
 		filters?: ResultFilters,
-	): Promise<Array<EvaluationResult> | null> {
+	): Promise<Array<EvaluationResult>> {
 		try {
 			const results = await prisma.evaluationResult.findMany({
 				where: {

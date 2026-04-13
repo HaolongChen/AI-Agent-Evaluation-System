@@ -65,17 +65,14 @@ export class RubricService {
 		}
 	}
 
-	async getRubricById(id: string): Promise<Rubric | null> {
+	async getRubricById(id: string): Promise<Rubric> {
 		try {
 			const rubricItem = (await prisma.rubric.findUnique({
 				where: { id },
 				include: {
 					criterion: true,
 				},
-			})) as RubricWithCriteria | null;
-			if (!rubricItem) {
-				throw new Error("Rubric not found for the given id");
-			}
+			})) as RubricWithCriteria;
 			return this.toGraphqlRubric(rubricItem);
 		} catch (error) {
 			console.error("Error fetching rubric by id:", error);

@@ -15,7 +15,7 @@ export const rubricResolver = {
 		getRubricById: async (
 			_: unknown,
 			arguments_: QueryGetRubricByIdArguments,
-		): Promise<Rubric | null> => {
+		): Promise<Rubric> => {
 			try {
 				return await rubricService.getRubricById(arguments_.id);
 			} catch (error) {
@@ -26,7 +26,7 @@ export const rubricResolver = {
 		getRubricByContext: async (
 			_: unknown,
 			arguments_: QueryGetRubricByContextArguments,
-		): Promise<Rubric[] | null> => {
+		): Promise<Rubric[]> => {
 			try {
 				return await rubricService.getRubrics(
 					arguments_.context.goldenSetId,

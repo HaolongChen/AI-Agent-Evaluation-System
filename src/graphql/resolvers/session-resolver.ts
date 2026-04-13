@@ -16,7 +16,7 @@ export const sessionResolver = {
 		getEvaluationSessionById: async (
 			_: unknown,
 			arguments_: QueryGetEvaluationSessionByIdArguments,
-		): Promise<EvaluationSession | null> => {
+		): Promise<EvaluationSession> => {
 			try {
 				return await analyticsService.getEvaluationSessionById(arguments_.id);
 			} catch (error) {
@@ -27,7 +27,7 @@ export const sessionResolver = {
 		getEvaluationSessions: async (
 			_: unknown,
 			arguments_: QueryGetEvaluationSessionsArguments,
-		): Promise<EvaluationSession[] | null> => {
+		): Promise<EvaluationSession[]> => {
 			try {
 				return await analyticsService.getEvaluationSessions(
 					arguments_.filters ?? undefined,
@@ -40,7 +40,7 @@ export const sessionResolver = {
 		getEvaluationResultById: async (
 			_: unknown,
 			arguments_: QueryGetEvaluationResultByIdArguments,
-		): Promise<EvaluationResult | null> => {
+		): Promise<EvaluationResult> => {
 			try {
 				return await analyticsService.getEvaluationResultById(arguments_.id);
 			} catch (error) {
@@ -51,7 +51,7 @@ export const sessionResolver = {
 		getEvaluationResults: async (
 			_: unknown,
 			arguments_: QueryGetEvaluationResultsArguments,
-		): Promise<EvaluationResult[] | null> => {
+		): Promise<EvaluationResult[]> => {
 			try {
 				return await analyticsService.getEvaluationResults(
 					arguments_.filters ?? undefined,

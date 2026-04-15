@@ -1,43 +1,17 @@
 import { prisma } from "../config/prisma.ts";
-
-import type {
-	GoldenSetFilters,
-	CopilotType,
-} from "../graphql/generated/resolvers-types.ts";
 import type {
 	goldenSet,
 	userInput,
 } from "../prisma/build/generated/prisma/client.ts";
-import type { CopilotType as PrismaCopilotType } from "../prisma/build/generated/prisma/enums.ts";
+import type { goldenSetCreateInput, goldenSetFindUniqueArgs as goldenSetFindUniqueArguments } from "../prisma/build/generated/prisma/models.ts";
 
-const toPrismaCopilotType = (copilotType: CopilotType): PrismaCopilotType => {
-	switch (copilotType) {
-		case "DATA_MODEL_BUILDER": {
-			return "dataModelBuilder";
-		}
-		case "UI_BUILDER": {
-			return "uiBuilder";
-		}
-		case "ACTION_FLOW_BUILDER": {
-			return "actionFlowBuilder";
-		}
-		case "LOG_ANALYZER": {
-			return "logAnalyzer";
-		}
-		case "AGENT_BUILDER": {
-			return "agentBuilder";
-		}
-	}
-
-	throw new Error(`Unsupported copilot type: ${copilotType}`);
-};
 
 export class GoldenSetService {
 	async getGoldenSetById(id: string): Promise<goldenSet> {
 		try {
 			const goldenSet = await prisma.goldenSet.findUnique({
 				where: { id },
-			} )
+			});
 			if (!goldenSet) {
 				throw new Error(`Golden set with ID ${id} not found`);
 			}
@@ -48,18 +22,10 @@ export class GoldenSetService {
 		}
 	}
 
-	async getGoldenSets(filters?: GoldenSetFilters): Promise<Array<goldenSet>> {
+	async getGoldenSets(filters: goldenSetFindUniqueArguments["where"]): Promise<Array<goldenSet>> {
 		try {
-			const copilotType =
-				filters?.copilotType ?
-					toPrismaCopilotType(filters.copilotType)
-				:	undefined;
 			const goldenSets = await prisma.goldenSet.findMany({
-				where: {
-					...(filters?.schemaId && { schemaId: filters.schemaId }),
-					...(copilotType && { copilotType }),
-					...(filters?.modelName && { modelName: filters.modelName }),
-				},
+				where: filters
 			});
 			return goldenSets;
 		} catch (error) {
@@ -68,39 +34,27 @@ export class GoldenSetService {
 		}
 	}
 
-	async createUserInput(
-		description: string,
-		content: string,
-		createdBy: string,
-	): Promise<userInput> {
+	async createUserInput(userInput: {
+		description?: string;
+		content: string;
+		createdBy?: string;
+	}): Promise<userInput> {
 		try {
-			const userInput = await prisma.userInput.create({
-				data: {
-					description: description,
-					content,
-					createdBy: createdBy,
-				},
+			const result = await prisma.userInput.create({
+				data: userInput,
 			});
-			return userInput;
+			return result;
 		} catch (error) {
 			console.error("Error creating user input:", error);
 			throw new Error("Failed to create user input");
 		}
 	}
 
-	async createGoldenSet(
-		schemaId: string,
-		copilotType: CopilotType,
-		modelName: string,
-	): Promise<goldenSet> {
-		try {
-			const copilotTypeValue = toPrismaCopilotType(copilotType);
+	async createGoldenSet(goldenSetInput: goldenSetCreateInput): Promise<goldenSet> {
+		try
+		{
 			const goldenSet = await prisma.goldenSet.create({
-				data: {
-					schemaId,
-					copilotType: copilotTypeValue,
-					modelName,
-				},
+				data: goldenSetInput,
 			});
 			return goldenSet;
 		} catch (error) {
@@ -109,10 +63,13 @@ export class GoldenSetService {
 		}
 	}
 
-	async linkGoldenSetToUserInput(
-		goldenSetId: string,
-		userInputId: string,
-	): Promise<goldenSet> {
+	async linkGoldenSetToUserInput({
+		goldenSetId,
+		userInputId,
+	}: {
+		goldenSetId: string;
+		userInputId: string;
+	}){
 		try {
 			const goldenSet = await prisma.goldenSet.update({
 				where: { id: goldenSetId },

@@ -2,264 +2,275 @@
 import { gql } from "graphql-tag";
 export const typeDefs = gql`
     type Query {
-  	"""
-  	Retrieve a single golden set by ID.
-  	"""
-  	getGoldenSetById(id: String!): GoldenSet!
+	"""
+	Retrieve a single golden set by ID.
+	"""
+	getGoldenSetById(id: String!): GoldenSet!
 
-  	"""
-  	List golden sets with optional filtering.
-  	"""
-  	getGoldenSets(filters: GoldenSetFilters): [GoldenSet]!
+	"""
+	List golden sets with optional filtering.
+	"""
+	getGoldenSets(filters: GoldenSetFilters): [GoldenSet]!
 
-  	"""
-  	Retrieve a single evaluation session by ID.
-  	"""
-  	getEvaluationSessionById(id: String!): EvaluationSession!
+	"""
+	Retrieve a single evaluation session by ID.
+	"""
+	getEvaluationSessionById(id: String!): EvaluationSession!
 
-  	"""
-  	List evaluation sessions with optional filtering.
-  	"""
-  	getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!
+	"""
+	List evaluation sessions with optional filtering.
+	"""
+	getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!
 
-  	"""
-  	Get all rubric criteria for a specific session.
-  	"""
-  	getRubricById(id: String!): Rubric!
+	"""
+	Get all rubric criteria for a specific session.
+	"""
+	getRubricById(id: String!): Rubric!
 
-  	"""
-  	Get rubric criteria filtered by review parameters.
-  	Useful for finding criteria pending human review.
-  	"""
-  	getRubricByContext(context: CopilotInput!): [Rubric]!
+	"""
+	Get rubric criteria filtered by review parameters.
+	Useful for finding criteria pending human review.
+	"""
+	getRubricByContext(context: CopilotInput!): [Rubric]!
 
-  	"""
-  	Get final evaluation result for a completed session.
-  	"""
-  	getEvaluationResultById(id: String!): EvaluationResult!
+	"""
+	Get final evaluation result for a completed session.
+	"""
+	getEvaluationResultById(id: String!): EvaluationResult!
 
-  	getEvaluationResults(filters: ResultFilters): [EvaluationResult]!
-  }
+	getEvaluationResults(filters: ResultFilters): [EvaluationResult]!
+}
 
-  type Mutation {
-  	initializeGoldenSet(input: GoldenSetInput!): GoldenSet!
+type Mutation {
+	initializeGoldenSet(input: GoldenSetInput!): GoldenSet!
 
-  	"""
-  	Upsert golden set with a new user input (atomic operation).
-  	Creates golden set if it doesn't exist, or adds input to existing one.
-  	RECOMMENDED for adding test cases.
-  	"""
-  	createUserInput(input: UserInputInput!): UserInput!
+	"""
+	Upsert golden set with a new user input (atomic operation).
+	Creates golden set if it doesn't exist, or adds input to existing one.
+	RECOMMENDED for adding test cases.
+	"""
+	createUserInput(input: UserInputInput!): UserInput!
 
-  	linkGoldenSetToUserInput(context: CopilotInput!): GoldenSet!
+	linkGoldenSetToUserInput(context: CopilotInput!): GoldenSetWithInputs!
 
-  	generateRubric(context: CopilotInput!): Rubric!
+	generateRubric(context: CopilotInput!): Rubric!
 
-  	executeCopilot(context: CopilotInput!): CopilotOutput!
+	executeCopilot(context: CopilotInput!): CopilotOutput!
 
-  	submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
+	submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
 
-  	createProject(projectName: String!): String!
+	createProject(projectName: String!): String!
 
-  	deleteProject(projectExId: String!): Boolean!
-  }
-  """
-  Type of AI Copilot being evaluated.
-  """
-  enum CopilotType {
-  	"Data model builder for database schema generation"
-  	DATA_MODEL_BUILDER
-  	"UI component builder for frontend development"
-  	UI_BUILDER
-  	"Workflow builder for action flows"
-  	ACTION_FLOW_BUILDER
-  	"Log analysis assistant"
-  	LOG_ANALYZER
-  	"General agent builder"
-  	AGENT_BUILDER
-  }
+	deleteProject(projectExId: String!): Boolean!
+}
+"""
+Type of AI Copilot being evaluated.
+"""
+enum CopilotType {
+	"Data model builder for database schema generation"
+	DATA_MODEL_BUILDER
+	"UI component builder for frontend development"
+	UI_BUILDER
+	"Workflow builder for action flows"
+	ACTION_FLOW_BUILDER
+	"Log analysis assistant"
+	LOG_ANALYZER
+	"General agent builder"
+	AGENT_BUILDER
+}
 
-  """
-  A golden set represents a collection of test cases (user inputs)
-  and expected copilot outputs for evaluating agent performance.
-  Identified uniquely by (schemaId, copilotType, modelName).
-  """
-  type GoldenSet {
-  	"Unique database identifier"
-  	id: String!
-  	"External project identifier from Functorz"
-  	schemaId: String!
-  	"Type of copilot being evaluated"
-  	copilotType: CopilotType!
-  	"Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
-  	modelName: String
-  }
+"""
+A golden set represents a collection of test cases (user inputs)
+and expected copilot outputs for evaluating agent performance.
+Identified uniquely by (schemaId, copilotType, modelName).
+"""
+type GoldenSet {
+	"Unique database identifier"
+	id: String!
+	"External project identifier from Functorz"
+	schemaId: String!
+	"Type of copilot being evaluated"
+	copilotType: CopilotType!
+	"Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
+	modelName: String
+}
 
-  """
-  A user input represents a test case prompt or query that will be sent
-  to the copilot being evaluated.
-  """
-  type UserInput {
-  	"Unique identifier"
-  	id: String!
-  	"Optional description of what this input tests"
-  	description: String
-  	"The actual prompt or query content"
-  	content: String!
-  	"Timestamp when input was added"
-  	createdAt: String
-  	"Account ID of creator"
-  	createdBy: String
-  }
+type GoldenSetWithInputs {
+	"Unique database identifier"
+	id: String!
+	"External project identifier from Functorz"
+	schemaId: String!
+	"Type of copilot being evaluated"
+	copilotType: CopilotType!
+	"Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
+	modelName: String
+	userInputs: [UserInput]!
+}
 
-  """
-  A copilot output represents the expected or actual response from the copilot,
-  including performance metrics (latency, tokens, context usage).
-  """
-  type CopilotOutput {
-  	"Unique identifier"
-  	id: String!
-  	"Parent golden set ID"
-  	goldenSetId: String!
-  	"Associated user input ID"
-  	userInputId: String!
-  	"The copilot's generated output content"
-  	content: String!
-  	"Timestamp when output was captured"
-  	createdAt: String
+"""
+A user input represents a test case prompt or query that will be sent
+to the copilot being evaluated.
+"""
+type UserInput {
+	"Unique identifier"
+	id: String!
+	"Optional description of what this input tests"
+	description: String
+	"The actual prompt or query content"
+	content: String!
+	"Timestamp when input was added"
+	createdAt: String!
+	"Account ID of creator"
+	createdBy: String
+}
 
-  }
+"""
+A copilot output represents the expected or actual response from the copilot,
+including performance metrics (latency, tokens, context usage).
+"""
+type CopilotOutput {
+	"Unique identifier"
+	id: String!
+	"Parent golden set ID"
+	goldenSetId: String!
+	"Associated user input ID"
+	userInputId: String!
+	"The copilot's generated output content"
+	content: String!
+	"Timestamp when output was captured"
+	createdAt: String!
+}
 
-  type Rubric {
-  	id: String!
-  	goldenSetId: String!
-  	userInputId: String!
-  	criterion: [Criteria!]!
-  }
+type Rubric {
+	id: String!
+	goldenSetId: String!
+	userInputId: String!
+	criterion: [Criteria!]!
+}
 
-  type Criteria {
-  	id: String!
-  	rubricId: String!
-  	version: String!
-  	title: String
-  	content: String!
-  	expectedEvaluation: Boolean!
-  	weight: Float!
-  }
+type Criteria {
+	id: String!
+	rubricId: String!
+	version: String!
+	title: String
+	content: String!
+	expectedEvaluation: Boolean!
+	weight: Float!
+}
 
-  enum EvaluatorType {
-  	HUMAN
-  	AGENT
-  }
+enum EvaluatorType {
+	HUMAN
+	AGENT
+}
 
-  """
-  An evaluation session represents a single run of the evaluation workflow
-  against a golden set, producing rubric criteria and scored results.
-  """
-  type EvaluationSession {
-  	"Unique session identifier"
-  	id: String!
-  	copilotOutputId: String!
-  	rubricId: String!
-  	evaluatorId: String!
-  	evaluatorType: EvaluatorType!
-  	"LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')"
-  	modelName: String
-  	evaluations: [EvaluationRecord]
-  	"Timestamp when session started"
-  	startedAt: String
-  	"Timestamp when session completed (null if still running)"
-  	completedAt: String
-  }
+"""
+An evaluation session represents a single run of the evaluation workflow
+against a golden set, producing rubric criteria and scored results.
+"""
+type EvaluationSession {
+	"Unique session identifier"
+	id: String!
+	copilotOutputId: String!
+	rubricId: String!
+	evaluatorId: String!
+	evaluatorType: EvaluatorType!
+	"LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')"
+	modelName: String
+	evaluations: [EvaluationRecord]
+	"Timestamp when session started"
+	startedAt: String
+	"Timestamp when session completed (null if still running)"
+	completedAt: String
+}
 
-  """
-  A judge record captures the agent or human evaluator's assessment
-  of a single rubric criterion.
-  """
-  type EvaluationRecord {
-  	"Unique evaluation record identifier"
-  	id: String!
-  	"Parent rubric criterion session ID"
-  	copilotOutputId: String!
-  	rubricId: String!
-  	criteriaId: String!
-  	evaluatorId: String!
-  	"Binary evaluation to the criterion question"
-  	evaluation: Boolean!
-  	"Optional explanation or reasoning for the evaluation"
-  	feedback: String
-  }
+"""
+A judge record captures the agent or human evaluator's assessment
+of a single rubric criterion.
+"""
+type EvaluationRecord {
+	"Unique evaluation record identifier"
+	id: String!
+	"Parent rubric criterion session ID"
+	copilotOutputId: String!
+	rubricId: String!
+	criteriaId: String!
+	evaluatorId: String!
+	"Binary evaluation to the criterion question"
+	evaluation: Boolean!
+	"Optional explanation or reasoning for the evaluation"
+	feedback: String
+}
 
-  """
-  Final evaluation result aggregating all rubric criterion scores
-  and generating a comprehensive report.
-  """
-  type EvaluationResult {
-  	"Unique result identifier"
-  	id: String!
-  	evaluatorId: String!
-  	copilotOutputId: String!
-  	rubricId: String!
+"""
+Final evaluation result aggregating all rubric criterion scores
+and generating a comprehensive report.
+"""
+type EvaluationResult {
+	"Unique result identifier"
+	id: String!
+	evaluatorId: String!
+	copilotOutputId: String!
+	rubricId: String!
 
-  	"Aggregated score across all weighted criteria (0 - 100)"
-  	overallScore: Float!
-  	"Executive summary of evaluation"
-  	summary: String!
-  	"Detailed analysis with per-criterion breakdown"
-  	detailedAnalysis: String!
-  	"Audit trail of workflow steps and decisions"
-  	auditTrace: [String]
-  }
+	"Aggregated score across all weighted criteria (0 - 100)"
+	overallScore: Float!
+	"Executive summary of evaluation"
+	summary: String!
+	"Detailed analysis with per-criterion breakdown"
+	detailedAnalysis: String!
+	"Audit trail of workflow steps and decisions"
+	auditTrace: [String]
+}
 
-  input GoldenSetFilters {
-  	schemaId: String
-  	copilotType: CopilotType
-  	modelName: String
-  }
+input GoldenSetFilters {
+	schemaId: String
+	copilotType: CopilotType
+	modelName: String
+}
 
-  input SessionFilters {
-  	evaluatorId: String
-  	copilotOutputId: String
-  	rubricId: String
-  	evaluatorType: EvaluatorType
-  }
+input SessionFilters {
+	evaluatorId: String
+	copilotOutputId: String
+	rubricId: String
+	evaluatorType: EvaluatorType
+}
 
-  input ResultFilters {
-  	evaluatorId: String
-  	copilotOutputId: String
-  	rubricId: String
-  }
+input ResultFilters {
+	evaluatorId: String
+	copilotOutputId: String
+	rubricId: String
+}
 
-  input EvaluationInput {
-  	criteriaId: String!
-  	"Binary evaluation"
-  	evaluation: Boolean!
-  	"Detailed explanation of the evaluation"
-  	feedback: String
-  }
+input EvaluationInput {
+	criteriaId: String!
+	"Binary evaluation"
+	evaluation: Boolean!
+	"Detailed explanation of the evaluation"
+	feedback: String
+}
 
-  input CopilotInput {
-  	goldenSetId: String!
-  	userInputId: String!
-  }
+input CopilotInput {
+	goldenSetId: String!
+	userInputId: String!
+}
 
-  input HumanEvaluationInput {
-  	evaluatorId: String!
-  	copilotOutputId: String!
-  	rubricId: String!
-  	evaluations: [EvaluationInput!]!
-  }
+input HumanEvaluationInput {
+	evaluatorId: String!
+	copilotOutputId: String!
+	rubricId: String!
+	evaluations: [EvaluationInput!]!
+}
 
-  input GoldenSetInput {
-  	schemaId: String!
-  	copilotType: CopilotType!
-  	modelName: String
-  }
+input GoldenSetInput {
+	schemaId: String!
+	copilotType: CopilotType!
+	modelName: String
+}
 
-  input UserInputInput {
-  	description: String
-  	query: String!
-  	createdBy: String
-  }
+input UserInputInput {
+	description: String
+	content: String!
+	createdBy: String
+}
 
 `

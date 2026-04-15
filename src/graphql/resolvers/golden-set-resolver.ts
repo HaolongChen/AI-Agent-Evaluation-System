@@ -1,6 +1,7 @@
 import {
 	CopilotType,
 	type GoldenSet,
+	type GoldenSetWithInputs,
 	type MutationCreateUserInputArgs as MutationCreateUserInputArguments,
 	type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
 	type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
@@ -11,7 +12,6 @@ import {
 import { goldenSetService } from "../../services/golden-set-service.ts";
 import { projectService } from "../../services/project-service.ts";
 import { REVERSE_COPILOT_TYPES } from "../../config/constants.ts";
-
 
 export const goldenSetResolver = {
 	Query: {
@@ -37,9 +37,7 @@ export const goldenSetResolver = {
 			arguments_: QueryGetGoldenSetsArguments,
 		): Promise<GoldenSet[]> => {
 			try {
-				const result = await goldenSetService.getGoldenSets(
-					arguments_.filters ?? undefined,
-				);
+				const result = await goldenSetService.getGoldenSets(arguments_.filters);
 				return result.map((gs) => ({
 					...gs,
 					copilotType: REVERSE_COPILOT_TYPES[
@@ -80,12 +78,13 @@ export const goldenSetResolver = {
 			arguments_: MutationCreateUserInputArguments,
 		): Promise<UserInput> => {
 			try {
-				const result = await goldenSetService.createUserInput(
-					arguments_.input.description ?? "",
-					arguments_.input.query,
-					arguments_.input.createdBy ?? "",
-				);
-				return { ...result, createdAt: result.createdAt.toISOString() };
+				const result = await goldenSetService.createUserInput(arguments_.input);
+				return {
+					...result,
+					createdAt: result.createdAt.toISOString(),
+					description: result.description ?? undefined,
+					createdBy: result.createdBy ?? undefined,
+				};
 			} catch (error) {
 				console.error("Error creating user input:", error);
 				throw new Error("Failed to create user input");
@@ -94,17 +93,22 @@ export const goldenSetResolver = {
 		linkGoldenSetToUserInput: async (
 			_: unknown,
 			arguments_: MutationLinkGoldenSetToUserInputArguments,
-		): Promise<GoldenSet> => {
+		): Promise<GoldenSetWithInputs> => {
 			try {
 				const result = await goldenSetService.linkGoldenSetToUserInput(
-					arguments_.context.goldenSetId,
-					arguments_.context.userInputId,
+					arguments_.context,
 				);
 				return {
 					...result,
 					copilotType: REVERSE_COPILOT_TYPES[
 						result.copilotType as keyof typeof REVERSE_COPILOT_TYPES
 					] as CopilotType,
+					userInputs: result.userInputs.map((ui) => ({
+						...ui,
+						createdAt: ui.createdAt.toISOString(),
+						description: ui.description ?? undefined,
+						createdBy: ui.createdBy ?? undefined,
+					})),
 				};
 			} catch (error) {
 				console.error("Error linking golden set to user input:", error);

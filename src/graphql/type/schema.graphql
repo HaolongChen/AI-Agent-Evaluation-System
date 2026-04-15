@@ -48,7 +48,7 @@ type Mutation {
 	"""
 	createUserInput(input: UserInputInput!): UserInput!
 
-	linkGoldenSetToUserInput(context: CopilotInput!): GoldenSet!
+	linkGoldenSetToUserInput(context: CopilotInput!): GoldenSetWithInputs!
 
 	generateRubric(context: CopilotInput!): Rubric!
 
@@ -92,6 +92,18 @@ type GoldenSet {
 	modelName: String
 }
 
+type GoldenSetWithInputs {
+	"Unique database identifier"
+	id: String!
+	"External project identifier from Functorz"
+	schemaId: String!
+	"Type of copilot being evaluated"
+	copilotType: CopilotType!
+	"Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
+	modelName: String
+	userInputs: [UserInput]!
+}
+
 """
 A user input represents a test case prompt or query that will be sent
 to the copilot being evaluated.
@@ -104,7 +116,7 @@ type UserInput {
 	"The actual prompt or query content"
 	content: String!
 	"Timestamp when input was added"
-	createdAt: String
+	createdAt: String!
 	"Account ID of creator"
 	createdBy: String
 }
@@ -123,8 +135,7 @@ type CopilotOutput {
 	"The copilot's generated output content"
 	content: String!
 	"Timestamp when output was captured"
-	createdAt: String
-
+	createdAt: String!
 }
 
 type Rubric {
@@ -255,6 +266,6 @@ input GoldenSetInput {
 
 input UserInputInput {
 	description: String
-	query: String!
+	content: String!
 	createdBy: String
 }

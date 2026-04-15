@@ -2,9 +2,9 @@
 import { EvaluationJobRunner } from "../jobs/evaluation-job.ts";
 import { TypeSystemStore } from "../external/zed/TypeSystemStore.ts";
 import { projectService } from "./project-service.ts";
-import type { CopilotOutput } from "../graphql/generated/resolvers-types.ts";
 import { prisma } from "../config/prisma.ts";
 import { assertNotNull } from "../external/zed/helpers.ts";
+import type { copilotOutput } from "../prisma/build/generated/prisma/client.ts";
 export class ExecutionService {
 	async getCopilotOutputs(goldenSetId: string, userInputId: string) {
 		try {
@@ -23,7 +23,7 @@ export class ExecutionService {
 	async executeCopilot(
 		goldenSetId: string,
 		userInputId: string,
-	): Promise<CopilotOutput> {
+	): Promise<copilotOutput> {
 		try {
 			const copilotInput = await prisma.goldenSet.findUnique({
 				where: { id: goldenSetId },
@@ -82,13 +82,7 @@ export class ExecutionService {
 				editableText,
 			);
 
-			return {
-				id: copilotOutput.id,
-				content: copilotOutput.content,
-				createdAt: copilotOutput.createdAt.toISOString(),
-				goldenSetId: copilotOutput.goldenSetId,
-				userInputId: copilotOutput.userInputId,
-			};
+			return copilotOutput;
 		} catch (error) {
 			console.error("Error executing copilot:", error);
 			throw new Error("Failed to execute copilot");

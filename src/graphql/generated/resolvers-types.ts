@@ -1,5 +1,5 @@
-export type Maybe<T> = T | null;
-export type InputMaybe<T> = Maybe<T>;
+export type Maybe<T> = T | undefined;
+export type InputMaybe<T> = T | undefined;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
 export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
@@ -28,7 +28,7 @@ export type CopilotOutput = {
   /** The copilot's generated output content */
   content: Scalars['String']['output'];
   /** Timestamp when output was captured */
-  createdAt?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['String']['output'];
   /** Parent golden set ID */
   goldenSetId: Scalars['String']['output'];
   /** Unique identifier */
@@ -165,6 +165,19 @@ export type GoldenSetInput = {
   schemaId: Scalars['String']['input'];
 };
 
+export type GoldenSetWithInputs = {
+  __typename?: 'GoldenSetWithInputs';
+  /** Type of copilot being evaluated */
+  copilotType: CopilotType;
+  /** Unique database identifier */
+  id: Scalars['String']['output'];
+  /** Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro') */
+  modelName?: Maybe<Scalars['String']['output']>;
+  /** External project identifier from Functorz */
+  schemaId: Scalars['String']['output'];
+  userInputs: Array<Maybe<UserInput>>;
+};
+
 export type HumanEvaluationInput = {
   copilotOutputId: Scalars['String']['input'];
   evaluations: Array<EvaluationInput>;
@@ -185,7 +198,7 @@ export type Mutation = {
   executeCopilot: CopilotOutput;
   generateRubric: Rubric;
   initializeGoldenSet: GoldenSet;
-  linkGoldenSetToUserInput: GoldenSet;
+  linkGoldenSetToUserInput: GoldenSetWithInputs;
   submitHumanEvaluation: EvaluationSession;
 };
 
@@ -321,7 +334,7 @@ export type UserInput = {
   /** The actual prompt or query content */
   content: Scalars['String']['output'];
   /** Timestamp when input was added */
-  createdAt?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['String']['output'];
   /** Account ID of creator */
   createdBy?: Maybe<Scalars['String']['output']>;
   /** Optional description of what this input tests */
@@ -331,7 +344,7 @@ export type UserInput = {
 };
 
 export type UserInputInput = {
+  content: Scalars['String']['input'];
   createdBy?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
-  query: Scalars['String']['input'];
 };

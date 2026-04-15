@@ -1,54 +1,17 @@
-import { Decimal } from "@prisma/client/runtime/client";
 import { generateRubrics } from "../deep-agents/rubricsGenerator/rubrics-generator.ts";
-import type { Criteria, Rubric } from "../graphql/generated/resolvers-types.ts";
 import type {
 	agentFeedbacks,
-	criteria,
 	rubric,
 } from "../prisma/build/generated/prisma/client.ts";
 import { prisma } from "../config/prisma.ts";
-type RubricWithCriteria = rubric & {
-	criterion: criteria[];
-};
-
-type RubricCriterionInput = {
-	title: string;
-	content: string;
-	expectedAnswer: boolean;
-	weight: Decimal;
-	version?: string;
-};
-
+import type { rubricCreateInput } from "../prisma/build/generated/prisma/models.ts";
 export class RubricService {
-	private toGraphqlCriteria(criteriaItem: criteria): Criteria {
-		return {
-			id: criteriaItem.id,
-			rubricId: criteriaItem.rubricId,
-			version: criteriaItem.version,
-			title: criteriaItem.title,
-			content: criteriaItem.content,
-			expectedEvaluation: criteriaItem.expectedAnswer,
-			weight: Number(criteriaItem.weight),
-		};
-	}
-
-	private toGraphqlRubric(rubricItem: RubricWithCriteria): Rubric {
-		return {
-			id: rubricItem.id,
-			goldenSetId: rubricItem.goldenSetId,
-			userInputId: rubricItem.userInputId,
-			criterion: rubricItem.criterion.map((item) =>
-				this.toGraphqlCriteria(item),
-			),
-		};
-	}
-
 	async getRubrics(
 		goldenSetId: string,
 		userInputId: string,
-	): Promise<Rubric[]> {
+	): Promise<rubric[]> {
 		try {
-			const rubrics = (await prisma.rubric.findMany({
+			const rubrics = await prisma.rubric.findMany({
 				where: {
 					goldenSetId,
 					userInputId,
@@ -57,23 +20,26 @@ export class RubricService {
 					criterion: true,
 				},
 				orderBy: { createdAt: "asc" },
-			})) as RubricWithCriteria[];
-			return rubrics.map((item) => this.toGraphqlRubric(item));
+			});
+			return rubrics;
 		} catch (error) {
 			console.error("Error fetching rubrics:", error);
 			throw new Error("Failed to fetch rubrics");
 		}
 	}
 
-	async getRubricById(id: string): Promise<Rubric> {
+	async getRubricById(id: string): Promise<rubric> {
 		try {
-			const rubricItem = (await prisma.rubric.findUnique({
+			const rubricItem = await prisma.rubric.findUnique({
 				where: { id },
 				include: {
 					criterion: true,
 				},
-			})) as RubricWithCriteria;
-			return this.toGraphqlRubric(rubricItem);
+			});
+			if (!rubricItem) {
+				throw new Error(`Rubric with ID ${id} not found`);
+			}
+			return rubricItem;
 		} catch (error) {
 			console.error("Error fetching rubric by id:", error);
 			throw new Error("Failed to fetch rubric by id");
@@ -83,7 +49,7 @@ export class RubricService {
 	async generateRubric(
 		goldenSetId: string,
 		userInputId: string,
-	): Promise<Rubric> {
+	): Promise<rubric> {
 		try {
 			const copilotInput = await prisma.goldenSet.findUnique({
 				where: { id: goldenSetId },
@@ -98,11 +64,7 @@ export class RubricService {
 						},
 					},
 				},
-			}) as {
-				schemaId: string;
-				userInputs: Array<{ content: string }>;
-			} | null;
-
+			});
 			if (
 				!copilotInput ||
 				!copilotInput.userInputs ||
@@ -125,49 +87,30 @@ export class RubricService {
 				throw new Error("Total weight of rubrics cannot be zero");
 			}
 
-			const savedRubric = await this.saveRubric(
+			const savedRubric = await this.saveRubric({
 				goldenSetId,
 				userInputId,
-				rubrics.rubrics.map((item) => ({
-					title: item.title,
-					content: item.content,
-					expectedAnswer: item.expectedAnswer,
-					weight: new Decimal(item.weight / overallWeight),
-				})),
-			);
+				...rubrics,
+			});
 
 			await Promise.allSettled(feedbacks(savedRubric.id));
-			return this.toGraphqlRubric(savedRubric);
+			return savedRubric;
 		} catch (error) {
 			console.error("Error generating rubric:", error);
 			throw new Error("Failed to generate rubric");
 		}
 	}
 
-	async saveRubric(
-		goldenSetId: string,
-		userInputId: string,
-		criteriaItems: RubricCriterionInput[],
-	): Promise<RubricWithCriteria> {
+	async saveRubric(rubricInput: rubricCreateInput): Promise<rubric> {
 		try {
-			return (await prisma.rubric.create({
+			return await prisma.rubric.create({
 				data: {
-					goldenSetId,
-					userInputId,
-					criterion: {
-						create: criteriaItems.map((item) => ({
-							version: item.version || "1.0",
-							title: item.title,
-							content: item.content,
-							expectedAnswer: item.expectedAnswer,
-							weight: item.weight,
-						})),
-					},
+					...rubricInput,
 				},
 				include: {
 					criterion: true,
 				},
-			})) as RubricWithCriteria;
+			});
 		} catch (error) {
 			console.error("Error saving rubric:", error);
 			throw new Error("Failed to save rubric");

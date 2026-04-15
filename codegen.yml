@@ -15,3 +15,5 @@ generates:
       strictScalars: true
       extractAllFieldsToTypes: true
       contextType: "unknown"
+      maybeValue: "T | undefined"
+      maybeType: "T | undefined"

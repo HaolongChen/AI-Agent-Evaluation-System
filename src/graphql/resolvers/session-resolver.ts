@@ -1,3 +1,4 @@
+import { EVALUATOR } from "../../config/constants.ts";
 import { analyticsService } from "../../services/analytics-service.ts";
 import {
 	EvaluatorType,
@@ -9,7 +10,6 @@ import {
 	type QueryGetEvaluationSessionByIdArgs as QueryGetEvaluationSessionByIdArguments,
 	type QueryGetEvaluationSessionsArgs as QueryGetEvaluationSessionsArguments,
 } from "../generated/resolvers-types.ts";
-
 
 export const sessionResolver = {
 	Query: {
@@ -29,9 +29,7 @@ export const sessionResolver = {
 			arguments_: QueryGetEvaluationSessionsArguments,
 		): Promise<EvaluationSession[]> => {
 			try {
-				return await analyticsService.getEvaluationSessions(
-					arguments_.filters ?? undefined,
-				);
+				return await analyticsService.getEvaluationSessions(arguments_.filters);
 			} catch (error) {
 				console.error("Error fetching evaluation sessions:", error);
 				throw new Error("Failed to fetch evaluation sessions");
@@ -53,9 +51,7 @@ export const sessionResolver = {
 			arguments_: QueryGetEvaluationResultsArguments,
 		): Promise<EvaluationResult[]> => {
 			try {
-				return await analyticsService.getEvaluationResults(
-					arguments_.filters ?? undefined,
-				);
+				return await analyticsService.getEvaluationResults(arguments_.filters);
 			} catch (error) {
 				console.error("Error fetching evaluation results:", error);
 				throw new Error("Failed to fetch evaluation results");
@@ -69,13 +65,10 @@ export const sessionResolver = {
 			arguments_: MutationSubmitHumanEvaluationArguments,
 		): Promise<EvaluationSession> => {
 			try {
-				return await analyticsService.createEvaluationSession(
-					arguments_.input.copilotOutputId,
-					arguments_.input.evaluatorId,
-					EvaluatorType.Human,
-					arguments_.input.rubricId,
-					arguments_.input.evaluations,
+				const session = await analyticsService.createEvaluationSession(
+					{...arguments_.input, evaluatorType: EvaluatorType.Human}
 				);
+				return session;
 			} catch (error) {
 				console.error("Error submitting human evaluation:", error);
 				throw new Error("Failed to submit human evaluation");

@@ -11,7 +11,7 @@ import type {
 	evaluationRecordCreateManyArgs as evaluationRecordCreateManyArguments,
 	evaluationResultFindManyArgs as evaluationResultFindManyArguments,
 	// evaluationSessionCreateArgs as evaluationSessionCreateArguments,
-    evaluationSessionFindUniqueArgs as evaluationSessionFindUniqueArguments,
+    evaluationSessionFindManyArgs as evaluationSessionFindManyArguments,
 } from "../prisma/build/generated/prisma/models.ts";
 
 type EvaluationSessionWithRecords = evaluationSession & {
@@ -21,7 +21,7 @@ type EvaluationSessionWithRecords = evaluationSession & {
 export class AnalyticsService {
 
 	async getEvaluationSessions(
-		filters: evaluationSessionFindUniqueArguments["where"],
+		filters: evaluationSessionFindManyArguments["where"],
 	): Promise<Array<evaluationSession>> {
 		try {
 			const sessions = await prisma.evaluationSession.findMany({

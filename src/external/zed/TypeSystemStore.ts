@@ -282,3 +282,14 @@ export class TypeSystemStore {
 		return ZTypeSystem.withEnabledFeatures<T>([], func);
 	};
 }
+
+export const getTypeSystemStoreForCopilot = async ( schemaId: string ): Promise<TypeSystemStore> =>
+{
+	const typeSystemStore = new TypeSystemStore();
+	await Promise.allSettled( [
+		typeSystemStore.getAFCustomCodeTemplates(),
+		typeSystemStore.getSupportedCustomModelDescriptor(),
+		typeSystemStore.rehydrate( schemaId ),
+	] );
+	return typeSystemStore;
+}

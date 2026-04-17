@@ -1,6 +1,6 @@
 
 import { EvaluationJobRunner } from "../jobs/evaluation-job.ts";
-import { TypeSystemStore } from "../external/zed/TypeSystemStore.ts";
+import { getTypeSystemStoreForCopilot } from "../external/zed/TypeSystemStore.ts";
 import { projectService } from "./project-service.ts";
 import { prisma } from "../config/prisma.ts";
 import { assertNotNull } from "../external/zed/helpers.ts";
@@ -35,8 +35,6 @@ export class ExecutionService {
 			});
 			if (
 				!copilotInput ||
-				!copilotInput.userInputs ||
-				copilotInput.userInputs.length !== 1 ||
 				!copilotInput.userInputs[0]?.content
 			) {
 				throw new Error(
@@ -44,23 +42,7 @@ export class ExecutionService {
 				);
 			}
 
-			const typeSystemStore = new TypeSystemStore();
-			const results = await Promise.allSettled([
-				typeSystemStore.getAFCustomCodeTemplates(),
-				typeSystemStore.getSupportedCustomModelDescriptor(),
-			]);
-			if (results.some((r) => r.status === "rejected")) {
-				console.error(
-					"Error initializing type system store:",
-					results
-						.filter((r) => r.status === "rejected")
-						.map((r) => (r as PromiseRejectedResult).reason),
-				);
-				throw new Error("Failed to initialize type system store");
-			}
-
-			await typeSystemStore.rehydrate(copilotInput.schemaId);
-
+			const typeSystemStore = await getTypeSystemStoreForCopilot(copilotInput.schemaId);
 			const projectName = `temp-project-${goldenSetId}-${userInputId}-${Date.now()}`;
 			const projectExId = await projectService.createProject(projectName);
 			const wsUrl = `${process.env.BACKEND_WS_URL}projectExId=${projectExId}&userToken=${process.env.userToken}&clientType=${process.env.clientType}`;
@@ -76,13 +58,11 @@ export class ExecutionService {
 
 			await projectService.deleteProject(projectExId);
 
-			const copilotOutput = await this.saveCopilotOutput(
+			return await this.saveCopilotOutput(
 				goldenSetId,
 				userInputId,
 				editableText,
 			);
-
-			return copilotOutput;
 		} catch (error) {
 			console.error("Error executing copilot:", error);
 			throw new Error("Failed to execute copilot");

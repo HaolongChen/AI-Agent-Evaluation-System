@@ -3,7 +3,7 @@ import type {
 	goldenSet,
 	userInput,
 } from "../prisma/build/generated/prisma/client.ts";
-import type { goldenSetCreateInput, goldenSetFindUniqueArgs as goldenSetFindUniqueArguments } from "../prisma/build/generated/prisma/models.ts";
+import type { goldenSetCreateInput, goldenSetFindManyArgs as goldenSetFindManyArguments } from "../prisma/build/generated/prisma/models.ts";
 
 
 export class GoldenSetService {
@@ -22,7 +22,7 @@ export class GoldenSetService {
 		}
 	}
 
-	async getGoldenSets(filters: goldenSetFindUniqueArguments["where"]): Promise<Array<goldenSet>> {
+	async getGoldenSets(filters: goldenSetFindManyArguments["where"]): Promise<Array<goldenSet>> {
 		try {
 			const goldenSets = await prisma.goldenSet.findMany({
 				where: filters

@@ -11,7 +11,7 @@ import {
 } from "../generated/resolvers-types.ts";
 import { goldenSetService } from "../../services/golden-set-service.ts";
 import { projectService } from "../../services/project-service.ts";
-import { REVERSE_COPILOT_TYPES } from "../../config/constants.ts";
+import { COPILOT_TYPES, REVERSE_COPILOT_TYPES } from "../../config/constants.ts";
 
 export const goldenSetResolver = {
 	Query: {
@@ -36,8 +36,13 @@ export const goldenSetResolver = {
 			_: unknown,
 			arguments_: QueryGetGoldenSetsArguments,
 		): Promise<GoldenSet[]> => {
-			try {
-				const result = await goldenSetService.getGoldenSets(arguments_.filters);
+			try
+			{
+				if(!arguments_.filters)
+				{
+					throw new Error("Filters are required");
+				}
+				const result = await goldenSetService.getGoldenSets({ ...arguments_.filters, copilotType: arguments_.filters.copilotType ? COPILOT_TYPES[arguments_.filters.copilotType] : undefined });
 				return result.map((gs) => ({
 					...gs,
 					copilotType: REVERSE_COPILOT_TYPES[
@@ -58,9 +63,7 @@ export const goldenSetResolver = {
 		): Promise<GoldenSet> => {
 			try {
 				const result = await goldenSetService.createGoldenSet(
-					arguments_.input.schemaId,
-					arguments_.input.copilotType,
-					arguments_.input.modelName ?? "undefined",
+					{ ...arguments_.input, copilotType: COPILOT_TYPES[arguments_.input.copilotType] },
 				);
 				return {
 					...result,

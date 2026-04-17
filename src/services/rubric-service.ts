@@ -67,7 +67,6 @@ export class RubricService {
 			});
 			if (
 				!copilotInput ||
-				!copilotInput.userInputs ||
 				!copilotInput.userInputs[0]?.content
 			) {
 				throw new Error(

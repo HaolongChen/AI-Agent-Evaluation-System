@@ -1,4 +1,4 @@
-import { EVALUATOR } from "../../config/constants.ts";
+import { EVALUATOR, REVERSE_EVALUATOR } from "../../config/constants.ts";
 import { analyticsService } from "../../services/analytics-service.ts";
 import {
 	EvaluatorType,
@@ -11,6 +11,27 @@ import {
 	type QueryGetEvaluationSessionsArgs as QueryGetEvaluationSessionsArguments,
 } from "../generated/resolvers-types.ts";
 
+const toGraphqlSession = (session: {
+	id: string;
+	copilotOutputId: string;
+	rubricId: string;
+	evaluatorId: string;
+	evaluatorType: string;
+	startedAt: Date;
+	completedAt: Date | null;
+	modelName: string | null;
+}): EvaluationSession => {
+	return {
+		...session,
+		evaluatorType: REVERSE_EVALUATOR[
+			session.evaluatorType as keyof typeof REVERSE_EVALUATOR
+		] as EvaluatorType,
+		startedAt: session.startedAt.toISOString(),
+		completedAt: session.completedAt?.toISOString() ?? undefined,
+		modelName: session.modelName ?? undefined,
+	};
+};
+
 export const sessionResolver = {
 	Query: {
 		getEvaluationSessionById: async (
@@ -18,7 +39,10 @@ export const sessionResolver = {
 			arguments_: QueryGetEvaluationSessionByIdArguments,
 		): Promise<EvaluationSession> => {
 			try {
-				return await analyticsService.getEvaluationSessionById(arguments_.id);
+				const session = await analyticsService.getEvaluationSessionById(
+					arguments_.id,
+				);
+				return toGraphqlSession(session);
 			} catch (error) {
 				console.error("Error fetching evaluation session by id:", error);
 				throw new Error("Failed to fetch evaluation session by id");
@@ -29,7 +53,17 @@ export const sessionResolver = {
 			arguments_: QueryGetEvaluationSessionsArguments,
 		): Promise<EvaluationSession[]> => {
 			try {
-				return await analyticsService.getEvaluationSessions(arguments_.filters);
+				if (!arguments_.filters) {
+					throw new Error("Filters are required");
+				}
+				const sessions = await analyticsService.getEvaluationSessions({
+					...arguments_.filters,
+					evaluatorType:
+						arguments_.filters.evaluatorType ?
+							EVALUATOR[arguments_.filters.evaluatorType]
+						:	undefined,
+				});
+				return sessions.map((session) => toGraphqlSession(session));
 			} catch (error) {
 				console.error("Error fetching evaluation sessions:", error);
 				throw new Error("Failed to fetch evaluation sessions");
@@ -40,7 +74,10 @@ export const sessionResolver = {
 			arguments_: QueryGetEvaluationResultByIdArguments,
 		): Promise<EvaluationResult> => {
 			try {
-				return await analyticsService.getEvaluationResultById(arguments_.id);
+				const result = await analyticsService.getEvaluationResultById(
+					arguments_.id,
+				);
+				return { ...result, overallScore: Number(result.overallScore) };
 			} catch (error) {
 				console.error("Error fetching evaluation result by id:", error);
 				throw new Error("Failed to fetch evaluation result by id");
@@ -51,7 +88,13 @@ export const sessionResolver = {
 			arguments_: QueryGetEvaluationResultsArguments,
 		): Promise<EvaluationResult[]> => {
 			try {
-				return await analyticsService.getEvaluationResults(arguments_.filters);
+				const results = await analyticsService.getEvaluationResults(
+					arguments_.filters,
+				);
+				return results.map((result) => ({
+					...result,
+					overallScore: Number(result.overallScore),
+				}));
 			} catch (error) {
 				console.error("Error fetching evaluation results:", error);
 				throw new Error("Failed to fetch evaluation results");
@@ -65,10 +108,22 @@ export const sessionResolver = {
 			arguments_: MutationSubmitHumanEvaluationArguments,
 		): Promise<EvaluationSession> => {
 			try {
-				const session = await analyticsService.createEvaluationSession(
-					{...arguments_.input, evaluatorType: EvaluatorType.Human}
-				);
-				return session;
+				const session = await analyticsService.createEvaluationSession({
+					copilotOutputId: arguments_.input.copilotOutputId,
+					evaluatorId: arguments_.input.evaluatorId,
+					evaluatorType: EVALUATOR.HUMAN,
+					rubricId: arguments_.input.rubricId,
+					evaluationRecords: arguments_.input.evaluations.map((item) => ({
+						copilotOutputId: arguments_.input.copilotOutputId,
+						evaluatorType: EVALUATOR.HUMAN,
+						rubricId: arguments_.input.rubricId,
+						criteriaId: item.criteriaId,
+						evaluatorId: arguments_.input.evaluatorId,
+						evaluation: item.evaluation,
+						feedback: item.feedback ?? undefined,
+					})),
+				});
+				return toGraphqlSession(session);
 			} catch (error) {
 				console.error("Error submitting human evaluation:", error);
 				throw new Error("Failed to submit human evaluation");

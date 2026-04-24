@@ -1,36 +1,36 @@
 {
-	"extends": "@tsconfig/node-ts/tsconfig.json",
-	"compilerOptions": {
-		"rootDir": "./",
-		"outDir": "./dist",
-		"module": "nodenext",
-		"target": "esnext",
-		"resolvePackageJsonImports": false,
-		"moduleResolution": "nodenext",
-		"pretty": true,
-		"erasableSyntaxOnly": false,
-		"skipDefaultLibCheck": true,
-		"skipLibCheck": true,
-		"strict": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"importHelpers": true,
-		"strictNullChecks": true,
-		"strictFunctionTypes": true,
-		"allowJs": true,
-		"lib": ["ESNext"]
-	},
-	"include": [
-		"src/**/*",
-		"scripts/**/*",
-		"tests/**/*",
-		"*.config.ts",
-		"env.d.ts"
-	],
-	"exclude": [
-		"node_modules/**/*",
-		"local_shell/**/*",
-		"dist/**/*",
-		"**/generated/**"
-	]
+  "extends": "@tsconfig/node-ts/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./",
+    "outDir": "./dist",
+    "module": "nodenext",
+    "target": "esnext",
+    "resolvePackageJsonImports": false,
+    "moduleResolution": "nodenext",
+    "pretty": true,
+    "erasableSyntaxOnly": false,
+    "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "allowJs": true,
+    "lib": ["ESNext"]
+  },
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "tests/**/*",
+    "*.config.ts",
+    "env.d.ts"
+  ],
+  "exclude": [
+    "node_modules/**/*",
+    "local_shell/**/*",
+    "dist/**/*",
+    "**/generated/**"
+  ]
 }

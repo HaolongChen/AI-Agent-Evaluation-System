@@ -1,43 +1,42 @@
 import type { CopilotType } from "../prisma/build/generated/prisma/enums.ts";
 
 export const COPILOT_TYPES = {
-	DATA_MODEL_BUILDER: "dataModelBuilder",
-	UI_BUILDER: "uiBuilder",
-	ACTION_FLOW_BUILDER: "actionFlowBuilder",
-	LOG_ANALYZER: "logAnalyzer",
-	AGENT_BUILDER: "agentBuilder",
+  DATA_MODEL_BUILDER: "dataModelBuilder",
+  UI_BUILDER: "uiBuilder",
+  ACTION_FLOW_BUILDER: "actionFlowBuilder",
+  LOG_ANALYZER: "logAnalyzer",
+  AGENT_BUILDER: "agentBuilder",
 } as const;
 
 export const REVERSE_COPILOT_TYPES: Record<
-	CopilotType,
-	keyof typeof COPILOT_TYPES
+  CopilotType,
+  keyof typeof COPILOT_TYPES
 > = {
-	dataModelBuilder: "DATA_MODEL_BUILDER",
-	uiBuilder: "UI_BUILDER",
-	actionFlowBuilder: "ACTION_FLOW_BUILDER",
-	logAnalyzer: "LOG_ANALYZER",
-	agentBuilder: "AGENT_BUILDER",
+  dataModelBuilder: "DATA_MODEL_BUILDER",
+  uiBuilder: "UI_BUILDER",
+  actionFlowBuilder: "ACTION_FLOW_BUILDER",
+  logAnalyzer: "LOG_ANALYZER",
+  agentBuilder: "AGENT_BUILDER",
 };
 
 export const EVALUATOR = {
-	HUMAN: "human",
-	AGENT: "agent",
+  HUMAN: "human",
+  AGENT: "agent",
 } as const;
 
 export const REVERSE_EVALUATOR: { [key: string]: string } = {
-	human: "HUMAN",
-	agent: "AGENT",
+  human: "HUMAN",
+  agent: "AGENT",
 };
 
-
 export const CALL_GRAPHQL = {
-	QUERY: {
-		GET_GOLDEN_SET_SCHEMAS: `
+  QUERY: {
+    GET_GOLDEN_SET_SCHEMAS: `
     query GetGoldenSetSchemas {
       getGoldenSetSchemas(copilotType: $copilotType)
     }
     `,
-		GET_GOLDEN_SETS: `
+    GET_GOLDEN_SETS: `
     query GetGoldenSets {
       getGoldenSets(projectExId: $projectExId, copilotType: $copilotType) {
         id
@@ -51,7 +50,7 @@ export const CALL_GRAPHQL = {
       }
     }
     `,
-		GET_SESSION: `
+    GET_SESSION: `
     query GetSession {
       getSession(id: $id) {
         id
@@ -71,7 +70,7 @@ export const CALL_GRAPHQL = {
       }
     }
     `,
-		GET_SESSIONS: `
+    GET_SESSIONS: `
     query GetSessions {
       getSessions(projectExId: $projectExId, copilotType: $copilotType, modelName: $modelName) {
         id
@@ -91,5 +90,5 @@ export const CALL_GRAPHQL = {
       }
     }
     `,
-	},
+  },
 };

@@ -19,7 +19,7 @@
     "test:jq": "tsx ./tests/jq.test.ts",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "format": "prettier --write .",
+    "format": "prettier --write . && prisma format",
     "db:setup": "tsx scripts/setup-db.ts",
     "db:seed": "tsx scripts/seed-golden-set.ts",
     "db:push": "pnpm dlx prisma db push",

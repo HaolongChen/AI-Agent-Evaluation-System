@@ -24,7 +24,7 @@ enum EvaluatorType {
 model goldenSet {
   id          String      @id @default(uuid())
   schemaId    String      @map("schema_id")
-  copilotType CopilotType @map("copilot_type")
+  copilotType CopilotType @default(dataModelBuilder) @map("copilot_type") // type of copilot being evaluated
   modelName   String      @default("undefined") @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
   userInputs  userInput[]
   // updatedAt   DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -34,12 +34,12 @@ model goldenSet {
 }
 
 model userInput {
-  id          String      @id @default(uuid())
-  description String?
-  content     String      @map("input_content") // user input
-  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy   String?     @map("created_by")
-  goldenSets  goldenSet[]
+  id         String      @id @default(uuid())
+  // description String?
+  content    String      @map("input_content") // user input
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy  String      @default("unknown") @map("created_by") // userId of the input creator
+  goldenSets goldenSet[]
 }
 
 model copilotOutput {
@@ -96,11 +96,12 @@ model criteria {
   rubricId String @map("rubric_id")
 
   // Rubric Content (one criteria per row)
-  version        String  @default("1.0")
-  title          String  @map("title")
-  content        String  @map("content") @db.Text
-  expectedAnswer Boolean @map("expected_answer") // perhaps could be multiple choice criteria
-  weight         Decimal @map("weight") @db.Decimal(5, 2)
+  // version     String  @default("1.0")
+  // title       String  @map("title")
+  content     String  @map("content") @db.Text
+  expectation Boolean @map("expectation") // perhaps could be multiple choice criteria
+  reasoning   String? @map("reasoning") // optional reasoning behind the criterion
+  weight      Decimal @map("weight") @db.Decimal(5, 2)
 
   rubric rubric @relation(fields: [rubricId], references: [id])
 

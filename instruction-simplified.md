@@ -1,4 +1,5 @@
 ## 流程
+
 - 获取 schema
   - 根据 project 找到 schema
 - 导入 schema 并对着 ai copilot 执行操作的运行环境
@@ -9,13 +10,16 @@
   - 对 ai copilot 的生成结果进行问题生成（读 ai copilot 的数据库）
   - 人工审核问题的界面
   - 提供给用户来填问题？
-- Dashboard / cli 
+- Dashboard / cli
 
 ### 开发 <br>
+
 ### Typescript <br>
+
 ### Postgres - 接 copilot 的数据库 <br>
 
 ## Table
+
 - golden_set
   - project_ex_id text
   - schema_ex_id text
@@ -31,6 +35,7 @@
   - result boolean
 
 ## Function
+
 1. Void updateGoldgenSetProject()
 2. List<schemaExId> getGoldenSetSchema()
 3. Void execAiCopilotByTypeAndModel(schemaExId, AiCopilotType, Model)
@@ -40,6 +45,7 @@
 7. Boolean judge(adaptive_rubric_id, result)
 
 ### Dashboard <br>
-### 展示 ai copilot 的调用信息 <br>
-### 审核问题 <br>
 
+### 展示 ai copilot 的调用信息 <br>
+
+### 审核问题 <br>

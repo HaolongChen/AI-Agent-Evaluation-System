@@ -1,4 +1,4 @@
-import { BaseMessage } from '@langchain/core/messages';
+import { BaseMessage } from "@langchain/core/messages";
 
 export interface SessionData {
   projectExId: string;
@@ -13,10 +13,10 @@ export interface UserContext {
 }
 
 export enum JobStateType {
-  AWAITING_INITIAL_REQUIREMENT = 'AWAITING_INITIAL_REQUIREMENT',
-  AWAITING_INTERPRETER_ANSWER = 'AWAITING_INTERPRETER_ANSWER',
-  AWAITING_PLAN_CONFIRMATION = 'AWAITING_PLAN_CONFIRMATION',
-  AWAITING_TASK_EXECUTION = 'AWAITING_TASK_EXECUTION',
+  AWAITING_INITIAL_REQUIREMENT = "AWAITING_INITIAL_REQUIREMENT",
+  AWAITING_INTERPRETER_ANSWER = "AWAITING_INTERPRETER_ANSWER",
+  AWAITING_PLAN_CONFIRMATION = "AWAITING_PLAN_CONFIRMATION",
+  AWAITING_TASK_EXECUTION = "AWAITING_TASK_EXECUTION",
 }
 
 export interface JobNextStepData {
@@ -43,10 +43,10 @@ export interface VersionedText {
 }
 
 export enum TaskStatus {
-  PENDING = 'pending',
-  RUNNING = 'running',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
+  PENDING = "pending",
+  RUNNING = "running",
+  COMPLETED = "completed",
+  FAILED = "failed",
 }
 
 export interface Task {
@@ -72,23 +72,22 @@ export interface JobState {
   dynamicOutput?: Record<string, unknown>;
 }
 
-
 // ------------------------------------------------------------
 
 const jobStateDescriptionMap: Record<JobStateType, string> = {
   [JobStateType.AWAITING_INITIAL_REQUIREMENT]:
-    'The default initial state of the system. It will also return to this state after all tasks are completed. At this time, the system is waiting for the user to propose requirements to determine the next action.',
+    "The default initial state of the system. It will also return to this state after all tasks are completed. At this time, the system is waiting for the user to propose requirements to determine the next action.",
   [JobStateType.AWAITING_INTERPRETER_ANSWER]:
     "The system is calling tools or large models to answer the user's questions.",
   [JobStateType.AWAITING_PLAN_CONFIRMATION]:
-    'The system is calling tools or large models to generate a development plan, or a development plan has been generated and is waiting for the user to confirm or propose modifications.',
+    "The system is calling tools or large models to generate a development plan, or a development plan has been generated and is waiting for the user to confirm or propose modifications.",
   [JobStateType.AWAITING_TASK_EXECUTION]:
-    'The user has confirmed the development plan, and the system is calling tools or large models to execute the development plan.',
+    "The user has confirmed the development plan, and the system is calling tools or large models to execute the development plan.",
 };
 
 export const JOB_STATE_DESCRIPTION = Object.entries(jobStateDescriptionMap)
   .map(([key, value]) => `* ${key}: ${value}`)
-  .join('\n');
+  .join("\n");
 
 export const DYNAMIC_OUTPUT_KEY_COMPLETION_MESSAGES_TO_CLIENT =
-  'completionMessagesToClient';
+  "completionMessagesToClient";

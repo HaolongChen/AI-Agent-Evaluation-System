@@ -154,15 +154,8 @@ mutation ReviewWithPatches {
     approved: false
     reviewerAccountId: "user-456"
     questionPatches: [
-      {
-        questionId: 123
-        weight: 0.6
-        title: "Correctness - Enhanced"
-      }
-      {
-        questionId: 124
-        expectedAnswer: false
-      }
+      { questionId: 123, weight: 0.6, title: "Correctness - Enhanced" }
+      { questionId: 124, expectedAnswer: false }
     ]
     feedback: "Adjusted weights based on project priorities"
   ) {
@@ -217,11 +210,11 @@ mutation EvalWithPatches {
 ```
 
 **Benefits of partial updates:**
+
 - **Less data transfer**: Send only what changed
 - **Fewer errors**: No risk of accidentally modifying unrelated fields
 - **Better UX**: Clearer intent - reviewers see exactly what they're changing
 - **Automatic recalculation**: System recalculates `totalWeight` and `overallScore` based on patches
-
 
 ## Data Model
 
@@ -238,7 +231,7 @@ The system uses a structured schema to track the entire evaluation lifecycle:
 
 - **Run Dev**: `pnpm dev`
 - **Build**: `pnpm build:bundle`
-- **Test**: 
+- **Test**:
   - `pnpm test:lg` (LangGraph workflow)
   - `pnpm test:graphql` (GraphQL API)
   - `pnpm test:partial-update` (Partial update functionality)

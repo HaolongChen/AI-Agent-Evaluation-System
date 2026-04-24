@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import * as z from "zod";
 
 /**
  * GraphQL Query and Mutation Builder
@@ -21,10 +21,10 @@ import * as z from 'zod';
  */
 function serializeValue(value: unknown): string {
   if (value === null || value === undefined) {
-    return 'null';
+    return "null";
   }
 
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     // Check if it's an enum value (ALL_CAPS or PascalCase without spaces)
     // Enums should not be quoted
     if (/^[A-Z_][A-Z0-9_]*$/.test(value)) {
@@ -34,19 +34,19 @@ function serializeValue(value: unknown): string {
     return `"${value.replace(/"/g, '\\"')}"`;
   }
 
-  if (typeof value === 'number' || typeof value === 'boolean') {
+  if (typeof value === "number" || typeof value === "boolean") {
     return String(value);
   }
 
   if (Array.isArray(value)) {
-    return `[${value.map(serializeValue).join(', ')}]`;
+    return `[${value.map(serializeValue).join(", ")}]`;
   }
 
-  if (typeof value === 'object') {
+  if (typeof value === "object") {
     const entries = Object.entries(value as Record<string, unknown>);
     const serialized = entries
       .map(([key, val]) => `${key}: ${serializeValue(val)}`)
-      .join(', ');
+      .join(", ");
     return `{${serialized}}`;
   }
 
@@ -95,7 +95,7 @@ export class QueryBuilder {
    */
   selectNested(fieldMap: Record<string, string[]>): this {
     Object.entries(fieldMap).forEach(([field, subfields]) => {
-      this.fields.push(`${field} { ${subfields.join(' ')} }`);
+      this.fields.push(`${field} { ${subfields.join(" ")} }`);
     });
     return this;
   }
@@ -104,10 +104,10 @@ export class QueryBuilder {
   build(): string {
     const variablePart =
       this.variableDefinitions.length > 0
-        ? `(${this.variableDefinitions.join(', ')})`
-        : '';
+        ? `(${this.variableDefinitions.join(", ")})`
+        : "";
 
-    const fieldsPart = this.fields.join('\n');
+    const fieldsPart = this.fields.join("\n");
 
     const query = `
       query ${this.queryName} {
@@ -157,7 +157,7 @@ export class MutationBuilder {
   /** Select nested fields. */
   selectNested(fieldMap: Record<string, string[]>): this {
     Object.entries(fieldMap).forEach(([field, subfields]) => {
-      this.fields.push(`${field} { ${subfields.join(' ')} }`);
+      this.fields.push(`${field} { ${subfields.join(" ")} }`);
     });
     return this;
   }
@@ -166,10 +166,10 @@ export class MutationBuilder {
   build(): string {
     const variablePart =
       this.variableDefinitions.length > 0
-        ? `(${this.variableDefinitions.join(', ')})`
-        : '';
+        ? `(${this.variableDefinitions.join(", ")})`
+        : "";
 
-    const fieldsPart = this.fields.join('\n');
+    const fieldsPart = this.fields.join("\n");
 
     const query = `
       mutation ${this.mutationName} {
@@ -188,7 +188,8 @@ export class MutationBuilder {
 // ---------------------------------------------------------------------------
 
 export const query = (name: string): QueryBuilder => new QueryBuilder(name);
-export const mutation = (name: string): MutationBuilder => new MutationBuilder(name);
+export const mutation = (name: string): MutationBuilder =>
+  new MutationBuilder(name);
 
 // ---------------------------------------------------------------------------
 // Typed document constants + variable types (use with gqlRequest())
@@ -221,29 +222,29 @@ export interface GetGoldenSetsVariables {
  */
 export const GoldenSetQueries = {
   getSchemas: (copilotType?: string) => {
-    const builder = query('getGoldenSetSchemas');
+    const builder = query("getGoldenSetSchemas");
     if (copilotType) {
-      builder.withVariable('copilotType', copilotType);
+      builder.withVariable("copilotType", copilotType);
     }
     return builder.build();
   },
 
   getGoldenSets: (projectExId?: string, copilotType?: string) => {
-    const builder = query('getGoldenSets').select(
-      'id',
-      'projectExId',
-      'copilotType',
-      'description',
-      'query',
-      'createdAt',
-      'isActive',
+    const builder = query("getGoldenSets").select(
+      "id",
+      "projectExId",
+      "copilotType",
+      "description",
+      "query",
+      "createdAt",
+      "isActive",
     );
 
     if (projectExId) {
-      builder.withVariable('projectExId', projectExId);
+      builder.withVariable("projectExId", projectExId);
     }
     if (copilotType) {
-      builder.withVariable('copilotType', copilotType);
+      builder.withVariable("copilotType", copilotType);
     }
 
     return builder.build();

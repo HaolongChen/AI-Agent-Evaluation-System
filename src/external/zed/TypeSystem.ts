@@ -1,4 +1,4 @@
-import ztype from '@functorz/ztype';
+import ztype from "@functorz/ztype";
 
 const ztypePackage = ztype.com.functorz.ztype;
 
@@ -86,9 +86,8 @@ export const {
   SchemaData,
 } = ztype.com.functorz.ztype.typesystem.schema;
 export const { Locale, IdUtilsJs } = ztype.com.functorz.ztype.typesystem.utils;
-export const {
-  DataModelEditingStateInfoJs,
-} = ztype.com.functorz.ztype.application.editor.databinding;
+export const { DataModelEditingStateInfoJs } =
+  ztype.com.functorz.ztype.application.editor.databinding;
 export const {
   TypeSelectorTypeOption,
   TypeSelectorTypeOptionJs,

@@ -40,15 +40,15 @@ export type CopilotOutput = {
 /** Type of AI Copilot being evaluated. */
 export enum CopilotType {
   /** Workflow builder for action flows */
-  ActionFlowBuilder = 'ACTION_FLOW_BUILDER',
+  ActionFlowBuilder = 'actionFlowBuilder',
   /** General agent builder */
-  AgentBuilder = 'AGENT_BUILDER',
+  AgentBuilder = 'agentBuilder',
   /** Data model builder for database schema generation */
-  DataModelBuilder = 'DATA_MODEL_BUILDER',
+  DataModelBuilder = 'dataModelBuilder',
   /** Log analysis assistant */
-  LogAnalyzer = 'LOG_ANALYZER',
+  LogAnalyzer = 'logAnalyzer',
   /** UI component builder for frontend development */
-  UiBuilder = 'UI_BUILDER'
+  UiBuilder = 'uiBuilder'
 }
 
 export type Criteria = {
@@ -56,6 +56,7 @@ export type Criteria = {
   content: Scalars['String']['output'];
   expectation: Scalars['Boolean']['output'];
   id: Scalars['String']['output'];
+  reasoning?: Maybe<Scalars['String']['output']>;
   rubricId: Scalars['String']['output'];
   weight: Scalars['Float']['output'];
 };
@@ -93,19 +94,16 @@ export type EvaluationRecord = {
  */
 export type EvaluationResult = {
   __typename?: 'EvaluationResult';
+  analysis: Scalars['String']['output'];
   /** Audit trail of workflow steps and decisions */
   auditTrace?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
   copilotOutputId: Scalars['String']['output'];
-  /** Detailed analysis with per-criterion breakdown */
-  detailedAnalysis: Scalars['String']['output'];
   evaluatorId: Scalars['String']['output'];
   /** Unique result identifier */
   id: Scalars['String']['output'];
   /** Aggregated score across all weighted criteria (0 - 100) */
   overallScore: Scalars['Float']['output'];
   rubricId: Scalars['String']['output'];
-  /** Executive summary of evaluation */
-  summary: Scalars['String']['output'];
 };
 
 /**
@@ -117,7 +115,7 @@ export type EvaluationSession = {
   /** Timestamp when session completed (null if still running) */
   completedAt?: Maybe<Scalars['String']['output']>;
   copilotOutputId: Scalars['String']['output'];
-  evaluations?: Maybe<Array<Maybe<EvaluationRecord>>>;
+  evaluationRecords: Array<Maybe<EvaluationRecord>>;
   evaluatorId: Scalars['String']['output'];
   evaluatorType: EvaluatorType;
   /** Unique session identifier */
@@ -130,8 +128,8 @@ export type EvaluationSession = {
 };
 
 export enum EvaluatorType {
-  Agent = 'AGENT',
-  Human = 'HUMAN'
+  Agent = 'agent',
+  Human = 'human'
 }
 
 /**
@@ -320,8 +318,6 @@ export type UserInput = {
   createdAt: Scalars['String']['output'];
   /** Account ID of creator */
   createdBy?: Maybe<Scalars['String']['output']>;
-  /** Optional description of what this input tests */
-  description?: Maybe<Scalars['String']['output']>;
   /** Unique identifier */
   id: Scalars['String']['output'];
 };

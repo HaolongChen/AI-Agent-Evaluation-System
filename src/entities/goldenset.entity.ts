@@ -1,5 +1,5 @@
 import z from "zod";
-import { userInputEntity } from "./user-input.entity.ts";
+import { userInputInternalEntity } from "./user-input.entity.ts";
 
 export const goldenSetEntity = z.object( {
   internal: z.object( {
@@ -11,10 +11,10 @@ export const goldenSetEntity = z.object( {
       'actionFlowBuilder',
       'logAnalyzer',
       'agentBuilder',
-    ] ).default( 'dataModelBuilder' ).optional(),
+    ] ).optional().default( 'dataModelBuilder' ),
     modelName: z.string().optional().default("undefined")
   } ),
   external: z.object( {
-    userInputs: z.array(userInputEntity.shape.internal)
+    userInputs: z.array(userInputInternalEntity)
   })
 })

@@ -41,15 +41,15 @@ Type of AI Copilot being evaluated.
 """
 enum CopilotType {
   "Data model builder for database schema generation"
-  DATA_MODEL_BUILDER
+  dataModelBuilder
   "UI component builder for frontend development"
-  UI_BUILDER
+  uiBuilder
   "Workflow builder for action flows"
-  ACTION_FLOW_BUILDER
+  actionFlowBuilder
   "Log analysis assistant"
-  LOG_ANALYZER
+  logAnalyzer
   "General agent builder"
-  AGENT_BUILDER
+  agentBuilder
 }
 
 """
@@ -87,8 +87,6 @@ to the copilot being evaluated.
 type UserInput {
   "Unique identifier"
   id: String!
-  "Optional description of what this input tests"
-  description: String
   "The actual prompt or query content"
   content: String!
   "Timestamp when input was added"
@@ -128,12 +126,13 @@ type Criteria {
   # title: String
   content: String!
   expectation: Boolean!
+  reasoning: String
   weight: Float!
 }
 
 enum EvaluatorType {
-  HUMAN
-  AGENT
+  human
+  agent
 }
 
 """
@@ -149,7 +148,7 @@ type EvaluationSession {
   evaluatorType: EvaluatorType!
   "LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')"
   modelName: String
-  evaluations: [EvaluationRecord]
+  evaluationRecords: [EvaluationRecord]!
   "Timestamp when session started"
   startedAt: String
   "Timestamp when session completed (null if still running)"
@@ -187,10 +186,8 @@ type EvaluationResult {
 
   "Aggregated score across all weighted criteria (0 - 100)"
   overallScore: Float!
-  "Executive summary of evaluation"
-  summary: String!
-  "Detailed analysis with per-criterion breakdown"
-  detailedAnalysis: String!
+
+  analysis: String!
   "Audit trail of workflow steps and decisions"
   auditTrace: [String]
 }

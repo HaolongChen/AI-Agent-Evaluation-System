@@ -172,8 +172,7 @@ model evaluationResult {
 
   // FinalReport fields (matching LangGraph FinalReport interface)
   overallScore     Decimal  @map("overall_score") @db.Decimal(5, 2)
-  summary          String   @db.Text
-  detailedAnalysis String   @map("detailed_analysis") @db.Text
+  analysis         String   @map("analysis") // detailed analysis of the copilot output based on the rubric criteria
   auditTrace       String[] @default([]) @map("audit_trace") // Array of audit log entries
   generatedAt      DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
 

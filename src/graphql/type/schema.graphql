@@ -1,38 +1,16 @@
 type Query {
-  """
-  Retrieve a single golden set by ID.
-  """
   getGoldenSetById(id: String!): GoldenSet!
 
-  """
-  List golden sets with optional filtering.
-  """
   getGoldenSets(filters: GoldenSetFilters): [GoldenSet]!
 
-  """
-  Retrieve a single evaluation session by ID.
-  """
   getEvaluationSessionById(id: String!): EvaluationSession!
 
-  """
-  List evaluation sessions with optional filtering.
-  """
   getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!
 
-  """
-  Get all rubric criteria for a specific session.
-  """
   getRubricById(id: String!): Rubric!
 
-  """
-  Get rubric criteria filtered by review parameters.
-  Useful for finding criteria pending human review.
-  """
   getRubricByContext(context: CopilotInput!): [Rubric]!
 
-  """
-  Get final evaluation result for a completed session.
-  """
   getEvaluationResultById(id: String!): EvaluationResult!
 
   getEvaluationResults(filters: ResultFilters): [EvaluationResult]!
@@ -41,11 +19,6 @@ type Query {
 type Mutation {
   initializeGoldenSet(input: GoldenSetInput!): GoldenSet!
 
-  """
-  Upsert golden set with a new user input (atomic operation).
-  Creates golden set if it doesn't exist, or adds input to existing one.
-  RECOMMENDED for adding test cases.
-  """
   createUserInput(input: UserInputInput!): UserInput!
 
   linkGoldenSetToUserInput(context: CopilotInput!): GoldenSetWithInputs!
@@ -148,10 +121,10 @@ type Rubric {
 type Criteria {
   id: String!
   rubricId: String!
-  version: String!
-  title: String
+  # version: String!
+  # title: String
   content: String!
-  expectedEvaluation: Boolean!
+  expectation: Boolean!
   weight: Float!
 }
 
@@ -260,12 +233,11 @@ input HumanEvaluationInput {
 
 input GoldenSetInput {
   schemaId: String!
-  copilotType: CopilotType!
+  copilotType: CopilotType
   modelName: String
 }
 
 input UserInputInput {
-  description: String
   content: String!
   createdBy: String
 }

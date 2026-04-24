@@ -6,8 +6,8 @@
   "scripts": {
     "initialize": "rm -rf node_modules dist pnpm-*.yaml && pnpm install",
     "clean": "rm -rf dist",
-    "typecheck": "tsgo --noEmit",
-    "build": "pnpm run clean && tsgo",
+    "typecheck": "tsc --noEmit",
+    "build": "pnpm run clean && tsc",
     "start": "node dist/index.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/index.ts",
     "debug": "tsx --inspect src/index.ts",
@@ -54,7 +54,6 @@
     "@types/node": "^25.5.0",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/parser": "^8.58.1",
-    "@typescript/native-preview": "7.0.0-dev.20260408.1",
     "eslint": "^9.39.4",
     "eslint-plugin-github": "^6.0.0",
     "eslint-plugin-unicorn": "^64.0.0",

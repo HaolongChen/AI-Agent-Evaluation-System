@@ -3,176 +3,176 @@ export { ProjectNameDuplicateError } from "../../external/zed/createProject.ts";
 
 import { backendClient, gqlRequest } from "../../external/graphql-client.ts";
 import {
-	GQL_CHECK_PROJECT_NAME_DUPLICATE,
-	GQL_CREATE_PROJECT_IN_ORGANIZATION,
-	GQL_DELETE_PROJECT,
-	GQL_ON_PROJECT_CREATION_STATUS_CHANGED,
-	PROJECT_CREATION_STATUS,
-	ProjectNameDuplicateError,
-	openApolloSubscription,
-	subscribeViaModernProtocol,
+  GQL_CHECK_PROJECT_NAME_DUPLICATE,
+  GQL_CREATE_PROJECT_IN_ORGANIZATION,
+  GQL_DELETE_PROJECT,
+  GQL_ON_PROJECT_CREATION_STATUS_CHANGED,
+  PROJECT_CREATION_STATUS,
+  ProjectNameDuplicateError,
+  openApolloSubscription,
+  subscribeViaModernProtocol,
 } from "../../external/zed/createProject.ts";
 import type {
-	ProjectCreationStatus,
-	CheckProjectNameDuplicateResponse,
-	CheckProjectNameDuplicateVariables,
-	CreateProjectMutationResponse,
-	CreateProjectMutationVariables,
-	DeleteProjectResponse,
-	DeleteProjectVariables,
+  ProjectCreationStatus,
+  CheckProjectNameDuplicateResponse,
+  CheckProjectNameDuplicateVariables,
+  CreateProjectMutationResponse,
+  CreateProjectMutationVariables,
+  DeleteProjectResponse,
+  DeleteProjectVariables,
 } from "../../external/zed/createProject.ts";
 
 export class ProjectService {
-	async createProject(
-		projectName: string,
-		{ useModernProtocol = false }: { useModernProtocol?: boolean } = {},
-	): Promise<string> {
-		const organizationExId = process.env.ORGANIZATION_EX_ID;
-		if (!organizationExId) {
-			throw new Error("ORGANIZATION_EX_ID env var is not set");
-		}
+  async createProject(
+    projectName: string,
+    { useModernProtocol = false }: { useModernProtocol?: boolean } = {},
+  ): Promise<string> {
+    const organizationExId = process.env.ORGANIZATION_EX_ID;
+    if (!organizationExId) {
+      throw new Error("ORGANIZATION_EX_ID env var is not set");
+    }
 
-		console.info("Checking project name availability", { projectName });
-		const nameCheckData = await gqlRequest<
-			CheckProjectNameDuplicateResponse,
-			CheckProjectNameDuplicateVariables
-		>(backendClient, GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
+    console.info("Checking project name availability", { projectName });
+    const nameCheckData = await gqlRequest<
+      CheckProjectNameDuplicateResponse,
+      CheckProjectNameDuplicateVariables
+    >(backendClient, GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
 
-		if (nameCheckData.checkProjectNameDuplicate) {
-			throw new ProjectNameDuplicateError(projectName);
-		}
+    if (nameCheckData.checkProjectNameDuplicate) {
+      throw new ProjectNameDuplicateError(projectName);
+    }
 
-		console.info("Creating project", { projectName, organizationExId });
-		const mutationData = await gqlRequest<
-			CreateProjectMutationResponse,
-			CreateProjectMutationVariables
-		>(backendClient, GQL_CREATE_PROJECT_IN_ORGANIZATION, {
-			projectName,
-			platform: "WEB",
-			projectSpaceType: "PERSONAL",
-			organizationExId,
-			category: "OTHERS",
-		});
+    console.info("Creating project", { projectName, organizationExId });
+    const mutationData = await gqlRequest<
+      CreateProjectMutationResponse,
+      CreateProjectMutationVariables
+    >(backendClient, GQL_CREATE_PROJECT_IN_ORGANIZATION, {
+      projectName,
+      platform: "WEB",
+      projectSpaceType: "PERSONAL",
+      organizationExId,
+      category: "OTHERS",
+    });
 
-		const taskId = mutationData.createProjectInOrganizationAsync;
-		console.info("Project creation task started", { taskId, projectName });
+    const taskId = mutationData.createProjectInOrganizationAsync;
+    console.info("Project creation task started", { taskId, projectName });
 
-		// No DB upsert — project table has been removed.
-		const onProjectCreated = async (projectExId: string): Promise<void> => {
-			console.info("Project creation completed", { projectExId, projectName });
-		};
+    // No DB upsert — project table has been removed.
+    const onProjectCreated = async (projectExId: string): Promise<void> => {
+      console.info("Project creation completed", { projectExId, projectName });
+    };
 
-		if (useModernProtocol) {
-			console.info("Using modern graphql-ws subscription path", { taskId });
-			return subscribeViaModernProtocol(taskId, onProjectCreated, (tid) =>
-				console.error("Project creation failed on server", {
-					taskId: tid,
-					projectName,
-				}),
-			);
-		}
+    if (useModernProtocol) {
+      console.info("Using modern graphql-ws subscription path", { taskId });
+      return subscribeViaModernProtocol(taskId, onProjectCreated, (tid) =>
+        console.error("Project creation failed on server", {
+          taskId: tid,
+          projectName,
+        }),
+      );
+    }
 
-		console.info("Using legacy Apollo WS subscription path", { taskId });
-		return this.subscribeViaLegacyProtocol(
-			taskId,
-			projectName,
-			onProjectCreated,
-		);
-	}
+    console.info("Using legacy Apollo WS subscription path", { taskId });
+    return this.subscribeViaLegacyProtocol(
+      taskId,
+      projectName,
+      onProjectCreated,
+    );
+  }
 
-	private subscribeViaLegacyProtocol(
-		taskId: string,
-		projectName: string,
-		onProjectCreated: (projectExId: string) => Promise<void>,
-	): Promise<string> {
-		return new Promise<string>((resolve, reject) => {
-			const subscriptionId = uuidv4();
-			let settled = false;
+  private subscribeViaLegacyProtocol(
+    taskId: string,
+    projectName: string,
+    onProjectCreated: (projectExId: string) => Promise<void>,
+  ): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const subscriptionId = uuidv4();
+      let settled = false;
 
-			const settle = (function_: () => void): void => {
-				if (settled) return;
-				settled = true;
-				function_();
-			};
+      const settle = (function_: () => void): void => {
+        if (settled) return;
+        settled = true;
+        function_();
+      };
 
-			const cleanup = openApolloSubscription(
-				subscriptionId,
-				"OnProjectCreationStatusChanged",
-				GQL_ON_PROJECT_CREATION_STATUS_CHANGED,
-				{ uniqueId: taskId },
-				(statusPayload: {
-					projectExId: string;
-					status: ProjectCreationStatus;
-				}) => {
-					const { projectExId, status } = statusPayload;
-					console.info("Project creation status update", {
-						projectExId,
-						status,
-					});
+      const cleanup = openApolloSubscription(
+        subscriptionId,
+        "OnProjectCreationStatusChanged",
+        GQL_ON_PROJECT_CREATION_STATUS_CHANGED,
+        { uniqueId: taskId },
+        (statusPayload: {
+          projectExId: string;
+          status: ProjectCreationStatus;
+        }) => {
+          const { projectExId, status } = statusPayload;
+          console.info("Project creation status update", {
+            projectExId,
+            status,
+          });
 
-					if (status === PROJECT_CREATION_STATUS.COMPLETED) {
-						onProjectCreated(projectExId)
-							.then(() => {
-								cleanup?.();
-								settle(() => resolve(projectExId));
-							})
-							.catch((error: unknown) => {
-								console.error("Project creation callback failed", {
-									projectExId,
-									err: error,
-								});
-								cleanup?.();
-								settle(() =>
-									reject(
-										error instanceof Error ? error : new Error(String(error)),
-									),
-								);
-							});
-					} else if (status === PROJECT_CREATION_STATUS.FAILED) {
-						console.error("Project creation failed on server", {
-							taskId,
-							projectName,
-						});
-						cleanup?.();
-						settle(() =>
-							reject(new Error(`Project creation failed for task ${taskId}`)),
-						);
-					}
-					// PROCESSING → keep waiting
-				},
-				(error) => {
-					console.error("Project creation subscription error", {
-						taskId,
-						err: error,
-					});
-					settle(() =>
-						reject(
-							error instanceof Error ? error : new Error("Subscription error"),
-						),
-					);
-				},
-				() => {
-					settle(() =>
-						reject(
-							new Error(
-								`Subscription completed without COMPLETED status for task ${taskId}`,
-							),
-						),
-					);
-				},
-			);
-		});
-	}
+          if (status === PROJECT_CREATION_STATUS.COMPLETED) {
+            onProjectCreated(projectExId)
+              .then(() => {
+                cleanup?.();
+                settle(() => resolve(projectExId));
+              })
+              .catch((error: unknown) => {
+                console.error("Project creation callback failed", {
+                  projectExId,
+                  err: error,
+                });
+                cleanup?.();
+                settle(() =>
+                  reject(
+                    error instanceof Error ? error : new Error(String(error)),
+                  ),
+                );
+              });
+          } else if (status === PROJECT_CREATION_STATUS.FAILED) {
+            console.error("Project creation failed on server", {
+              taskId,
+              projectName,
+            });
+            cleanup?.();
+            settle(() =>
+              reject(new Error(`Project creation failed for task ${taskId}`)),
+            );
+          }
+          // PROCESSING → keep waiting
+        },
+        (error) => {
+          console.error("Project creation subscription error", {
+            taskId,
+            err: error,
+          });
+          settle(() =>
+            reject(
+              error instanceof Error ? error : new Error("Subscription error"),
+            ),
+          );
+        },
+        () => {
+          settle(() =>
+            reject(
+              new Error(
+                `Subscription completed without COMPLETED status for task ${taskId}`,
+              ),
+            ),
+          );
+        },
+      );
+    });
+  }
 
-	async deleteProject(projectExId: string): Promise<void> {
-		console.info("Deleting project", { projectExId });
-		await gqlRequest<DeleteProjectResponse, DeleteProjectVariables>(
-			backendClient,
-			GQL_DELETE_PROJECT,
-			{ projectExId },
-		);
-		console.info("Project deleted", { projectExId });
-	}
+  async deleteProject(projectExId: string): Promise<void> {
+    console.info("Deleting project", { projectExId });
+    await gqlRequest<DeleteProjectResponse, DeleteProjectVariables>(
+      backendClient,
+      GQL_DELETE_PROJECT,
+      { projectExId },
+    );
+    console.info("Project deleted", { projectExId });
+  }
 }
 
 export const projectService = new ProjectService();

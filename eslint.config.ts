@@ -7,7 +7,7 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn";
 
 export default defineConfig([
   {
-    files: ["{src,tests,scripts}/**/*.{js,mjs,cjs,ts,mts,cts}"],
+    files: ["src/**/*.{js,mjs,cjs,ts,mts,cts}"],
     ignores: [
       "node_modules/**",
       "dist/**",
@@ -15,12 +15,16 @@ export default defineConfig([
       "local_shell/**",
       "src/graphql/type/**",
       "env.d.ts",
+      ".dependency-cruiser.cjs",
+      "dependency-graph.svg",
+      "momen_doc/**",
     ],
     plugins: { js, codeComplete },
     extends: ["js/recommended"],
     languageOptions: { globals: globals.node },
   },
   {
+    files: ["src/**/*.ts"],
     ...eslintPluginUnicorn.configs.recommended,
     ignores: [
       "node_modules/**",
@@ -31,6 +35,9 @@ export default defineConfig([
       "env.d.ts",
       "**/external/**",
       "src/graphql/type/**",
+      ".dependency-cruiser.cjs",
+      "dependency-graph.svg",
+      "momen_doc/**",
     ],
   },
   tseslint.configs.recommended,

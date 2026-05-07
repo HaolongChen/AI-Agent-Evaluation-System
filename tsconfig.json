@@ -17,7 +17,6 @@
     "importHelpers": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
-    "allowJs": true,
     "lib": ["ESNext"]
   },
   "include": [
@@ -31,6 +30,9 @@
     "node_modules/**/*",
     "local_shell/**/*",
     "dist/**/*",
-    "**/generated/**"
+    "**/generated/**",
+    ".dependency-cruiser.cjs",
+    "dependency-graph.svg",
+    "momen_doc/**"
   ]
 }

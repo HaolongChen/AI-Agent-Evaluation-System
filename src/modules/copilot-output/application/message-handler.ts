@@ -29,7 +29,7 @@ import {
   type CopilotApiResultJs,
 } from "../../../external/zed/TypeSystem.ts";
 import { assertNotNull } from "../../../external/zed/helpers.ts";
-import type { ToolResult } from "../../../external/graph-states.ts";
+import type { ToolResult } from "../../shared/domain/interface/graph-states.ts";
 
 type MessageHandlerTypeMap = {
   [K in CopilotMessageType]: (

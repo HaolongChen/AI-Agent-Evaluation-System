@@ -1,6 +1,6 @@
-import { gql } from 'graphql-request';
+import { gql } from "graphql-request";
 
-import { backendClient, gqlRequest } from './graphql-client.ts';
+import { backendClient, gqlRequest } from "./graphql-client.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,7 +38,10 @@ export const login = async (
   password: string,
 ): Promise<string> => {
   try {
-    console.info('Attempting login for phone number:', `***${phoneNumber.slice(-4)}`);
+    console.info(
+      "Attempting login for phone number:",
+      `***${phoneNumber.slice(-4)}`,
+    );
 
     const data = await gqlRequest<LoginResponse, LoginVariables>(
       backendClient,
@@ -49,13 +52,13 @@ export const login = async (
     const accessToken = data.loginWithPhoneNumber.accessToken;
 
     if (!accessToken) {
-      throw new Error('No access token received from login');
+      throw new Error("No access token received from login");
     }
 
-    console.info('Login successful');
+    console.info("Login successful");
     return accessToken;
   } catch (error) {
-    console.error('Error during login:', error);
-    throw new Error('Failed to login', { cause: error });
+    console.error("Error during login:", error);
+    throw new Error("Failed to login", { cause: error });
   }
 };

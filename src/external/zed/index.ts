@@ -1,39 +1,39 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 export enum BackendOnlyActionFlowNodeType {
-  CUSTOM_CODE = 'CUSTOM_CODE',
-  TEMPLATE_CODE = 'TEMPLATE_CODE',
-  INSERT_RECORD = 'INSERT_RECORD',
-  UPDATE_RECORD = 'UPDATE_RECORD',
-  DELETE_RECORD = 'DELETE_RECORD',
-  QUERY_RECORD = 'QUERY_RECORD',
-  THIRD_PARTY_API = 'THIRD_PARTY_API',
-  ACTION_FLOW = 'ACTION_FLOW',
-  UPDATE_GLOBAL_VARIABLES = 'UPDATE_GLOBAL_VARIABLES',
-  AI_CREATE_CONVERSATION = 'AI_CREATE_CONVERSATION',
-  AI_DELETE_CONVERSATION = 'AI_DELETE_CONVERSATION',
-  AI_SEND_MESSAGE = 'AI_SEND_MESSAGE',
-  AI_STOP_RESPONSE = 'AI_STOP_RESPONSE',
-  ADD_ROLE_TO_ACCOUNT = 'ADD_ROLE_TO_ACCOUNT',
-  REMOVE_ROLE_FROM_ACCOUNT = 'REMOVE_ROLE_FROM_ACCOUNT',
+  CUSTOM_CODE = "CUSTOM_CODE",
+  TEMPLATE_CODE = "TEMPLATE_CODE",
+  INSERT_RECORD = "INSERT_RECORD",
+  UPDATE_RECORD = "UPDATE_RECORD",
+  DELETE_RECORD = "DELETE_RECORD",
+  QUERY_RECORD = "QUERY_RECORD",
+  THIRD_PARTY_API = "THIRD_PARTY_API",
+  ACTION_FLOW = "ACTION_FLOW",
+  UPDATE_GLOBAL_VARIABLES = "UPDATE_GLOBAL_VARIABLES",
+  AI_CREATE_CONVERSATION = "AI_CREATE_CONVERSATION",
+  AI_DELETE_CONVERSATION = "AI_DELETE_CONVERSATION",
+  AI_SEND_MESSAGE = "AI_SEND_MESSAGE",
+  AI_STOP_RESPONSE = "AI_STOP_RESPONSE",
+  ADD_ROLE_TO_ACCOUNT = "ADD_ROLE_TO_ACCOUNT",
+  REMOVE_ROLE_FROM_ACCOUNT = "REMOVE_ROLE_FROM_ACCOUNT",
 }
 export enum GeneralActionFlowNodeType {
-  FLOW_START = 'FLOW_START',
-  FLOW_END = 'FLOW_END',
-  BRANCH_SEPARATION = 'BRANCH_SEPARATION',
-  BRANCH_ITEM = 'BRANCH_ITEM',
-  BRANCH_MERGE = 'BRANCH_MERGE',
-  FOR_EACH_START = 'FOR_EACH_START',
-  FOR_EACH_END = 'FOR_EACH_END',
-  WHILE_START = 'WHILE_START',
-  WHILE_END = 'WHILE_END',
-  BREAK = 'BREAK',
+  FLOW_START = "FLOW_START",
+  FLOW_END = "FLOW_END",
+  BRANCH_SEPARATION = "BRANCH_SEPARATION",
+  BRANCH_ITEM = "BRANCH_ITEM",
+  BRANCH_MERGE = "BRANCH_MERGE",
+  FOR_EACH_START = "FOR_EACH_START",
+  FOR_EACH_END = "FOR_EACH_END",
+  WHILE_START = "WHILE_START",
+  WHILE_END = "WHILE_END",
+  BREAK = "BREAK",
 }
 export enum FrontendOnlyActionFlowNodeType {
-  CONCURRENT_BRANCH_SEPARATION = 'CONCURRENT_BRANCH_SEPARATION',
-  CONCURRENT_BRANCH_MERGE = 'CONCURRENT_BRANCH_MERGE',
-  CALL_ACTION = 'CALL_ACTION',
-  SUCCESS_FAIL_MERGE = 'SUCCESS_FAIL_MERGE',
+  CONCURRENT_BRANCH_SEPARATION = "CONCURRENT_BRANCH_SEPARATION",
+  CONCURRENT_BRANCH_MERGE = "CONCURRENT_BRANCH_MERGE",
+  CALL_ACTION = "CALL_ACTION",
+  SUCCESS_FAIL_MERGE = "SUCCESS_FAIL_MERGE",
 }
 export interface ChooseLocationEventBinding {
   addressAssociatedPathComponents?: PathComponent[];
@@ -1047,10 +1047,10 @@ export interface TerminateWhenFail {
   terminateWhenFail: boolean;
 }
 export enum DefaultColorType {
-  DEFAULT = 'default',
+  DEFAULT = "default",
 }
 export enum GradientColorType {
-  LINEAR = 'linear-gradient',
+  LINEAR = "linear-gradient",
 }
 export interface GeneralConfigState {
   enabled: boolean;
@@ -1741,17 +1741,17 @@ export interface UnknownEffect {
   effect: string;
 }
 export enum MobileNavigationTransitionType {
-  PUSH = 'PUSH',
+  PUSH = "PUSH",
 }
 export enum WebNavigationTransitionType {
-  PUSH = 'PUSH',
-  NEW_TAB = 'NEW_TAB',
+  PUSH = "PUSH",
+  NEW_TAB = "NEW_TAB",
 }
 export enum WechatNavigationTransitionType {
-  PUSH = 'PUSH',
-  RELAUNCH = 'RELAUNCH',
-  SWITCH_TO = 'SWITCH_TO',
-  REDIRECT = 'REDIRECT',
+  PUSH = "PUSH",
+  RELAUNCH = "RELAUNCH",
+  SWITCH_TO = "SWITCH_TO",
+  REDIRECT = "REDIRECT",
 }
 export interface FormattedNumber {
   formatOptions?: NumberFormatOptions;
@@ -1761,140 +1761,140 @@ export interface BinaryNumericTransform {
   leftOperand: TransformOperand;
   operator: string;
   rightOperand: TransformOperand;
-  type: 'binaryNumeric';
+  type: "binaryNumeric";
 }
 export interface UnaryNumericTransform {
   operator: string;
-  type: 'unaryNumeric';
+  type: "unaryNumeric";
 }
 export enum GenericOperator {
-  EQ = '_eq',
-  NEQ = '_neq',
-  GT = '_gt',
-  LT = '_lt',
-  GTE = '_gte',
-  LTE = '_lte',
-  ISNULL = '_is_null',
-  IS_NOT_NULL = '_is_not_null',
-  IN = '_in',
-  NOT_IN = '_nin',
-  REGEX_MATCH = '_regex_match',
+  EQ = "_eq",
+  NEQ = "_neq",
+  GT = "_gt",
+  LT = "_lt",
+  GTE = "_gte",
+  LTE = "_lte",
+  ISNULL = "_is_null",
+  IS_NOT_NULL = "_is_not_null",
+  IN = "_in",
+  NOT_IN = "_nin",
+  REGEX_MATCH = "_regex_match",
 }
 export enum TextOperator {
-  LIKE = '_like',
-  NLIKE = '_nlike',
-  ILIKE = '_ilike',
-  NILIKE = '_nilike',
+  LIKE = "_like",
+  NLIKE = "_nlike",
+  ILIKE = "_ilike",
+  NILIKE = "_nilike",
 }
 export enum BooleanOperator {
-  IS_TRUE = '_is_true',
-  IS_FALSE = '_is_false',
+  IS_TRUE = "_is_true",
+  IS_FALSE = "_is_false",
 }
 export enum CollectionOperator {
-  ISEMPTY = '_is_empty',
-  ISNOTEMPTY = '_is_not_empty',
-  INCLUDES = 'includes',
+  ISEMPTY = "_is_empty",
+  ISNOTEMPTY = "_is_not_empty",
+  INCLUDES = "includes",
 }
 export enum FormulaOperator {
-  TO_STRING = 'toText',
-  TO_INTEGER = 'toInteger',
-  TO_DECIMAL = 'toDecimal',
-  TO_DATE_TIME = 'toDateTime',
-  ADD = '+',
-  SUBTRACT = '-',
-  MULTIPLY = '*',
-  DIVIDE = '/',
-  MODULO = '%',
-  MIN = 'min',
-  MAX = 'max',
-  CEIL = 'ceil',
-  FLOOR = 'floor',
-  TRUNC = 'trunc',
-  ABS = 'abs',
-  RANDOM_NUMBER = 'randomNumber',
-  POWER = 'power',
-  LOG = 'log',
-  DECIMAL_FORMAT = 'decimal_format',
-  NUMBER_FORMATTING = 'numberFormatting',
-  DURATION_FORMATTING = 'durationFormatting',
-  EQUAL = 'equal',
-  NOT_EQUAL = 'not_equal',
-  STRING_CONCAT = 'stringConcat',
-  SUBSTRING = 'substring',
-  TO_LOWER_CASE = 'toLowerCase',
-  TO_UPPER_CASE = 'toUpperCase',
-  SPLIT = 'split',
-  STRING_REPLACE = 'stringReplace',
-  STRING_FIND = 'stringFind',
-  STRING_CONTAIN = 'stringContain',
-  SUBSTRING_TO_END = 'substringToEnd',
-  SUBSTRING_FROM_START = 'substringFromStart',
-  RANDOM_STRING = 'randomString',
-  SUBSTITUTE = 'substitute',
-  ENCODE_URL = 'encodeUrl',
-  DECODE_URL = 'decodeUrl',
-  UUID = 'uuid',
-  TEXT_REPEAT = 'textRepeat',
-  TRIM = 'trim',
-  REGEX_EXTRACT = 'regexExtract',
-  REGEX_EXTRACT_ALL = 'regexExtractAll',
-  REGEX_MATCH = 'regexMatch',
-  REGEX_REPLACE = 'regexReplace',
-  GET_VALUE_FROM_JSON = 'get_value_from_json',
-  STRING_LENGTH = 'stringLength',
-  ARRAY_LENGTH = 'arrayLength',
-  ARRAY_JOIN = 'array_join',
-  ARRAY_TO_ITEM_CONVERSION = 'arrayToItemConversion',
-  ARRAY_GET_ITEM = 'arrayGetItem',
-  ARRAY_FIRST_ITEM = 'arrayFirstItem',
-  ARRAY_LAST_ITEM = 'arrayLastItem',
-  RANDOM_ITEM = 'randomItem',
-  SLICE = 'slice',
-  INDEX_OF = 'indexOf',
-  ARRAY_MAPPING = 'arrayMapping',
-  FILTER = 'filter',
-  SEQUENCE = 'sequence',
-  COALESCE = 'coalesce',
-  ARRAY_MIN = 'arrayMin',
-  ARRAY_MAX = 'arrayMax',
-  ARRAY_SUM = 'arraySum',
-  ARRAY_AVERAGE = 'arrayAverage',
-  ARRAY_CONCAT = 'arrayConcat',
-  UNIQUE = 'unique',
-  CREATE_TIME = 'createTime',
-  GET_CURRENT_TIME = 'getCurrentTime',
-  DURATION = 'duration',
-  TIME_OPERATION = 'timeOperation',
-  DATE_PART = 'datePart',
-  DATE_TIME_COMBINE = 'dateTimeCombine',
-  TIMESTAMP_GET_DATE = 'timestampGetDate',
-  TIMESTAMP_GET_TIME = 'timestampGetTime',
-  DATE_TIME_FORMATTING = 'dateTimeFormatting',
-  RELATIVE_TIME_FORMATTING = 'relativeTimeFormatting',
-  DISTANCE = 'distance',
-  CREATE_GEO_POINT = 'createGeoPoint',
-  GET_VALUE_FROM_GEO_POINT = 'get_value_from_geo_point',
-  ENUM_ENTRIES = 'enumEntries',
+  TO_STRING = "toText",
+  TO_INTEGER = "toInteger",
+  TO_DECIMAL = "toDecimal",
+  TO_DATE_TIME = "toDateTime",
+  ADD = "+",
+  SUBTRACT = "-",
+  MULTIPLY = "*",
+  DIVIDE = "/",
+  MODULO = "%",
+  MIN = "min",
+  MAX = "max",
+  CEIL = "ceil",
+  FLOOR = "floor",
+  TRUNC = "trunc",
+  ABS = "abs",
+  RANDOM_NUMBER = "randomNumber",
+  POWER = "power",
+  LOG = "log",
+  DECIMAL_FORMAT = "decimal_format",
+  NUMBER_FORMATTING = "numberFormatting",
+  DURATION_FORMATTING = "durationFormatting",
+  EQUAL = "equal",
+  NOT_EQUAL = "not_equal",
+  STRING_CONCAT = "stringConcat",
+  SUBSTRING = "substring",
+  TO_LOWER_CASE = "toLowerCase",
+  TO_UPPER_CASE = "toUpperCase",
+  SPLIT = "split",
+  STRING_REPLACE = "stringReplace",
+  STRING_FIND = "stringFind",
+  STRING_CONTAIN = "stringContain",
+  SUBSTRING_TO_END = "substringToEnd",
+  SUBSTRING_FROM_START = "substringFromStart",
+  RANDOM_STRING = "randomString",
+  SUBSTITUTE = "substitute",
+  ENCODE_URL = "encodeUrl",
+  DECODE_URL = "decodeUrl",
+  UUID = "uuid",
+  TEXT_REPEAT = "textRepeat",
+  TRIM = "trim",
+  REGEX_EXTRACT = "regexExtract",
+  REGEX_EXTRACT_ALL = "regexExtractAll",
+  REGEX_MATCH = "regexMatch",
+  REGEX_REPLACE = "regexReplace",
+  GET_VALUE_FROM_JSON = "get_value_from_json",
+  STRING_LENGTH = "stringLength",
+  ARRAY_LENGTH = "arrayLength",
+  ARRAY_JOIN = "array_join",
+  ARRAY_TO_ITEM_CONVERSION = "arrayToItemConversion",
+  ARRAY_GET_ITEM = "arrayGetItem",
+  ARRAY_FIRST_ITEM = "arrayFirstItem",
+  ARRAY_LAST_ITEM = "arrayLastItem",
+  RANDOM_ITEM = "randomItem",
+  SLICE = "slice",
+  INDEX_OF = "indexOf",
+  ARRAY_MAPPING = "arrayMapping",
+  FILTER = "filter",
+  SEQUENCE = "sequence",
+  COALESCE = "coalesce",
+  ARRAY_MIN = "arrayMin",
+  ARRAY_MAX = "arrayMax",
+  ARRAY_SUM = "arraySum",
+  ARRAY_AVERAGE = "arrayAverage",
+  ARRAY_CONCAT = "arrayConcat",
+  UNIQUE = "unique",
+  CREATE_TIME = "createTime",
+  GET_CURRENT_TIME = "getCurrentTime",
+  DURATION = "duration",
+  TIME_OPERATION = "timeOperation",
+  DATE_PART = "datePart",
+  DATE_TIME_COMBINE = "dateTimeCombine",
+  TIMESTAMP_GET_DATE = "timestampGetDate",
+  TIMESTAMP_GET_TIME = "timestampGetTime",
+  DATE_TIME_FORMATTING = "dateTimeFormatting",
+  RELATIVE_TIME_FORMATTING = "relativeTimeFormatting",
+  DISTANCE = "distance",
+  CREATE_GEO_POINT = "createGeoPoint",
+  GET_VALUE_FROM_GEO_POINT = "get_value_from_geo_point",
+  ENUM_ENTRIES = "enumEntries",
 }
 export enum PrimitiveType {
-  STRING = 's:p:string',
-  DECIMAL = 's:p:decimal',
-  BIGINT = 's:p:bigint',
-  BOOLEAN = 's:p:boolean',
-  TIMESTAMPTZ = 's:p:timestamptz',
-  TIMETZ = 's:p:timetz',
-  DATE = 's:p:date',
-  JSONB = 's:p:jsonb',
-  IMAGE = 's:p:image',
-  VIDEO = 's:p:video',
-  FILE = 's:p:file',
-  GEO_POINT = 's:p:geo_point',
+  STRING = "s:p:string",
+  DECIMAL = "s:p:decimal",
+  BIGINT = "s:p:bigint",
+  BOOLEAN = "s:p:boolean",
+  TIMESTAMPTZ = "s:p:timestamptz",
+  TIMETZ = "s:p:timetz",
+  DATE = "s:p:date",
+  JSONB = "s:p:jsonb",
+  IMAGE = "s:p:image",
+  VIDEO = "s:p:video",
+  FILE = "s:p:file",
+  GEO_POINT = "s:p:geo_point",
 }
 export enum SystemDefinedType {
-  NULL = 'null',
-  LOCATION_INFO = 'SYSTEM_DEFINED:OBJECT:location_info',
-  BITMAP = 'SYSTEM_DEFINED:PRIMITIVE:bitmap',
-  BIGSERIAL = 'SYSTEM_DEFINED:PRIMITIVE:bigserial',
+  NULL = "null",
+  LOCATION_INFO = "SYSTEM_DEFINED:OBJECT:location_info",
+  BITMAP = "SYSTEM_DEFINED:PRIMITIVE:bitmap",
+  BIGSERIAL = "SYSTEM_DEFINED:PRIMITIVE:bigserial",
 }
 export interface ListViewProperties {
   autoGridEnabled: boolean;
@@ -1931,7 +1931,9 @@ export interface SendCustomVerificationCodeEventBinding {
   verificationCodeType?: SendVerificationCodeType;
 }
 export interface SendSystemVerificationCodeEventBinding {
-  contactType: SendVerificationCodeMethod.SYSTEM_EMAIL | SendVerificationCodeMethod.SYSTEM_PHONE;
+  contactType:
+    | SendVerificationCodeMethod.SYSTEM_EMAIL
+    | SendVerificationCodeMethod.SYSTEM_PHONE;
   displayName?: string;
   failedActions?: EventBinding[];
   id: string;
@@ -2078,7 +2080,9 @@ export interface CancelRecurringPaymentEventBinding {
   id: string;
   recurringPaymentId: DataBinding;
   successActions?: EventBinding[];
-  type: EventType.ALIPAY_CANCEL_RECURRING_PAYMENT | EventType.STRIPE_CANCEL_RECURRING_PAYMENT;
+  type:
+    | EventType.ALIPAY_CANCEL_RECURRING_PAYMENT
+    | EventType.STRIPE_CANCEL_RECURRING_PAYMENT;
 }
 export interface CheckVerificationCodeEventBinding {
   contactType: string;
@@ -2340,7 +2344,10 @@ export interface RefundEventBinding {
   paymentId: DataBinding;
   refundAmount: DataBinding;
   successActions?: EventBinding[];
-  type: EventType.ALIPAY_REFUND | EventType.WECHAT_REFUND | EventType.STRIPE_REFUND;
+  type:
+    | EventType.ALIPAY_REFUND
+    | EventType.WECHAT_REFUND
+    | EventType.STRIPE_REFUND;
 }
 export interface ScanQRCodeEventBinding {
   displayName?: string;
@@ -2548,18 +2555,21 @@ export interface LogisticsShipmentInfo {
 }
 export interface OtherShipmentInfo {
   itemDescription: DataBinding;
-  shippingMode: ShippingMode.SAME_CITY | ShippingMode.DIGITAL | ShippingMode.PICK_UP;
+  shippingMode:
+    | ShippingMode.SAME_CITY
+    | ShippingMode.DIGITAL
+    | ShippingMode.PICK_UP;
 }
 export interface BasicSortConfig {
   field: PathComponent[];
   sort: SortType;
-  type: 'BASIC';
+  type: "BASIC";
 }
 export interface VectorSortConfig {
   calculation: VectorCalculation;
   comparison: DataBinding;
   field: PathComponent[];
-  type: 'VECTOR';
+  type: "VECTOR";
 }
 export interface CustomTabConfig {
   mode: TabMode.CUSTOM;
@@ -4111,7 +4121,11 @@ export interface HasBodyParameterApiMeta {
   url: DataBinding;
 }
 export interface NoBodyParameterApiMeta {
-  method: APIHttpMethod.GET | APIHttpMethod.OPTION | APIHttpMethod.HEAD | APIHttpMethod.DELETE;
+  method:
+    | APIHttpMethod.GET
+    | APIHttpMethod.OPTION
+    | APIHttpMethod.HEAD
+    | APIHttpMethod.DELETE;
   parameter?: NoBodyParameters;
   url: DataBinding;
 }
@@ -4389,7 +4403,9 @@ export interface Lottie {
   type: ComponentRefactorComponentType.LOTTIE;
 }
 export interface LottieProgressBar {
-  design?: ComponentDesign<GeneralComponentStyle<LottieProgressBarWrapperStyle>>;
+  design?: ComponentDesign<
+    GeneralComponentStyle<LottieProgressBarWrapperStyle>
+  >;
   displayName: string;
   events?: LottieProgressBarEvents;
   id: string;
@@ -4454,7 +4470,9 @@ export interface Video {
   type: ComponentRefactorComponentType.VIDEO;
 }
 export interface WechatOfficialAccount {
-  design?: ComponentDesign<GeneralComponentStyle<WechatOfficialAccountWrapperStyle>>;
+  design?: ComponentDesign<
+    GeneralComponentStyle<WechatOfficialAccountWrapperStyle>
+  >;
   displayName: string;
   events?: undefined;
   id: string;
@@ -7079,7 +7097,9 @@ export interface OverrideRecord {
   componentFrame?: ComponentFrame;
   componentHidden?: boolean;
   dataAttributes?: OverrideAttributes;
-  interactionPropertyRecord?: { [key in InteractionType]?: InteractionProperty };
+  interactionPropertyRecord?: {
+    [key in InteractionType]?: InteractionProperty;
+  };
   isFloating?: boolean;
   layout?: ComponentLayout;
   variantRecord?: Record<string, InteractionProperty>;
@@ -7629,1158 +7649,1162 @@ export interface UploadedFileConfigItem {
   fileExId: string;
 }
 export enum AIContextType {
-  DB_QUERY = 'dbQuery',
-  TPA_QUERY = 'tpaQuery',
-  UPLOADED_FILE_CONFIG = 'uploadedFileConfig',
+  DB_QUERY = "dbQuery",
+  TPA_QUERY = "tpaQuery",
+  UPLOADED_FILE_CONFIG = "uploadedFileConfig",
 }
 export enum APIHttpMethod {
-  GET = 'GET',
-  POST = 'POST',
-  PUT = 'PUT',
-  DELETE = 'DELETE',
-  PATCH = 'PATCH',
-  OPTION = 'OPTION',
-  HEAD = 'HEAD',
+  GET = "GET",
+  POST = "POST",
+  PUT = "PUT",
+  DELETE = "DELETE",
+  PATCH = "PATCH",
+  OPTION = "OPTION",
+  HEAD = "HEAD",
 }
 export enum AggregateType {
-  MAX = 'max',
-  MIN = 'min',
-  SUM = 'sum',
-  AVG = 'avg',
+  MAX = "max",
+  MIN = "min",
+  SUM = "sum",
+  AVG = "avg",
 }
 export enum AiModel {
-  CHAT_GPT_4 = 'CHAT_GPT_4',
-  CHAT_GPT_3_5 = 'CHAT_GPT_3_5',
-  GPT_4O_MINI = 'GPT_4O_MINI',
+  CHAT_GPT_4 = "CHAT_GPT_4",
+  CHAT_GPT_3_5 = "CHAT_GPT_3_5",
+  GPT_4O_MINI = "GPT_4O_MINI",
 }
 export enum AlignItems {
-  FLEX_START = 'flex-start',
-  CENTER = 'center',
-  BASELINE = 'baseline',
-  FLEX_END = 'flex-end',
+  FLEX_START = "flex-start",
+  CENTER = "center",
+  BASELINE = "baseline",
+  FLEX_END = "flex-end",
 }
 export enum ApiContentType {
-  APPLICATION_JSON = 'application/json',
-  URL_ENCODED = 'application/x-www-form-urlencoded',
-  FORM_DATA = 'multipart/form-data',
+  APPLICATION_JSON = "application/json",
+  URL_ENCODED = "application/x-www-form-urlencoded",
+  FORM_DATA = "multipart/form-data",
 }
 export enum ArithmeticOperator {
-  INCREMENT = 'increment',
-  DECREMENT = 'decrement',
+  INCREMENT = "increment",
+  DECREMENT = "decrement",
 }
 export enum BackdropFilterType {
-  BLUR = 'blur',
+  BLUR = "blur",
 }
 export enum BackgroundImageFitType {
-  FILL = 'fill',
-  FIT = 'fit',
-  STRETCH = 'stretch',
-  CENTER = 'center',
-  TILE = 'tile',
+  FILL = "fill",
+  FIT = "fit",
+  STRETCH = "stretch",
+  CENTER = "center",
+  TILE = "tile",
 }
 export enum BillingCycleTimeUnit {
-  DAY = 'DAY',
-  MONTH = 'MONTH',
+  DAY = "DAY",
+  MONTH = "MONTH",
 }
 export enum BillingType {
-  ONE_TIME = 'ONE_TIME',
-  RECURRING = 'RECURRING',
-  REFUND = 'REFUND',
-  UPDATE_INVOICE = 'UPDATE_INVOICE',
+  ONE_TIME = "ONE_TIME",
+  RECURRING = "RECURRING",
+  REFUND = "REFUND",
+  UPDATE_INVOICE = "UPDATE_INVOICE",
 }
 export enum BorderStyleType {
-  SOLID = 'solid',
+  SOLID = "solid",
 }
 export enum BoxShadowType {
-  OUTSET = 'outset',
-  INSET = 'inset',
+  OUTSET = "outset",
+  INSET = "inset",
 }
 export enum BranchType {
-  MUTUAL_EXCLUSION = 'MUTUAL_EXCLUSION',
-  MUTUAL_TOLERANCE = 'MUTUAL_TOLERANCE',
+  MUTUAL_EXCLUSION = "MUTUAL_EXCLUSION",
+  MUTUAL_TOLERANCE = "MUTUAL_TOLERANCE",
 }
 export enum BuildTarget {
-  ANDROID = 'ANDROID',
-  IOS = 'IOS',
-  WECHAT_MINIPROGRAM = 'WECHAT_MINIPROGRAM',
-  MOBILE_WEB = 'MOBILE_WEB',
-  WEB = 'WEB',
+  ANDROID = "ANDROID",
+  IOS = "IOS",
+  WECHAT_MINIPROGRAM = "WECHAT_MINIPROGRAM",
+  MOBILE_WEB = "MOBILE_WEB",
+  WEB = "WEB",
 }
 export enum BuiltInFunction {
-  GET_CURRENT_DATE = 'getCurrentDate',
-  GET_CURRENT_TIME = 'getCurrentTime',
-  GET_TIMESTAMP = 'getTimestamp',
-  GET_CLIPBOARD_DATA = 'getClipboardData',
-  GET_NULL = 'getNull',
-  GET_EMPTY_TEXT = 'getEmptyText',
-  GET_EMPTY_ARRAY = 'getEmptyArray',
-  GET_IS_IOS = 'getIsIOS',
-  GET_IS_ANDROID = 'getIsAndroid',
-  GET_IS_LOGGED_IN = 'getIsLoggedIn',
-  GET_LOGGED_IN_USER_ROLES = 'getLoggedInUserRoles',
-  GET_PAGE_URL = 'getPageUrl',
-  GET_WEB_REFERRER = 'getWebReferrer',
-  GET_USER_AGENT = 'getUserAgent',
-  GET_CURRENT_VERIFICATION_CODE = 'getCurrentVerificationCode',
-  GET_CURRENT_VERIFICATION_CODE_TARGET = 'getCurrentVerificationCodeTarget',
-  GET_CURRENT_VERIFICATION_CODE_TYPE = 'getCurrentVerificationCodeType',
+  GET_CURRENT_DATE = "getCurrentDate",
+  GET_CURRENT_TIME = "getCurrentTime",
+  GET_TIMESTAMP = "getTimestamp",
+  GET_CLIPBOARD_DATA = "getClipboardData",
+  GET_NULL = "getNull",
+  GET_EMPTY_TEXT = "getEmptyText",
+  GET_EMPTY_ARRAY = "getEmptyArray",
+  GET_IS_IOS = "getIsIOS",
+  GET_IS_ANDROID = "getIsAndroid",
+  GET_IS_LOGGED_IN = "getIsLoggedIn",
+  GET_LOGGED_IN_USER_ROLES = "getLoggedInUserRoles",
+  GET_PAGE_URL = "getPageUrl",
+  GET_WEB_REFERRER = "getWebReferrer",
+  GET_USER_AGENT = "getUserAgent",
+  GET_CURRENT_VERIFICATION_CODE = "getCurrentVerificationCode",
+  GET_CURRENT_VERIFICATION_CODE_TARGET = "getCurrentVerificationCodeTarget",
+  GET_CURRENT_VERIFICATION_CODE_TYPE = "getCurrentVerificationCodeType",
 }
 export enum CallbackType {
-  DEFAULT = 'DEFAULT',
-  WECHATPAY_MINIPROGRAM = 'WECHATPAY_MINIPROGRAM',
-  WECHATPAY_PARTNER_MINIPROGRAM = 'WECHATPAY_PARTNER_MINIPROGRAM',
-  OTTPAY = 'OTTPAY',
-  ALIPAY_WEB = 'ALIPAY_WEB',
-  STRIPE_WEB = 'STRIPE_WEB',
-  MALL_BOOK = 'MALL_BOOK',
+  DEFAULT = "DEFAULT",
+  WECHATPAY_MINIPROGRAM = "WECHATPAY_MINIPROGRAM",
+  WECHATPAY_PARTNER_MINIPROGRAM = "WECHATPAY_PARTNER_MINIPROGRAM",
+  OTTPAY = "OTTPAY",
+  ALIPAY_WEB = "ALIPAY_WEB",
+  STRIPE_WEB = "STRIPE_WEB",
+  MALL_BOOK = "MALL_BOOK",
 }
 export enum CameraFlash {
-  AUTO = 'auto',
-  ON = 'on',
-  OFF = 'off',
-  TORCH = 'torch',
+  AUTO = "auto",
+  ON = "on",
+  OFF = "off",
+  TORCH = "torch",
 }
 export enum CameraFrameSize {
-  SMALL = 'small',
-  MEDIUM = 'medium',
-  LARGE = 'large',
+  SMALL = "small",
+  MEDIUM = "medium",
+  LARGE = "large",
 }
 export enum CameraPosition {
-  FRONT = 'front',
-  BACK = 'back',
+  FRONT = "front",
+  BACK = "back",
 }
 export enum CameraResolution {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
 }
 export enum ClientType {
-  WECHAT_MINI_PROGRAM = 'WECHAT_MINI_PROGRAM',
-  WEB = 'WEB',
-  MOBILE = 'MOBILE',
+  WECHAT_MINI_PROGRAM = "WECHAT_MINI_PROGRAM",
+  WEB = "WEB",
+  MOBILE = "MOBILE",
 }
 export enum ClonedComponentGroupType {
-  DEFAULT = 'DEFAULT',
-  CUSTOM = 'CUSTOM',
+  DEFAULT = "DEFAULT",
+  CUSTOM = "CUSTOM",
 }
 export enum CloseModalMode {
-  CLOSE_ON_TOP = 'CLOSE_ON_TOP',
-  CLOSE_ALL = 'CLOSE_ALL',
+  CLOSE_ON_TOP = "CLOSE_ON_TOP",
+  CLOSE_ALL = "CLOSE_ALL",
 }
 export enum CodeComponentPropType {
-  NUMBER = 'Number',
-  STRING = 'String',
-  BOOLEAN = 'Boolean',
-  DATE = 'Date',
-  TIME = 'Time',
-  DATETIME = 'DateTime',
-  JSON = 'Json',
-  NUMBER_ARRAY = 'NumberArray',
-  STRING_ARRAY = 'StringArray',
-  BOOLEAN_ARRAY = 'BooleanArray',
-  DATE_ARRAY = 'DateArray',
-  TIME_ARRAY = 'TimeArray',
-  DATETIME_ARRAY = 'DateTimeArray',
-  JSON_ARRAY = 'JsonArray',
-  COMPONENT = 'Component',
-  EVENT_HANDLER = 'EventHandler',
-  UNKNOWN = 'Unknown',
+  NUMBER = "Number",
+  STRING = "String",
+  BOOLEAN = "Boolean",
+  DATE = "Date",
+  TIME = "Time",
+  DATETIME = "DateTime",
+  JSON = "Json",
+  NUMBER_ARRAY = "NumberArray",
+  STRING_ARRAY = "StringArray",
+  BOOLEAN_ARRAY = "BooleanArray",
+  DATE_ARRAY = "DateArray",
+  TIME_ARRAY = "TimeArray",
+  DATETIME_ARRAY = "DateTimeArray",
+  JSON_ARRAY = "JsonArray",
+  COMPONENT = "Component",
+  EVENT_HANDLER = "EventHandler",
+  UNKNOWN = "Unknown",
 }
 export enum ColumnType {
-  BIGSERIAL = 'BIGSERIAL',
-  BIGINT = 'BIGINT',
-  INTEGER = 'INTEGER',
-  FLOAT8 = 'FLOAT8',
-  DECIMAL = 'DECIMAL',
-  TIMESTAMPTZ = 'TIMESTAMPTZ',
-  TIMETZ = 'TIMETZ',
-  DATE = 'DATE',
-  INTERVAL = 'INTERVAL',
-  TEXT = 'TEXT',
-  BOOLEAN = 'BOOLEAN',
-  IMAGE = 'IMAGE',
-  VIDEO = 'VIDEO',
-  IMAGE_LIST = 'IMAGE_LIST',
-  FILE = 'FILE',
-  GEO_POINT = 'GEO_POINT',
-  JSONB = 'JSONB',
+  BIGSERIAL = "BIGSERIAL",
+  BIGINT = "BIGINT",
+  INTEGER = "INTEGER",
+  FLOAT8 = "FLOAT8",
+  DECIMAL = "DECIMAL",
+  TIMESTAMPTZ = "TIMESTAMPTZ",
+  TIMETZ = "TIMETZ",
+  DATE = "DATE",
+  INTERVAL = "INTERVAL",
+  TEXT = "TEXT",
+  BOOLEAN = "BOOLEAN",
+  IMAGE = "IMAGE",
+  VIDEO = "VIDEO",
+  IMAGE_LIST = "IMAGE_LIST",
+  FILE = "FILE",
+  GEO_POINT = "GEO_POINT",
+  JSONB = "JSONB",
 }
 export enum ComponentLayoutDirection {
-  TOP = 'top',
-  RIGHT = 'right',
-  BOTTOM = 'bottom',
-  LEFT = 'left',
+  TOP = "top",
+  RIGHT = "right",
+  BOTTOM = "bottom",
+  LEFT = "left",
 }
 export enum ComponentLayoutFlexDirection {
-  HORIZONTAL = 'horizontal',
-  VERTICAL = 'vertical',
+  HORIZONTAL = "horizontal",
+  VERTICAL = "vertical",
 }
 export enum ComponentLayoutOverflow {
-  SCROLL = 'scroll',
-  VISIBLE = 'visible',
-  HIDDEN = 'hidden',
+  SCROLL = "scroll",
+  VISIBLE = "visible",
+  HIDDEN = "hidden",
 }
 export enum ComponentLayoutType {
-  FLEX = 'flex',
-  GRID = 'grid',
+  FLEX = "flex",
+  GRID = "grid",
 }
 export enum ComponentLayoutUnit {
-  FIXED = 'px',
-  RELATIVE = '%',
-  FIT_CONTENT = 'auto',
-  FILL = 'fr',
+  FIXED = "px",
+  RELATIVE = "%",
+  FIT_CONTENT = "auto",
+  FILL = "fr",
 }
 export enum ComponentRefactorComponentType {
-  PAGE = 'PAGE',
-  BUTTON = 'BUTTON',
-  TEXT = 'TEXT',
-  LAYOUT_VIEW = 'LAYOUT_VIEW',
-  LIST = 'LIST',
-  IMAGE = 'IMAGE',
-  VIDEO = 'VIDEO',
-  LOTTIE = 'LOTTIE',
-  WECHAT_NAVIGATION_BAR = 'WECHAT_NAVIGATION_BAR',
-  MOBILE_NAVIGATION_BAR = 'MOBILE_NAVIGATION_BAR',
-  RICH_TEXT = 'RICH_TEXT',
-  TEXT_INPUT = 'TEXT_INPUT',
-  NUMBER_INPUT = 'NUMBER_INPUT',
-  VIDEO_PICKER = 'VIDEO_PICKER',
-  FILE_PICKER = 'FILE_PICKER',
-  TAB_VIEW = 'TAB_VIEW',
-  SELECT_VIEW = 'SELECT_VIEW',
-  SWITCH = 'SWITCH',
-  MODAL = 'MODAL',
-  MAP = 'MAP',
-  MAP_MARKER = 'MAP_MARKER',
-  WECHAT_ADVERT_BANNER = 'WECHAT_ADVERT_BANNER',
-  LOTTIE_PROGRESS_BAR = 'LOTTIE_PROGRESS_BAR',
-  CALENDAR = 'CALENDAR',
-  CAMERA = 'CAMERA',
-  CONDITIONAL_VIEW = 'CONDITIONAL_VIEW',
-  WECHAT_OFFICIAL_ACCOUNT = 'WECHAT_OFFICIAL_ACCOUNT',
-  HORIZONTAL_LINE = 'HORIZONTAL_LINE',
-  CODE_COMPONENT = 'CODE_COMPONENT',
-  SHEET = 'SHEET',
-  HTML = 'HTML',
-  RICH_TEXT_EDITOR = 'RICH_TEXT_EDITOR',
-  MIX_IMAGE_PICKER = 'MIX_IMAGE_PICKER',
-  DATE_TIME_PICKER = 'DATE_TIME_PICKER',
-  DATA_SELECTOR = 'DATA_SELECTOR',
-  PROGRESS_BAR = 'PROGRESS_BAR',
+  PAGE = "PAGE",
+  BUTTON = "BUTTON",
+  TEXT = "TEXT",
+  LAYOUT_VIEW = "LAYOUT_VIEW",
+  LIST = "LIST",
+  IMAGE = "IMAGE",
+  VIDEO = "VIDEO",
+  LOTTIE = "LOTTIE",
+  WECHAT_NAVIGATION_BAR = "WECHAT_NAVIGATION_BAR",
+  MOBILE_NAVIGATION_BAR = "MOBILE_NAVIGATION_BAR",
+  RICH_TEXT = "RICH_TEXT",
+  TEXT_INPUT = "TEXT_INPUT",
+  NUMBER_INPUT = "NUMBER_INPUT",
+  VIDEO_PICKER = "VIDEO_PICKER",
+  FILE_PICKER = "FILE_PICKER",
+  TAB_VIEW = "TAB_VIEW",
+  SELECT_VIEW = "SELECT_VIEW",
+  SWITCH = "SWITCH",
+  MODAL = "MODAL",
+  MAP = "MAP",
+  MAP_MARKER = "MAP_MARKER",
+  WECHAT_ADVERT_BANNER = "WECHAT_ADVERT_BANNER",
+  LOTTIE_PROGRESS_BAR = "LOTTIE_PROGRESS_BAR",
+  CALENDAR = "CALENDAR",
+  CAMERA = "CAMERA",
+  CONDITIONAL_VIEW = "CONDITIONAL_VIEW",
+  WECHAT_OFFICIAL_ACCOUNT = "WECHAT_OFFICIAL_ACCOUNT",
+  HORIZONTAL_LINE = "HORIZONTAL_LINE",
+  CODE_COMPONENT = "CODE_COMPONENT",
+  SHEET = "SHEET",
+  HTML = "HTML",
+  RICH_TEXT_EDITOR = "RICH_TEXT_EDITOR",
+  MIX_IMAGE_PICKER = "MIX_IMAGE_PICKER",
+  DATE_TIME_PICKER = "DATE_TIME_PICKER",
+  DATA_SELECTOR = "DATA_SELECTOR",
+  PROGRESS_BAR = "PROGRESS_BAR",
 }
 export enum ComponentRefactorCursorType {
-  IMAGE = 'image',
-  KEYWORD = 'keyword',
+  IMAGE = "image",
+  KEYWORD = "keyword",
 }
 export enum ComponentRefactorFontStyle {
-  NORMAL = 'normal',
-  ITALIC = 'italic',
-  OBLIQUE = 'oblique',
+  NORMAL = "normal",
+  ITALIC = "italic",
+  OBLIQUE = "oblique",
 }
 export enum ComponentRefactorImageSource {
-  EXID = 'EXID',
-  URL = 'URL',
+  EXID = "EXID",
+  URL = "URL",
 }
 export enum ComponentRefactorTextAlign {
-  LEFT = 'left',
-  CENTER = 'center',
-  RIGHT = 'right',
+  LEFT = "left",
+  CENTER = "center",
+  RIGHT = "right",
 }
 export enum ComponentRefactorTextDecorationLine {
-  UNDERLINE = 'underline',
-  LINE_THROUGH = 'line-through',
-  NONE = 'none',
+  UNDERLINE = "underline",
+  LINE_THROUGH = "line-through",
+  NONE = "none",
 }
 export enum ComponentRefactorVerticalDirection {
-  TOP = 'top',
-  BOTTOM = 'bottom',
-  BOTH = 'both',
+  TOP = "top",
+  BOTTOM = "bottom",
+  BOTH = "both",
 }
 export enum ComponentRefactorVideoSource {
-  EXID = 'EXID',
-  URL = 'URL',
-  YOUTUBE = 'YOUTUBE',
+  EXID = "EXID",
+  URL = "URL",
+  YOUTUBE = "YOUTUBE",
 }
 export enum ComponentType {
-  MOBILE_PAGE = 'mobile-page',
-  BUTTON = 'button',
-  TEXT = 'text',
-  CUSTOM_VIEW = 'custom-view',
-  CUSTOM_LIST = 'custom-list',
-  HORIZONTAL_LIST = 'horizontal-list',
-  IMAGE = 'image',
-  VIDEO = 'video',
-  LOTTIE = 'lottie',
-  ICON = 'icon',
-  MOBILE_STATUS_BAR = 'mobile-status-bar',
-  WECHAT_NAVIGATION_BAR = 'wechat-navigation-bar',
-  SIMPLE_LIST = 'simple-list',
-  SLOT_FOOTER = 'slot-footer',
-  RICH_TEXT = 'rich-text',
-  INPUT = 'input',
-  NUMBER_INPUT = 'number-input',
-  DATA_PICKER = 'data-picker',
-  IMAGE_PICKER = 'image-picker',
-  VIDEO_PICKER = 'video-picker',
-  FILE_PICKER = 'file-picker',
-  TAB_VIEW = 'tab-view',
-  BLANK_CONTAINER = 'blank-container',
-  SCROLL_VIEW = 'scroll-view',
-  SELECT_VIEW = 'select-view',
-  SWITCH = 'switch',
-  MODAL_VIEW = 'modal-view',
-  MULTI_IMAGE = 'multi-image',
-  MULTI_IMAGE_PICKER = 'multi-image-picker',
-  MAP_VIEW = 'map-view',
-  MARKER = 'marker',
-  ADVERT_BANNER = 'advert-banner',
-  COUNT_DOWN = 'count-down',
-  PROGRESS_BAR = 'progress-bar',
-  CALENDER = 'calendar',
-  CAMERA_VIEW = 'camera-view',
-  CONDITIONAL_CONTAINER = 'conditional-container',
-  CONDITIONAL_CONTAINER_CHILD = 'conditional-container-child',
-  CUSTOM_MULTI_IMAGE_PICKER = 'custom-multi-image-picker',
-  WECHAT_OFFICIAL_ACCOUNT = 'wechat-official-account',
-  HORIZONTAL_LINE = 'horizontal-line',
-  CUSTOM_COMPONENT = 'custom-component',
-  SHEET = 'sheet',
-  HTML = 'html',
-  WEB_PAGE = 'web-page',
-  PAGING_TOOLBAR = 'paging-toolbar',
-  RICH_TEXT_EDITOR = 'rich-text-editor',
-  REUSABLE_COMPONENT = 'reusable-component',
-  INSTANCE_COMPONENT = 'instance-component',
-  MIX_IMAGE_PICKER = 'mix-image-picker',
-  DATE_TIME_PICKER = 'date-time-picker',
-  DATA_SELECTOR = 'data-selector',
-  SIMPLE_PROGRESS_BAR = 'simple-progress-bar',
+  MOBILE_PAGE = "mobile-page",
+  BUTTON = "button",
+  TEXT = "text",
+  CUSTOM_VIEW = "custom-view",
+  CUSTOM_LIST = "custom-list",
+  HORIZONTAL_LIST = "horizontal-list",
+  IMAGE = "image",
+  VIDEO = "video",
+  LOTTIE = "lottie",
+  ICON = "icon",
+  MOBILE_STATUS_BAR = "mobile-status-bar",
+  WECHAT_NAVIGATION_BAR = "wechat-navigation-bar",
+  SIMPLE_LIST = "simple-list",
+  SLOT_FOOTER = "slot-footer",
+  RICH_TEXT = "rich-text",
+  INPUT = "input",
+  NUMBER_INPUT = "number-input",
+  DATA_PICKER = "data-picker",
+  IMAGE_PICKER = "image-picker",
+  VIDEO_PICKER = "video-picker",
+  FILE_PICKER = "file-picker",
+  TAB_VIEW = "tab-view",
+  BLANK_CONTAINER = "blank-container",
+  SCROLL_VIEW = "scroll-view",
+  SELECT_VIEW = "select-view",
+  SWITCH = "switch",
+  MODAL_VIEW = "modal-view",
+  MULTI_IMAGE = "multi-image",
+  MULTI_IMAGE_PICKER = "multi-image-picker",
+  MAP_VIEW = "map-view",
+  MARKER = "marker",
+  ADVERT_BANNER = "advert-banner",
+  COUNT_DOWN = "count-down",
+  PROGRESS_BAR = "progress-bar",
+  CALENDER = "calendar",
+  CAMERA_VIEW = "camera-view",
+  CONDITIONAL_CONTAINER = "conditional-container",
+  CONDITIONAL_CONTAINER_CHILD = "conditional-container-child",
+  CUSTOM_MULTI_IMAGE_PICKER = "custom-multi-image-picker",
+  WECHAT_OFFICIAL_ACCOUNT = "wechat-official-account",
+  HORIZONTAL_LINE = "horizontal-line",
+  CUSTOM_COMPONENT = "custom-component",
+  SHEET = "sheet",
+  HTML = "html",
+  WEB_PAGE = "web-page",
+  PAGING_TOOLBAR = "paging-toolbar",
+  RICH_TEXT_EDITOR = "rich-text-editor",
+  REUSABLE_COMPONENT = "reusable-component",
+  INSTANCE_COMPONENT = "instance-component",
+  MIX_IMAGE_PICKER = "mix-image-picker",
+  DATE_TIME_PICKER = "date-time-picker",
+  DATA_SELECTOR = "data-selector",
+  SIMPLE_PROGRESS_BAR = "simple-progress-bar",
 }
 export enum ConditionCategory {
-  CONSTANT = 'constant-condition',
-  EXPRESSION = 'expression-condition',
-  ENVIRONMENT = 'environment-condition',
+  CONSTANT = "constant-condition",
+  EXPRESSION = "expression-condition",
+  ENVIRONMENT = "environment-condition",
 }
 export enum ConstantConditionType {
-  ALWAYS = 'always',
-  DEFAULT = 'default',
-  NEVER = 'never',
+  ALWAYS = "always",
+  DEFAULT = "default",
+  NEVER = "never",
 }
 export enum ContentType {
-  APPLICATION_JSON = 'APPLICATION_JSON',
-  TEXT_PLAIN = 'TEXT_PLAIN',
-  TEXT_HTML = 'TEXT_HTML',
+  APPLICATION_JSON = "APPLICATION_JSON",
+  TEXT_PLAIN = "TEXT_PLAIN",
+  TEXT_HTML = "TEXT_HTML",
 }
 export enum CountDownActionType {
-  START = 'start',
-  PAUSE = 'pause',
-  RESET = 'reset',
+  START = "start",
+  PAUSE = "pause",
+  RESET = "reset",
 }
 export enum CronInputType {
-  CONFIGURED = 'CONFIGURED',
-  CUSTOMIZED = 'CUSTOMIZED',
+  CONFIGURED = "CONFIGURED",
+  CUSTOMIZED = "CUSTOMIZED",
 }
 export enum CursorKeyword {
-  INHERIT = 'inherit',
-  DEFAULT = 'default',
-  AUTO = 'auto',
-  NONE = 'none',
-  POINTER = 'pointer',
-  HELP = 'help',
-  NOT_ALLOWED = 'not-allowed',
-  PROGRESS = 'progress',
-  TEXT = 'text',
+  INHERIT = "inherit",
+  DEFAULT = "default",
+  AUTO = "auto",
+  NONE = "none",
+  POINTER = "pointer",
+  HELP = "help",
+  NOT_ALLOWED = "not-allowed",
+  PROGRESS = "progress",
+  TEXT = "text",
 }
 export enum CustomComponentItemParameterType {
-  ARRAY = 'ARRAY',
-  BOOLEAN = 'BOOLEAN',
-  FLOAT8 = 'FLOAT8',
-  IMAGE = 'IMAGE',
-  INTEGER = 'INTEGER',
-  OBJECT = 'OBJECT',
-  TEXT = 'TEXT',
+  ARRAY = "ARRAY",
+  BOOLEAN = "BOOLEAN",
+  FLOAT8 = "FLOAT8",
+  IMAGE = "IMAGE",
+  INTEGER = "INTEGER",
+  OBJECT = "OBJECT",
+  TEXT = "TEXT",
 }
 export enum DataBindingOperation {
-  CONCAT = 'concat',
+  CONCAT = "concat",
 }
 export enum DataConditionType {
-  FILLED = 'filled',
-  EMPTY = 'empty',
-  EMAIL = 'email',
-  PHONE_NUMBER = 'phone-number',
-  AUDITED_CONTENT = 'audited-content',
-  REGEX = 'regex',
+  FILLED = "filled",
+  EMPTY = "empty",
+  EMAIL = "email",
+  PHONE_NUMBER = "phone-number",
+  AUDITED_CONTENT = "audited-content",
+  REGEX = "regex",
 }
 export enum DataEncode {
-  NONE_ENCODE = 'NONE_ENCODE',
-  JSON_STRING_ENCODE = 'JSON_STRING_ENCODE',
-  JSON_MEDIA_ENCODE = 'JSON_MEDIA_ENCODE',
-  URL_MEDIA_ENCODE = 'URL_MEDIA_ENCODE',
-  BASE64_MEDIA_ENCODE = 'BASE64_MEDIA_ENCODE',
+  NONE_ENCODE = "NONE_ENCODE",
+  JSON_STRING_ENCODE = "JSON_STRING_ENCODE",
+  JSON_MEDIA_ENCODE = "JSON_MEDIA_ENCODE",
+  URL_MEDIA_ENCODE = "URL_MEDIA_ENCODE",
+  BASE64_MEDIA_ENCODE = "BASE64_MEDIA_ENCODE",
 }
 export enum DataModelFieldType {
-  COLUMN = 'COLUMN',
-  RELATION_IN_SOURCE = 'RELATION_IN_SOURCE',
+  COLUMN = "COLUMN",
+  RELATION_IN_SOURCE = "RELATION_IN_SOURCE",
 }
 export enum DateFormat {
-  ELAPSED_TIME = 'elapsed-time',
-  DATE = 'yyyy/MM/dd',
-  MONTH_DAY = 'MM/dd',
-  DATE_TIME = 'yyyy/MM/dd HH:mm',
-  DAY_OF_WEEK = 'E',
-  TIME = 'HH:mm',
-  MONTH_DAY_YEAR = 'MM/dd/yyyy',
-  MMM_DO_YYYY = 'MMM. Do, YYYY',
-  DEFAULT = 'yyyy/MM/ddThh:mmTZD',
+  ELAPSED_TIME = "elapsed-time",
+  DATE = "yyyy/MM/dd",
+  MONTH_DAY = "MM/dd",
+  DATE_TIME = "yyyy/MM/dd HH:mm",
+  DAY_OF_WEEK = "E",
+  TIME = "HH:mm",
+  MONTH_DAY_YEAR = "MM/dd/yyyy",
+  MMM_DO_YYYY = "MMM. Do, YYYY",
+  DEFAULT = "yyyy/MM/ddThh:mmTZD",
 }
 export enum DateTimePickerMode {
-  TIME = 'TIME',
-  DATE = 'DATE',
+  TIME = "TIME",
+  DATE = "DATE",
 }
 export enum DateTimeType {
-  DATE = 'DATE',
-  TIME = 'TIME',
-  TIMESTAMP = 'TIMESTAMP',
+  DATE = "DATE",
+  TIME = "TIME",
+  TIMESTAMP = "TIMESTAMP",
 }
 export enum DateTimeUnit {
-  YEAR = 'year',
-  MONTH = 'month',
-  DAY = 'day',
-  HOUR = 'hour',
-  MINUTE = 'minute',
-  SECOND = 'second',
-  MILLISECOND = 'millisecond',
-  WEEKDAY = 'weekday',
-  WEEK = 'week',
+  YEAR = "year",
+  MONTH = "month",
+  DAY = "day",
+  HOUR = "hour",
+  MINUTE = "minute",
+  SECOND = "second",
+  MILLISECOND = "millisecond",
+  WEEKDAY = "weekday",
+  WEEK = "week",
 }
 export enum DbOperationType {
-  INSERT = 'INSERT',
-  UPDATE = 'UPDATE',
-  INSERT_OR_UPDATE = 'INSERT_OR_UPDATE',
-  DELETE = 'DELETE',
+  INSERT = "INSERT",
+  UPDATE = "UPDATE",
+  INSERT_OR_UPDATE = "INSERT_OR_UPDATE",
+  DELETE = "DELETE",
 }
 export enum DistanceMeasurement {
-  METER = 'METER',
-  KILOMETER = 'KILOMETER',
-  MILE = 'MILE',
+  METER = "METER",
+  KILOMETER = "KILOMETER",
+  MILE = "MILE",
 }
 export enum EmbeddingModel {
-  TEXT_EMBEDDING_ADA_002 = 'TEXT_EMBEDDING_ADA_002',
-  ZHIPU_TEXT_EMBEDDING = 'ZHIPU_TEXT_EMBEDDING',
+  TEXT_EMBEDDING_ADA_002 = "TEXT_EMBEDDING_ADA_002",
+  ZHIPU_TEXT_EMBEDDING = "ZHIPU_TEXT_EMBEDDING",
 }
 export enum EncoderType {
-  MEDIA_TO_URL = 'MEDIA_TO_URL',
-  MEDIA_TO_BASE64 = 'MEDIA_TO_BASE64',
-  JSON_TO_STRING = 'JSON_TO_STRING',
+  MEDIA_TO_URL = "MEDIA_TO_URL",
+  MEDIA_TO_BASE64 = "MEDIA_TO_BASE64",
+  JSON_TO_STRING = "JSON_TO_STRING",
 }
 export enum EnvironmentConditionType {
-  OS_TYPE = 'os-type',
-  WECHAT_PERMISSION = 'wechat-permission',
+  OS_TYPE = "os-type",
+  WECHAT_PERMISSION = "wechat-permission",
 }
 export enum EventType {
-  SWITCH_VIEW_CASE = 'switch-view-case',
-  RERUN_CONDITION = 'rerun-condition',
-  NAVIGATION = 'navigation',
-  MUTATION = 'mutation',
-  TRIGGER_MUTATION = 'trigger-mutation',
-  THIRD_PARTY_API = 'thirdParty-api',
-  FUNCTOR_API = 'functor-api',
-  FUNCTOR = 'functor',
-  BATCH_MUTATION = 'batch-mutation',
-  QUERY = 'query',
-  SUBSCRIPTION = 'subscription',
-  SET_INPUT_VALUE = 'set-input-value',
-  RESET_INPUT_VALUE = 'reset-input-value',
-  SET_PAGE_DATA = 'set-page-data',
-  SET_GLOBAL_DATA = 'set-global-data',
-  REFRESH = 'refresh',
-  REFRESH_LIST = 'refresh-list',
-  REFRESH_CELL = 'refresh-cell',
-  REFRESH_LOGIN_USER = 'refresh-login-user',
-  USER_REGISTER = 'user-register',
-  USER_LOGIN = 'user-login',
-  SEND_VERIFICATION_CODE = 'send-verification-code',
-  CHECK_VERIFICATION_CODE = 'check-verification-code',
-  CONDITIONAL = 'conditional',
-  SHOW_MODAL = 'show-modal',
-  HIDE_MODAL = 'hide-modal',
-  SHOW_TOAST = 'show-toast',
-  OPEN_EXTERNAL_LINK = 'open-external-link',
-  AUDIO = 'audio',
-  VIDEO = 'video',
-  FULLSCREEN_IMAGE = 'fullscreen-image',
-  GET_LOCATION = 'get-location',
-  OPEN_LOCATION = 'open-location',
-  CHOOSE_LOCATION = 'choose-location',
-  SCROLL_TO = 'scroll-to',
-  UPLOAD_FILE = 'upload-file',
-  SCROLL_PAGE_TO = 'scroll-page-to',
-  LOTTIE = 'lottie',
-  WECHAT_NOTIFICATION = 'wechat-notification',
-  SMS_NOTIFICATION = 'sms-notification',
-  NOTIFICATION_AUTHORIZATION = 'notification-authorization',
-  GENERATE_QR_CODE = 'generate-qr-code',
-  GENERATE_MINI_PROGRAM_CODE = 'generate-mini-program-code',
-  SCAN_QR_CODE = 'scan-qr-code',
-  PREVIEW_DOCUMENT = 'preview-document',
-  SCROLL_HORIZONTAL_LIST = 'scroll-horizontal-list',
-  GET_ADMINISTRATION_AREA = 'get-administration-area',
-  SET_FOLD_MODE = 'set-fold-mode',
-  IMAGE_PICKER_ADD_IMAGE = 'image-picker-add-image',
-  IMAGE_PICKER_DELETE_IMAGE = 'image-picker-delete-image',
-  IMAGE_PICKER_REPLACE_IMAGE = 'image-picker-replace-image',
-  LIST_ACTION = 'list-action',
-  IMAGE_FILTER = 'image-filter',
-  EDIT_FILTER_AND_STICKER = 'edit-filter-and-sticker',
-  ACTION_FLOW = 'action-flow',
-  ZAI_TASK = 'zai-task',
-  AI_CREATE_CONVERSATION = 'ai-create-conversation',
-  AI_DELETE_CONVERSATION = 'ai-delete-conversation',
-  AI_SEND_MESSAGE = 'ai-send-message',
-  AI_OBTAIN_INFO = 'ai-obtain-info',
-  AI_STOP_RESPONSE = 'ai-stop-response',
-  SHARE = 'share',
-  LOG = 'log',
-  COUNTDOWN = 'countdown',
-  SET_CLIPBOARD = 'set-clipboard',
-  CALL_PHONE = 'call-phone',
-  TAKE_PHOTO = 'take-photo',
-  OBTAIN_PHONE_NUMBER = 'obtain-phone-number',
-  OPEN_WEB_VIEW = 'open-web-view',
-  CONFIGURE_CAMERA = 'configure-camera',
-  OPEN_WECHAT_SETTING = 'open-wechat-setting',
-  WECHAT_CONTACT = 'wechat-contact',
-  OPEN_REWARDED_VIDEO_AD = 'open-rewarded-video-ad',
-  OPEN_CHANNELS_LIVE = 'open-channels-live',
-  NAVIGATE_TO_MINI_PROGRAM = 'navigate-to-mini-program',
-  MODIFY_JSONB = 'modify-jsonb',
-  USERNAME_REGISTER = 'username-register',
-  PHONE_NUMBER_REGISTER = 'phone-number-register',
-  EMAIL_REGISTER = 'email-register',
-  USERNAME_LOGIN = 'username-login',
-  PHONE_NUMBER_CODE_LOGIN = 'phone-number-login',
-  PHONE_NUMBER_PASSWORD_LOGIN = 'phone-number-password-login',
-  EMAIL_LOGIN = 'email-login',
-  PHONE_NUMBER_RESET_PASSWORD = 'phone-number-reset-password',
-  EMAIL_RESET_PASSWORD = 'email-reset-password',
-  WECHAT_LOGIN = 'wechat-login',
-  WEB_SILENT_LOGIN = 'web-silent-login',
-  WECHAT_AUTHENTICATE_LOGIN = 'wechat-authenicate-login',
-  WXWORK_AUTHENTICATE_LOGIN = 'wxwork-authenicate-login',
-  ACCOUNT_BIND_PHONE_NUMBER = 'account-bind-phone-number',
-  ACCOUNT_UNBIND_PHONE_NUMBER = 'account-unbind-phone-number',
-  ACCOUNT_BIND_EMAIL = 'account-bind-email',
-  ACCOUNT_UNBIND_EMAIL = 'account-unbind-email',
-  DELETE_ACCOUNT_BY_VERIFICATION_CODE = 'delete-account-by-verification-code',
-  DELETE_ACCOUNT_BY_PASSWORD = 'delete-account-by-password',
-  LIST_LOAD_MORE = 'list-load-more',
-  SHARE_TO_WEIBO = 'share-to-weibo',
-  SHARE_TO_TWITTER = 'share-to-twitter',
-  DOWNLOAD_IMAGE = 'download-image',
-  DOWNLOAD_FILE = 'download-file',
-  OBTAIN_WE_RUN_DATA = 'obtain-we-run-data',
-  ADD_PHONE_CONTACT = 'add-phone-contact',
-  PRINT_COMPONENT = 'print-component',
-  WECHAT_PAYMENT = 'wechat-payment',
-  WECHAT_ORDER_AND_CALL_PAYMENT = 'wechat-order-and-call-payment',
-  ALI_PAYMENT = 'ali-payment',
-  MALLBOOK_DEPOSIT = 'mallbook-deposit',
-  COMPLETE_PERSONAL_INFO = 'complete-personal-info',
-  COMPONENT_TO_IMAGE = 'component-to-image',
-  SSO_LOGIN_OR_REGISTER = 'sso-login-or-register',
-  SSO_BIND = 'sso-bind',
-  SSO_UNBIND = 'sso-unbind',
-  STRIPE_PAYMENT = 'stripe-payment',
-  SCHEDULED_JOB_CONTROL = 'scheduled-job-control',
-  SCROLL_TO_BOTTOM = 'scroll-to-bottom',
-  WECHAT_GET_PRIVACY_SETTING = 'wechat-get-privacy-setting',
-  WECHAT_OPEN_PRIVACY_CONTRACT = 'wechat-open-privacy-contract',
-  WECHAT_AGREE_PRIVACY_AUTHORIZATION = 'wechat-agree-privacy-authorization',
-  WECHAT_SAVE_VIDEO_TO_ALBUM = 'wechat-save-video-to-album',
-  WECHAT_SHIPMENT = 'wechat-shipment',
-  WECHAT_RECEIPT = 'wechat-receipt',
-  WECHAT_OPEN_CHANNELS = 'wechat-open-channels',
-  WECHAT_ADD_PHONE_CALENDAR = 'wechat-add-phone-calendar',
-  EXPORT = 'export',
-  ALIPAY_RECURRING_PAYMENT = 'alipay-recurring-payment',
-  ALIPAY_CANCEL_RECURRING_PAYMENT = 'alipay-cancel-recurring-payment',
-  STRIPE_RECURRING_PAYMENT = 'stripe-recurring-payment',
-  STRIPE_CANCEL_RECURRING_PAYMENT = 'stripe-cancel-recurring-payment',
-  WECHAT_REFUND = 'wechat-refund',
-  ALIPAY_REFUND = 'alipay-refund',
-  STRIPE_REFUND = 'stripe-refund',
-  ANIMATION_SLIDE_EFFECT = 'animation-slide-effect',
-  ANIMATION_FADE_EFFECT = 'animation-fade-effect',
-  ANIMATION_SCALE_EFFECT = 'animation-scale-effect',
-  ANIMATION_FLIP_EMPHASIS = 'animation-flip-emphasis',
-  ANIMATION_COMMON_EMPHASIS = 'animation-common-emphasis',
-  ANIMATION_SCROLLING_INTERACTION = 'animation-scrolling-interaction',
-  ANIMATION_VARIANT_INTERACTION = 'animation-variant-interaction',
-  SHOW_MODAL_WITH_CALLBACK_EVENTS = 'show-modal-with-callback-events',
-  SET_VARIABLE_DATA = 'set-variable-data',
-  CLOSE_MODAL = 'close-modal',
-  NAVIGATION_GO_TO_WECHAT = 'navigation-go-to-wechat',
-  NAVIGATION_GO_TO_WEB = 'navigation-go-to-web',
-  NAVIGATION_GO_TO_MOBILE = 'navigation-go-to-mobile',
-  NAVIGATION_GO_BACK = 'navigation-go-back',
-  COMPONENT_TO_BITMAP = 'component-to-bitmap',
-  DOWNLOAD_BITMAP = 'download-bitmap',
-  TRANSFORM_BITMAP_TO_IMAGE = 'transform-bitmap-to-image',
-  TRANSFORM_IMAGE_TO_BITMAP = 'transform-image-to-bitmap',
+  SWITCH_VIEW_CASE = "switch-view-case",
+  RERUN_CONDITION = "rerun-condition",
+  NAVIGATION = "navigation",
+  MUTATION = "mutation",
+  TRIGGER_MUTATION = "trigger-mutation",
+  THIRD_PARTY_API = "thirdParty-api",
+  FUNCTOR_API = "functor-api",
+  FUNCTOR = "functor",
+  BATCH_MUTATION = "batch-mutation",
+  QUERY = "query",
+  SUBSCRIPTION = "subscription",
+  SET_INPUT_VALUE = "set-input-value",
+  RESET_INPUT_VALUE = "reset-input-value",
+  SET_PAGE_DATA = "set-page-data",
+  SET_GLOBAL_DATA = "set-global-data",
+  REFRESH = "refresh",
+  REFRESH_LIST = "refresh-list",
+  REFRESH_CELL = "refresh-cell",
+  REFRESH_LOGIN_USER = "refresh-login-user",
+  USER_REGISTER = "user-register",
+  USER_LOGIN = "user-login",
+  SEND_VERIFICATION_CODE = "send-verification-code",
+  CHECK_VERIFICATION_CODE = "check-verification-code",
+  CONDITIONAL = "conditional",
+  SHOW_MODAL = "show-modal",
+  HIDE_MODAL = "hide-modal",
+  SHOW_TOAST = "show-toast",
+  OPEN_EXTERNAL_LINK = "open-external-link",
+  AUDIO = "audio",
+  VIDEO = "video",
+  FULLSCREEN_IMAGE = "fullscreen-image",
+  GET_LOCATION = "get-location",
+  OPEN_LOCATION = "open-location",
+  CHOOSE_LOCATION = "choose-location",
+  SCROLL_TO = "scroll-to",
+  UPLOAD_FILE = "upload-file",
+  SCROLL_PAGE_TO = "scroll-page-to",
+  LOTTIE = "lottie",
+  WECHAT_NOTIFICATION = "wechat-notification",
+  SMS_NOTIFICATION = "sms-notification",
+  NOTIFICATION_AUTHORIZATION = "notification-authorization",
+  GENERATE_QR_CODE = "generate-qr-code",
+  GENERATE_MINI_PROGRAM_CODE = "generate-mini-program-code",
+  SCAN_QR_CODE = "scan-qr-code",
+  PREVIEW_DOCUMENT = "preview-document",
+  SCROLL_HORIZONTAL_LIST = "scroll-horizontal-list",
+  GET_ADMINISTRATION_AREA = "get-administration-area",
+  SET_FOLD_MODE = "set-fold-mode",
+  IMAGE_PICKER_ADD_IMAGE = "image-picker-add-image",
+  IMAGE_PICKER_DELETE_IMAGE = "image-picker-delete-image",
+  IMAGE_PICKER_REPLACE_IMAGE = "image-picker-replace-image",
+  LIST_ACTION = "list-action",
+  IMAGE_FILTER = "image-filter",
+  EDIT_FILTER_AND_STICKER = "edit-filter-and-sticker",
+  ACTION_FLOW = "action-flow",
+  ZAI_TASK = "zai-task",
+  AI_CREATE_CONVERSATION = "ai-create-conversation",
+  AI_DELETE_CONVERSATION = "ai-delete-conversation",
+  AI_SEND_MESSAGE = "ai-send-message",
+  AI_OBTAIN_INFO = "ai-obtain-info",
+  AI_STOP_RESPONSE = "ai-stop-response",
+  SHARE = "share",
+  LOG = "log",
+  COUNTDOWN = "countdown",
+  SET_CLIPBOARD = "set-clipboard",
+  CALL_PHONE = "call-phone",
+  TAKE_PHOTO = "take-photo",
+  OBTAIN_PHONE_NUMBER = "obtain-phone-number",
+  OPEN_WEB_VIEW = "open-web-view",
+  CONFIGURE_CAMERA = "configure-camera",
+  OPEN_WECHAT_SETTING = "open-wechat-setting",
+  WECHAT_CONTACT = "wechat-contact",
+  OPEN_REWARDED_VIDEO_AD = "open-rewarded-video-ad",
+  OPEN_CHANNELS_LIVE = "open-channels-live",
+  NAVIGATE_TO_MINI_PROGRAM = "navigate-to-mini-program",
+  MODIFY_JSONB = "modify-jsonb",
+  USERNAME_REGISTER = "username-register",
+  PHONE_NUMBER_REGISTER = "phone-number-register",
+  EMAIL_REGISTER = "email-register",
+  USERNAME_LOGIN = "username-login",
+  PHONE_NUMBER_CODE_LOGIN = "phone-number-login",
+  PHONE_NUMBER_PASSWORD_LOGIN = "phone-number-password-login",
+  EMAIL_LOGIN = "email-login",
+  PHONE_NUMBER_RESET_PASSWORD = "phone-number-reset-password",
+  EMAIL_RESET_PASSWORD = "email-reset-password",
+  WECHAT_LOGIN = "wechat-login",
+  WEB_SILENT_LOGIN = "web-silent-login",
+  WECHAT_AUTHENTICATE_LOGIN = "wechat-authenicate-login",
+  WXWORK_AUTHENTICATE_LOGIN = "wxwork-authenicate-login",
+  ACCOUNT_BIND_PHONE_NUMBER = "account-bind-phone-number",
+  ACCOUNT_UNBIND_PHONE_NUMBER = "account-unbind-phone-number",
+  ACCOUNT_BIND_EMAIL = "account-bind-email",
+  ACCOUNT_UNBIND_EMAIL = "account-unbind-email",
+  DELETE_ACCOUNT_BY_VERIFICATION_CODE = "delete-account-by-verification-code",
+  DELETE_ACCOUNT_BY_PASSWORD = "delete-account-by-password",
+  LIST_LOAD_MORE = "list-load-more",
+  SHARE_TO_WEIBO = "share-to-weibo",
+  SHARE_TO_TWITTER = "share-to-twitter",
+  DOWNLOAD_IMAGE = "download-image",
+  DOWNLOAD_FILE = "download-file",
+  OBTAIN_WE_RUN_DATA = "obtain-we-run-data",
+  ADD_PHONE_CONTACT = "add-phone-contact",
+  PRINT_COMPONENT = "print-component",
+  WECHAT_PAYMENT = "wechat-payment",
+  WECHAT_ORDER_AND_CALL_PAYMENT = "wechat-order-and-call-payment",
+  ALI_PAYMENT = "ali-payment",
+  MALLBOOK_DEPOSIT = "mallbook-deposit",
+  COMPLETE_PERSONAL_INFO = "complete-personal-info",
+  COMPONENT_TO_IMAGE = "component-to-image",
+  SSO_LOGIN_OR_REGISTER = "sso-login-or-register",
+  SSO_BIND = "sso-bind",
+  SSO_UNBIND = "sso-unbind",
+  STRIPE_PAYMENT = "stripe-payment",
+  SCHEDULED_JOB_CONTROL = "scheduled-job-control",
+  SCROLL_TO_BOTTOM = "scroll-to-bottom",
+  WECHAT_GET_PRIVACY_SETTING = "wechat-get-privacy-setting",
+  WECHAT_OPEN_PRIVACY_CONTRACT = "wechat-open-privacy-contract",
+  WECHAT_AGREE_PRIVACY_AUTHORIZATION = "wechat-agree-privacy-authorization",
+  WECHAT_SAVE_VIDEO_TO_ALBUM = "wechat-save-video-to-album",
+  WECHAT_SHIPMENT = "wechat-shipment",
+  WECHAT_RECEIPT = "wechat-receipt",
+  WECHAT_OPEN_CHANNELS = "wechat-open-channels",
+  WECHAT_ADD_PHONE_CALENDAR = "wechat-add-phone-calendar",
+  EXPORT = "export",
+  ALIPAY_RECURRING_PAYMENT = "alipay-recurring-payment",
+  ALIPAY_CANCEL_RECURRING_PAYMENT = "alipay-cancel-recurring-payment",
+  STRIPE_RECURRING_PAYMENT = "stripe-recurring-payment",
+  STRIPE_CANCEL_RECURRING_PAYMENT = "stripe-cancel-recurring-payment",
+  WECHAT_REFUND = "wechat-refund",
+  ALIPAY_REFUND = "alipay-refund",
+  STRIPE_REFUND = "stripe-refund",
+  ANIMATION_SLIDE_EFFECT = "animation-slide-effect",
+  ANIMATION_FADE_EFFECT = "animation-fade-effect",
+  ANIMATION_SCALE_EFFECT = "animation-scale-effect",
+  ANIMATION_FLIP_EMPHASIS = "animation-flip-emphasis",
+  ANIMATION_COMMON_EMPHASIS = "animation-common-emphasis",
+  ANIMATION_SCROLLING_INTERACTION = "animation-scrolling-interaction",
+  ANIMATION_VARIANT_INTERACTION = "animation-variant-interaction",
+  SHOW_MODAL_WITH_CALLBACK_EVENTS = "show-modal-with-callback-events",
+  SET_VARIABLE_DATA = "set-variable-data",
+  CLOSE_MODAL = "close-modal",
+  NAVIGATION_GO_TO_WECHAT = "navigation-go-to-wechat",
+  NAVIGATION_GO_TO_WEB = "navigation-go-to-web",
+  NAVIGATION_GO_TO_MOBILE = "navigation-go-to-mobile",
+  NAVIGATION_GO_BACK = "navigation-go-back",
+  COMPONENT_TO_BITMAP = "component-to-bitmap",
+  DOWNLOAD_BITMAP = "download-bitmap",
+  TRANSFORM_BITMAP_TO_IMAGE = "transform-bitmap-to-image",
+  TRANSFORM_IMAGE_TO_BITMAP = "transform-image-to-bitmap",
 }
 export enum FileSizeUnit {
-  KB = 'KB',
-  MB = 'MB',
-  GB = 'GB',
-  INF = 'INF',
+  KB = "KB",
+  MB = "MB",
+  GB = "GB",
+  INF = "INF",
 }
 export enum FileSource {
-  EXID = 'EXID',
+  EXID = "EXID",
 }
 export enum FlexDirection {
-  ROW = 'row',
-  COLUMN = 'column',
+  ROW = "row",
+  COLUMN = "column",
 }
 export enum FlexWrap {
-  WRAP = 'wrap',
-  NOWRAP = 'nowrap',
-  WRAP_REVERSE = 'wrap-reverse',
+  WRAP = "wrap",
+  NOWRAP = "nowrap",
+  WRAP_REVERSE = "wrap-reverse",
 }
 export enum FoldingMode {
-  NONE = 'none',
-  FOLDED = 'folded',
-  UNFOLDED = 'unfolded',
+  NONE = "none",
+  FOLDED = "folded",
+  UNFOLDED = "unfolded",
 }
 export enum FullScreenImageMode {
-  FROM_CURRENT_IMAGE = 'FROM_CURRENT_IMAGE',
-  FROM_IMAGE_SOURCE = 'FROM_IMAGE_SOURCE',
+  FROM_CURRENT_IMAGE = "FROM_CURRENT_IMAGE",
+  FROM_IMAGE_SOURCE = "FROM_IMAGE_SOURCE",
 }
 export enum GeoPointGetValueType {
-  LATITUDE = 'latitude',
-  LONGITUDE = 'longitude',
+  LATITUDE = "latitude",
+  LONGITUDE = "longitude",
 }
 export enum HeaderTag {
-  H1 = 'h1',
-  H2 = 'h2',
-  H3 = 'h3',
-  H4 = 'h4',
-  H5 = 'h5',
-  H6 = 'h6',
+  H1 = "h1",
+  H2 = "h2",
+  H3 = "h3",
+  H4 = "h4",
+  H5 = "h5",
+  H6 = "h6",
 }
 export enum HorizontalDirection {
-  LEFT = 'left',
-  RIGHT = 'right',
-  BOTH = 'both',
+  LEFT = "left",
+  RIGHT = "right",
+  BOTH = "both",
 }
 export enum HorizontalLineDirection {
-  HORIZONTAL = 'horizontal',
-  VERTICAL = 'vertical',
+  HORIZONTAL = "horizontal",
+  VERTICAL = "vertical",
 }
 export enum HorizontalLineType {
-  SOLID = 'solid',
-  DASH = 'dash',
-  WAVY = 'wavy',
+  SOLID = "solid",
+  DASH = "dash",
+  WAVY = "wavy",
 }
 export enum HtmlMode {
-  CODE = 'code',
-  IFRAME = 'iframe',
+  CODE = "code",
+  IFRAME = "iframe",
 }
 export enum HttpMethod {
-  GET = 'GET',
-  POST = 'POST',
-  PUT = 'PUT',
-  DELETE = 'DELETE',
+  GET = "GET",
+  POST = "POST",
+  PUT = "PUT",
+  DELETE = "DELETE",
 }
 export enum ImageInputQuality {
-  LOW = 'LOW',
-  HIGH = 'HIGH',
+  LOW = "LOW",
+  HIGH = "HIGH",
 }
 export enum InputValueType {
-  TEXT = 'TEXT',
-  BIGINT = 'BIGINT',
-  NUMERIC = 'Numeric',
-  DECIMAL = 'DECIMAL',
+  TEXT = "TEXT",
+  BIGINT = "BIGINT",
+  NUMERIC = "Numeric",
+  DECIMAL = "DECIMAL",
 }
 export enum InputVariableCategory {
-  GENERAL = 'GENERAL',
-  URL_PATH = 'URL_PATH',
-  URL_QUERY = 'URL_QUERY',
+  GENERAL = "GENERAL",
+  URL_PATH = "URL_PATH",
+  URL_QUERY = "URL_QUERY",
 }
 export enum InteractionType {
-  HOVER = 'hover',
-  CLICK = 'click',
-  SCROLL_INTO = 'scrollInto',
-  SCROLLING = 'scrolling',
+  HOVER = "hover",
+  CLICK = "click",
+  SCROLL_INTO = "scrollInto",
+  SCROLLING = "scrolling",
 }
 export enum JustifyContent {
-  START = 'start',
-  CENTER = 'center',
-  END = 'end',
-  SPACE_BETWEEN = 'space-between',
-  SPACE_AROUND = 'space-around',
-  SPACE_EVENLY = 'space-evenly',
+  START = "start",
+  CENTER = "center",
+  END = "end",
+  SPACE_BETWEEN = "space-between",
+  SPACE_AROUND = "space-around",
+  SPACE_EVENLY = "space-evenly",
 }
 export enum KeywordLinearGradientDirectionValue {
-  TO_TOP = 'to top',
-  TO_BOTTOM = 'to bottom',
-  TO_LEFT = 'to left',
-  TO_RIGHT = 'to right',
-  TO_TOP_LEFT = 'to top left',
-  TO_TOP_RIGHT = 'to top right',
-  TO_BOTTOM_LEFT = 'to bottom left',
-  TO_BOTTOM_RIGHT = 'to bottom right',
+  TO_TOP = "to top",
+  TO_BOTTOM = "to bottom",
+  TO_LEFT = "to left",
+  TO_RIGHT = "to right",
+  TO_TOP_LEFT = "to top left",
+  TO_TOP_RIGHT = "to top right",
+  TO_BOTTOM_LEFT = "to bottom left",
+  TO_BOTTOM_RIGHT = "to bottom right",
 }
 export enum Language {
-  EN = 'EN',
-  ZH = 'ZH',
+  EN = "EN",
+  ZH = "ZH",
 }
 export enum LayoutDisplay {
-  FLEX = 'flex',
-  GRID = 'grid',
-  BLOCK = 'block',
-  NONE = 'none',
+  FLEX = "flex",
+  GRID = "grid",
+  BLOCK = "block",
+  NONE = "none",
 }
 export enum LayoutMode {
-  FIXED = 'fixed',
-  WRAP_CONTENT = 'wrap-content',
-  FILL_PARENT = 'fill-parent',
+  FIXED = "fixed",
+  WRAP_CONTENT = "wrap-content",
+  FILL_PARENT = "fill-parent",
 }
 export enum LengthUnit {
-  FIXED = 'px',
-  RELATIVE = '%',
-  AUTO = 'auto',
+  FIXED = "px",
+  RELATIVE = "%",
+  AUTO = "auto",
 }
 export enum LinearGradientDirectionType {
-  ANGLE = 'angle',
-  KEYWORD = 'keyword',
+  ANGLE = "angle",
+  KEYWORD = "keyword",
 }
 export enum ListDataAccessMode {
-  REMOTE = 'remote',
-  LOCAL = 'local',
+  REMOTE = "remote",
+  LOCAL = "local",
 }
 export enum ListDirection {
-  HORIZONTAL = 'horizontal',
-  VERTICAL = 'vertical',
+  HORIZONTAL = "horizontal",
+  VERTICAL = "vertical",
 }
 export enum ListViewAutoScrollToTopOnRefreshMode {
-  ALWAYS = 'always',
-  REFRESH_ACTION = 'refresh-action',
-  AUTO_REFRESH = 'auto-refresh',
-  NEVER = 'never',
+  ALWAYS = "always",
+  REFRESH_ACTION = "refresh-action",
+  AUTO_REFRESH = "auto-refresh",
+  NEVER = "never",
 }
 export enum LiteralCategory {
-  STRING = 'STRING',
-  DECIMAL = 'DECIMAL',
-  BIGINT = 'BIGINT',
-  BOOLEAN = 'BOOLEAN',
-  TIMESTAMPTZ = 'TIMESTAMPTZ',
-  TIMETZ = 'TIMETZ',
-  DATE = 'DATE',
-  JSONB = 'JSONB',
-  GEO_POINT = 'GEO_POINT',
+  STRING = "STRING",
+  DECIMAL = "DECIMAL",
+  BIGINT = "BIGINT",
+  BOOLEAN = "BOOLEAN",
+  TIMESTAMPTZ = "TIMESTAMPTZ",
+  TIMETZ = "TIMETZ",
+  DATE = "DATE",
+  JSONB = "JSONB",
+  GEO_POINT = "GEO_POINT",
 }
 export enum LottieAction {
-  PLAY = 'play',
-  STOP = 'stop',
-  PAUSE = 'pause',
-  PLAY_SEGMENTS = 'playSegments',
-  SET_DIRECTION = 'setDirection',
+  PLAY = "play",
+  STOP = "stop",
+  PAUSE = "pause",
+  PLAY_SEGMENTS = "playSegments",
+  SET_DIRECTION = "setDirection",
 }
 export enum MapType {
-  A_MAP = 'A_MAP',
-  MAP_BOX = 'MAP_BOX',
+  A_MAP = "A_MAP",
+  MAP_BOX = "MAP_BOX",
 }
 export enum MediaAction {
-  PLAY = 'play',
-  PAUSE = 'pause',
-  STOP = 'stop',
+  PLAY = "play",
+  PAUSE = "pause",
+  STOP = "stop",
 }
 export enum MiniAppCodeType {
-  WECHAT = 'wechat',
-  CUSTOM = 'custom',
+  WECHAT = "wechat",
+  CUSTOM = "custom",
 }
 export enum ModifyJsonbActionType {
-  SET_VALUE = 'setValue',
-  REMOVE_JSON_NODE = 'removeJsonNode',
+  SET_VALUE = "setValue",
+  REMOVE_JSON_NODE = "removeJsonNode",
 }
 export enum MutationOp {
-  INSERT = 'insert',
-  UPSERT = 'upsert',
-  UPDATE = 'update',
-  DELETE = 'delete',
+  INSERT = "insert",
+  UPSERT = "upsert",
+  UPDATE = "update",
+  DELETE = "delete",
 }
 export enum NavigationOperation {
-  GO = 'go',
-  GO_BACK = 'go-back',
+  GO = "go",
+  GO_BACK = "go-back",
 }
 export enum NumberFormatEnum {
-  THOUSANDS_SEPARATOR = 'THOUSANDS_SEPARATOR',
-  PERCENT = 'PERCENT',
+  THOUSANDS_SEPARATOR = "THOUSANDS_SEPARATOR",
+  PERCENT = "PERCENT",
 }
 export enum OAuth2AuthorizationGrantType {
-  AUTHORIZATION_CODE = 'AUTHORIZATION_CODE',
-  CLIENT_CREDENTIALS = 'CLIENT_CREDENTIALS',
-  PASSWORD = 'PASSWORD',
-  JWT_BEARER = 'JWT_BEARER',
+  AUTHORIZATION_CODE = "AUTHORIZATION_CODE",
+  CLIENT_CREDENTIALS = "CLIENT_CREDENTIALS",
+  PASSWORD = "PASSWORD",
+  JWT_BEARER = "JWT_BEARER",
 }
 export enum OAuth2ClientAuthenticationMethod {
-  CLIENT_SECRET_BASIC = 'CLIENT_SECRET_BASIC',
-  CLIENT_SECRET_POST = 'CLIENT_SECRET_POST',
-  CLIENT_SECRET_JWT = 'CLIENT_SECRET_JWT',
-  PRIVATE_KEY_JWT = 'PRIVATE_KEY_JWT',
+  CLIENT_SECRET_BASIC = "CLIENT_SECRET_BASIC",
+  CLIENT_SECRET_POST = "CLIENT_SECRET_POST",
+  CLIENT_SECRET_JWT = "CLIENT_SECRET_JWT",
+  PRIVATE_KEY_JWT = "PRIVATE_KEY_JWT",
 }
 export enum ObjectFit {
-  CONTAIN = 'contain',
-  COVER = 'cover',
-  FILL = 'fill',
+  CONTAIN = "contain",
+  COVER = "cover",
+  FILL = "fill",
 }
 export enum OrderBy {
-  ASC_NULLS_LAST = 'asc_nulls_last',
-  DESC_NULLS_LAST = 'desc_nulls_last',
+  ASC_NULLS_LAST = "asc_nulls_last",
+  DESC_NULLS_LAST = "desc_nulls_last",
 }
 export enum Overflow {
-  SCROLL = 'scroll',
-  VISIBLE = 'visible',
-  HIDDEN = 'hidden',
-  AUTO = 'auto',
+  SCROLL = "scroll",
+  VISIBLE = "visible",
+  HIDDEN = "hidden",
+  AUTO = "auto",
 }
 export enum PagingType {
-  SIZE_AND_INDEX = 'SIZE_AND_INDEX',
+  SIZE_AND_INDEX = "SIZE_AND_INDEX",
 }
 export enum ParamPosition {
-  BODY = 'BODY',
-  HEADER = 'HEADER',
-  QUERY = 'QUERY',
-  PATH = 'PATH',
+  BODY = "BODY",
+  HEADER = "HEADER",
+  QUERY = "QUERY",
+  PATH = "PATH",
 }
 export enum PaymentType {
-  STRIPE = 'STRIPE',
-  ALIPAY = 'ALIPAY',
-  WECHAT = 'WECHAT',
+  STRIPE = "STRIPE",
+  ALIPAY = "ALIPAY",
+  WECHAT = "WECHAT",
 }
 export enum Platform {
-  WECHAT = 'WECHAT',
-  WEB = 'WEB',
-  MOBILE = 'MOBILE',
+  WECHAT = "WECHAT",
+  WEB = "WEB",
+  MOBILE = "MOBILE",
 }
 export enum Position {
-  RELATIVE = 'relative',
-  ABSOLUTE = 'absolute',
-  FIXED = 'fixed',
+  RELATIVE = "relative",
+  ABSOLUTE = "absolute",
+  FIXED = "fixed",
 }
 export enum ProgressBarFormat {
-  NONE = 'none',
-  PERCENTAGE = 'percentage',
-  VALUE = 'value',
+  NONE = "none",
+  PERCENTAGE = "percentage",
+  VALUE = "value",
 }
 export enum ProgressBarMode {
-  LINE = 'line',
-  CIRCLE = 'circle',
+  LINE = "line",
+  CIRCLE = "circle",
 }
 export enum ReferenceLocation {
-  CUSTOM_TYPE = 'CUSTOM_TYPE',
-  DATA_MODEL = 'DATA_MODEL',
-  TYPE_DEFINITION = 'TYPE_DEFINITION',
+  CUSTOM_TYPE = "CUSTOM_TYPE",
+  DATA_MODEL = "DATA_MODEL",
+  TYPE_DEFINITION = "TYPE_DEFINITION",
 }
 export enum RelationType {
-  ONE_TO_ONE = 'ONE_TO_ONE',
-  ONE_TO_MANY = 'ONE_TO_MANY',
-  MANY_TO_MANY = 'MANY_TO_MANY',
+  ONE_TO_ONE = "ONE_TO_ONE",
+  ONE_TO_MANY = "ONE_TO_MANY",
+  MANY_TO_MANY = "MANY_TO_MANY",
 }
 export enum RepeatTimeInterval {
-  EVERY_MINUTE = 'EVERY_MINUTE',
-  EVERY_HOUR = 'EVERY_HOUR',
-  EVERY_DAY = 'EVERY_DAY',
-  EVERY_WEEK = 'EVERY_WEEK',
-  EVERY_MONTH = 'EVERY_MONTH',
-  EVERY_YEAR = 'EVERY_YEAR',
+  EVERY_MINUTE = "EVERY_MINUTE",
+  EVERY_HOUR = "EVERY_HOUR",
+  EVERY_DAY = "EVERY_DAY",
+  EVERY_WEEK = "EVERY_WEEK",
+  EVERY_MONTH = "EVERY_MONTH",
+  EVERY_YEAR = "EVERY_YEAR",
 }
 export enum ResponseConfigCategory {
-  FALLBACK = 'FALLBACK',
-  CUSTOM = 'CUSTOM',
+  FALLBACK = "FALLBACK",
+  CUSTOM = "CUSTOM",
 }
 export enum RoundingMode {
-  HALF_EVEN = 'HALF_EVEN',
-  HALF_UP = 'HALF_UP',
-  HALF_DOWN = 'HALF_DOWN',
-  UP = 'UP',
-  DOWN = 'DOWN',
-  CEILING = 'CEILING',
-  FLOOR = 'FLOOR',
+  HALF_EVEN = "HALF_EVEN",
+  HALF_UP = "HALF_UP",
+  HALF_DOWN = "HALF_DOWN",
+  UP = "UP",
+  DOWN = "DOWN",
+  CEILING = "CEILING",
+  FLOOR = "FLOOR",
 }
 export enum ScheduledJobControlAction {
-  START = 'start',
-  PAUSE = 'pause',
+  START = "start",
+  PAUSE = "pause",
 }
 export enum ScheduledTriggerType {
-  SIMPLE_TRIGGER = 'SIMPLE_TRIGGER',
+  SIMPLE_TRIGGER = "SIMPLE_TRIGGER",
 }
 export enum ScreenTransitionType {
-  PUSH = 'push',
-  SWITCH_TO = 'switch-to',
-  REDIRECT = 'redirect',
-  RELAUNCH = 'reLaunch',
-  NEW_TAB = 'new-tab',
+  PUSH = "push",
+  SWITCH_TO = "switch-to",
+  REDIRECT = "redirect",
+  RELAUNCH = "reLaunch",
+  NEW_TAB = "new-tab",
 }
 export enum ScrollHorizontalListDirection {
-  BACKWARD = 'backward',
-  FORWARD = 'forward',
+  BACKWARD = "backward",
+  FORWARD = "forward",
 }
 export enum ScrollPageToMode {
-  COMPONENT = 'component',
-  TOP = 'top',
+  COMPONENT = "component",
+  TOP = "top",
 }
 export enum ScrollToMode {
-  INDEX = 'index',
-  BOTTOM = 'bottom',
-  TOP = 'top',
-  NEXT = 'next',
-  PREV = 'prev',
+  INDEX = "index",
+  BOTTOM = "bottom",
+  TOP = "top",
+  NEXT = "next",
+  PREV = "prev",
 }
 export enum SecretType {
-  CUSTOM = 'CUSTOM',
+  CUSTOM = "CUSTOM",
 }
 export enum SelectViewSourceType {
-  QUERY = 'QUERY',
-  LOCAL = 'LOCAL',
+  QUERY = "QUERY",
+  LOCAL = "LOCAL",
 }
 export enum SendVerificationCodeContactType {
-  PHONE = 'phone',
-  EMAIL = 'email',
+  PHONE = "phone",
+  EMAIL = "email",
 }
 export enum SendVerificationCodeMethod {
-  SYSTEM_PHONE = 'phone',
-  SYSTEM_EMAIL = 'email',
-  CUSTOM_CONFIG = 'custom',
+  SYSTEM_PHONE = "phone",
+  SYSTEM_EMAIL = "email",
+  CUSTOM_CONFIG = "custom",
 }
 export enum SendVerificationCodeType {
-  REGISTER = 'register',
-  LOGIN = 'login',
-  RESET = 'reset',
-  BIND_ACCOUNT = 'bind-account',
-  UNBIND_ACCOUNT = 'unbind-account',
-  DELETE = 'delete',
+  REGISTER = "register",
+  LOGIN = "login",
+  RESET = "reset",
+  BIND_ACCOUNT = "bind-account",
+  UNBIND_ACCOUNT = "unbind-account",
+  DELETE = "delete",
 }
 export enum SeoRenderingMethod {
-  CSR = 'CSR',
-  SSR = 'SSR',
-  SSG = 'SSG',
+  CSR = "CSR",
+  SSR = "SSR",
+  SSG = "SSG",
 }
 export enum SetDataOp {
-  ASSIGN = 'assign',
-  APPEND = 'append',
-  REMOVE = 'remove',
+  ASSIGN = "assign",
+  APPEND = "append",
+  REMOVE = "remove",
 }
 export enum SheetDataSourceType {
-  DB_QUERY = 'DB_QUERY',
+  DB_QUERY = "DB_QUERY",
 }
 export enum ShippingMode {
-  LOGISTICS = 'LOGISTICS',
-  SAME_CITY = 'SAME_CITY',
-  PICK_UP = 'PICK_UP',
-  DIGITAL = 'DIGITAL',
+  LOGISTICS = "LOGISTICS",
+  SAME_CITY = "SAME_CITY",
+  PICK_UP = "PICK_UP",
+  DIGITAL = "DIGITAL",
 }
 export enum ShowModalMode {
-  ALERT = 'alert',
-  CUSTOM = 'custom',
+  ALERT = "alert",
+  CUSTOM = "custom",
 }
 export enum SitemapGenerationMethod {
-  AUTO = 'AUTO',
-  BY_PATH_DATA = 'BY_PATH_DATA',
+  AUTO = "AUTO",
+  BY_PATH_DATA = "BY_PATH_DATA",
 }
 export enum SizeMinMaxUnit {
-  FIXED = 'px',
-  RELATIVE = '%',
+  FIXED = "px",
+  RELATIVE = "%",
 }
 export enum SizeUnit {
-  FIXED = 'px',
-  RELATIVE = '%',
-  FILL = 'fr',
-  FIT_CONTENT = 'fit-content',
+  FIXED = "px",
+  RELATIVE = "%",
+  FILL = "fr",
+  FIT_CONTENT = "fit-content",
 }
 export enum SocialMediaConfigValueType {
-  USE_SEO_TDK = 'USE_SEO_TDK',
-  DATA_BINDING = 'DATA_BINDING',
+  USE_SEO_TDK = "USE_SEO_TDK",
+  DATA_BINDING = "DATA_BINDING",
 }
 export enum SortType {
-  DESCENDING = 'descending',
-  ASCENDING = 'ascending',
+  DESCENDING = "descending",
+  ASCENDING = "ascending",
 }
 export enum SsoPageType {
-  M_REF = 'mRef',
-  URL = 'url',
+  M_REF = "mRef",
+  URL = "url",
 }
 export enum SsoProtocol {
-  OAUTH2 = 'OAUTH2',
+  OAUTH2 = "OAUTH2",
 }
 export enum SsoType {
-  GOOGLE = 'GOOGLE',
-  FACEBOOK = 'FACEBOOK',
-  CUSTOM_SSO = 'CUSTOM_SSO',
+  GOOGLE = "GOOGLE",
+  FACEBOOK = "FACEBOOK",
+  CUSTOM_SSO = "CUSTOM_SSO",
 }
 export enum StatusCode {
-  SUCCESS = '2xx',
-  PERMANENT_FAIL = '4xx',
-  TEMPORARY_FAIL = '5xx',
+  SUCCESS = "2xx",
+  PERMANENT_FAIL = "4xx",
+  TEMPORARY_FAIL = "5xx",
 }
 export enum StyleSyntax {
-  UNSET = 'unset',
+  UNSET = "unset",
 }
 export enum SwitchStyleType {
-  SWITCH = 'SWITCH',
-  TICK_CHECKBOX = 'TICK_CHECKBOX',
-  ROUND_CHECKBOX = 'ROUND_CHECKBOX',
+  SWITCH = "SWITCH",
+  TICK_CHECKBOX = "TICK_CHECKBOX",
+  ROUND_CHECKBOX = "ROUND_CHECKBOX",
 }
 export enum TPADataType {
-  TEXT = 'TEXT',
-  FLOAT8 = 'FLOAT8',
-  INTEGER = 'INTEGER',
-  BIGINT = 'BIGINT',
-  DECIMAL = 'DECIMAL',
-  BOOLEAN = 'BOOLEAN',
-  OBJECT = 'OBJECT',
-  ARRAY = 'ARRAY',
-  IMAGE = 'IMAGE',
+  TEXT = "TEXT",
+  FLOAT8 = "FLOAT8",
+  INTEGER = "INTEGER",
+  BIGINT = "BIGINT",
+  DECIMAL = "DECIMAL",
+  BOOLEAN = "BOOLEAN",
+  OBJECT = "OBJECT",
+  ARRAY = "ARRAY",
+  IMAGE = "IMAGE",
 }
 export enum TabMode {
-  CUSTOM = 'CUSTOM',
-  NORMAL = 'NORMAL',
+  CUSTOM = "CUSTOM",
+  NORMAL = "NORMAL",
 }
 export enum TemporalUnit {
-  YEAR = 'year',
-  MONTH = 'month',
-  DAY = 'day',
-  HOUR = 'hour',
-  MINUTE = 'minute',
-  SECOND = 'second',
+  YEAR = "year",
+  MONTH = "month",
+  DAY = "day",
+  HOUR = "hour",
+  MINUTE = "minute",
+  SECOND = "second",
 }
 export enum TextDecorationStyle {
-  SOLID = 'solid',
-  WAVY = 'wavy',
-  DASHED = 'dashed',
+  SOLID = "solid",
+  WAVY = "wavy",
+  DASHED = "dashed",
 }
 export enum TextDisplayMode {
-  NORMAL = 'normal',
-  RICH_TEXT = 'richText',
-  MARKDOWN = 'markdown',
+  NORMAL = "normal",
+  RICH_TEXT = "richText",
+  MARKDOWN = "markdown",
 }
 export enum ThirdPartyRequestOperation {
-  QUERY = 'query',
-  MUTATION = 'mutation',
+  QUERY = "query",
+  MUTATION = "mutation",
 }
 export enum TimeDirection {
-  LATER = 'later',
-  BEFORE = 'before',
+  LATER = "later",
+  BEFORE = "before",
 }
 export enum TimeUnit {
-  DAY = 'day',
-  HOUR = 'hour',
-  MINUTE = 'minute',
-  SECOND = 'second',
-  MILLISECONDS = 'millisecond',
+  DAY = "day",
+  HOUR = "hour",
+  MINUTE = "minute",
+  SECOND = "second",
+  MILLISECONDS = "millisecond",
 }
 export enum TriggerType {
-  DB_TRIGGER = 'DB_TRIGGER',
+  DB_TRIGGER = "DB_TRIGGER",
 }
 export enum TypeCodecType {
-  CURRENT = 'CURRENT',
-  TARGET_FIELD = 'TARGET_FIELD',
+  CURRENT = "CURRENT",
+  TARGET_FIELD = "TARGET_FIELD",
 }
 export enum TypeDefinitionCategory {
-  OBJECT = 'OBJECT',
-  ENUM = 'ENUM',
+  OBJECT = "OBJECT",
+  ENUM = "ENUM",
 }
 export enum TypeSchemaEnum {
-  STRING = 'STRING',
-  NUMBER = 'NUMBER',
-  DECIMAL = 'DECIMAL',
-  INTEGER = 'INTEGER',
-  BOOLEAN = 'BOOLEAN',
-  TIMESTAMPTZ = 'TIMESTAMPTZ',
-  TIME = 'TIME',
-  DATE = 'DATE',
-  GEO_POINT = 'GEO_POINT',
-  JSONB = 'JSONB',
-  OBJECT = 'OBJECT',
-  ARRAY = 'ARRAY',
-  NULL = 'NULL',
+  STRING = "STRING",
+  NUMBER = "NUMBER",
+  DECIMAL = "DECIMAL",
+  INTEGER = "INTEGER",
+  BOOLEAN = "BOOLEAN",
+  TIMESTAMPTZ = "TIMESTAMPTZ",
+  TIME = "TIME",
+  DATE = "DATE",
+  GEO_POINT = "GEO_POINT",
+  JSONB = "JSONB",
+  OBJECT = "OBJECT",
+  ARRAY = "ARRAY",
+  NULL = "NULL",
 }
 export enum UploadSizeType {
-  DEFAULT = 'default',
-  ORIGINAL = 'original',
-  COMPRESSED = 'compressed',
+  DEFAULT = "default",
+  ORIGINAL = "original",
+  COMPRESSED = "compressed",
 }
 export enum UploadStrategy {
-  DEFAULT = 'DEFAULT',
+  DEFAULT = "DEFAULT",
 }
 export enum UserLoginActionType {
-  WECHAT_LOGIN = 'wechat-login',
-  WECHAT_SILENT_LOGIN = 'wechat-silent-login',
-  WECHAT_PHONE_NUMBER_LOGIN = 'wechat-phone-number-login',
-  LOGIN = 'login',
-  LOGOUT = 'logout',
+  WECHAT_LOGIN = "wechat-login",
+  WECHAT_SILENT_LOGIN = "wechat-silent-login",
+  WECHAT_PHONE_NUMBER_LOGIN = "wechat-phone-number-login",
+  LOGIN = "login",
+  LOGOUT = "logout",
 }
 export enum ValueBindingKind {
-  LITERAL = 'literal',
-  COLUMN_NAME = 'columnName',
-  EMPTY = 'empty',
-  VARIABLE = 'variable',
-  FUNCTION = 'function',
-  FORMULA = 'formula',
-  THEME = 'theme',
-  CONDITIONAL = 'conditional',
-  LIST = 'list',
-  JSON = 'json',
-  ENUM_OPTION = 'enumOption',
-  CUSTOM_ARRAY = 'customArray',
-  CUSTOM_OBJECT = 'customObject',
-  IMAGE = 'image',
-  VIDEO = 'video',
-  FILE = 'file',
-  SECRET = 'secret',
-  INPUT = 'input',
-  SELECTION = 'selection',
-  ARRAY_ELEMENT_MAPPING = 'arrayElementMapping',
+  LITERAL = "literal",
+  COLUMN_NAME = "columnName",
+  EMPTY = "empty",
+  VARIABLE = "variable",
+  FUNCTION = "function",
+  FORMULA = "formula",
+  THEME = "theme",
+  CONDITIONAL = "conditional",
+  LIST = "list",
+  JSON = "json",
+  ENUM_OPTION = "enumOption",
+  CUSTOM_ARRAY = "customArray",
+  CUSTOM_OBJECT = "customObject",
+  IMAGE = "image",
+  VIDEO = "video",
+  FILE = "file",
+  SECRET = "secret",
+  INPUT = "input",
+  SELECTION = "selection",
+  ARRAY_ELEMENT_MAPPING = "arrayElementMapping",
 }
 export enum VectorCalculation {
-  EUCLIDEAN = 'EUCLIDEAN',
-  COSINE = 'COSINE',
+  EUCLIDEAN = "EUCLIDEAN",
+  COSINE = "COSINE",
 }
 export enum VectorGenerator {
-  CHAT_GPT_4 = 'CHAT_GPT_4',
-  TEXT_EMBEDDING_ADA_002 = 'TEXT_EMBEDDING_ADA_002',
-  ZHIPU_TEXT_EMBEDDING = 'ZHIPU_TEXT_EMBEDDING',
+  CHAT_GPT_4 = "CHAT_GPT_4",
+  TEXT_EMBEDDING_ADA_002 = "TEXT_EMBEDDING_ADA_002",
+  ZHIPU_TEXT_EMBEDDING = "ZHIPU_TEXT_EMBEDDING",
 }
 export enum VerticalDirection {
-  TOP_DOWN = 'top-down',
-  BOTTOM_UP = 'bottom-up',
+  TOP_DOWN = "top-down",
+  BOTTOM_UP = "bottom-up",
 }
 export enum VideoSource {
-  UPLOAD = 'upload',
-  VIDEO = 'video',
-  YOUTUBE = 'youtube',
-  URL = 'url',
+  UPLOAD = "upload",
+  VIDEO = "video",
+  YOUTUBE = "youtube",
+  URL = "url",
 }
 export enum WechatOpenChannelsType {
-  USER_PROFILE = 'user-profile',
-  LIVE = 'live',
-  ACTIVITY = 'activity',
-  EVENT = 'event',
+  USER_PROFILE = "user-profile",
+  LIVE = "live",
+  ACTIVITY = "activity",
+  EVENT = "event",
 }
 export enum XPlatformCardType {
-  SUMMARY = 'SUMMARY',
-  SUMMARY_WITH_LARGE_IMAGE = 'SUMMARY_WITH_LARGE_IMAGE',
+  SUMMARY = "SUMMARY",
+  SUMMARY_WITH_LARGE_IMAGE = "SUMMARY_WITH_LARGE_IMAGE",
 }
 export enum ZAiToolType {
-  ACTION_FLOW = 'ACTION_FLOW',
-  TPA = 'TPA',
-  ZAI = 'ZAI',
-  OBTAIN_MORE_INFORMATION = 'OBTAIN_MORE_INFORMATION',
-  STRUCTURED_OUTPUT = 'STRUCTURED_OUTPUT',
+  ACTION_FLOW = "ACTION_FLOW",
+  TPA = "TPA",
+  ZAI = "ZAI",
+  OBTAIN_MORE_INFORMATION = "OBTAIN_MORE_INFORMATION",
+  STRUCTURED_OUTPUT = "STRUCTURED_OUTPUT",
 }
-export type BackendActionFlowNodeType = BackendOnlyActionFlowNodeType | GeneralActionFlowNodeType;
+export type BackendActionFlowNodeType =
+  | BackendOnlyActionFlowNodeType
+  | GeneralActionFlowNodeType;
 
-export type FrontendActionFlowNodeType = FrontendOnlyActionFlowNodeType | GeneralActionFlowNodeType;
+export type FrontendActionFlowNodeType =
+  | FrontendOnlyActionFlowNodeType
+  | GeneralActionFlowNodeType;
 
 export type CombinedStyleAttributes =
   | BlankContainerAttributes
@@ -8830,7 +8854,9 @@ export type BlockEndNode =
   | SuccessFailMerge
   | WhileEnd;
 
-export type BackgroundAttributes = CombinedStyleAttributes | DraggableScreenAttributes;
+export type BackgroundAttributes =
+  | CombinedStyleAttributes
+  | DraggableScreenAttributes;
 
 export type TextStyleAttributes =
   | ButtonAttributes
@@ -8840,7 +8866,10 @@ export type TextStyleAttributes =
 
 export type ExtraAttributesFromInput = InputAttributes | OverrideAttributes;
 
-export type PropertyMappable = ArrayElementMapping | InputBinding | VariableBinding;
+export type PropertyMappable =
+  | ArrayElementMapping
+  | InputBinding
+  | VariableBinding;
 
 export type BlockCreatable =
   | BranchSeparation
@@ -8851,7 +8880,10 @@ export type BlockCreatable =
 
 export type ColumnOperator = GenericOperator | TextOperator;
 
-export type ExpressionConditionType = BooleanOperator | CollectionOperator | GenericOperator;
+export type ExpressionConditionType =
+  | BooleanOperator
+  | CollectionOperator
+  | GenericOperator;
 
 export type ComponentBinding = InputBinding;
 
@@ -8881,7 +8913,8 @@ export type HasTargetComponentIdForAssignEventBinding =
   | ResetInputValueEventBinding
   | SetInputValueEventBinding;
 
-export type HasTargetModalIdEventBinding = ShowModalWithCallbackEventsEventBinding;
+export type HasTargetModalIdEventBinding =
+  ShowModalWithCallbackEventsEventBinding;
 
 export type FullScreenImageEventBinding =
   | FullScreenCurrentImageEventBinding
@@ -8895,7 +8928,9 @@ export type HasAIConfigIdEventBinding =
   | AIStopResponseEventBinding
   | ZAITaskEventBinding;
 
-export type HasAIConfigInputEventBinding = AICreateConversationEventBinding | ZAITaskEventBinding;
+export type HasAIConfigInputEventBinding =
+  | AICreateConversationEventBinding
+  | ZAITaskEventBinding;
 
 export type HasAIConversationIdEventBinding =
   | AIDeleteConversationEventBinding
@@ -8968,7 +9003,9 @@ export type SsoEventBinding =
   | SsoLoginOrRegisterEventBinding
   | SsoUnbindEventBinding;
 
-export type TriggerEventBinding = NotificationEventBinding | TriggerMutationEventBinding;
+export type TriggerEventBinding =
+  | NotificationEventBinding
+  | TriggerMutationEventBinding;
 
 export type ComponentRefactorInteraction =
   | AnimationCommonEmphasis
@@ -9188,7 +9225,9 @@ export type ValueBinding =
   | SecretBinding
   | VariableBinding;
 
-export type CodeComponentValueInput = CodeComponentMRefInput | CodeComponentVariableAssignment;
+export type CodeComponentValueInput =
+  | CodeComponentMRefInput
+  | CodeComponentVariableAssignment;
 
 export type HasInteractions =
   | ButtonEvents
@@ -9228,7 +9267,10 @@ export type HasOnValueChange =
 
 export type InnerVariable = ReadOnlyVariable | ReadWriteVariable;
 
-export type InputVariable = GeneralInputVariable | UrlPathInputVariable | UrlQueryInputVariable;
+export type InputVariable =
+  | GeneralInputVariable
+  | UrlPathInputVariable
+  | UrlQueryInputVariable;
 
 export type OptionalVariable = GeneralInputVariable | UrlQueryInputVariable;
 
@@ -9292,11 +9334,20 @@ export type InputComponent =
   | TextInput
   | VideoPicker;
 
-export type HasBuiltInOutputs = Calendar | CodeComponent | InputComponent | ListView;
+export type HasBuiltInOutputs =
+  | Calendar
+  | CodeComponent
+  | InputComponent
+  | ListView;
 
 export type HasCustomOutputs = RootComponent;
 
-export type ComponentWithOptionalPrivateScope = LayoutView | ListView | Modal | Page | SelectView;
+export type ComponentWithOptionalPrivateScope =
+  | LayoutView
+  | ListView
+  | Modal
+  | Page
+  | SelectView;
 
 export type Container = LayoutComponent | Modal | Page;
 
@@ -9457,7 +9508,9 @@ export type HasDataSourceComponent =
   | MapViewMeta
   | SelectViewMeta;
 
-export type HasDefaultImageListComponent = CustomMultiImagePickerMeta | MultiImagePickerMeta;
+export type HasDefaultImageListComponent =
+  | CustomMultiImagePickerMeta
+  | MultiImagePickerMeta;
 
 export type HasDefaultValueComponent =
   | DataPickerMeta
@@ -9472,7 +9525,11 @@ export type HasDefaultValueComponent =
   | SwitchMeta
   | TabViewMeta;
 
-export type HasImageComponent = ImageMeta | ImagePickerMeta | MapViewMeta | MixImagePickerMeta;
+export type HasImageComponent =
+  | ImageMeta
+  | ImagePickerMeta
+  | MapViewMeta
+  | MixImagePickerMeta;
 
 export type HasInComponentData =
   | CustomMultiImagePickerMeta
@@ -9483,11 +9540,16 @@ export type HasInComponentData =
 
 export type HasOnBeginPlayActionsComponent = VideoMeta;
 
-export type HasOnProgressChangeActionsComponent = ProgressBarMeta | SimpleProgressBarMeta;
+export type HasOnProgressChangeActionsComponent =
+  | ProgressBarMeta
+  | SimpleProgressBarMeta;
 
 export type HasProgressComponent = SimpleProgressBarMeta;
 
-export type HasSuccessActionsComponent = ImagePickerMeta | MixImagePickerMeta | VideoPickerMeta;
+export type HasSuccessActionsComponent =
+  | ImagePickerMeta
+  | MixImagePickerMeta
+  | VideoPickerMeta;
 
 export type HasTimeUpActionsComponent = CountDownMeta;
 
@@ -9500,11 +9562,16 @@ export type HasTitleComponent =
 
 export type HasVideoComponent = VideoMeta | VideoPickerMeta;
 
-export type ItemClickableComponent = MultiImageMeta | MultiImagePickerMeta | SelectViewMeta;
+export type ItemClickableComponent =
+  | MultiImageMeta
+  | MultiImagePickerMeta
+  | SelectViewMeta;
 
 export type MapComponent = MapViewMeta;
 
-export type MayHaveComponentLocalDataComponent = CustomMultiImagePickerMeta | SelectViewMeta;
+export type MayHaveComponentLocalDataComponent =
+  | CustomMultiImagePickerMeta
+  | SelectViewMeta;
 
 export type NumberPickerComponent = NumberInputMeta;
 
@@ -9610,7 +9677,10 @@ export type ActionFlowNode =
 
 export type ApiMeta = HasBodyParameterApiMeta | NoBodyParameterApiMeta;
 
-export type CallbackResponse = ApplicationJsonResponse | TextHtmlResponse | TextPlainResponse;
+export type CallbackResponse =
+  | ApplicationJsonResponse
+  | TextHtmlResponse
+  | TextPlainResponse;
 
 export type ComponentBase = Component | ComponentMeta;
 
@@ -9620,7 +9690,9 @@ export type DbTrigger =
   | DbInsertTrigger
   | DbUpdateTrigger;
 
-export type HasDataSourceToDisplay = DataSelectorProperties | SelectViewProperties;
+export type HasDataSourceToDisplay =
+  | DataSelectorProperties
+  | SelectViewProperties;
 
 export type HasLocalDataSource = GeoMapProperties;
 
@@ -9632,9 +9704,14 @@ export type HasDataSourceProperties =
 
 export type HtmlProperties = HtmlCodeProperties | HtmlIFrameProperties;
 
-export type SwitchCaseProperties = ConditionalViewProperties | TabViewProperties;
+export type SwitchCaseProperties =
+  | ConditionalViewProperties
+  | TabViewProperties;
 
-export type ConditionBoolExp = ConstantCondition | EnvironmentCondition | ExpressionCondition;
+export type ConditionBoolExp =
+  | ConstantCondition
+  | EnvironmentCondition
+  | ExpressionCondition;
 
 export type HtmlAttributes = HtmlCodeAttributes | HtmlIFrameAttributes;
 
@@ -9728,42 +9805,68 @@ export type DataAttributes =
   | VideoPickerAttributes
   | WechatNavigationBarAttributes;
 
-export type ExtraAttributesFromCalendar = CalendarAttributes | OverrideAttributes;
+export type ExtraAttributesFromCalendar =
+  | CalendarAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromCountDown = CountDownAttributes | OverrideAttributes;
+export type ExtraAttributesFromCountDown =
+  | CountDownAttributes
+  | OverrideAttributes;
 
 export type ExtraAttributesFromCustomMultiImagePicker =
   | CustomMultiImagePickerAttributes
   | OverrideAttributes;
 
-export type ExtraAttributesFromDataPicker = DataPickerAttributes | OverrideAttributes;
+export type ExtraAttributesFromDataPicker =
+  | DataPickerAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromDataSelector = DataSelectorAttributes | OverrideAttributes;
+export type ExtraAttributesFromDataSelector =
+  | DataSelectorAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromDateTimePicker = DateTimePickerAttributes | OverrideAttributes;
+export type ExtraAttributesFromDateTimePicker =
+  | DateTimePickerAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromDraggableScreen = DraggableScreenAttributes | OverrideAttributes;
+export type ExtraAttributesFromDraggableScreen =
+  | DraggableScreenAttributes
+  | OverrideAttributes;
 
 export type ExtraAttributesFromMapView = MapViewAttributes | OverrideAttributes;
 
-export type ExtraAttributesFromMixImagePicker = MixImagePickerAttributes | OverrideAttributes;
+export type ExtraAttributesFromMixImagePicker =
+  | MixImagePickerAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromMultiImage = MultiImageAttributes | OverrideAttributes;
+export type ExtraAttributesFromMultiImage =
+  | MultiImageAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromMultiImagePicker = MultiImagePickerAttributes | OverrideAttributes;
+export type ExtraAttributesFromMultiImagePicker =
+  | MultiImagePickerAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromNumberInput = NumberInputAttributes | OverrideAttributes;
+export type ExtraAttributesFromNumberInput =
+  | NumberInputAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromProgressBar = OverrideAttributes | ProgressBarAttributes;
+export type ExtraAttributesFromProgressBar =
+  | OverrideAttributes
+  | ProgressBarAttributes;
 
 export type ExtraAttributesFromRichText =
   | OverrideAttributes
   | RichTextAttributes
   | RichTextEditorAttributes;
 
-export type ExtraAttributesFromSelectView = OverrideAttributes | SelectViewAttributes;
+export type ExtraAttributesFromSelectView =
+  | OverrideAttributes
+  | SelectViewAttributes;
 
-export type ExtraAttributesFromSimpleProgressBar = OverrideAttributes | SimpleProgressBarAttributes;
+export type ExtraAttributesFromSimpleProgressBar =
+  | OverrideAttributes
+  | SimpleProgressBarAttributes;
 
 export type ExtraAttributesFromSwitch = OverrideAttributes | SwitchAttributes;
 
@@ -9783,17 +9886,25 @@ export type ImageSourceAttributes =
   | MarkerIconAttributes
   | OverrideAttributes;
 
-export type VideoSourceAttributes = OverrideAttributes | VideoAttributes | VideoPickerAttributes;
+export type VideoSourceAttributes =
+  | OverrideAttributes
+  | VideoAttributes
+  | VideoPickerAttributes;
 
 export type ObjectLiteralNode = ArrayNode | ObjectNode | ValueNode;
 
-export type TypeSchema = ArrayTypeSchema | ObjectTypeSchema | PrimitiveTypeSchema;
+export type TypeSchema =
+  | ArrayTypeSchema
+  | ObjectTypeSchema
+  | PrimitiveTypeSchema;
 
 export type ActionFlow = BackendActionFlow | FrontendActionFlow;
 
 export type ClientSchema = MobileSchema | WebSchema | WechatMiniProgramSchema;
 
-export type SourceWithTransformFormula = ArrayFilterFormulaBinding | ArrayMappingFormulaBinding;
+export type SourceWithTransformFormula =
+  | ArrayFilterFormulaBinding
+  | ArrayMappingFormulaBinding;
 
 export type TriggerConfiguration = DbTriggerConfiguration;
 
@@ -9831,7 +9942,10 @@ export type HasLayoutSize =
   | ViewWrapperStyle
   | WechatOfficialAccountWrapperStyle;
 
-export type GridOrNoneLayoutStyle = BlockOrNoneLayoutStyle | GridLayoutStyle | NoneLayoutStyle;
+export type GridOrNoneLayoutStyle =
+  | BlockOrNoneLayoutStyle
+  | GridLayoutStyle
+  | NoneLayoutStyle;
 
 export type LengthSyntaxWithValue = FixedLengthSyntax | RelativeLengthSyntax;
 
@@ -9897,7 +10011,9 @@ export type ComponentWrapperStyle =
   | ViewWrapperStyle
   | WechatOfficialAccountWrapperStyle;
 
-export type DimensionValues = AbsoluteOrFixedPositionStyle | PlainDimensionValues;
+export type DimensionValues =
+  | AbsoluteOrFixedPositionStyle
+  | PlainDimensionValues;
 
 export type HasBackdropFilterStyle =
   | ButtonWrapperStyle
@@ -10117,7 +10233,9 @@ export type HasSize = HasLayoutSize | LottieProgressBarWrapperStyle;
 
 export type HasTextColorStyle = RichTextEditorWrapperStyle;
 
-export type HasTextStyle = NavigationBarWrapperStyle | TextStyleAsComponentWrapperStyle;
+export type HasTextStyle =
+  | NavigationBarWrapperStyle
+  | TextStyleAsComponentWrapperStyle;
 
 export type HasZIndex =
   | ButtonWrapperStyle
@@ -10148,13 +10266,21 @@ export type HasZIndex =
   | ViewWrapperStyle
   | WechatOfficialAccountWrapperStyle;
 
-export type LayoutStyle = BlockLayoutStyle | FlexLayoutStyle | GridOrNoneLayoutStyle;
+export type LayoutStyle =
+  | BlockLayoutStyle
+  | FlexLayoutStyle
+  | GridOrNoneLayoutStyle;
 
 export type LengthSyntax = AutoLengthSyntax | LengthSyntaxWithValue;
 
-export type PositionStyle = AbsoluteOrFixedPositionStyle | RelativePositionStyle;
+export type PositionStyle =
+  | AbsoluteOrFixedPositionStyle
+  | RelativePositionStyle;
 
-export type SizeStyle = GeneralSizeStyle | HeightSizeStyle | WidthHeightSizeStyle;
+export type SizeStyle =
+  | GeneralSizeStyle
+  | HeightSizeStyle
+  | WidthHeightSizeStyle;
 
 export type ApiParameter = HasBodyParameters | NoBodyParameters;
 
@@ -10167,13 +10293,17 @@ export type ClientConfiguration =
   | WebClientConfiguration
   | WechatMiniProgramClientConfiguration;
 
-export type ClonedComponentGroup = CustomClonedComponentGroup | DefaultClonedComponentGroup;
+export type ClonedComponentGroup =
+  | CustomClonedComponentGroup
+  | DefaultClonedComponentGroup;
 
 export type CodeComponentConfig =
   | CodeComponentConfigWithDynamicInput
   | DeprecatedCodeComponentConfig;
 
-export type CodeComponentInput = CodeComponentActionsInput | CodeComponentValueInput;
+export type CodeComponentInput =
+  | CodeComponentActionsInput
+  | CodeComponentValueInput;
 
 export type ComponentEvents =
   | CalendarEvents
@@ -10219,7 +10349,9 @@ export type ImageFilterParamsType =
   | Record<string, DataBinding>
   | Record<string, DataBinding>[];
 
-export type LinearGradientDirection = AngleLinearGradientDirection | KeywordLinearGradientDirection;
+export type LinearGradientDirection =
+  | AngleLinearGradientDirection
+  | KeywordLinearGradientDirection;
 
 export type MapConfiguration = AMapConfiguration | MapBoxConfiguration;
 
@@ -10238,7 +10370,9 @@ export type MockedZSchemaNode =
   | TpaConfigsZSchemaNode
   | ZAiConfigsZSchemaNode;
 
-export type PaymentConfiguration = GeneralPaymentConfiguration | StripePaymentConfiguration;
+export type PaymentConfiguration =
+  | GeneralPaymentConfiguration
+  | StripePaymentConfiguration;
 
 export type PlatformConfiguration = WebConfiguration | WechatConfiguration;
 
@@ -10250,9 +10384,13 @@ export type Schema = ReferenceSchema | TypeSchema;
 
 export type SheetDataSource = DBQueryDataSource;
 
-export type SocialMediaConfigValue = SocialMediaDataBindingValue | SocialMediaUseSeoTDKValue;
+export type SocialMediaConfigValue =
+  | SocialMediaDataBindingValue
+  | SocialMediaUseSeoTDKValue;
 
-export type SocialMediaSeoConfig = GeneralSocialMediaSeoConfig | XPlatformSeoConfig;
+export type SocialMediaSeoConfig =
+  | GeneralSocialMediaSeoConfig
+  | XPlatformSeoConfig;
 
 export type SortConfig = BasicSortConfig | VectorSortConfig;
 
@@ -10313,7 +10451,9 @@ export type TypeCodec = CurrentTypeCodec | TargetTypeFieldCodec;
 
 export type TypeDefinition = EnumTypeDefinition | ObjectTypeDefinition;
 
-export type ZAiOutputConfig = DefaultZAiOutputConfig | StructuredZAiOutputConfig;
+export type ZAiOutputConfig =
+  | DefaultZAiOutputConfig
+  | StructuredZAiOutputConfig;
 
 export type ZAiTool =
   | ActionFlowTool
@@ -10322,7 +10462,9 @@ export type ZAiTool =
   | StructuredOutputTool
   | ThirdPartyApiTool;
 
-export type ActionFlowNodeType = BackendActionFlowNodeType | FrontendActionFlowNodeType;
+export type ActionFlowNodeType =
+  | BackendActionFlowNodeType
+  | FrontendActionFlowNodeType;
 
 export type AuthorizationFailureEventBinding =
   | ChooseLocationEventBinding
@@ -10378,7 +10520,7 @@ export type CallActionOnFailConfig = CallActionsOnFail | TerminateWhenFail;
 
 export type ColorType = DefaultColorType | GradientColorType;
 
-export type ColumnSelections = string[] | 'all';
+export type ColumnSelections = string[] | "all";
 
 export type ConfigState = LoginConfigState;
 
@@ -10405,24 +10547,34 @@ export type Effect =
   | SlideEffect
   | VariantInteraction;
 
-export type ExtraAttributesFromAdvertBanner = AdvertBannerAttributes | OverrideAttributes;
+export type ExtraAttributesFromAdvertBanner =
+  | AdvertBannerAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromCameraView = CameraViewAttributes | OverrideAttributes;
+export type ExtraAttributesFromCameraView =
+  | CameraViewAttributes
+  | OverrideAttributes;
 
 export type ExtraAttributesFromConditionalContainer =
   | ConditionalContainerAttributes
   | OverrideAttributes;
 
-export type ExtraAttributesFromCustomList = CustomListAttributes | OverrideAttributes;
+export type ExtraAttributesFromCustomList =
+  | CustomListAttributes
+  | OverrideAttributes;
 
 export type ExtraAttributesFromCustomView =
   | CustomViewAttributes
   | ModalViewAttributes
   | OverrideAttributes;
 
-export type ExtraAttributesFromHorizontalLine = HorizontalLineAttributes | OverrideAttributes;
+export type ExtraAttributesFromHorizontalLine =
+  | HorizontalLineAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromHorizontalList = HorizontalListAttributes | OverrideAttributes;
+export type ExtraAttributesFromHorizontalList =
+  | HorizontalListAttributes
+  | OverrideAttributes;
 
 export type ExtraAttributesFromIcon = IconAttributes | OverrideAttributes;
 
@@ -10431,17 +10583,27 @@ export type ExtraAttributesFromImage =
   | ImageAttributes
   | OverrideAttributes;
 
-export type ExtraAttributesFromImagePicker = ImagePickerAttributes | OverrideAttributes;
+export type ExtraAttributesFromImagePicker =
+  | ImagePickerAttributes
+  | OverrideAttributes;
 
 export type ExtraAttributesFromLottie = LottieAttributes | OverrideAttributes;
 
-export type ExtraAttributesFromModalView = ModalViewAttributes | OverrideAttributes;
+export type ExtraAttributesFromModalView =
+  | ModalViewAttributes
+  | OverrideAttributes;
 
-export type ExtraAttributesFromPagingToolBar = OverrideAttributes | PagingToolbarAttributes;
+export type ExtraAttributesFromPagingToolBar =
+  | OverrideAttributes
+  | PagingToolbarAttributes;
 
-export type ExtraAttributesFromRichTextEditor = OverrideAttributes | RichTextEditorAttributes;
+export type ExtraAttributesFromRichTextEditor =
+  | OverrideAttributes
+  | RichTextEditorAttributes;
 
-export type ExtraAttributesFromScrollView = OverrideAttributes | ScrollViewAttributes;
+export type ExtraAttributesFromScrollView =
+  | OverrideAttributes
+  | ScrollViewAttributes;
 
 export type ExtraAttributesFromSheet = OverrideAttributes | SheetAttributes;
 
@@ -10449,7 +10611,9 @@ export type ExtraAttributesFromText = TextAttributes;
 
 export type ExtraAttributesFromVideo = OverrideAttributes | VideoAttributes;
 
-export type ExtraAttributesFromVideoPicker = OverrideAttributes | VideoPickerAttributes;
+export type ExtraAttributesFromVideoPicker =
+  | OverrideAttributes
+  | VideoPickerAttributes;
 
 export type FilterStyleAttributes =
   | ButtonAttributes
@@ -10505,7 +10669,10 @@ export type HasBackgroundColor =
 
 export type HasBranchItemIds = BranchSeparation | ConcurrentBranchSeparation;
 
-export type HasBranchSeparationId = BranchItem | BranchMerge | ConcurrentBranchMerge;
+export type HasBranchSeparationId =
+  | BranchItem
+  | BranchMerge
+  | ConcurrentBranchMerge;
 
 export type HasClickActions =
   | BlankContainerAttributes
@@ -10559,7 +10726,10 @@ export type HasInputArgs = FlowStart | RunCustomCode;
 
 export type HasInputArgsDataBinding = RunCustomCode | RunTemplateCode;
 
-export type HasLabelColor = DataPickerAttributes | OverrideAttributes | SimpleProgressBarAttributes;
+export type HasLabelColor =
+  | DataPickerAttributes
+  | OverrideAttributes
+  | SimpleProgressBarAttributes;
 
 export type HasMultiLine =
   | ExtraAttributesFromInput
@@ -10614,7 +10784,10 @@ export type HasTextColor =
   | SheetAttributes
   | WechatNavigationBarAttributes;
 
-export type HasVerticalPadding = CustomListAttributes | MultiImageAttributes | OverrideAttributes;
+export type HasVerticalPadding =
+  | CustomListAttributes
+  | MultiImageAttributes
+  | OverrideAttributes;
 
 export type IntOrDataBinding = DataBinding | number;
 
@@ -10659,11 +10832,18 @@ export type Operator =
 
 export type PredefinedType = PrimitiveType | SystemDefinedType;
 
-export type PreserveCellStateProperties = ListViewProperties | SelectViewProperties;
+export type PreserveCellStateProperties =
+  | ListViewProperties
+  | SelectViewProperties;
 
-export type PropertyDataFormattable = ComponentBinding | FunctionBinding | VariableBinding;
+export type PropertyDataFormattable =
+  | ComponentBinding
+  | FunctionBinding
+  | VariableBinding;
 
-export type PropertyShouldUpdateOnValueChange = ComponentBinding | VariableBinding;
+export type PropertyShouldUpdateOnValueChange =
+  | ComponentBinding
+  | VariableBinding;
 
 export type RequestResultEventBinding =
   | AICreateConversationEventBinding
@@ -10755,7 +10935,9 @@ export type ShowScrollBarAttributes =
   | CustomViewAttributes
   | HorizontalListAttributes;
 
-export type StripePaymentInfo = StripePaymentEventBinding | StripeRecurringPaymentEventBinding;
+export type StripePaymentInfo =
+  | StripePaymentEventBinding
+  | StripeRecurringPaymentEventBinding;
 
 export type SwitchCaseAttributes =
   | ConditionalContainerAttributes

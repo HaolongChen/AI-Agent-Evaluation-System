@@ -3,8 +3,8 @@ import type {
   MapBoxConfiguration,
   AuthenticationConfig,
   DataModel,
-} from './index.ts';
-import { MapType } from './index.ts';
+} from "./index.ts";
+import { MapType } from "./index.ts";
 
 export const DEFAULT_AUTHENTICATION_CONFIG: AuthenticationConfig = {
   usernameConfig: { enabled: true },
@@ -17,13 +17,13 @@ export const DEFAULT_AUTHENTICATION_CONFIG: AuthenticationConfig = {
 
 export const DEFAULT_A_MAP_CONFIGURATION: AMapConfiguration = {
   type: MapType.A_MAP,
-  key: '',
-  secret: '',
+  key: "",
+  secret: "",
 };
 
 export const DEFAULT_MAP_BOX_CONFIGURATION: MapBoxConfiguration = {
   type: MapType.MAP_BOX,
-  token: '',
+  token: "",
 };
 
 export const DEFAULT_DATA_MODEL: DataModel = {
@@ -41,7 +41,7 @@ export const DEFAULT_DATA_MODEL: DataModel = {
 // ====================================================
 
 export interface SupportedCustomModelDescriptor_supportedCustomModelDescriptor {
-  __typename: 'SupportedCustomModelDescriptor';
+  __typename: "SupportedCustomModelDescriptor";
   chatModelDescriptors: (any | null)[] | null;
   embeddingModelDescriptors: (any | null)[] | null;
 }
@@ -51,43 +51,43 @@ export interface SupportedCustomModelDescriptor {
 }
 
 export enum ColumnType {
-  BIGINT = 'BIGINT',
-  BIGSERIAL = 'BIGSERIAL',
-  BITMAP = 'BITMAP',
-  BOOLEAN = 'BOOLEAN',
-  DATE = 'DATE',
-  DECIMAL = 'DECIMAL',
-  FILE = 'FILE',
-  FLOAT8 = 'FLOAT8',
-  GEO_POINT = 'GEO_POINT',
-  IMAGE = 'IMAGE',
-  IMAGE_LIST = 'IMAGE_LIST',
-  INTEGER = 'INTEGER',
-  INTERVAL = 'INTERVAL',
-  JSONB = 'JSONB',
-  LOCATION_INFO = 'LOCATION_INFO',
-  TEXT = 'TEXT',
-  TIMESTAMPTZ = 'TIMESTAMPTZ',
-  TIMETZ = 'TIMETZ',
-  UNKNOWN = 'UNKNOWN',
-  VIDEO = 'VIDEO',
+  BIGINT = "BIGINT",
+  BIGSERIAL = "BIGSERIAL",
+  BITMAP = "BITMAP",
+  BOOLEAN = "BOOLEAN",
+  DATE = "DATE",
+  DECIMAL = "DECIMAL",
+  FILE = "FILE",
+  FLOAT8 = "FLOAT8",
+  GEO_POINT = "GEO_POINT",
+  IMAGE = "IMAGE",
+  IMAGE_LIST = "IMAGE_LIST",
+  INTEGER = "INTEGER",
+  INTERVAL = "INTERVAL",
+  JSONB = "JSONB",
+  LOCATION_INFO = "LOCATION_INFO",
+  TEXT = "TEXT",
+  TIMESTAMPTZ = "TIMESTAMPTZ",
+  TIMETZ = "TIMETZ",
+  UNKNOWN = "UNKNOWN",
+  VIDEO = "VIDEO",
 }
 
 export enum AfCodeTemplateStatus {
-  CREATED = 'CREATED',
-  PUBLISHED = 'PUBLISHED',
+  CREATED = "CREATED",
+  PUBLISHED = "PUBLISHED",
 }
 
-export const SYSTEM_MODEL_PROVIDER = 'Functorz';
+export const SYSTEM_MODEL_PROVIDER = "Functorz";
 
 export enum ProjectCreationStatus {
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  PROCESSING = 'PROCESSING',
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  PROCESSING = "PROCESSING",
 }
 
 export interface OnProjectCreationStatusChanged_onProjectCreationStatusChanged {
-  __typename: 'ProjectCreationResult';
+  __typename: "ProjectCreationResult";
   projectExId: string | null;
   status: ProjectCreationStatus | null;
 }

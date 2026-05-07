@@ -83,7 +83,8 @@ export const GoldenSetScalarFieldEnum = {
   id: 'id',
   schemaId: 'schemaId',
   copilotType: 'copilotType',
-  modelName: 'modelName'
+  modelName: 'modelName',
+  updatedAt: 'updatedAt'
 } as const
 
 export type GoldenSetScalarFieldEnum = (typeof GoldenSetScalarFieldEnum)[keyof typeof GoldenSetScalarFieldEnum]
@@ -91,7 +92,6 @@ export type GoldenSetScalarFieldEnum = (typeof GoldenSetScalarFieldEnum)[keyof t
 
 export const UserInputScalarFieldEnum = {
   id: 'id',
-  description: 'description',
   content: 'content',
   createdAt: 'createdAt',
   createdBy: 'createdBy'
@@ -133,11 +133,10 @@ export type RubricScalarFieldEnum = (typeof RubricScalarFieldEnum)[keyof typeof 
 export const CriteriaScalarFieldEnum = {
   id: 'id',
   rubricId: 'rubricId',
-  version: 'version',
-  title: 'title',
   content: 'content',
   expectedAnswer: 'expectedAnswer',
-  weight: 'weight'
+  weight: 'weight',
+  reasoning: 'reasoning'
 } as const
 
 export type CriteriaScalarFieldEnum = (typeof CriteriaScalarFieldEnum)[keyof typeof CriteriaScalarFieldEnum]
@@ -191,8 +190,7 @@ export const EvaluationResultScalarFieldEnum = {
   rubricId: 'rubricId',
   evaluatorType: 'evaluatorType',
   overallScore: 'overallScore',
-  summary: 'summary',
-  detailedAnalysis: 'detailedAnalysis',
+  analysis: 'analysis',
   auditTrace: 'auditTrace',
   generatedAt: 'generatedAt'
 } as const

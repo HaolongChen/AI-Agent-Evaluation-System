@@ -41,8 +41,7 @@ export type EvaluationResultMinAggregateOutputType = {
   rubricId: string | null
   evaluatorType: $Enums.EvaluatorType | null
   overallScore: runtime.Decimal | null
-  summary: string | null
-  detailedAnalysis: string | null
+  analysis: string | null
   generatedAt: Date | null
 }
 
@@ -53,8 +52,7 @@ export type EvaluationResultMaxAggregateOutputType = {
   rubricId: string | null
   evaluatorType: $Enums.EvaluatorType | null
   overallScore: runtime.Decimal | null
-  summary: string | null
-  detailedAnalysis: string | null
+  analysis: string | null
   generatedAt: Date | null
 }
 
@@ -65,8 +63,7 @@ export type EvaluationResultCountAggregateOutputType = {
   rubricId: number
   evaluatorType: number
   overallScore: number
-  summary: number
-  detailedAnalysis: number
+  analysis: number
   auditTrace: number
   generatedAt: number
   _all: number
@@ -88,8 +85,7 @@ export type EvaluationResultMinAggregateInputType = {
   rubricId?: true
   evaluatorType?: true
   overallScore?: true
-  summary?: true
-  detailedAnalysis?: true
+  analysis?: true
   generatedAt?: true
 }
 
@@ -100,8 +96,7 @@ export type EvaluationResultMaxAggregateInputType = {
   rubricId?: true
   evaluatorType?: true
   overallScore?: true
-  summary?: true
-  detailedAnalysis?: true
+  analysis?: true
   generatedAt?: true
 }
 
@@ -112,8 +107,7 @@ export type EvaluationResultCountAggregateInputType = {
   rubricId?: true
   evaluatorType?: true
   overallScore?: true
-  summary?: true
-  detailedAnalysis?: true
+  analysis?: true
   auditTrace?: true
   generatedAt?: true
   _all?: true
@@ -212,8 +206,7 @@ export type EvaluationResultGroupByOutputType = {
   rubricId: string
   evaluatorType: $Enums.EvaluatorType
   overallScore: runtime.Decimal
-  summary: string
-  detailedAnalysis: string
+  analysis: string
   auditTrace: string[]
   generatedAt: Date
   _count: EvaluationResultCountAggregateOutputType | null
@@ -248,8 +241,7 @@ export type evaluationResultWhereInput = {
   rubricId?: Prisma.StringFilter<"evaluationResult"> | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationResult"> | $Enums.EvaluatorType
   overallScore?: Prisma.DecimalFilter<"evaluationResult"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary?: Prisma.StringFilter<"evaluationResult"> | string
-  detailedAnalysis?: Prisma.StringFilter<"evaluationResult"> | string
+  analysis?: Prisma.StringFilter<"evaluationResult"> | string
   auditTrace?: Prisma.StringNullableListFilter<"evaluationResult">
   generatedAt?: Prisma.DateTimeFilter<"evaluationResult"> | Date | string
   evaluationSession?: Prisma.XOR<Prisma.EvaluationSessionScalarRelationFilter, Prisma.evaluationSessionWhereInput>
@@ -262,8 +254,7 @@ export type evaluationResultOrderByWithRelationInput = {
   rubricId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   overallScore?: Prisma.SortOrder
-  summary?: Prisma.SortOrder
-  detailedAnalysis?: Prisma.SortOrder
+  analysis?: Prisma.SortOrder
   auditTrace?: Prisma.SortOrder
   generatedAt?: Prisma.SortOrder
   evaluationSession?: Prisma.evaluationSessionOrderByWithRelationInput
@@ -280,8 +271,7 @@ export type evaluationResultWhereUniqueInput = Prisma.AtLeast<{
   rubricId?: Prisma.StringFilter<"evaluationResult"> | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationResult"> | $Enums.EvaluatorType
   overallScore?: Prisma.DecimalFilter<"evaluationResult"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary?: Prisma.StringFilter<"evaluationResult"> | string
-  detailedAnalysis?: Prisma.StringFilter<"evaluationResult"> | string
+  analysis?: Prisma.StringFilter<"evaluationResult"> | string
   auditTrace?: Prisma.StringNullableListFilter<"evaluationResult">
   generatedAt?: Prisma.DateTimeFilter<"evaluationResult"> | Date | string
   evaluationSession?: Prisma.XOR<Prisma.EvaluationSessionScalarRelationFilter, Prisma.evaluationSessionWhereInput>
@@ -294,8 +284,7 @@ export type evaluationResultOrderByWithAggregationInput = {
   rubricId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   overallScore?: Prisma.SortOrder
-  summary?: Prisma.SortOrder
-  detailedAnalysis?: Prisma.SortOrder
+  analysis?: Prisma.SortOrder
   auditTrace?: Prisma.SortOrder
   generatedAt?: Prisma.SortOrder
   _count?: Prisma.evaluationResultCountOrderByAggregateInput
@@ -315,8 +304,7 @@ export type evaluationResultScalarWhereWithAggregatesInput = {
   rubricId?: Prisma.StringWithAggregatesFilter<"evaluationResult"> | string
   evaluatorType?: Prisma.EnumEvaluatorTypeWithAggregatesFilter<"evaluationResult"> | $Enums.EvaluatorType
   overallScore?: Prisma.DecimalWithAggregatesFilter<"evaluationResult"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary?: Prisma.StringWithAggregatesFilter<"evaluationResult"> | string
-  detailedAnalysis?: Prisma.StringWithAggregatesFilter<"evaluationResult"> | string
+  analysis?: Prisma.StringWithAggregatesFilter<"evaluationResult"> | string
   auditTrace?: Prisma.StringNullableListFilter<"evaluationResult">
   generatedAt?: Prisma.DateTimeWithAggregatesFilter<"evaluationResult"> | Date | string
 }
@@ -324,8 +312,7 @@ export type evaluationResultScalarWhereWithAggregatesInput = {
 export type evaluationResultCreateInput = {
   id?: string
   overallScore: runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary: string
-  detailedAnalysis: string
+  analysis: string
   auditTrace?: Prisma.evaluationResultCreateauditTraceInput | string[]
   generatedAt?: Date | string
   evaluationSession: Prisma.evaluationSessionCreateNestedOneWithoutResultInput
@@ -338,8 +325,7 @@ export type evaluationResultUncheckedCreateInput = {
   rubricId: string
   evaluatorType: $Enums.EvaluatorType
   overallScore: runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary: string
-  detailedAnalysis: string
+  analysis: string
   auditTrace?: Prisma.evaluationResultCreateauditTraceInput | string[]
   generatedAt?: Date | string
 }
@@ -347,8 +333,7 @@ export type evaluationResultUncheckedCreateInput = {
 export type evaluationResultUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   overallScore?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary?: Prisma.StringFieldUpdateOperationsInput | string
-  detailedAnalysis?: Prisma.StringFieldUpdateOperationsInput | string
+  analysis?: Prisma.StringFieldUpdateOperationsInput | string
   auditTrace?: Prisma.evaluationResultUpdateauditTraceInput | string[]
   generatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   evaluationSession?: Prisma.evaluationSessionUpdateOneRequiredWithoutResultNestedInput
@@ -361,8 +346,7 @@ export type evaluationResultUncheckedUpdateInput = {
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   overallScore?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary?: Prisma.StringFieldUpdateOperationsInput | string
-  detailedAnalysis?: Prisma.StringFieldUpdateOperationsInput | string
+  analysis?: Prisma.StringFieldUpdateOperationsInput | string
   auditTrace?: Prisma.evaluationResultUpdateauditTraceInput | string[]
   generatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -374,8 +358,7 @@ export type evaluationResultCreateManyInput = {
   rubricId: string
   evaluatorType: $Enums.EvaluatorType
   overallScore: runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary: string
-  detailedAnalysis: string
+  analysis: string
   auditTrace?: Prisma.evaluationResultCreateauditTraceInput | string[]
   generatedAt?: Date | string
 }
@@ -383,8 +366,7 @@ export type evaluationResultCreateManyInput = {
 export type evaluationResultUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   overallScore?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary?: Prisma.StringFieldUpdateOperationsInput | string
-  detailedAnalysis?: Prisma.StringFieldUpdateOperationsInput | string
+  analysis?: Prisma.StringFieldUpdateOperationsInput | string
   auditTrace?: Prisma.evaluationResultUpdateauditTraceInput | string[]
   generatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -396,8 +378,7 @@ export type evaluationResultUncheckedUpdateManyInput = {
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   overallScore?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary?: Prisma.StringFieldUpdateOperationsInput | string
-  detailedAnalysis?: Prisma.StringFieldUpdateOperationsInput | string
+  analysis?: Prisma.StringFieldUpdateOperationsInput | string
   auditTrace?: Prisma.evaluationResultUpdateauditTraceInput | string[]
   generatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -421,8 +402,7 @@ export type evaluationResultCountOrderByAggregateInput = {
   rubricId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   overallScore?: Prisma.SortOrder
-  summary?: Prisma.SortOrder
-  detailedAnalysis?: Prisma.SortOrder
+  analysis?: Prisma.SortOrder
   auditTrace?: Prisma.SortOrder
   generatedAt?: Prisma.SortOrder
 }
@@ -438,8 +418,7 @@ export type evaluationResultMaxOrderByAggregateInput = {
   rubricId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   overallScore?: Prisma.SortOrder
-  summary?: Prisma.SortOrder
-  detailedAnalysis?: Prisma.SortOrder
+  analysis?: Prisma.SortOrder
   generatedAt?: Prisma.SortOrder
 }
 
@@ -450,8 +429,7 @@ export type evaluationResultMinOrderByAggregateInput = {
   rubricId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   overallScore?: Prisma.SortOrder
-  summary?: Prisma.SortOrder
-  detailedAnalysis?: Prisma.SortOrder
+  analysis?: Prisma.SortOrder
   generatedAt?: Prisma.SortOrder
 }
 
@@ -503,8 +481,7 @@ export type evaluationResultUpdateauditTraceInput = {
 export type evaluationResultCreateWithoutEvaluationSessionInput = {
   id?: string
   overallScore: runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary: string
-  detailedAnalysis: string
+  analysis: string
   auditTrace?: Prisma.evaluationResultCreateauditTraceInput | string[]
   generatedAt?: Date | string
 }
@@ -512,8 +489,7 @@ export type evaluationResultCreateWithoutEvaluationSessionInput = {
 export type evaluationResultUncheckedCreateWithoutEvaluationSessionInput = {
   id?: string
   overallScore: runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary: string
-  detailedAnalysis: string
+  analysis: string
   auditTrace?: Prisma.evaluationResultCreateauditTraceInput | string[]
   generatedAt?: Date | string
 }
@@ -537,8 +513,7 @@ export type evaluationResultUpdateToOneWithWhereWithoutEvaluationSessionInput = 
 export type evaluationResultUpdateWithoutEvaluationSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   overallScore?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary?: Prisma.StringFieldUpdateOperationsInput | string
-  detailedAnalysis?: Prisma.StringFieldUpdateOperationsInput | string
+  analysis?: Prisma.StringFieldUpdateOperationsInput | string
   auditTrace?: Prisma.evaluationResultUpdateauditTraceInput | string[]
   generatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -546,8 +521,7 @@ export type evaluationResultUpdateWithoutEvaluationSessionInput = {
 export type evaluationResultUncheckedUpdateWithoutEvaluationSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   overallScore?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  summary?: Prisma.StringFieldUpdateOperationsInput | string
-  detailedAnalysis?: Prisma.StringFieldUpdateOperationsInput | string
+  analysis?: Prisma.StringFieldUpdateOperationsInput | string
   auditTrace?: Prisma.evaluationResultUpdateauditTraceInput | string[]
   generatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -561,8 +535,7 @@ export type evaluationResultSelect<ExtArgs extends runtime.Types.Extensions.Inte
   rubricId?: boolean
   evaluatorType?: boolean
   overallScore?: boolean
-  summary?: boolean
-  detailedAnalysis?: boolean
+  analysis?: boolean
   auditTrace?: boolean
   generatedAt?: boolean
   evaluationSession?: boolean | Prisma.evaluationSessionDefaultArgs<ExtArgs>
@@ -575,8 +548,7 @@ export type evaluationResultSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   rubricId?: boolean
   evaluatorType?: boolean
   overallScore?: boolean
-  summary?: boolean
-  detailedAnalysis?: boolean
+  analysis?: boolean
   auditTrace?: boolean
   generatedAt?: boolean
   evaluationSession?: boolean | Prisma.evaluationSessionDefaultArgs<ExtArgs>
@@ -589,8 +561,7 @@ export type evaluationResultSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   rubricId?: boolean
   evaluatorType?: boolean
   overallScore?: boolean
-  summary?: boolean
-  detailedAnalysis?: boolean
+  analysis?: boolean
   auditTrace?: boolean
   generatedAt?: boolean
   evaluationSession?: boolean | Prisma.evaluationSessionDefaultArgs<ExtArgs>
@@ -603,13 +574,12 @@ export type evaluationResultSelectScalar = {
   rubricId?: boolean
   evaluatorType?: boolean
   overallScore?: boolean
-  summary?: boolean
-  detailedAnalysis?: boolean
+  analysis?: boolean
   auditTrace?: boolean
   generatedAt?: boolean
 }
 
-export type evaluationResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "evaluatorId" | "copilotOutputId" | "rubricId" | "evaluatorType" | "overallScore" | "summary" | "detailedAnalysis" | "auditTrace" | "generatedAt", ExtArgs["result"]["evaluationResult"]>
+export type evaluationResultOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "evaluatorId" | "copilotOutputId" | "rubricId" | "evaluatorType" | "overallScore" | "analysis" | "auditTrace" | "generatedAt", ExtArgs["result"]["evaluationResult"]>
 export type evaluationResultInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   evaluationSession?: boolean | Prisma.evaluationSessionDefaultArgs<ExtArgs>
 }
@@ -632,8 +602,7 @@ export type $evaluationResultPayload<ExtArgs extends runtime.Types.Extensions.In
     rubricId: string
     evaluatorType: $Enums.EvaluatorType
     overallScore: runtime.Decimal
-    summary: string
-    detailedAnalysis: string
+    analysis: string
     auditTrace: string[]
     generatedAt: Date
   }, ExtArgs["result"]["evaluationResult"]>
@@ -1066,8 +1035,7 @@ export interface evaluationResultFieldRefs {
   readonly rubricId: Prisma.FieldRef<"evaluationResult", 'String'>
   readonly evaluatorType: Prisma.FieldRef<"evaluationResult", 'EvaluatorType'>
   readonly overallScore: Prisma.FieldRef<"evaluationResult", 'Decimal'>
-  readonly summary: Prisma.FieldRef<"evaluationResult", 'String'>
-  readonly detailedAnalysis: Prisma.FieldRef<"evaluationResult", 'String'>
+  readonly analysis: Prisma.FieldRef<"evaluationResult", 'String'>
   readonly auditTrace: Prisma.FieldRef<"evaluationResult", 'String[]'>
   readonly generatedAt: Prisma.FieldRef<"evaluationResult", 'DateTime'>
 }

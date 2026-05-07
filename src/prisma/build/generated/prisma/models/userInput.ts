@@ -26,7 +26,6 @@ export type AggregateUserInput = {
 
 export type UserInputMinAggregateOutputType = {
   id: string | null
-  description: string | null
   content: string | null
   createdAt: Date | null
   createdBy: string | null
@@ -34,7 +33,6 @@ export type UserInputMinAggregateOutputType = {
 
 export type UserInputMaxAggregateOutputType = {
   id: string | null
-  description: string | null
   content: string | null
   createdAt: Date | null
   createdBy: string | null
@@ -42,7 +40,6 @@ export type UserInputMaxAggregateOutputType = {
 
 export type UserInputCountAggregateOutputType = {
   id: number
-  description: number
   content: number
   createdAt: number
   createdBy: number
@@ -52,7 +49,6 @@ export type UserInputCountAggregateOutputType = {
 
 export type UserInputMinAggregateInputType = {
   id?: true
-  description?: true
   content?: true
   createdAt?: true
   createdBy?: true
@@ -60,7 +56,6 @@ export type UserInputMinAggregateInputType = {
 
 export type UserInputMaxAggregateInputType = {
   id?: true
-  description?: true
   content?: true
   createdAt?: true
   createdBy?: true
@@ -68,7 +63,6 @@ export type UserInputMaxAggregateInputType = {
 
 export type UserInputCountAggregateInputType = {
   id?: true
-  description?: true
   content?: true
   createdAt?: true
   createdBy?: true
@@ -149,10 +143,9 @@ export type userInputGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 
 export type UserInputGroupByOutputType = {
   id: string
-  description: string | null
   content: string
   createdAt: Date
-  createdBy: string | null
+  createdBy: string
   _count: UserInputCountAggregateOutputType | null
   _min: UserInputMinAggregateOutputType | null
   _max: UserInputMaxAggregateOutputType | null
@@ -178,19 +171,17 @@ export type userInputWhereInput = {
   OR?: Prisma.userInputWhereInput[]
   NOT?: Prisma.userInputWhereInput | Prisma.userInputWhereInput[]
   id?: Prisma.StringFilter<"userInput"> | string
-  description?: Prisma.StringNullableFilter<"userInput"> | string | null
   content?: Prisma.StringFilter<"userInput"> | string
   createdAt?: Prisma.DateTimeFilter<"userInput"> | Date | string
-  createdBy?: Prisma.StringNullableFilter<"userInput"> | string | null
+  createdBy?: Prisma.StringFilter<"userInput"> | string
   goldenSets?: Prisma.GoldenSetListRelationFilter
 }
 
 export type userInputOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  description?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
-  createdBy?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdBy?: Prisma.SortOrder
   goldenSets?: Prisma.goldenSetOrderByRelationAggregateInput
 }
 
@@ -199,19 +190,17 @@ export type userInputWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.userInputWhereInput | Prisma.userInputWhereInput[]
   OR?: Prisma.userInputWhereInput[]
   NOT?: Prisma.userInputWhereInput | Prisma.userInputWhereInput[]
-  description?: Prisma.StringNullableFilter<"userInput"> | string | null
   content?: Prisma.StringFilter<"userInput"> | string
   createdAt?: Prisma.DateTimeFilter<"userInput"> | Date | string
-  createdBy?: Prisma.StringNullableFilter<"userInput"> | string | null
+  createdBy?: Prisma.StringFilter<"userInput"> | string
   goldenSets?: Prisma.GoldenSetListRelationFilter
 }, "id">
 
 export type userInputOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  description?: Prisma.SortOrderInput | Prisma.SortOrder
   content?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
-  createdBy?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdBy?: Prisma.SortOrder
   _count?: Prisma.userInputCountOrderByAggregateInput
   _max?: Prisma.userInputMaxOrderByAggregateInput
   _min?: Prisma.userInputMinOrderByAggregateInput
@@ -222,70 +211,62 @@ export type userInputScalarWhereWithAggregatesInput = {
   OR?: Prisma.userInputScalarWhereWithAggregatesInput[]
   NOT?: Prisma.userInputScalarWhereWithAggregatesInput | Prisma.userInputScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"userInput"> | string
-  description?: Prisma.StringNullableWithAggregatesFilter<"userInput"> | string | null
   content?: Prisma.StringWithAggregatesFilter<"userInput"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"userInput"> | Date | string
-  createdBy?: Prisma.StringNullableWithAggregatesFilter<"userInput"> | string | null
+  createdBy?: Prisma.StringWithAggregatesFilter<"userInput"> | string
 }
 
 export type userInputCreateInput = {
   id?: string
-  description?: string | null
   content: string
   createdAt?: Date | string
-  createdBy?: string | null
+  createdBy?: string
   goldenSets?: Prisma.goldenSetCreateNestedManyWithoutUserInputsInput
 }
 
 export type userInputUncheckedCreateInput = {
   id?: string
-  description?: string | null
   content: string
   createdAt?: Date | string
-  createdBy?: string | null
+  createdBy?: string
   goldenSets?: Prisma.goldenSetUncheckedCreateNestedManyWithoutUserInputsInput
 }
 
 export type userInputUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdBy?: Prisma.StringFieldUpdateOperationsInput | string
   goldenSets?: Prisma.goldenSetUpdateManyWithoutUserInputsNestedInput
 }
 
 export type userInputUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdBy?: Prisma.StringFieldUpdateOperationsInput | string
   goldenSets?: Prisma.goldenSetUncheckedUpdateManyWithoutUserInputsNestedInput
 }
 
 export type userInputCreateManyInput = {
   id?: string
-  description?: string | null
   content: string
   createdAt?: Date | string
-  createdBy?: string | null
+  createdBy?: string
 }
 
 export type userInputUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdBy?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type userInputUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdBy?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type UserInputListRelationFilter = {
@@ -300,7 +281,6 @@ export type userInputOrderByRelationAggregateInput = {
 
 export type userInputCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  description?: Prisma.SortOrder
   content?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
@@ -308,7 +288,6 @@ export type userInputCountOrderByAggregateInput = {
 
 export type userInputMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  description?: Prisma.SortOrder
   content?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
@@ -316,7 +295,6 @@ export type userInputMaxOrderByAggregateInput = {
 
 export type userInputMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  description?: Prisma.SortOrder
   content?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   createdBy?: Prisma.SortOrder
@@ -360,28 +338,18 @@ export type userInputUncheckedUpdateManyWithoutGoldenSetsNestedInput = {
   deleteMany?: Prisma.userInputScalarWhereInput | Prisma.userInputScalarWhereInput[]
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
 export type userInputCreateWithoutGoldenSetsInput = {
   id?: string
-  description?: string | null
   content: string
   createdAt?: Date | string
-  createdBy?: string | null
+  createdBy?: string
 }
 
 export type userInputUncheckedCreateWithoutGoldenSetsInput = {
   id?: string
-  description?: string | null
   content: string
   createdAt?: Date | string
-  createdBy?: string | null
+  createdBy?: string
 }
 
 export type userInputCreateOrConnectWithoutGoldenSetsInput = {
@@ -410,34 +378,30 @@ export type userInputScalarWhereInput = {
   OR?: Prisma.userInputScalarWhereInput[]
   NOT?: Prisma.userInputScalarWhereInput | Prisma.userInputScalarWhereInput[]
   id?: Prisma.StringFilter<"userInput"> | string
-  description?: Prisma.StringNullableFilter<"userInput"> | string | null
   content?: Prisma.StringFilter<"userInput"> | string
   createdAt?: Prisma.DateTimeFilter<"userInput"> | Date | string
-  createdBy?: Prisma.StringNullableFilter<"userInput"> | string | null
+  createdBy?: Prisma.StringFilter<"userInput"> | string
 }
 
 export type userInputUpdateWithoutGoldenSetsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdBy?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type userInputUncheckedUpdateWithoutGoldenSetsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdBy?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type userInputUncheckedUpdateManyWithoutGoldenSetsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   content?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdBy?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -473,7 +437,6 @@ export type UserInputCountOutputTypeCountGoldenSetsArgs<ExtArgs extends runtime.
 
 export type userInputSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  description?: boolean
   content?: boolean
   createdAt?: boolean
   createdBy?: boolean
@@ -483,7 +446,6 @@ export type userInputSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type userInputSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  description?: boolean
   content?: boolean
   createdAt?: boolean
   createdBy?: boolean
@@ -491,7 +453,6 @@ export type userInputSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
 
 export type userInputSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  description?: boolean
   content?: boolean
   createdAt?: boolean
   createdBy?: boolean
@@ -499,13 +460,12 @@ export type userInputSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
 
 export type userInputSelectScalar = {
   id?: boolean
-  description?: boolean
   content?: boolean
   createdAt?: boolean
   createdBy?: boolean
 }
 
-export type userInputOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "description" | "content" | "createdAt" | "createdBy", ExtArgs["result"]["userInput"]>
+export type userInputOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "createdAt" | "createdBy", ExtArgs["result"]["userInput"]>
 export type userInputInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   goldenSets?: boolean | Prisma.userInput$goldenSetsArgs<ExtArgs>
   _count?: boolean | Prisma.UserInputCountOutputTypeDefaultArgs<ExtArgs>
@@ -520,10 +480,9 @@ export type $userInputPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    description: string | null
     content: string
     createdAt: Date
-    createdBy: string | null
+    createdBy: string
   }, ExtArgs["result"]["userInput"]>
   composites: {}
 }
@@ -949,7 +908,6 @@ export interface Prisma__userInputClient<T, Null = never, ExtArgs extends runtim
  */
 export interface userInputFieldRefs {
   readonly id: Prisma.FieldRef<"userInput", 'String'>
-  readonly description: Prisma.FieldRef<"userInput", 'String'>
   readonly content: Prisma.FieldRef<"userInput", 'String'>
   readonly createdAt: Prisma.FieldRef<"userInput", 'DateTime'>
   readonly createdBy: Prisma.FieldRef<"userInput", 'String'>

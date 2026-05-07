@@ -63,15 +63,11 @@
           },
           "language": "ZH"
         },
-        "rootPageIds": [
-          "vv4ptlqh4"
-        ],
+        "rootPageIds": ["vv4ptlqh4"],
         "componentMetaById": {
           "vv4ptlqh4": {
             "parentMRef": "",
-            "applicablePlatforms": [
-              "WEB"
-            ],
+            "applicablePlatforms": ["WEB"],
             "mRef": "vv4ptlqh4",
             "type": "web-page",
             "layoutEnabled": true,
@@ -355,15 +351,11 @@
           "pageCountInMainPackage": 6,
           "pageCountInSubPackage": 12
         },
-        "rootPageIds": [
-          "r4fuek9wc"
-        ],
+        "rootPageIds": ["r4fuek9wc"],
         "componentMetaById": {
           "r4fuek9wc": {
             "parentMRef": "",
-            "applicablePlatforms": [
-              "WECHAT"
-            ],
+            "applicablePlatforms": ["WECHAT"],
             "mRef": "r4fuek9wc",
             "type": "mobile-page",
             "layoutEnabled": true,
@@ -548,9 +540,7 @@
               }
             },
             "componentHidden": false,
-            "childMRefs": [
-              "iux9bqg9g"
-            ],
+            "childMRefs": ["iux9bqg9g"],
             "queries": [],
             "thirdPartyQueries": [],
             "listDataAccessMode": "remote",
@@ -565,9 +555,7 @@
           },
           "iux9bqg9g": {
             "parentMRef": "r4fuek9wc",
-            "applicablePlatforms": [
-              "WECHAT"
-            ],
+            "applicablePlatforms": ["WECHAT"],
             "mRef": "iux9bqg9g",
             "type": "wechat-navigation-bar",
             "layoutEnabled": false,
@@ -776,15 +764,11 @@
           "constraintMetadata": [
             {
               "name": "account_pkey",
-              "primaryKeyColumns": [
-                "id"
-              ]
+              "primaryKeyColumns": ["id"]
             },
             {
               "name": "account_id_key",
-              "compositeUniqueColumns": [
-                "id"
-              ]
+              "compositeUniqueColumns": ["id"]
             }
           ],
           "isView": false,
@@ -825,21 +809,15 @@
           "constraintMetadata": [
             {
               "name": "fz_province_pkey",
-              "primaryKeyColumns": [
-                "id"
-              ]
+              "primaryKeyColumns": ["id"]
             },
             {
               "name": "fz_province_id_key",
-              "compositeUniqueColumns": [
-                "id"
-              ]
+              "compositeUniqueColumns": ["id"]
             },
             {
               "name": "fz_province_name_key",
-              "compositeUniqueColumns": [
-                "name"
-              ]
+              "compositeUniqueColumns": ["name"]
             }
           ],
           "isView": false,
@@ -892,21 +870,15 @@
           "constraintMetadata": [
             {
               "name": "fz_city_pkey",
-              "primaryKeyColumns": [
-                "id"
-              ]
+              "primaryKeyColumns": ["id"]
             },
             {
               "name": "fz_city_id_key",
-              "compositeUniqueColumns": [
-                "id"
-              ]
+              "compositeUniqueColumns": ["id"]
             },
             {
               "name": "fz_city_name_key",
-              "compositeUniqueColumns": [
-                "name"
-              ]
+              "compositeUniqueColumns": ["name"]
             }
           ],
           "isView": false,
@@ -959,15 +931,11 @@
           "constraintMetadata": [
             {
               "name": "fz_district_pkey",
-              "primaryKeyColumns": [
-                "id"
-              ]
+              "primaryKeyColumns": ["id"]
             },
             {
               "name": "fz_district_id_key",
-              "compositeUniqueColumns": [
-                "id"
-              ]
+              "compositeUniqueColumns": ["id"]
             }
           ],
           "isView": false,
@@ -1045,15 +1013,11 @@
           "constraintMetadata": [
             {
               "name": "fz_audit_record_pkey",
-              "primaryKeyColumns": [
-                "id"
-              ]
+              "primaryKeyColumns": ["id"]
             },
             {
               "name": "fz_audit_record_id_key",
-              "compositeUniqueColumns": [
-                "id"
-              ]
+              "compositeUniqueColumns": ["id"]
             }
           ],
           "isView": false,
@@ -1130,27 +1094,19 @@
           "constraintMetadata": [
             {
               "name": "fz_permission_role_pkey",
-              "primaryKeyColumns": [
-                "id"
-              ]
+              "primaryKeyColumns": ["id"]
             },
             {
               "name": "fz_permission_role_id_key",
-              "compositeUniqueColumns": [
-                "id"
-              ]
+              "compositeUniqueColumns": ["id"]
             },
             {
               "name": "fz_permission_role_uuid_key",
-              "compositeUniqueColumns": [
-                "uuid"
-              ]
+              "compositeUniqueColumns": ["uuid"]
             },
             {
               "name": "fz_permission_role_name_key",
-              "compositeUniqueColumns": [
-                "name"
-              ]
+              "compositeUniqueColumns": ["name"]
             }
           ],
           "isView": false,
@@ -1215,29 +1171,19 @@
           "constraintMetadata": [
             {
               "name": "fz_account_has_permission_role_pkey",
-              "primaryKeyColumns": [
-                "id"
-              ]
+              "primaryKeyColumns": ["id"]
             },
             {
               "name": "fk_account_id_account_id",
-              "sourceUnitedColumns": [
-                "account_id"
-              ],
+              "sourceUnitedColumns": ["account_id"],
               "targetTable": "fz_account_has_permission_role",
-              "targetUnitedColumns": [
-                "id"
-              ]
+              "targetUnitedColumns": ["id"]
             },
             {
               "name": "fk_role_id_fz_permission_role_id",
-              "sourceUnitedColumns": [
-                "role_id"
-              ],
+              "sourceUnitedColumns": ["role_id"],
               "targetTable": "fz_account_has_permission_role",
-              "targetUnitedColumns": [
-                "id"
-              ]
+              "targetUnitedColumns": ["id"]
             }
           ],
           "isView": false,

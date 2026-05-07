@@ -151,3 +151,4 @@ pnpm-*.yaml
 local_shell
 
 ZSchema_Flattened.json
+.codegraphy/

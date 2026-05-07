@@ -1,11 +1,11 @@
 {
-	"client": {
-		"service": {
-			"name": "ai-agent-evaluation-system",
+  "client": {
+    "service": {
+      "name": "ai-agent-evaluation-system",
 
-			"url": "https://zionbackend-internal.functorz.work/api/graphql",
-			"skipSSLValidation": true
-		},
-		"excludes": ["**/node_modules", "**/__tests__", "**/dist", "**/generated"]
-	}
+      "url": "https://zionbackend-internal.functorz.work/api/graphql",
+      "skipSSLValidation": true
+    },
+    "excludes": ["**/node_modules", "**/__tests__", "**/dist", "**/generated"]
+  }
 }

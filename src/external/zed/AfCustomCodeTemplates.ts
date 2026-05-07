@@ -43,5 +43,7 @@ export interface AfCustomCodeTemplates_visibleAfCustomCodeTemplates {
 }
 
 export interface AfCustomCodeTemplates {
-  visibleAfCustomCodeTemplates: (AfCustomCodeTemplates_visibleAfCustomCodeTemplates | null)[] | null;
+  visibleAfCustomCodeTemplates:
+    | (AfCustomCodeTemplates_visibleAfCustomCodeTemplates | null)[]
+    | null;
 }

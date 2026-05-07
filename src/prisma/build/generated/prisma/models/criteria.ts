@@ -37,31 +37,28 @@ export type CriteriaSumAggregateOutputType = {
 export type CriteriaMinAggregateOutputType = {
   id: string | null
   rubricId: string | null
-  version: string | null
-  title: string | null
   content: string | null
   expectedAnswer: boolean | null
   weight: runtime.Decimal | null
+  reasoning: string | null
 }
 
 export type CriteriaMaxAggregateOutputType = {
   id: string | null
   rubricId: string | null
-  version: string | null
-  title: string | null
   content: string | null
   expectedAnswer: boolean | null
   weight: runtime.Decimal | null
+  reasoning: string | null
 }
 
 export type CriteriaCountAggregateOutputType = {
   id: number
   rubricId: number
-  version: number
-  title: number
   content: number
   expectedAnswer: number
   weight: number
+  reasoning: number
   _all: number
 }
 
@@ -77,31 +74,28 @@ export type CriteriaSumAggregateInputType = {
 export type CriteriaMinAggregateInputType = {
   id?: true
   rubricId?: true
-  version?: true
-  title?: true
   content?: true
   expectedAnswer?: true
   weight?: true
+  reasoning?: true
 }
 
 export type CriteriaMaxAggregateInputType = {
   id?: true
   rubricId?: true
-  version?: true
-  title?: true
   content?: true
   expectedAnswer?: true
   weight?: true
+  reasoning?: true
 }
 
 export type CriteriaCountAggregateInputType = {
   id?: true
   rubricId?: true
-  version?: true
-  title?: true
   content?: true
   expectedAnswer?: true
   weight?: true
+  reasoning?: true
   _all?: true
 }
 
@@ -194,11 +188,10 @@ export type criteriaGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 export type CriteriaGroupByOutputType = {
   id: string
   rubricId: string
-  version: string
-  title: string
   content: string
   expectedAnswer: boolean
   weight: runtime.Decimal
+  reasoning: string | null
   _count: CriteriaCountAggregateOutputType | null
   _avg: CriteriaAvgAggregateOutputType | null
   _sum: CriteriaSumAggregateOutputType | null
@@ -227,22 +220,20 @@ export type criteriaWhereInput = {
   NOT?: Prisma.criteriaWhereInput | Prisma.criteriaWhereInput[]
   id?: Prisma.StringFilter<"criteria"> | string
   rubricId?: Prisma.StringFilter<"criteria"> | string
-  version?: Prisma.StringFilter<"criteria"> | string
-  title?: Prisma.StringFilter<"criteria"> | string
   content?: Prisma.StringFilter<"criteria"> | string
   expectedAnswer?: Prisma.BoolFilter<"criteria"> | boolean
   weight?: Prisma.DecimalFilter<"criteria"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.StringNullableFilter<"criteria"> | string | null
   rubric?: Prisma.XOR<Prisma.RubricScalarRelationFilter, Prisma.rubricWhereInput>
 }
 
 export type criteriaOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
-  version?: Prisma.SortOrder
-  title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   expectedAnswer?: Prisma.SortOrder
   weight?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrderInput | Prisma.SortOrder
   rubric?: Prisma.rubricOrderByWithRelationInput
 }
 
@@ -253,22 +244,20 @@ export type criteriaWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.criteriaWhereInput[]
   NOT?: Prisma.criteriaWhereInput | Prisma.criteriaWhereInput[]
   rubricId?: Prisma.StringFilter<"criteria"> | string
-  version?: Prisma.StringFilter<"criteria"> | string
-  title?: Prisma.StringFilter<"criteria"> | string
   content?: Prisma.StringFilter<"criteria"> | string
   expectedAnswer?: Prisma.BoolFilter<"criteria"> | boolean
   weight?: Prisma.DecimalFilter<"criteria"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.StringNullableFilter<"criteria"> | string | null
   rubric?: Prisma.XOR<Prisma.RubricScalarRelationFilter, Prisma.rubricWhereInput>
 }, "id" | "id_rubricId">
 
 export type criteriaOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
-  version?: Prisma.SortOrder
-  title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   expectedAnswer?: Prisma.SortOrder
   weight?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.criteriaCountOrderByAggregateInput
   _avg?: Prisma.criteriaAvgOrderByAggregateInput
   _max?: Prisma.criteriaMaxOrderByAggregateInput
@@ -282,80 +271,72 @@ export type criteriaScalarWhereWithAggregatesInput = {
   NOT?: Prisma.criteriaScalarWhereWithAggregatesInput | Prisma.criteriaScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"criteria"> | string
   rubricId?: Prisma.StringWithAggregatesFilter<"criteria"> | string
-  version?: Prisma.StringWithAggregatesFilter<"criteria"> | string
-  title?: Prisma.StringWithAggregatesFilter<"criteria"> | string
   content?: Prisma.StringWithAggregatesFilter<"criteria"> | string
   expectedAnswer?: Prisma.BoolWithAggregatesFilter<"criteria"> | boolean
   weight?: Prisma.DecimalWithAggregatesFilter<"criteria"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.StringNullableWithAggregatesFilter<"criteria"> | string | null
 }
 
 export type criteriaCreateInput = {
   id?: string
-  version?: string
-  title: string
   content: string
   expectedAnswer: boolean
   weight: runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: string | null
   rubric: Prisma.rubricCreateNestedOneWithoutCriterionInput
 }
 
 export type criteriaUncheckedCreateInput = {
   id?: string
   rubricId: string
-  version?: string
-  title: string
   content: string
   expectedAnswer: boolean
   weight: runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: string | null
 }
 
 export type criteriaUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  version?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   expectedAnswer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weight?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rubric?: Prisma.rubricUpdateOneRequiredWithoutCriterionNestedInput
 }
 
 export type criteriaUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string
-  version?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   expectedAnswer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weight?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type criteriaCreateManyInput = {
   id?: string
   rubricId: string
-  version?: string
-  title: string
   content: string
   expectedAnswer: boolean
   weight: runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: string | null
 }
 
 export type criteriaUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  version?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   expectedAnswer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weight?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type criteriaUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string
-  version?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   expectedAnswer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weight?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type CriteriaListRelationFilter = {
@@ -376,11 +357,10 @@ export type criteriaIdRubricIdCompoundUniqueInput = {
 export type criteriaCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
-  version?: Prisma.SortOrder
-  title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   expectedAnswer?: Prisma.SortOrder
   weight?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrder
 }
 
 export type criteriaAvgOrderByAggregateInput = {
@@ -390,21 +370,19 @@ export type criteriaAvgOrderByAggregateInput = {
 export type criteriaMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
-  version?: Prisma.SortOrder
-  title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   expectedAnswer?: Prisma.SortOrder
   weight?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrder
 }
 
 export type criteriaMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
-  version?: Prisma.SortOrder
-  title?: Prisma.SortOrder
   content?: Prisma.SortOrder
   expectedAnswer?: Prisma.SortOrder
   weight?: Prisma.SortOrder
+  reasoning?: Prisma.SortOrder
 }
 
 export type criteriaSumOrderByAggregateInput = {
@@ -465,22 +443,24 @@ export type DecimalFieldUpdateOperationsInput = {
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type criteriaCreateWithoutRubricInput = {
   id?: string
-  version?: string
-  title: string
   content: string
   expectedAnswer: boolean
   weight: runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: string | null
 }
 
 export type criteriaUncheckedCreateWithoutRubricInput = {
   id?: string
-  version?: string
-  title: string
   content: string
   expectedAnswer: boolean
   weight: runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: string | null
 }
 
 export type criteriaCreateOrConnectWithoutRubricInput = {
@@ -515,47 +495,42 @@ export type criteriaScalarWhereInput = {
   NOT?: Prisma.criteriaScalarWhereInput | Prisma.criteriaScalarWhereInput[]
   id?: Prisma.StringFilter<"criteria"> | string
   rubricId?: Prisma.StringFilter<"criteria"> | string
-  version?: Prisma.StringFilter<"criteria"> | string
-  title?: Prisma.StringFilter<"criteria"> | string
   content?: Prisma.StringFilter<"criteria"> | string
   expectedAnswer?: Prisma.BoolFilter<"criteria"> | boolean
   weight?: Prisma.DecimalFilter<"criteria"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.StringNullableFilter<"criteria"> | string | null
 }
 
 export type criteriaCreateManyRubricInput = {
   id?: string
-  version?: string
-  title: string
   content: string
   expectedAnswer: boolean
   weight: runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: string | null
 }
 
 export type criteriaUpdateWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  version?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   expectedAnswer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weight?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type criteriaUncheckedUpdateWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  version?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   expectedAnswer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weight?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type criteriaUncheckedUpdateManyWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  version?: Prisma.StringFieldUpdateOperationsInput | string
-  title?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   expectedAnswer?: Prisma.BoolFieldUpdateOperationsInput | boolean
   weight?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  reasoning?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -563,47 +538,43 @@ export type criteriaUncheckedUpdateManyWithoutRubricInput = {
 export type criteriaSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   rubricId?: boolean
-  version?: boolean
-  title?: boolean
   content?: boolean
   expectedAnswer?: boolean
   weight?: boolean
+  reasoning?: boolean
   rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["criteria"]>
 
 export type criteriaSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   rubricId?: boolean
-  version?: boolean
-  title?: boolean
   content?: boolean
   expectedAnswer?: boolean
   weight?: boolean
+  reasoning?: boolean
   rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["criteria"]>
 
 export type criteriaSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   rubricId?: boolean
-  version?: boolean
-  title?: boolean
   content?: boolean
   expectedAnswer?: boolean
   weight?: boolean
+  reasoning?: boolean
   rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["criteria"]>
 
 export type criteriaSelectScalar = {
   id?: boolean
   rubricId?: boolean
-  version?: boolean
-  title?: boolean
   content?: boolean
   expectedAnswer?: boolean
   weight?: boolean
+  reasoning?: boolean
 }
 
-export type criteriaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "rubricId" | "version" | "title" | "content" | "expectedAnswer" | "weight", ExtArgs["result"]["criteria"]>
+export type criteriaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "rubricId" | "content" | "expectedAnswer" | "weight" | "reasoning", ExtArgs["result"]["criteria"]>
 export type criteriaInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
 }
@@ -622,11 +593,10 @@ export type $criteriaPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     rubricId: string
-    version: string
-    title: string
     content: string
     expectedAnswer: boolean
     weight: runtime.Decimal
+    reasoning: string | null
   }, ExtArgs["result"]["criteria"]>
   composites: {}
 }
@@ -1053,11 +1023,10 @@ export interface Prisma__criteriaClient<T, Null = never, ExtArgs extends runtime
 export interface criteriaFieldRefs {
   readonly id: Prisma.FieldRef<"criteria", 'String'>
   readonly rubricId: Prisma.FieldRef<"criteria", 'String'>
-  readonly version: Prisma.FieldRef<"criteria", 'String'>
-  readonly title: Prisma.FieldRef<"criteria", 'String'>
   readonly content: Prisma.FieldRef<"criteria", 'String'>
   readonly expectedAnswer: Prisma.FieldRef<"criteria", 'Boolean'>
   readonly weight: Prisma.FieldRef<"criteria", 'Decimal'>
+  readonly reasoning: Prisma.FieldRef<"criteria", 'String'>
 }
     
 

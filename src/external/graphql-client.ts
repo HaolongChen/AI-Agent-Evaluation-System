@@ -1,6 +1,6 @@
-import { GraphQLClient, ClientError } from 'graphql-request';
-import { createClient as createWsClient } from 'graphql-ws';
-import { WebSocket } from 'ws';
+import { GraphQLClient, ClientError } from "graphql-request";
+import { createClient as createWsClient } from "graphql-ws";
+import { WebSocket } from "ws";
 
 // ---------------------------------------------------------------------------
 // Auth state — token with 1-hour TTL
@@ -14,7 +14,7 @@ class AuthState {
   setToken(token: string): void {
     this.token = token;
     this.expiry = Date.now() + this.TTL_MS;
-    console.info('Access token set, expires in', this.TTL_MS / 1000, 'seconds');
+    console.info("Access token set, expires in", this.TTL_MS / 1000, "seconds");
   }
 
   clearToken(): void {
@@ -39,12 +39,12 @@ export const authState = new AuthState();
 
 function makeHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'X-Zed-Version': '2.1.0',
+    "Content-Type": "application/json",
+    "X-Zed-Version": "2.1.0",
   };
   const token = authState.getToken();
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`;
   }
   return headers;
 }
@@ -59,9 +59,12 @@ export const localClient = new GraphQLClient(`${process.env.URL}/graphql`, {
   headers: makeHeaders,
 });
 
-export const backendClient = new GraphQLClient(process.env.BACKEND_GRAPHQL_URL, {
-  headers: makeHeaders,
-});
+export const backendClient = new GraphQLClient(
+  process.env.BACKEND_GRAPHQL_URL,
+  {
+    headers: makeHeaders,
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Typed HTTP request wrapper
@@ -94,9 +97,9 @@ export async function gqlRequest<TData>(
     return await client.request<TData>(document);
   } catch (error) {
     if (error instanceof ClientError) {
-      console.error('GraphQL error:', { errors: error.response.errors });
+      console.error("GraphQL error:", { errors: error.response.errors });
     } else {
-      console.error('GraphQL request failed:', error);
+      console.error("GraphQL request failed:", error);
     }
     throw error;
   }
@@ -127,9 +130,9 @@ function getWsClient(): WsClient {
       return token ? { Authorization: `Bearer ${token}` } : {};
     },
     on: {
-      connected: () => console.info('GraphQL subscription WS connected'),
-      closed: () => console.info('GraphQL subscription WS closed'),
-      error: (err) => console.error('GraphQL subscription WS error:', err),
+      connected: () => console.info("GraphQL subscription WS connected"),
+      closed: () => console.info("GraphQL subscription WS closed"),
+      error: (err) => console.error("GraphQL subscription WS error:", err),
     },
   });
 
@@ -205,7 +208,7 @@ export function gqlSubscribe<TData>(
         }
       },
       error: (err) => {
-        console.error('GraphQL subscription error:', err);
+        console.error("GraphQL subscription error:", err);
         handlers.error(err);
       },
       complete: () => {

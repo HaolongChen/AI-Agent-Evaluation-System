@@ -21,7 +21,7 @@ type Mutation {
 
   createUserInput(input: UserInputInput!): UserInput!
 
-  linkGoldenSetToUserInput(context: CopilotInput!): GoldenSetWithInputs!
+  linkGoldenSetToUserInput(context: CopilotInput!): Boolean!
 
   generateRubric(context: CopilotInput!): Rubric!
 

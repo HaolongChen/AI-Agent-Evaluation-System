@@ -11,9 +11,11 @@ export class UserInputRepository implements IUserInputRepository {
     if (!goldenSet) {
       throw new Error(`GoldenSet with ID ${goldenSetId} not found`);
     }
-    return goldenSet.userInputs.map(
-      (userInput) => new UserInputEntity(userInput, userInput.id),
-    );
+    return goldenSet.userInputs.map((userInput) => {
+      const userInputEntity = new UserInputEntity(userInput, userInput.id);
+      userInputEntity.createdAt = userInput.createdAt;
+      return userInputEntity;
+    });
   }
   async addGoldenSetAssociation(
     userInputId: string,
@@ -38,6 +40,8 @@ export class UserInputRepository implements IUserInputRepository {
     if (!userInput) {
       throw new Error(`UserInput with ID ${id} not found`);
     }
-    return new UserInputEntity(userInput, userInput.id);
+    const userInputEntity = new UserInputEntity(userInput, userInput.id);
+    userInputEntity.createdAt = userInput.createdAt;
+    return userInputEntity;
   }
 }

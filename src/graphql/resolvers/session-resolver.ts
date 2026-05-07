@@ -1,4 +1,3 @@
-import { EVALUATOR, REVERSE_EVALUATOR } from "../../config/constants.ts";
 import { analyticsService } from "../../services/analytics-service.ts";
 import {
   EvaluatorType,

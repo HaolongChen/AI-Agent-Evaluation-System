@@ -1,7 +1,7 @@
-import { v4 as uuidv4 } from "uuid";
-export { ProjectNameDuplicateError } from "../external/zed/createProject.ts";
+export { ProjectNameDuplicateError } from "../../../external/zed/createProject.ts";
 
-import { backendClient, gqlRequest } from "../external/graphql-client.ts";
+import { randomUUID } from "node:crypto";
+import { backendClient, gqlRequest } from "../../../external/graphql-client.ts";
 import {
   GQL_CHECK_PROJECT_NAME_DUPLICATE,
   GQL_CREATE_PROJECT_IN_ORGANIZATION,
@@ -11,7 +11,7 @@ import {
   ProjectNameDuplicateError,
   openApolloSubscription,
   subscribeViaModernProtocol,
-} from "../external/zed/createProject.ts";
+} from "../../../external/zed/createProject.ts";
 import type {
   ProjectCreationStatus,
   CheckProjectNameDuplicateResponse,
@@ -20,7 +20,7 @@ import type {
   CreateProjectMutationVariables,
   DeleteProjectResponse,
   DeleteProjectVariables,
-} from "../external/zed/createProject.ts";
+} from "../../../external/zed/createProject.ts";
 
 export class ProjectService {
   async createProject(
@@ -86,7 +86,7 @@ export class ProjectService {
     onProjectCreated: (projectExId: string) => Promise<void>,
   ): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      const subscriptionId = uuidv4();
+      const subscriptionId = randomUUID();
       let settled = false;
 
       const settle = (function_: () => void): void => {

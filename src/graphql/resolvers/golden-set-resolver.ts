@@ -1,7 +1,15 @@
+import { repository } from "../../DI/repository.ts";
+import { CreateGoldenSetUseCase } from "../../modules/copilot-input/application/create-golden-set.ts";
+import { CreateUserInputUseCase } from "../../modules/copilot-input/application/create-user-input.ts";
+import { FormCopilotInputUseCase } from "../../modules/copilot-input/application/form-copilot-input.ts";
+import {
+  GetGoldenSetByIdUseCase,
+  GetGoldenSetsByFilterUseCase,
+} from "../../modules/copilot-input/application/get-golden-set.ts";
+import { projectService } from "../../modules/copilot-input/application/project-service.ts";
 import {
   CopilotType,
   type GoldenSet,
-  type GoldenSetWithInputs,
   type MutationCreateUserInputArgs as MutationCreateUserInputArguments,
   type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
   type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
@@ -9,8 +17,15 @@ import {
   type QueryGetGoldenSetsArgs as QueryGetGoldenSetsArguments,
   type UserInput,
 } from "../generated/resolvers-types.ts";
-import { goldenSetService } from "../../services/golden-set-service.ts";
-import { projectService } from "../../services/project-service.ts";
+import { GraphQLError } from "graphql";
+
+const copilotTypeMapper = {
+  dataModelBuilder: CopilotType.DataModelBuilder,
+  uiBuilder: CopilotType.UiBuilder,
+  actionFlowBuilder: CopilotType.ActionFlowBuilder,
+  logAnalyzer: CopilotType.LogAnalyzer,
+  agentBuilder: CopilotType.AgentBuilder,
+};
 
 export const goldenSetResolver = {
   Query: {
@@ -18,13 +33,32 @@ export const goldenSetResolver = {
       _: unknown,
       arguments_: QueryGetGoldenSetByIdArguments,
     ): Promise<GoldenSet> => {
-      throw new Error("Method not implemented.");
+      const getGoldenSetByIdUseCase = new GetGoldenSetByIdUseCase(
+        repository.goldenSetRepository,
+      );
+      const goldenSet = await getGoldenSetByIdUseCase.execute(arguments_.id);
+      if (!goldenSet) {
+        throw new GraphQLError(`GoldenSet with id ${arguments_.id} not found`);
+      }
+      return {
+        ...goldenSet,
+        copilotType: copilotTypeMapper[goldenSet.copilotType],
+      };
     },
     getGoldenSets: async (
       _: unknown,
       arguments_: QueryGetGoldenSetsArguments,
     ): Promise<GoldenSet[]> => {
-      throw new Error("Method not implemented.");
+      const getGoldenSetsByFilterUseCase = new GetGoldenSetsByFilterUseCase(
+        repository.goldenSetRepository,
+      );
+      const goldenSets = await getGoldenSetsByFilterUseCase.execute(
+        arguments_.filters ?? {},
+      );
+      return goldenSets.map((goldenSet) => ({
+        ...goldenSet,
+        copilotType: copilotTypeMapper[goldenSet.copilotType],
+      }));
     },
   },
 
@@ -33,32 +67,59 @@ export const goldenSetResolver = {
       _: unknown,
       arguments_: MutationInitializeGoldenSetArguments,
     ): Promise<GoldenSet> => {
-      throw new Error("Method not implemented.");
+      const createGoldenSetUseCase = new CreateGoldenSetUseCase(
+        repository.goldenSetRepository,
+      );
+      const goldenSet = await createGoldenSetUseCase.execute(
+        arguments_.input.schemaId,
+        arguments_.input.copilotType,
+        arguments_.input.modelName,
+      );
+      return {
+        ...goldenSet,
+        copilotType: copilotTypeMapper[goldenSet.copilotType],
+      };
     },
     createUserInput: async (
       _: unknown,
       arguments_: MutationCreateUserInputArguments,
     ): Promise<UserInput> => {
-      throw new Error("Method not implemented.");
+      const createUserInputUseCase = new CreateUserInputUseCase(
+        repository.userInputRepository,
+      );
+      const userInput = await createUserInputUseCase.execute(
+        arguments_.input.content,
+        arguments_.input.createdBy,
+      );
+      return { ...userInput, createdAt: userInput.createdAt!.toISOString() };
     },
     linkGoldenSetToUserInput: async (
       _: unknown,
       arguments_: MutationLinkGoldenSetToUserInputArguments,
-    ): Promise<GoldenSetWithInputs> => {
-      throw new Error("Method not implemented.");
+    ): Promise<boolean> => {
+      const formCopilotInputUseCase = new FormCopilotInputUseCase({
+        goldenSetRepository: repository.goldenSetRepository,
+        userInputRepository: repository.userInputRepository,
+      });
+      await formCopilotInputUseCase.execute(
+        arguments_.context.goldenSetId,
+        arguments_.context.userInputId,
+      );
+      return true;
     },
 
     createProject: async (
       _: unknown,
       arguments_: { projectName: string },
     ): Promise<string> => {
-      throw new Error("Method not implemented.");
+      return await projectService.createProject(arguments_.projectName);
     },
     deleteProject: async (
       _: unknown,
       arguments_: { projectExId: string },
     ): Promise<boolean> => {
-      throw new Error("Method not implemented.");
+      await projectService.deleteProject(arguments_.projectExId);
+      return true;
     },
   },
 };

@@ -10,8 +10,8 @@ export const copilotTypeEnum = z.enum([
 
 export const goldenSetSchema = z.object({
   schemaId: z.string(),
-  copilotType: copilotTypeEnum.optional().default("dataModelBuilder"),
-  modelName: z.string().optional().default("undefined"),
+  copilotType: copilotTypeEnum.default("dataModelBuilder"),
+  modelName: z.string().default("undefined"),
 });
 
 export const goldenSetFiltersSchema = goldenSetSchema.partial();

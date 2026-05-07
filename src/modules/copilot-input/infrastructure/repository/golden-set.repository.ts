@@ -13,9 +13,11 @@ export class GoldenSetRepository implements IGoldenSetRepository {
     if (!userInput) {
       throw new Error(`UserInput with ID ${userInputId} not found`);
     }
-    return userInput.goldenSets.map(
-      (goldenSet) => new GoldenSetEntity(goldenSet, goldenSet.id),
-    );
+    return userInput.goldenSets.map((goldenSet) => {
+      const goldenSetEntity = new GoldenSetEntity(goldenSet, goldenSet.id);
+      goldenSetEntity.updatedAt = goldenSet.updatedAt;
+      return goldenSetEntity;
+    });
   }
   async getByFilters(
     filters: output<typeof goldenSetFiltersSchema>,
@@ -23,9 +25,11 @@ export class GoldenSetRepository implements IGoldenSetRepository {
     const goldenSets = await prisma.goldenSet.findMany({
       where: { ...filters },
     });
-    return goldenSets.map(
-      (goldenSet) => new GoldenSetEntity(goldenSet, goldenSet.id),
-    );
+    return goldenSets.map((goldenSet) => {
+      const goldenSetEntity = new GoldenSetEntity(goldenSet, goldenSet.id);
+      goldenSetEntity.updatedAt = goldenSet.updatedAt;
+      return goldenSetEntity;
+    });
   }
   async addUserInputAssociation(
     goldenSetId: string,
@@ -48,6 +52,8 @@ export class GoldenSetRepository implements IGoldenSetRepository {
     if (!goldenSet) {
       throw new Error(`GoldenSet with ID ${id} not found`);
     }
-    return new GoldenSetEntity(goldenSet, goldenSet.id);
+    const goldenSetEntity = new GoldenSetEntity(goldenSet, goldenSet.id);
+    goldenSetEntity.updatedAt = goldenSet.updatedAt;
+    return goldenSetEntity;
   }
 }

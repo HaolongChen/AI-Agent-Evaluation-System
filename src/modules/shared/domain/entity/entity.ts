@@ -1,8 +1,10 @@
-import z from "zod";
+import * as z from "zod";
 
 export class Entity<T extends z.ZodObject = z.ZodObject> {
   private readonly _data: z.infer<T>;
   private _id: string;
+  private _createdAt?: z.infer<z.ZodDate>;
+  private _updatedAt?: z.infer<z.ZodDate>;
 
   constructor(
     data: z.infer<T>,
@@ -25,8 +27,33 @@ export class Entity<T extends z.ZodObject = z.ZodObject> {
     this._id = z.uuidv4().parse(newId);
   }
 
-  public toJSON(): z.infer<T> & { id: string } {
-    return { ...this.data, id: this.id };
+  public set createdAt(date: z.infer<z.ZodDate>) {
+    this._createdAt = date;
+  }
+
+  public get createdAt(): z.infer<z.ZodDate> | undefined {
+    return this._createdAt;
+  }
+
+  public set updatedAt(date: z.infer<z.ZodDate>) {
+    this._updatedAt = date;
+  }
+
+  public get updatedAt(): z.infer<z.ZodDate> | undefined {
+    return this._updatedAt;
+  }
+
+  public toJSON(): z.infer<T> & {
+    id: string;
+    createdAt?: z.infer<z.ZodDate>;
+    updatedAt?: z.infer<z.ZodDate>;
+  } {
+    return {
+      ...this.data,
+      id: this.id,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+    };
   }
 
   public equals(otherEntityId: string): boolean {

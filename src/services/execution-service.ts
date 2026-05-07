@@ -1,6 +1,6 @@
 import { EvaluationJobRunner } from "../jobs/evaluation-job.ts";
 import { getTypeSystemStoreForCopilot } from "../external/zed/TypeSystemStore.ts";
-import { projectService } from "./project-service.ts";
+import { projectService } from "../modules/copilot-input/application/project-service.ts";
 import { prisma } from "../config/prisma.ts";
 import { assertNotNull } from "../external/zed/helpers.ts";
 import type { copilotOutput } from "../prisma/build/generated/prisma/client.ts";

@@ -70,6 +70,11 @@ export class MessageHandler extends CopilotJobEntity {
     super(copilotJobEntity.data, copilotJobEntity.id);
   }
 
+  private terminate() {
+    this.send({ type: CopilotMessageType.TERMINATE });
+    this.setTerminate();
+  }
+
   private messageExtractor(message: Data): CopilotMessage {
     const data: CopilotMessage[] = JSON.parse(message.toString());
     return data[0];
@@ -78,11 +83,11 @@ export class MessageHandler extends CopilotJobEntity {
   invoke(message: Data) {
     const data = this.messageExtractor(message);
     const handler = this.messageTypeToHandlerMap[data.type];
-    if (handler) {
+    if (handler && !this.isTerminated) {
       // Type assertion necessary as the mapped type isn't fully narrowed in the assignment constraint
       (handler as (message: typeof data) => void)(data);
     } else {
-      console.warn(`No handler found for message type: ${data.type}`);
+      console.warn(`No handler found for message: ${data}`);
     }
   }
 
@@ -91,11 +96,13 @@ export class MessageHandler extends CopilotJobEntity {
   }
 
   handleEditableTextMessage(message: EditableTextMessage) {
-    console.log(message);
+    this.editableText = message.content;
+    this.terminate();
   }
 
   handleErrorMessage(message: ErrorMessage) {
     console.log(message);
+    throw new Error(message.content);
   }
 
   handleExecErrorMessage(message: ExecErrorMessage) {
@@ -128,7 +135,9 @@ export class MessageHandler extends CopilotJobEntity {
   }
 
   handleStateChangeMessage(message: StateChangeMessage) {
-    console.log(message);
+    if (message.currentJobIsRunning === false) {
+      throw new Error("Current job is not running.");
+    }
   }
 
   handleStopMessage(message: StopMessage) {
@@ -140,7 +149,7 @@ export class MessageHandler extends CopilotJobEntity {
   }
 
   handleTaskMessage(message: TaskMessage) {
-    console.log(message);
+    this.addTask(message);
   }
 
   handleTaskRevertSuccessMessage(message: TaskRevertSuccessMessage) {

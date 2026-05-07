@@ -11,7 +11,7 @@ import {
   type TaskMessage,
   type ToolCall,
   type ToolCallsMessage,
-} from "../external/types.ts";
+} from "../../../external/types.ts";
 import {
   ClientType,
   CopilotJs,
@@ -19,9 +19,9 @@ import {
   Product,
   type CopilotApiResultJs,
   type OpaqueSchemaGraph,
-} from "../external/zed/TypeSystem.ts";
-import { assertNotNull } from "../external/zed/helpers.ts";
-import type { ToolResult } from "../external/graph-states.ts";
+} from "../../../external/zed/TypeSystem.ts";
+import { assertNotNull } from "../../../external/zed/helpers.ts";
+import type { ToolResult } from "../../../external/graph-states.ts";
 import type { Data } from "ws";
 
 const DEFAULT_TIMEOUT_MS = 300_000; // 5 minutes

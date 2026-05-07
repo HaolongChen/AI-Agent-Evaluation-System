@@ -1,5 +1,5 @@
 import { prisma } from "../../../../config/prisma.ts";
-import { CopilotOutputEntity } from "../../domain/entity/copilot-output.schema.js";
+import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import type { ICopilotOutputRepository } from "../../domain/interface/copilot-output.interface.ts";
 
 export class CopilotOutputRepository implements ICopilotOutputRepository {

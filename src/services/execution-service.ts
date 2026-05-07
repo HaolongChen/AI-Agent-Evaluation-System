@@ -1,4 +1,4 @@
-import { EvaluationJobRunner } from "../jobs/evaluation-job.ts";
+import { EvaluationJobRunner } from "../modules/copilot-output/application/evaluation-job.ts";
 import { getTypeSystemStoreForCopilot } from "../external/zed/TypeSystemStore.ts";
 import { projectService } from "../modules/copilot-input/application/project-service.ts";
 import { prisma } from "../config/prisma.ts";

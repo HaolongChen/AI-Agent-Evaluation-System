@@ -1,6 +1,7 @@
 import { repository } from "../../DI/repository.ts";
 import { ExecuteCopilotUseCase } from "../../modules/copilot-output/application/execution-service.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-output/domain/entity/copilot-output.entity.ts";
+import { GenerateRubricUseCase } from "../../modules/rubrics/application/generate-rubric.ts";
 import { GetRubricsByCopilotInputUseCase } from "../../modules/rubrics/application/get-by-copilot-intput.ts";
 import { GetRubricByIdUseCase } from "../../modules/rubrics/application/get-by-id.ts";
 import type { RubricAggregate } from "../../modules/rubrics/domain/aggregate/rubric.aggregate.ts";
@@ -86,7 +87,12 @@ export const rubricResolver = {
       _: unknown,
       arguments_: MutationGenerateRubricArguments,
     ): Promise<Rubric> => {
-      throw new Error("Method not implemented.");
+      const generateRubricUseCase = new GenerateRubricUseCase(repository);
+      const rubricAggregate = await generateRubricUseCase.execute(
+        arguments_.context.goldenSetId,
+        arguments_.context.userInputId,
+      );
+      return toGraphqlRubric(rubricAggregate);
     },
   },
 };

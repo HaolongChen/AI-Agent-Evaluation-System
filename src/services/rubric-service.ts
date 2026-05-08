@@ -1,4 +1,4 @@
-import { generateRubrics } from "../deep-agents/rubricsGenerator/rubrics-generator.ts";
+import { generateRubrics } from "../modules/rubrics/application/rubrics-generator.ts";
 import type {
   agentFeedbacks,
   rubric,

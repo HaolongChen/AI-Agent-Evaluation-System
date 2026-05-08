@@ -7,20 +7,23 @@ import {
 import * as z from "zod";
 import { createMiddleware, HumanMessage, toolStrategy } from "langchain";
 //
-import { getSchemaModel } from "../../external/ali-oss.ts";
+import { getSchemaModel } from "../../../external/ali-oss.ts";
 import { fromUint8Array } from "js-base64";
 import { Crdt } from "@functorz/crdt-helper";
 import fs from "node:fs/promises";
 import { MemorySaver } from "@langchain/langgraph";
-import { Feedback, save_agent_feedbacks } from "./tools/feedback.ts";
-import { rubricService } from "../../services/rubric-service.ts";
-import type { agentFeedbacks } from "../../prisma/build/generated/prisma/client.ts";
-import { gemini } from "../llm/index.ts";
-import { fetchSideBar } from "./tools/documentation-reader.ts";
+import {
+  Feedback,
+  save_agent_feedbacks,
+} from "../../../deep-agents/rubricsGenerator/tools/feedback.ts";
+import { rubricService } from "../../../services/rubric-service.ts";
+import type { agentFeedbacks } from "../../../prisma/build/generated/prisma/client.ts";
+import { gemini } from "../../../deep-agents/llm/index.ts";
+import { fetchSideBar } from "../../../deep-agents/rubricsGenerator/tools/documentation-reader.ts";
 
-import { inspectMiddleware } from "./middleware/inspect.ts";
-import { read_json_schema } from "./tools/schema-reader.ts";
-import { read_markdown_documentations } from "./tools/markdown-reader.ts";
+import { inspectMiddleware } from "../../../deep-agents/rubricsGenerator/middleware/inspect.ts";
+import { read_json_schema } from "../../../deep-agents/rubricsGenerator/tools/schema-reader.ts";
+import { read_markdown_documentations } from "../../../deep-agents/rubricsGenerator/tools/markdown-reader.ts";
 
 const promptsBasePath = new URL("prompts/", import.meta.url);
 const feedbackPrompt = await fs.readFile(
@@ -104,10 +107,9 @@ const documentationsLookupAgent: SubAgent = {
 };
 
 const responseSchema = z.object({
-  rubrics: z
+  criterion: z
     .array(
       z.object({
-        title: z.string().describe("The title of current rubric"),
         content: z
           .string()
           .describe(
@@ -182,7 +184,7 @@ export const generateRubrics = async (
   query: string,
 ): Promise<
   {
-    rubrics: z.infer<typeof responseSchema>;
+    criterion: z.infer<typeof responseSchema>;
   } & {
     feedbacks: (rubricId: string) => Promise<agentFeedbacks | undefined>[];
   }
@@ -279,5 +281,5 @@ export const generateRubrics = async (
     ),
   ];
 
-  return { rubrics: response.structuredResponse, feedbacks: feedbacks };
+  return { criterion: response.structuredResponse, feedbacks: feedbacks };
 };

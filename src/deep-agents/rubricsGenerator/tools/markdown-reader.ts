@@ -279,9 +279,9 @@ export const read_markdown_documentations = tool(
       const selectedSection =
         heading && heading.trim()
           ? extractByHeading(markdown, heading.trim())
-          : (keyword && keyword.trim()
+          : keyword && keyword.trim()
             ? extractByKeyword(markdown, keyword.trim())
-            : markdown);
+            : markdown;
 
       const normalizedExcerpt = normalizeText(selectedSection || markdown);
       const { excerpt, truncated } = truncateContent(

@@ -12,11 +12,7 @@ import { fromUint8Array } from "js-base64";
 import { Crdt } from "@functorz/crdt-helper";
 import fs from "node:fs/promises";
 import { MemorySaver } from "@langchain/langgraph";
-import {
-  Feedback,
-  save_agent_feedbacks,
-} from "../../../deep-agents/rubricsGenerator/tools/feedback.ts";
-import { rubricService } from "../../../services/rubric-service.ts";
+import { save_agent_feedbacks } from "../../../deep-agents/rubricsGenerator/tools/feedback.ts";
 import type { agentFeedbacks } from "../../../prisma/build/generated/prisma/client.ts";
 import { gemini } from "../../../deep-agents/llm/index.ts";
 import { fetchSideBar } from "../../../deep-agents/rubricsGenerator/tools/documentation-reader.ts";
@@ -24,62 +20,20 @@ import { fetchSideBar } from "../../../deep-agents/rubricsGenerator/tools/docume
 import { inspectMiddleware } from "../../../deep-agents/rubricsGenerator/middleware/inspect.ts";
 import { read_json_schema } from "../../../deep-agents/rubricsGenerator/tools/schema-reader.ts";
 import { read_markdown_documentations } from "../../../deep-agents/rubricsGenerator/tools/markdown-reader.ts";
-
-const promptsBasePath = new URL("prompts/", import.meta.url);
-const feedbackPrompt = await fs.readFile(
-  new URL("feedbackPrompt.md", promptsBasePath),
-  "utf8",
-);
-const schemaLookupPromptTemplate = await fs.readFile(
-  new URL("schemaLookupPrompt.md", promptsBasePath),
-  "utf8",
-);
-const rubricsGeneratorPromptTemplate = await fs.readFile(
-  new URL("rubricsGeneratorPrompt.md", promptsBasePath),
-  "utf8",
-);
-
-const documentationsLookupPromptTemplate = await fs.readFile(
-  new URL("documentationsLookupPrompt.md", promptsBasePath),
-  "utf8",
-);
-const schemaLookupPromptText = schemaLookupPromptTemplate.replace(
-  "${feedbackPrompt}",
-  feedbackPrompt,
-);
-const rubricsGeneratorPromptText = rubricsGeneratorPromptTemplate.replace(
-  "${feedbackPrompt}",
-  feedbackPrompt,
-);
-const documentationsLookupPromptText =
-  documentationsLookupPromptTemplate.replace(
-    "${feedbackPrompt}",
-    feedbackPrompt,
-  );
-
-const rubricsGeneratorFeedback = new Feedback("rubrics-generator-agent");
-const schemaLookupAgentFeedback = new Feedback("schema-lookup-agent");
-const documentationsLookupAgentFeedback = new Feedback(
-  "documentations-lookup-agent",
-);
-
-const schemaQueryWorker: SubAgent = {
-  name: "schema-query-worker",
-  description:
-    "Specialized worker for focused jq-based schema lookups on small, explicit targets.",
-  systemPrompt:
-    "You are schema-query-worker. Split complex schema investigations into small jq lookups and return concise structured findings only.",
-  tools: [read_json_schema],
-};
-
-const documentationsExcerptWorker: SubAgent = {
-  name: "documentations-excerpt-worker",
-  description:
-    "Specialized worker for focused markdown evidence extraction by heading/keyword.",
-  systemPrompt:
-    "You are documentations-excerpt-worker. Split complex documentation requests into small heading/keyword extraction tasks and return concise evidence only.",
-  tools: [read_markdown_documentations],
-};
+import {
+  documentationsLookupAgentFeedback,
+  documentationsExcerptWorker,
+  documentationsLookupPromptText,
+  schemaLookupAgentFeedback,
+  schemaQueryWorker,
+  schemaLookupPromptText,
+  rubricsGeneratorPromptText,
+  rubricsGeneratorFeedback,
+} from "../domain/service/prompts.service.ts";
+import {
+  contextSchema,
+  responseSchema,
+} from "../domain/schema/deep-agents.schema.ts";
 
 const documentationsLookupAgent: SubAgent = {
   name: "documentations-lookup-agent",
@@ -105,54 +59,6 @@ const documentationsLookupAgent: SubAgent = {
   description:
     "This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided crdt schema model and user input.",
 };
-
-const responseSchema = z.object({
-  criterion: z
-    .array(
-      z.object({
-        content: z
-          .string()
-          .describe(
-            `The content of the rubric, which should be a markdown string that clearly describes the expected copilot's results referring to the crdt schema model and user input. The content should be structured in a way that is specially and uniquely designed for evaluation, which means it cannot be answered directly only with user input and (public information or common sense) without referring to the provided crdt schema model and zion (momen) official documentation. And it can only be answered true or false whether the copilot results match the expected outcome and should avoid vagueness that narrows the disparity of possible answers`,
-          ),
-        expectedAnswer: z
-          .boolean()
-          .describe(
-            `A boolean value indicating the expected answer of current rubric. This field would be used to evaluate the modifications that copilot will make by determining whether the copilot results match the phenomenon described in current rubric based on copilot's modifications. The expected answer should represent whether the outcome described in current rubric is desired, providing a clear and explicit benchmark for evaluation. This field is crucial for assessing the accuracies of the copilot's modifications in relation to the provided crdt schema model and zion (momen) official documentation.`,
-          ),
-        weight: z
-          .number()
-          .max(1)
-          .min(0)
-          .positive()
-          .describe(
-            `The weight of the rubric, which indicates the importance or significance of current rubric in the overall evaluation process among all rubrics being generated The weight should be a positive number ranging from 0 to 1, and higher values indicate greater importance. This value should not be restricted assuming that the sum of all weights equals 1. The weights will be re-calculated to ensure the sum equals 1 after generation. This field is used to calculate the overall score when multiple rubrics are applied.`,
-          ),
-        failureScenario: z
-          .string()
-          .describe(
-            "A concrete bug or misbehavior scenario this rubric is intended to catch.",
-          ),
-        verificationTarget: z
-          .string()
-          .describe(
-            "Where to verify this rubric (field/path/snippet) in candidate output or schema.",
-          ),
-        verificationRule: z
-          .string()
-          .describe(
-            "How to decide true/false using evidence from verification target.",
-          ),
-      }),
-    )
-    .describe(
-      `The response is an array of criteria, where each criterion includes a title, content, expected answer, and weight. The title provides a brief overview of the rubric, while the content offers detailed criteria and standards for evaluation to come. The expected answer indicates the anticipated outcome or modifications by copilot when applying the rubric, and the weight signifies the importance of the rubric in the overall evaluation process. This structured format allows for clear and effective evaluation of AI agents based on the provided JSON schema.`,
-    ),
-});
-
-const contextSchema = z.object({
-  schemaId: z.string(),
-});
 
 const schemaLookupAgent: SubAgent = {
   name: "schema-lookup-agent",
@@ -186,7 +92,7 @@ export const generateRubrics = async (
   {
     criterion: z.infer<typeof responseSchema>;
   } & {
-    feedbacks: (rubricId: string) => Promise<agentFeedbacks | undefined>[];
+    feedbacks?: (rubricId: string) => Promise<agentFeedbacks | undefined>[];
   }
 > => {
   await Promise.all([
@@ -263,23 +169,5 @@ export const generateRubrics = async (
       // recursionLimit: 100,
     },
   );
-  const feedbacks = (rubricId: string) => [
-    rubricService.saveAgentFeedbacks(
-      rubricId,
-      "rubrics-generator-agent",
-      rubricsGeneratorFeedback.getFeedbacks(),
-    ),
-    rubricService.saveAgentFeedbacks(
-      rubricId,
-      "schema-lookup-agent",
-      schemaLookupAgentFeedback.getFeedbacks(),
-    ),
-    rubricService.saveAgentFeedbacks(
-      rubricId,
-      "documentations-lookup-agent",
-      documentationsLookupAgentFeedback.getFeedbacks(),
-    ),
-  ];
-
-  return { criterion: response.structuredResponse, feedbacks: feedbacks };
+  return { criterion: response.structuredResponse };
 };

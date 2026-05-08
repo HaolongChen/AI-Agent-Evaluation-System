@@ -33,9 +33,9 @@ const patch = async (
         href.at(-1) === "/" ? href.slice(0, -1) : href,
         href === "/"
           ? "/introduction"
-          : (href.at(-1) === "/"
+          : href.at(-1) === "/"
             ? href.slice(0, -1)
-            : href),
+            : href,
       );
       return {
         name: dom.first().text(),

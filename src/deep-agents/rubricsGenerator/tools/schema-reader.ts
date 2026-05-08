@@ -82,9 +82,9 @@ export const read_json_schema = tool(
     const filePath =
       agentName === "schema-lookup-agent" || agentName === "schema-query-worker"
         ? `${process.cwd()}/local_shell/schemas/zschema.json`
-        : (schemaId
+        : schemaId
           ? `${process.cwd()}/local_shell/zion/${schemaId}/crdt_schema.json`
-          : "");
+          : "";
 
     if (!filePath) {
       return {
@@ -106,11 +106,11 @@ export const read_json_schema = tool(
         keySignals: [summary],
         evidenceTargets: Array.isArray(clampedValue)
           ? [`array[0..${Math.max(0, clampedValue.length - 1)}]`]
-          : (clampedValue !== null && typeof clampedValue === "object"
+          : clampedValue !== null && typeof clampedValue === "object"
             ? Object.keys(clampedValue as Record<string, unknown>)
                 .slice(0, DEFAULT_REASONING_POINTS)
                 .map((key) => `$.${key}`)
-            : ["scalar_result"]),
+            : ["scalar_result"],
         decisionHint:
           "Use evidenceTargets to form falsifiable checks; avoid pasting raw JSON blocks.",
       };
@@ -151,11 +151,11 @@ export const read_json_schema = tool(
           keySignals: [summary],
           evidenceTargets: Array.isArray(clampedValue)
             ? [`array[0..${Math.max(0, clampedValue.length - 1)}]`]
-            : (clampedValue !== null && typeof clampedValue === "object"
+            : clampedValue !== null && typeof clampedValue === "object"
               ? Object.keys(clampedValue as Record<string, unknown>)
                   .slice(0, DEFAULT_REASONING_POINTS)
                   .map((key) => `$.${key}`)
-              : ["scalar_result"]),
+              : ["scalar_result"],
           decisionHint:
             "Use evidenceTargets to form falsifiable checks; avoid pasting raw JSON blocks.",
         };

@@ -1,5 +1,8 @@
 import { WebSocket } from "ws";
-import { type CopilotMessage } from "../../../external/types.ts";
+import {
+  CopilotMessageType,
+  type CopilotMessage,
+} from "../../../external/types.ts";
 import { MessageHandler } from "./message-handler.js";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 
@@ -7,8 +10,15 @@ export class EvaluationJobRunner {
   private messageHandler: MessageHandler;
   private socket: WebSocket;
 
-  constructor(copilotJobEntity: CopilotJobEntity) {
-    this.messageHandler = new MessageHandler(this.send, copilotJobEntity);
+  constructor(
+    copilotJobEntity: CopilotJobEntity,
+    private callback: (result: string) => void,
+  ) {
+    this.messageHandler = new MessageHandler(
+      this.send,
+      copilotJobEntity,
+      callback,
+    );
     this.socket = new WebSocket(copilotJobEntity.data.wsUrl);
   }
 
@@ -40,5 +50,10 @@ export class EvaluationJobRunner {
       throw new Error("Cannot send message after job termination");
     }
     this.socket.send(JSON.stringify(data));
+    if (data.type === CopilotMessageType.TERMINATE) {
+      this.callback(
+        this.messageHandler.editableText || "Message doesn't exist",
+      );
+    }
   }
 }

@@ -66,6 +66,7 @@ export class MessageHandler extends CopilotJobEntity {
   constructor(
     private readonly send: (data: CopilotMessage) => void,
     copilotJobEntity: CopilotJobEntity,
+    private callback: (result: string) => void,
   ) {
     super(copilotJobEntity.data, copilotJobEntity.id);
   }

@@ -26,30 +26,43 @@ enum EvaluatorType {
 
 // context
 model goldenSet {
-  id          String      @id @default(uuid())
-  schemaId    String      @map("schema_id")
-  copilotType CopilotType @default(dataModelBuilder) @map("copilot_type") // e.g., 'dataModelBuilder', 'uiBuilder', 'actionFlowBuilder', 'logAnalyzer', 'agentBuilder'
-  modelName   String      @default("undefined") @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-  userInputs  userInput[]
-  updatedAt   DateTime    @default(now()) @map("updated_at") @db.Timestamptz(6)
+  id          String                @id @default(uuid())
+  schemaId    String                @map("schema_id")
+  copilotType CopilotType           @default(dataModelBuilder) @map("copilot_type") // e.g., 'dataModelBuilder', 'uiBuilder', 'actionFlowBuilder', 'logAnalyzer', 'agentBuilder'
+  modelName   String                @default("undefined") @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
+  userInputs  goldenSet_userInput[]
+  updatedAt   DateTime              @default(now()) @map("updated_at") @db.Timestamptz(6)
   // evaluationSessions evaluationSession[]
 
   @@unique([schemaId, copilotType, modelName], map: "unique_golden_set")
 }
 
 model userInput {
-  id         String      @id @default(uuid())
+  id         String                @id @default(uuid())
   // description String?
-  content    String      @map("input_content") // user input
-  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy  String     @default("unknown") @map("created_by") // userId or "auto-generated" for system-generated inputs
-  goldenSets goldenSet[]
+  content    String                @map("input_content") // user input
+  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy  String                @default("unknown") @map("created_by") // userId or "auto-generated" for system-generated inputs
+  goldenSets goldenSet_userInput[]
+}
+
+model goldenSet_userInput {
+  goldenSetId String @map("golden_set_id")
+  userInputId String @map("user_input_id")
+
+  goldenSet goldenSet @relation(fields: [goldenSetId], references: [id])
+  userInput userInput @relation(fields: [userInputId], references: [id])
+  copilotOutput copilotOutput[]
+  rubrics rubric[]
+
+  @@id([goldenSetId, userInputId], map: "idx_golden_set_user_input")
 }
 
 model copilotOutput {
   id          String   @id @default(uuid())
   goldenSetId String   @map("golden_set_id")
   userInputId String   @map("user_input_id")
+  copilotInput goldenSet_userInput @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
   content     String   @map("output_content") // copilot output
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
@@ -85,6 +98,7 @@ model rubric {
   goldenSetId String @map("golden_set_id")
   userInputId String @map("user_input_id")
 
+  copilotInput goldenSet_userInput @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
   copilotOutputs copilotOutput_rubric[]
   criterion      criteria[]
   agentFeedbacks agentFeedbacks[]
@@ -106,6 +120,7 @@ model criteria {
   expectedAnswer Boolean @map("expected_answer") // perhaps could be multiple choice criteria
   weight         Decimal @map("weight") @db.Decimal(5, 2)
   reasoning      String? @map("reasoning") @db.Text // optional explanation of the criterion
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   rubric rubric @relation(fields: [rubricId], references: [id])
 

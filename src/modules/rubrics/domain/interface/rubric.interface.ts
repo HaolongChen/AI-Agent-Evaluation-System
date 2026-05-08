@@ -9,7 +9,7 @@ export interface IRubricRepository extends IRepository<RubricEntity> {
 
   addCriterionToRubric(
     rubricId: string,
-    criterion: CriteriaEntity,
+    criterion: CriteriaEntity[],
   ): Promise<void>;
 
   deleteCriterion(criterionId: string): Promise<void>;
@@ -25,4 +25,6 @@ export interface IRubricRepository extends IRepository<RubricEntity> {
     rubricId: string,
     copilotOutputId: string,
   ): Promise<void>;
+
+  findById(id: string): Promise<RubricAggregate>;
 }

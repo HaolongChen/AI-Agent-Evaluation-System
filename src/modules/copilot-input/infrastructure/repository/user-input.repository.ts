@@ -1,37 +1,37 @@
 import { prisma } from "../../../../config/prisma.ts";
+import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { UserInputEntity } from "../../domain/entity/user-input.entity.js";
 import type { IUserInputRepository } from "../../domain/interface/user-input.interface.ts";
 
 export class UserInputRepository implements IUserInputRepository {
   async getByGoldenSetId(goldenSetId: string): Promise<Array<UserInputEntity>> {
-    const goldenSet = await prisma.goldenSet.findUnique({
-      where: { id: goldenSetId },
-      include: { userInputs: true },
+    const goldenSets = await prisma.goldenSet_userInput.findMany({
+      where: { goldenSetId },
+      include: { userInput: true },
     });
-    if (!goldenSet) {
-      throw new Error(`GoldenSet with ID ${goldenSetId} not found`);
-    }
-    return goldenSet.userInputs.map((userInput) => {
-      const userInputEntity = new UserInputEntity(userInput, userInput.id);
-      userInputEntity.createdAt = userInput.createdAt;
-      return userInputEntity;
-    });
+    return goldenSets.map(({ userInput }) =>
+      repositoryDateMapper(
+        userInput,
+        new UserInputEntity(userInput, userInput.id),
+      ),
+    );
   }
   async addGoldenSetAssociation(
     userInputId: string,
     goldenSetId: string,
   ): Promise<void> {
-    await prisma.userInput.update({
-      where: { id: userInputId },
+    await prisma.goldenSet_userInput.create({
       data: {
-        goldenSets: {
-          connect: { id: goldenSetId },
-        },
+        goldenSetId,
+        userInputId,
       },
     });
   }
   async save(entity: UserInputEntity): Promise<void> {
-    await prisma.userInput.create({ data: { ...entity.data, id: entity.id } });
+    const userInput = await prisma.userInput.create({
+      data: { ...entity.data, id: entity.id },
+    });
+    repositoryDateMapper(userInput, entity);
   }
   async findById(id: string): Promise<UserInputEntity> {
     const userInput = await prisma.userInput.findUnique({
@@ -40,8 +40,9 @@ export class UserInputRepository implements IUserInputRepository {
     if (!userInput) {
       throw new Error(`UserInput with ID ${id} not found`);
     }
-    const userInputEntity = new UserInputEntity(userInput, userInput.id);
-    userInputEntity.createdAt = userInput.createdAt;
-    return userInputEntity;
+    return repositoryDateMapper(
+      userInput,
+      new UserInputEntity(userInput, userInput.id),
+    );
   }
 }

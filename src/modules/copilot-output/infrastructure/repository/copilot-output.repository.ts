@@ -1,4 +1,5 @@
 import { prisma } from "../../../../config/prisma.ts";
+import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import type { ICopilotOutputRepository } from "../../domain/interface/copilot-output.interface.ts";
 
@@ -7,20 +8,30 @@ export class CopilotOutputRepository implements ICopilotOutputRepository {
     goldenSetId: string,
     userInputId: string,
   ): Promise<CopilotOutputEntity[]> {
-    const copilotOutputs = await prisma.copilotOutput.findMany({
-      where: {
-        goldenSetId,
-        userInputId,
-      },
+    const copilotInput = await prisma.goldenSet_userInput.findUnique({
+      where: { goldenSetId_userInputId: { goldenSetId, userInputId } },
+      include: { copilotOutput: true },
     });
-    return copilotOutputs.map(
-      (output) => new CopilotOutputEntity(output, output.id),
+    if (!copilotInput) {
+      throw new Error(
+        `No association found for GoldenSet ID ${goldenSetId} and UserInput ID ${userInputId}`,
+      );
+    }
+    if (
+      !copilotInput.copilotOutput ||
+      copilotInput.copilotOutput.length === 0
+    ) {
+      return [];
+    }
+    return copilotInput.copilotOutput.map((output) =>
+      repositoryDateMapper(output, new CopilotOutputEntity(output, output.id)),
     );
   }
   async save(entity: CopilotOutputEntity): Promise<void> {
-    await prisma.copilotOutput.create({
+    const output = await prisma.copilotOutput.create({
       data: { ...entity.data, id: entity.id },
     });
+    entity.createdAt = output.createdAt;
   }
   async findById(id: string): Promise<CopilotOutputEntity> {
     const copilotOutput = await prisma.copilotOutput.findUnique({
@@ -29,6 +40,9 @@ export class CopilotOutputRepository implements ICopilotOutputRepository {
     if (!copilotOutput) {
       throw new Error(`CopilotOutput with id ${id} not found`);
     }
-    return new CopilotOutputEntity(copilotOutput, copilotOutput.id);
+    return repositoryDateMapper(
+      copilotOutput,
+      new CopilotOutputEntity(copilotOutput, copilotOutput.id),
+    );
   }
 }

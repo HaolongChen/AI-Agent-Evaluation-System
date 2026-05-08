@@ -1,4 +1,6 @@
 import { prisma } from "../../../../config/prisma.ts";
+import type { Decimal } from "../../../../prisma/build/generated/prisma/internal/prismaNamespace.ts";
+import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { RubricAggregate } from "../../domain/aggregate/rubric.aggregate.js";
 import {
   CriteriaEntity,
@@ -6,7 +8,43 @@ import {
 } from "../../domain/entity/rubric.entity.js";
 import type { IRubricRepository } from "../../domain/interface/rubric.interface.ts";
 
+interface Criteria {
+  id: string;
+  createdAt: Date;
+  rubricId: string;
+  content: string;
+  expectedAnswer: boolean;
+  weight: Decimal;
+  reasoning: string | null;
+}
+
+interface Rubric {
+  id: string;
+  goldenSetId: string;
+  userInputId: string;
+  createdAt: Date;
+  criterion: Criteria[];
+}
 export class RubricRepository implements IRubricRepository {
+  private buildCriteriaEntity(criteria: Criteria): CriteriaEntity {
+    return repositoryDateMapper(
+      criteria,
+      new CriteriaEntity(
+        { ...criteria, weight: Number(criteria.weight) },
+        criteria.id,
+      ),
+    );
+  }
+  private buildRubricAggregate(rubric: Rubric): RubricAggregate {
+    const rubricAggregate = new RubricAggregate(
+      repositoryDateMapper(rubric, new RubricEntity(rubric, rubric.id)),
+    );
+    for (const criteria of rubric.criterion) {
+      rubricAggregate.addCriteria(this.buildCriteriaEntity(criteria));
+    }
+    return rubricAggregate;
+  }
+
   async getByGoldenSetIdAndUserInputId(
     goldenSetId: string,
     userInputId: string,
@@ -15,18 +53,7 @@ export class RubricRepository implements IRubricRepository {
       where: { goldenSetId, userInputId },
       include: { criterion: true },
     });
-    return rubrics.map((rubric) => {
-      const rubricEntity = new RubricEntity(rubric, rubric.id);
-      const rubricAggregate = new RubricAggregate(rubricEntity);
-      for (const criterion of rubric.criterion) {
-        const criteriaEntity = new CriteriaEntity(
-          { ...criterion, weight: Number(criterion.weight) },
-          criterion.id,
-        );
-        rubricAggregate.addCriteria(criteriaEntity);
-      }
-      return rubricAggregate;
-    });
+    return rubrics.map((rubric) => this.buildRubricAggregate(rubric));
   }
   async linkRubricToCopilotOutput(
     rubricId: string,
@@ -40,7 +67,7 @@ export class RubricRepository implements IRubricRepository {
     });
   }
   async saveWithCriterion(rubricAggregate: RubricAggregate): Promise<void> {
-    await prisma.rubric.create({
+    const rubric = await prisma.rubric.create({
       data: {
         ...rubricAggregate.data,
         id: rubricAggregate.id,
@@ -52,7 +79,9 @@ export class RubricRepository implements IRubricRepository {
           },
         },
       },
+      include: { criterion: true },
     });
+    this.buildRubricAggregate(rubric);
   }
   async getCriterionByRubricId(rubricId: string): Promise<CriteriaEntity[]> {
     const rubric = await prisma.rubric.findUnique({
@@ -62,30 +91,28 @@ export class RubricRepository implements IRubricRepository {
     if (!rubric) {
       throw new Error(`Rubric with ID ${rubricId} not found`);
     }
-    return rubric.criterion.map(
-      (criteria) =>
-        new CriteriaEntity(
-          { ...criteria, weight: Number(criteria.weight) },
-          criteria.id,
-        ),
+    return rubric.criterion.map((criteria) =>
+      this.buildCriteriaEntity(criteria),
     );
   }
   async addCriterionToRubric(
     rubricId: string,
-    criterion: CriteriaEntity,
+    criterion: CriteriaEntity[],
   ): Promise<void> {
-    await prisma.rubric.update({
+    const rubric = await prisma.rubric.update({
       where: { id: rubricId },
       data: {
         criterion: {
-          create: {
-            ...criterion.data,
-            id: criterion.id,
-            weight: Number(criterion.data.weight),
+          createMany: {
+            data: criterion.map((criteria) => {
+              return { ...criteria.data, id: criteria.id };
+            }),
           },
         },
       },
+      include: { criterion: true },
     });
+    this.buildRubricAggregate(rubric);
   }
   async deleteCriterion(criterionId: string): Promise<void> {
     await prisma.criteria.delete({ where: { id: criterionId } });
@@ -94,13 +121,19 @@ export class RubricRepository implements IRubricRepository {
     await prisma.rubric.delete({ where: { id: rubricId } });
   }
   async save(entity: RubricEntity): Promise<void> {
-    await prisma.rubric.create({ data: { ...entity.data, id: entity.id } });
+    const rubric = await prisma.rubric.create({
+      data: { ...entity.data, id: entity.id },
+    });
+    repositoryDateMapper(rubric, entity);
   }
-  async findById(id: string): Promise<RubricEntity> {
-    const rubric = await prisma.rubric.findUnique({ where: { id } });
+  async findById(id: string): Promise<RubricAggregate> {
+    const rubric = await prisma.rubric.findUnique({
+      where: { id },
+      include: { criterion: true },
+    });
     if (!rubric) {
       throw new Error(`Rubric with ID ${id} not found`);
     }
-    return new RubricEntity(rubric, rubric.id);
+    return this.buildRubricAggregate(rubric);
   }
 }

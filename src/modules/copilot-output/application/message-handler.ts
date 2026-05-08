@@ -28,7 +28,6 @@ import {
   Product,
   type CopilotApiResultJs,
 } from "../../../external/zed/TypeSystem.ts";
-import { assertNotNull } from "../../../external/zed/helpers.ts";
 import type { ToolResult } from "../../shared/domain/interface/graph-states.ts";
 
 type MessageHandlerTypeMap = {
@@ -66,7 +65,7 @@ export class MessageHandler extends CopilotJobEntity {
   constructor(
     private readonly send: (data: CopilotMessage) => void,
     copilotJobEntity: CopilotJobEntity,
-    private callback: (result: string) => void,
+    private resolve: (result: string | PromiseLike<string>) => void,
   ) {
     super(copilotJobEntity.data, copilotJobEntity.id);
   }
@@ -98,6 +97,7 @@ export class MessageHandler extends CopilotJobEntity {
 
   handleEditableTextMessage(message: EditableTextMessage) {
     this.editableText = message.content;
+    this.resolve(message.content);
     this.terminate();
   }
 
@@ -187,7 +187,7 @@ export class MessageHandler extends CopilotJobEntity {
     const locale = Locale.ZH;
     try {
       const result: CopilotApiResultJs = CopilotJs.toolCalls(
-        assertNotNull(this.data.schemaGraph),
+        this.data.schemaGraph,
         undefined,
         product,
         clientType,

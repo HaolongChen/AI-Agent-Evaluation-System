@@ -19,11 +19,11 @@ export class RubricAggregate extends AggregateRoot<typeof rubricSchema> {
   }
 
   public toJSON(): ReturnType<AggregateRoot<typeof rubricSchema>["toJSON"]> & {
-    criterion: CriteriaEntity[];
+    criterion: ReturnType<CriteriaEntity["toJSON"]>[];
   } {
     return {
       ...super.toJSON(),
-      criterion: this._criterion,
+      criterion: this._criterion.map((criteria) => criteria.toJSON()),
     };
   }
 }

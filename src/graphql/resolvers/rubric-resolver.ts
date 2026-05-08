@@ -1,5 +1,9 @@
-import { executionService } from "../../services/execution-service.ts";
-import { rubricService } from "../../services/rubric-service.ts";
+import { repository } from "../../DI/repository.ts";
+import { ExecuteCopilotUseCase } from "../../modules/copilot-output/application/execution-service.ts";
+import type { CopilotOutputEntity } from "../../modules/copilot-output/domain/entity/copilot-output.entity.ts";
+import { GetRubricsByCopilotInputUseCase } from "../../modules/rubrics/application/get-by-copilot-intput.ts";
+import { GetRubricByIdUseCase } from "../../modules/rubrics/application/get-by-id.ts";
+import type { RubricAggregate } from "../../modules/rubrics/domain/aggregate/rubric.aggregate.ts";
 
 import type {
   CopilotOutput,
@@ -10,32 +14,9 @@ import type {
   Rubric,
 } from "../generated/resolvers-types.ts";
 
-type PrismCriteriaLike = {
-  id: string;
-  rubricId: string;
-  version: string;
-  title: string | null;
-  content: string;
-  expectedAnswer: boolean;
-  weight: unknown;
-};
-
-type PrismRubricLike = {
-  id: string;
-  goldenSetId: string;
-  userInputId: string;
-  criterion: PrismCriteriaLike[];
-};
-
-type PrismaCopilotOutputLike = {
-  id: string;
-  goldenSetId: string;
-  userInputId: string;
-  content: string;
-  createdAt: Date;
-};
-
-const toGraphqlRubric = (rubric: PrismRubricLike): Rubric => {
+const toGraphqlRubric = (
+  rubric: ReturnType<RubricAggregate["toJSON"]>,
+): Rubric => {
   return {
     id: rubric.id,
     goldenSetId: rubric.goldenSetId,
@@ -43,21 +24,20 @@ const toGraphqlRubric = (rubric: PrismRubricLike): Rubric => {
     criterion: rubric.criterion.map((item) => ({
       id: item.id,
       rubricId: item.rubricId,
-      version: item.version,
-      title: item.title ?? undefined,
       content: item.content,
-      expectedEvaluation: item.expectedAnswer,
+      expectation: item.expectedAnswer,
       weight: Number(item.weight),
+      createdAt: item.createdAt!.toISOString(),
     })),
   };
 };
 
 const toGraphqlCopilotOutput = (
-  output: PrismaCopilotOutputLike,
+  output: ReturnType<CopilotOutputEntity["toJSON"]>,
 ): CopilotOutput => {
   return {
     ...output,
-    createdAt: output.createdAt.toISOString(),
+    createdAt: output.createdAt!.toISOString(),
   };
 };
 
@@ -67,13 +47,23 @@ export const rubricResolver = {
       _: unknown,
       arguments_: QueryGetRubricByIdArguments,
     ): Promise<Rubric> => {
-      throw new Error("Method not implemented.");
+      const getRubricByIdUseCase = new GetRubricByIdUseCase(
+        repository.rubricRepository,
+      );
+      const rubric = await getRubricByIdUseCase.execute(arguments_.id);
+      return toGraphqlRubric(rubric);
     },
     getRubricByContext: async (
       _: unknown,
       arguments_: QueryGetRubricByContextArguments,
     ): Promise<Rubric[]> => {
-      throw new Error("Method not implemented.");
+      const getRubricsByCopilotInputUseCase =
+        new GetRubricsByCopilotInputUseCase(repository.rubricRepository);
+      const rubrics = await getRubricsByCopilotInputUseCase.execute(
+        arguments_.context.goldenSetId,
+        arguments_.context.userInputId,
+      );
+      return rubrics.map((rubric) => toGraphqlRubric(rubric));
     },
   },
 
@@ -82,7 +72,15 @@ export const rubricResolver = {
       _: unknown,
       arguments_: MutationExecuteCopilotArguments,
     ): Promise<CopilotOutput> => {
-      throw new Error("Method not implemented.");
+      const executeCopilotUseCase = new ExecuteCopilotUseCase({
+        copilotOutputRepository: repository.copilotOutputRepository,
+        goldenSetRepository: repository.goldenSetRepository,
+      });
+      const copilotOutput = await executeCopilotUseCase.execute(
+        arguments_.context.goldenSetId,
+        arguments_.context.userInputId,
+      );
+      return toGraphqlCopilotOutput(copilotOutput);
     },
     generateRubric: async (
       _: unknown,

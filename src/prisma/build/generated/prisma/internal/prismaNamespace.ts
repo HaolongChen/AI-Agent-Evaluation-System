@@ -1577,6 +1577,20 @@ export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<
 >;
 
 /**
+ * Reference to a field of type 'AgentNameType'
+ */
+export type EnumAgentNameTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "AgentNameType"
+>;
+
+/**
+ * Reference to a field of type 'AgentNameType[]'
+ */
+export type ListEnumAgentNameTypeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "AgentNameType[]">;
+
+/**
  * Reference to a field of type 'EvaluatorType'
  */
 export type EnumEvaluatorTypeFieldRefInput<$PrismaModel> = FieldRefInputType<

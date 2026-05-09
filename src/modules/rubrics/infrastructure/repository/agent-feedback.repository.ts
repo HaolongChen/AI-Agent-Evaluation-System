@@ -1,7 +1,17 @@
 import { prisma } from "../../../../config/prisma.ts";
+import { AgentNameType } from "../../../../prisma/build/generated/prisma/enums.js";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { AgentFeedbackEntity } from "../../domain/entity/agent-feedback.entity.js";
 import type { IAgentFeedbackRepository } from "../../domain/interface/agent-feedback.interface.ts";
+import type { AgentName } from "../../domain/schema/agent-feedback.schema.ts";
+
+function agentNameMapperToRepository(agentName: AgentName): AgentNameType {
+  return agentName.replaceAll("-", "_") as AgentNameType;
+}
+
+function agentNameMapperFromRepository(agentName: AgentNameType): AgentName {
+  return agentName.replaceAll("_", "-") as AgentName;
+}
 
 export class AgentFeedbackRepository implements IAgentFeedbackRepository {
   async save(entity: AgentFeedbackEntity): Promise<void> {
@@ -10,7 +20,9 @@ export class AgentFeedbackRepository implements IAgentFeedbackRepository {
       data: {
         agentFeedbacks: {
           updateMany: {
-            where: { agentName: entity.data.agentName },
+            where: {
+              agentName: agentNameMapperToRepository(entity.data.agentName),
+            },
             data: { feedback: { push: entity.data.feedback } },
           },
         },
@@ -28,7 +40,13 @@ export class AgentFeedbackRepository implements IAgentFeedbackRepository {
     }
     return repositoryDateMapper(
       agentFeedback,
-      new AgentFeedbackEntity(agentFeedback, agentFeedback.id),
+      new AgentFeedbackEntity(
+        {
+          ...agentFeedback,
+          agentName: agentNameMapperFromRepository(agentFeedback.agentName),
+        },
+        agentFeedback.id,
+      ),
     );
   }
 }

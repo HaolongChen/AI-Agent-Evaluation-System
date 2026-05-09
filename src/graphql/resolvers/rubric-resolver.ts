@@ -88,10 +88,12 @@ export const rubricResolver = {
       arguments_: MutationGenerateRubricArguments,
     ): Promise<Rubric> => {
       const generateRubricUseCase = new GenerateRubricUseCase(repository);
-      const rubricAggregate = await generateRubricUseCase.execute(
-        arguments_.context.goldenSetId,
-        arguments_.context.userInputId,
-      );
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { feedbacks, ...rubricAggregate } =
+        await generateRubricUseCase.execute(
+          arguments_.context.goldenSetId,
+          arguments_.context.userInputId,
+        );
       return toGraphqlRubric(rubricAggregate);
     },
   },

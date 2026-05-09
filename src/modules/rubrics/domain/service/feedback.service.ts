@@ -1,44 +1,65 @@
+import { AgentFeedbackEntity } from "../entity/agent-feedback.entity.ts";
 import type { AgentName } from "../schema/agent-feedback.schema.ts";
 
 const sanitizeFeedback = (value: string): string => {
   return value.replaceAll(/\s+/g, " ").trim();
 };
 
-export class Feedback<T extends AgentName = AgentName> {
-  private feedbacks: string[] = [];
-
-  constructor(public agentName: T) {}
+export class Feedback<
+  T extends AgentName = AgentName,
+> extends AgentFeedbackEntity {
+  constructor(
+    public agentName: T,
+    rubricId: string,
+  ) {
+    super({ agentName, feedback: [], rubricId });
+  }
 
   addFeedback = (feedback: string) => {
     const normalizedFeedback = sanitizeFeedback(feedback);
 
-    const previousFeedback = this.feedbacks.at(-1);
+    const previousFeedback = this.data.feedback.at(-1);
     if (previousFeedback === normalizedFeedback) {
       return;
     }
 
-    this.feedbacks.push(normalizedFeedback);
+    this.data.feedback.push(feedback);
     console.debug(`Added feedback: ${normalizedFeedback}`);
   };
 
   getFeedbacks = (): string[] => {
-    return this.feedbacks;
+    return this.data.feedback;
   };
 
   clearFeedbacks = (): void => {
-    this.feedbacks = [];
+    this.data.feedback = [];
   };
 }
 
-export const feedbackDistributor = (Feedbacks: {
+export type Feedbacks = {
   [key in AgentName]: Feedback<key>;
-}) => {
+};
+
+export type FeedbacksJSON = {
+  [key in AgentName]: ReturnType<Feedback<key>["toJSON"]>;
+};
+
+export const feedbackDistributor = (feedbacks: Feedbacks) => {
   return (agentName: AgentName, feedback: string) => {
-    const agentFeedback = Feedbacks[agentName];
+    const agentFeedback = feedbacks[agentName];
     if (!agentFeedback) {
       console.warn(`No feedback instance found for agent: ${agentName}`);
       return;
     }
     agentFeedback.addFeedback(feedback);
   };
+};
+
+export const feedbacksToJSON = (feedbacks: Feedbacks): FeedbacksJSON => {
+  const feedbacksJSON = {} as FeedbacksJSON;
+  for (const agentName in feedbacks) {
+    feedbacksJSON[agentName as AgentName] =
+      feedbacks[agentName as AgentName].toJSON();
+  }
+  return feedbacksJSON;
 };

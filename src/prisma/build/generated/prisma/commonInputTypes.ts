@@ -262,6 +262,39 @@ export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedStringNullableFilter<$PrismaModel>;
 };
 
+export type EnumAgentNameTypeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.AgentNameType
+    | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentNameType[]
+    | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentNameType[]
+    | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel>
+    | $Enums.AgentNameType;
+};
+
+export type EnumAgentNameTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.AgentNameType
+    | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentNameType[]
+    | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentNameType[]
+    | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentNameTypeWithAggregatesFilter<$PrismaModel>
+    | $Enums.AgentNameType;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel>;
+};
+
 export type EnumEvaluatorTypeFilter<$PrismaModel = never> = {
   equals?:
     | $Enums.EvaluatorType
@@ -700,6 +733,40 @@ export type NestedIntNullableFilter<$PrismaModel = never> = {
   gte?: number | Prisma.IntFieldRefInput<$PrismaModel>;
   not?: Prisma.NestedIntNullableFilter<$PrismaModel> | number | null;
 };
+
+export type NestedEnumAgentNameTypeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.AgentNameType
+    | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
+  in?:
+    | $Enums.AgentNameType[]
+    | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
+  notIn?:
+    | $Enums.AgentNameType[]
+    | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
+  not?:
+    | Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel>
+    | $Enums.AgentNameType;
+};
+
+export type NestedEnumAgentNameTypeWithAggregatesFilter<$PrismaModel = never> =
+  {
+    equals?:
+      | $Enums.AgentNameType
+      | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
+    in?:
+      | $Enums.AgentNameType[]
+      | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
+    notIn?:
+      | $Enums.AgentNameType[]
+      | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
+    not?:
+      | Prisma.NestedEnumAgentNameTypeWithAggregatesFilter<$PrismaModel>
+      | $Enums.AgentNameType;
+    _count?: Prisma.NestedIntFilter<$PrismaModel>;
+    _min?: Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel>;
+    _max?: Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel>;
+  };
 
 export type NestedEnumEvaluatorTypeFilter<$PrismaModel = never> = {
   equals?:

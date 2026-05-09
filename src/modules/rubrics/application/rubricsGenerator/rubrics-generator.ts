@@ -10,33 +10,23 @@ import { gemini } from "../../../shared/infrastructure/llm-providers.ts";
 import { rubricsGeneratorAgentConfig } from "../../domain/config/agent-environment.ts";
 import { save_agent_feedbacks } from "./tools/feedback.ts";
 import {
-  Feedback,
   feedbackDistributor,
+  type Feedbacks,
 } from "../../domain/service/feedback.service.js";
-import type { AgentName } from "../../domain/schema/agent-feedback.schema.ts";
 
 const checkpointer = new MemorySaver();
 
 export const generateRubrics = async (
   schemaId: string,
   query: string,
-): Promise<
-  {
-    criterion: z.infer<typeof responseSchema>;
-  } & {
-    [key in AgentName]: Feedback<key>;
-  }
-> => {
+  feedbacks: Feedbacks,
+): Promise<{
+  criterion: z.infer<typeof responseSchema>;
+}> => {
   await setupEnvironment(schemaId);
 
-  const Feedbacks: { [key in AgentName]: Feedback<key> } = {
-    "rubrics-generator-agent": new Feedback("rubrics-generator-agent"),
-    "documentations-lookup-agent": new Feedback("documentations-lookup-agent"),
-    "schema-lookup-agent": new Feedback("schema-lookup-agent"),
-  };
-
   const saveFeedbacksTool = save_agent_feedbacks(
-    feedbackDistributor(Feedbacks),
+    feedbackDistributor(feedbacks),
   );
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -80,5 +70,5 @@ export const generateRubrics = async (
       // recursionLimit: 100,
     },
   );
-  return { criterion: response.structuredResponse, ...Feedbacks };
+  return { criterion: response.structuredResponse };
 };

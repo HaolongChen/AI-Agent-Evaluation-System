@@ -8,6 +8,12 @@ import {
 } from "../domain/entity/rubric.entity.ts";
 import type { IAgentFeedbackRepository } from "../domain/interface/agent-feedback.interface.ts";
 import { SaveFeedbacksUseCase } from "./save-feedbacks.ts";
+import {
+  Feedback,
+  feedbacksToJSON,
+  type Feedbacks,
+} from "../domain/service/feedback.service.js";
+import { randomUUID } from "node:crypto";
 
 export class GenerateRubricUseCase {
   constructor(
@@ -26,9 +32,25 @@ export class GenerateRubricUseCase {
       );
     const schemaId = copilotInput.goldenSetEntity.data.schemaId;
     const query = copilotInput.userInputEntity.data.content;
-    const { criterion, ...Feedbacks } = await generateRubrics(schemaId, query);
+    const rubricId = randomUUID();
+    const feedbacks: Feedbacks = {
+      "rubrics-generator-agent": new Feedback<"rubrics-generator-agent">(
+        "rubrics-generator-agent",
+        rubricId,
+      ),
+      "documentations-lookup-agent":
+        new Feedback<"documentations-lookup-agent">(
+          "documentations-lookup-agent",
+          rubricId,
+        ),
+      "schema-lookup-agent": new Feedback<"schema-lookup-agent">(
+        "schema-lookup-agent",
+        rubricId,
+      ),
+    };
+    const { criterion } = await generateRubrics(schemaId, query, feedbacks);
     const rubricAggregate = new RubricAggregate(
-      new RubricEntity({ goldenSetId, userInputId }),
+      new RubricEntity({ goldenSetId, userInputId }, rubricId),
     );
     for (const criteria of criterion.criterion) {
       rubricAggregate.addCriteria(
@@ -39,7 +61,10 @@ export class GenerateRubricUseCase {
     const saveFeedbacksUseCase = new SaveFeedbacksUseCase(
       this.repository.agentFeedbackRepository,
     );
-    await saveFeedbacksUseCase.execute(Feedbacks, rubricAggregate.id);
-    return rubricAggregate.toJSON();
+    await saveFeedbacksUseCase.execute(feedbacks, rubricAggregate.id);
+    return {
+      ...rubricAggregate.toJSON(),
+      feedbacks: feedbacksToJSON(feedbacks),
+    };
   }
 }

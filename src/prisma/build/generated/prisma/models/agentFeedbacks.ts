@@ -27,14 +27,14 @@ export type AggregateAgentFeedbacks = {
 export type AgentFeedbacksMinAggregateOutputType = {
   id: string | null;
   rubricId: string | null;
-  agentName: string | null;
+  agentName: $Enums.AgentNameType | null;
   createdAt: Date | null;
 };
 
 export type AgentFeedbacksMaxAggregateOutputType = {
   id: string | null;
   rubricId: string | null;
-  agentName: string | null;
+  agentName: $Enums.AgentNameType | null;
   createdAt: Date | null;
 };
 
@@ -156,7 +156,7 @@ export type agentFeedbacksGroupByArgs<
 export type AgentFeedbacksGroupByOutputType = {
   id: string;
   rubricId: string;
-  agentName: string;
+  agentName: $Enums.AgentNameType;
   feedback: string[];
   createdAt: Date;
   _count: AgentFeedbacksCountAggregateOutputType | null;
@@ -184,7 +184,9 @@ export type agentFeedbacksWhereInput = {
   NOT?: Prisma.agentFeedbacksWhereInput | Prisma.agentFeedbacksWhereInput[];
   id?: Prisma.StringFilter<"agentFeedbacks"> | string;
   rubricId?: Prisma.StringFilter<"agentFeedbacks"> | string;
-  agentName?: Prisma.StringFilter<"agentFeedbacks"> | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeFilter<"agentFeedbacks">
+    | $Enums.AgentNameType;
   feedback?: Prisma.StringNullableListFilter<"agentFeedbacks">;
   createdAt?: Prisma.DateTimeFilter<"agentFeedbacks"> | Date | string;
   rubric?: Prisma.XOR<
@@ -209,7 +211,9 @@ export type agentFeedbacksWhereUniqueInput = Prisma.AtLeast<
     OR?: Prisma.agentFeedbacksWhereInput[];
     NOT?: Prisma.agentFeedbacksWhereInput | Prisma.agentFeedbacksWhereInput[];
     rubricId?: Prisma.StringFilter<"agentFeedbacks"> | string;
-    agentName?: Prisma.StringFilter<"agentFeedbacks"> | string;
+    agentName?:
+      | Prisma.EnumAgentNameTypeFilter<"agentFeedbacks">
+      | $Enums.AgentNameType;
     feedback?: Prisma.StringNullableListFilter<"agentFeedbacks">;
     createdAt?: Prisma.DateTimeFilter<"agentFeedbacks"> | Date | string;
     rubric?: Prisma.XOR<
@@ -241,7 +245,9 @@ export type agentFeedbacksScalarWhereWithAggregatesInput = {
     | Prisma.agentFeedbacksScalarWhereWithAggregatesInput[];
   id?: Prisma.StringWithAggregatesFilter<"agentFeedbacks"> | string;
   rubricId?: Prisma.StringWithAggregatesFilter<"agentFeedbacks"> | string;
-  agentName?: Prisma.StringWithAggregatesFilter<"agentFeedbacks"> | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeWithAggregatesFilter<"agentFeedbacks">
+    | $Enums.AgentNameType;
   feedback?: Prisma.StringNullableListFilter<"agentFeedbacks">;
   createdAt?:
     | Prisma.DateTimeWithAggregatesFilter<"agentFeedbacks">
@@ -251,7 +257,7 @@ export type agentFeedbacksScalarWhereWithAggregatesInput = {
 
 export type agentFeedbacksCreateInput = {
   id?: string;
-  agentName: string;
+  agentName: $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksCreatefeedbackInput | string[];
   createdAt?: Date | string;
   rubric: Prisma.rubricCreateNestedOneWithoutAgentFeedbacksInput;
@@ -260,14 +266,16 @@ export type agentFeedbacksCreateInput = {
 export type agentFeedbacksUncheckedCreateInput = {
   id?: string;
   rubricId: string;
-  agentName: string;
+  agentName: $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksCreatefeedbackInput | string[];
   createdAt?: Date | string;
 };
 
 export type agentFeedbacksUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  agentName?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeFieldUpdateOperationsInput
+    | $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksUpdatefeedbackInput | string[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   rubric?: Prisma.rubricUpdateOneRequiredWithoutAgentFeedbacksNestedInput;
@@ -276,7 +284,9 @@ export type agentFeedbacksUpdateInput = {
 export type agentFeedbacksUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string;
-  agentName?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeFieldUpdateOperationsInput
+    | $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksUpdatefeedbackInput | string[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -284,14 +294,16 @@ export type agentFeedbacksUncheckedUpdateInput = {
 export type agentFeedbacksCreateManyInput = {
   id?: string;
   rubricId: string;
-  agentName: string;
+  agentName: $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksCreatefeedbackInput | string[];
   createdAt?: Date | string;
 };
 
 export type agentFeedbacksUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  agentName?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeFieldUpdateOperationsInput
+    | $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksUpdatefeedbackInput | string[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -299,7 +311,9 @@ export type agentFeedbacksUpdateManyMutationInput = {
 export type agentFeedbacksUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string;
-  agentName?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeFieldUpdateOperationsInput
+    | $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksUpdatefeedbackInput | string[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -458,6 +472,10 @@ export type agentFeedbacksCreatefeedbackInput = {
   set: string[];
 };
 
+export type EnumAgentNameTypeFieldUpdateOperationsInput = {
+  set?: $Enums.AgentNameType;
+};
+
 export type agentFeedbacksUpdatefeedbackInput = {
   set?: string[];
   push?: string | string[];
@@ -465,14 +483,14 @@ export type agentFeedbacksUpdatefeedbackInput = {
 
 export type agentFeedbacksCreateWithoutRubricInput = {
   id?: string;
-  agentName: string;
+  agentName: $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksCreatefeedbackInput | string[];
   createdAt?: Date | string;
 };
 
 export type agentFeedbacksUncheckedCreateWithoutRubricInput = {
   id?: string;
-  agentName: string;
+  agentName: $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksCreatefeedbackInput | string[];
   createdAt?: Date | string;
 };
@@ -530,35 +548,43 @@ export type agentFeedbacksScalarWhereInput = {
     | Prisma.agentFeedbacksScalarWhereInput[];
   id?: Prisma.StringFilter<"agentFeedbacks"> | string;
   rubricId?: Prisma.StringFilter<"agentFeedbacks"> | string;
-  agentName?: Prisma.StringFilter<"agentFeedbacks"> | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeFilter<"agentFeedbacks">
+    | $Enums.AgentNameType;
   feedback?: Prisma.StringNullableListFilter<"agentFeedbacks">;
   createdAt?: Prisma.DateTimeFilter<"agentFeedbacks"> | Date | string;
 };
 
 export type agentFeedbacksCreateManyRubricInput = {
   id?: string;
-  agentName: string;
+  agentName: $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksCreatefeedbackInput | string[];
   createdAt?: Date | string;
 };
 
 export type agentFeedbacksUpdateWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  agentName?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeFieldUpdateOperationsInput
+    | $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksUpdatefeedbackInput | string[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type agentFeedbacksUncheckedUpdateWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  agentName?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeFieldUpdateOperationsInput
+    | $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksUpdatefeedbackInput | string[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 export type agentFeedbacksUncheckedUpdateManyWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
-  agentName?: Prisma.StringFieldUpdateOperationsInput | string;
+  agentName?:
+    | Prisma.EnumAgentNameTypeFieldUpdateOperationsInput
+    | $Enums.AgentNameType;
   feedback?: Prisma.agentFeedbacksUpdatefeedbackInput | string[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -654,7 +680,7 @@ export type $agentFeedbacksPayload<
     {
       id: string;
       rubricId: string;
-      agentName: string;
+      agentName: $Enums.AgentNameType;
       feedback: string[];
       createdAt: Date;
     },
@@ -1277,7 +1303,7 @@ export interface Prisma__agentFeedbacksClient<
 export interface agentFeedbacksFieldRefs {
   readonly id: Prisma.FieldRef<"agentFeedbacks", "String">;
   readonly rubricId: Prisma.FieldRef<"agentFeedbacks", "String">;
-  readonly agentName: Prisma.FieldRef<"agentFeedbacks", "String">;
+  readonly agentName: Prisma.FieldRef<"agentFeedbacks", "AgentNameType">;
   readonly feedback: Prisma.FieldRef<"agentFeedbacks", "String[]">;
   readonly createdAt: Prisma.FieldRef<"agentFeedbacks", "DateTime">;
 }

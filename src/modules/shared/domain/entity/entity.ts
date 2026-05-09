@@ -1,8 +1,8 @@
 import * as z from "zod";
 
 export class Entity<T extends z.ZodObject = z.ZodObject> {
-  private _data: z.infer<T>;
-  private _id: string;
+  protected _data: z.infer<T>;
+  protected _id: string;
   private _createdAt?: z.infer<z.ZodDate>;
   private _updatedAt?: z.infer<z.ZodDate>;
 

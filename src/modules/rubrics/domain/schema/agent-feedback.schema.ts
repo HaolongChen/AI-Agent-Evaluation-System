@@ -8,11 +8,19 @@ const agentNamesEnum = z.enum([
 
 export type AgentName = z.infer<typeof agentNamesEnum>;
 
-export const AgentFeedbackSchema = z.object({
+export const agentFeedbackSchema = z.object({
   rubricId: z.uuidv4(),
   feedback: z.string().array(),
   agentName: agentNamesEnum,
 });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const feedbackSchemaWithoutAgentName = agentFeedbackSchema.omit({
+  agentName: true,
+});
+
+export type AgentFeedback<T extends AgentName> = z.infer<
+  typeof feedbackSchemaWithoutAgentName
+> & { agentName: T };
 
 export const saveAgentFeedbackToolField = {
   name: "save_agent_feedbacks",

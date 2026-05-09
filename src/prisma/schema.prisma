@@ -11,6 +11,12 @@ generator erd {
   provider = "prisma-erd-generator"
 }
 
+enum AgentNameType {
+  rubrics_generator_agent
+  documentations_lookup_agent
+  schema_lookup_agent
+}
+
 enum CopilotType {
   dataModelBuilder
   uiBuilder
@@ -130,7 +136,7 @@ model criteria {
 model agentFeedbacks {
   id        String   @id @default(uuid())
   rubricId  String   @map("rubric_id")
-  agentName String   @map("agent_name") // could be agentId or "auto-evaluation" for agent evaluations
+  agentName AgentNameType   @map("agent_name")
   feedback  String[] @map("feedback") // free-form feedback from the evaluation agent
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

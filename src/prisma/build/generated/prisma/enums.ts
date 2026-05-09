@@ -8,6 +8,14 @@
  * 🟢 You can import this file directly.
  */
 
+export const AgentNameType = {
+  rubrics_generator_agent: "rubrics_generator_agent",
+  documentations_lookup_agent: "documentations_lookup_agent",
+  schema_lookup_agent: "schema_lookup_agent",
+} as const;
+
+export type AgentNameType = (typeof AgentNameType)[keyof typeof AgentNameType];
+
 export const CopilotType = {
   dataModelBuilder: "dataModelBuilder",
   uiBuilder: "uiBuilder",

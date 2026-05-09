@@ -1,9 +1,9 @@
 import type z from "zod";
 import { Entity } from "../../../shared/domain/entity/entity.ts";
-import { AgentFeedbackSchema } from "../schema/agent-feedback.schema.ts";
+import { agentFeedbackSchema } from "../schema/agent-feedback.schema.ts";
 
-export class AgentFeedbackEntity extends Entity<typeof AgentFeedbackSchema> {
-  constructor(data: z.infer<typeof AgentFeedbackSchema>, id?: string) {
-    super(data, AgentFeedbackSchema, id);
+export class AgentFeedbackEntity extends Entity<typeof agentFeedbackSchema> {
+  constructor(data: z.infer<typeof agentFeedbackSchema>, id?: string) {
+    super(data, agentFeedbackSchema, id);
   }
 }

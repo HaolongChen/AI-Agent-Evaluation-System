@@ -1,9 +1,17 @@
 import z from "zod";
 
+const agentNamesEnum = z.enum([
+  "rubrics-generator-agent",
+  "documentations-lookup-agent",
+  "schema-lookup-agent",
+]);
+
+export type AgentName = z.infer<typeof agentNamesEnum>;
+
 export const AgentFeedbackSchema = z.object({
   rubricId: z.uuidv4(),
   feedback: z.string().array(),
-  agentName: z.string(),
+  agentName: agentNamesEnum,
 });
 
 export const saveAgentFeedbackToolField = {

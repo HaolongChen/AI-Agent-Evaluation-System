@@ -1,8 +1,12 @@
 import { tool } from "langchain";
-import { saveAgentFeedbackToolField } from "../../../domain/schema/agent-feedback.schema.ts";
+import {
+  saveAgentFeedbackToolField,
+  type AgentName,
+} from "../../../domain/schema/agent-feedback.schema.ts";
 
-export const save_agent_feedbacks = (function_: (feedback: string) => void) =>
-  tool(({ feedbacks }) => {
-    function_(feedbacks);
-    return "Feedback saved successfully.";
+export const save_agent_feedbacks = (
+  function_: (agentName: AgentName, feedback: string) => void,
+) =>
+  tool(({ feedbacks }, config) => {
+    function_(config.metadata.lc_agent_name as AgentName, feedbacks);
   }, saveAgentFeedbackToolField);

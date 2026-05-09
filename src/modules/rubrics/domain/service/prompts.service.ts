@@ -1,5 +1,4 @@
 import type { SubAgent } from "@HaolongChen/deepagents";
-import { Feedback } from "./feedback.service.ts";
 import { read_markdown_documentations } from "../../application/rubricsGenerator/tools/markdown-reader.ts";
 import { read_json_schema } from "../../application/rubricsGenerator/tools/schema-reader.ts";
 import fs from "node:fs/promises";
@@ -40,12 +39,6 @@ export const documentationsLookupPromptText =
     "${feedbackPrompt}",
     feedbackPrompt,
   );
-
-export const rubricsGeneratorFeedback = new Feedback("rubrics-generator-agent");
-export const schemaLookupAgentFeedback = new Feedback("schema-lookup-agent");
-export const documentationsLookupAgentFeedback = new Feedback(
-  "documentations-lookup-agent",
-);
 
 export const schemaQueryWorker: SubAgent = {
   name: "schema-query-worker",

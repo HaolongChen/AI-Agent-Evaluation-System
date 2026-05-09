@@ -1,18 +1,19 @@
-import {
-  // createSubAgentMiddleware,
-  createDeepAgent,
-  StateBackend,
-} from "@HaolongChen/deepagents";
+import { createDeepAgent, StateBackend } from "@HaolongChen/deepagents";
 import * as z from "zod";
 import { HumanMessage } from "langchain";
 import { MemorySaver } from "@langchain/langgraph";
-import type { agentFeedbacks } from "../../../../prisma/build/generated/prisma/client.ts";
 import { responseSchema } from "../../domain/schema/deep-agents.schema.ts";
 import { documentationsLookupAgent } from "./subagents/documentations-lookup-agent.ts";
 import { schemaLookupAgent } from "./subagents/schema-lookup-agent.ts";
 import { setupEnvironment } from "./service/environment-setup.ts";
 import { gemini } from "../../../shared/infrastructure/llm-providers.ts";
 import { rubricsGeneratorAgentConfig } from "../../domain/config/agent-environment.ts";
+import { save_agent_feedbacks } from "./tools/feedback.ts";
+import {
+  Feedback,
+  feedbackDistributor,
+} from "../../domain/service/feedback.service.js";
+import type { AgentName } from "../../domain/schema/agent-feedback.schema.ts";
 
 const checkpointer = new MemorySaver();
 
@@ -23,10 +24,20 @@ export const generateRubrics = async (
   {
     criterion: z.infer<typeof responseSchema>;
   } & {
-    feedbacks?: (rubricId: string) => Promise<agentFeedbacks | undefined>[];
+    [key in AgentName]: Feedback<key>;
   }
 > => {
   await setupEnvironment(schemaId);
+
+  const Feedbacks: { [key in AgentName]: Feedback<key> } = {
+    "rubrics-generator-agent": new Feedback("rubrics-generator-agent"),
+    "documentations-lookup-agent": new Feedback("documentations-lookup-agent"),
+    "schema-lookup-agent": new Feedback("schema-lookup-agent"),
+  };
+
+  const saveFeedbacksTool = save_agent_feedbacks(
+    feedbackDistributor(Feedbacks),
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { subagents: _, ...agentConfig } =
@@ -35,7 +46,17 @@ export const generateRubrics = async (
   const rubrics_generator_agent = createDeepAgent({
     model: gemini,
     backend: () => new StateBackend(),
-    subagents: [schemaLookupAgent, documentationsLookupAgent],
+    tools: [saveFeedbacksTool],
+    subagents: [
+      {
+        ...schemaLookupAgent,
+        tools: [...(schemaLookupAgent.tools ?? []), saveFeedbacksTool],
+      },
+      {
+        ...documentationsLookupAgent,
+        tools: [...(documentationsLookupAgent.tools ?? []), saveFeedbacksTool],
+      },
+    ],
     checkpointer,
     ...agentConfig,
   });
@@ -59,5 +80,5 @@ export const generateRubrics = async (
       // recursionLimit: 100,
     },
   );
-  return { criterion: response.structuredResponse };
+  return { criterion: response.structuredResponse, ...Feedbacks };
 };

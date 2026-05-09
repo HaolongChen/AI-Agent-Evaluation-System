@@ -7,6 +7,7 @@ import {
   RubricEntity,
 } from "../domain/entity/rubric.entity.ts";
 import type { IAgentFeedbackRepository } from "../domain/interface/agent-feedback.interface.ts";
+import { SaveFeedbacksUseCase } from "./save-feedbacks.ts";
 
 export class GenerateRubricUseCase {
   constructor(
@@ -25,7 +26,7 @@ export class GenerateRubricUseCase {
       );
     const schemaId = copilotInput.goldenSetEntity.data.schemaId;
     const query = copilotInput.userInputEntity.data.content;
-    const { criterion } = await generateRubrics(schemaId, query);
+    const { criterion, ...Feedbacks } = await generateRubrics(schemaId, query);
     const rubricAggregate = new RubricAggregate(
       new RubricEntity({ goldenSetId, userInputId }),
     );
@@ -35,6 +36,10 @@ export class GenerateRubricUseCase {
       );
     }
     await this.repository.rubricRepository.saveWithCriterion(rubricAggregate);
+    const saveFeedbacksUseCase = new SaveFeedbacksUseCase(
+      this.repository.agentFeedbackRepository,
+    );
+    await saveFeedbacksUseCase.execute(Feedbacks, rubricAggregate.id);
     return rubricAggregate.toJSON();
   }
 }

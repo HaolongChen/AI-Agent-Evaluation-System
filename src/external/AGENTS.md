@@ -1,24 +1,21 @@
-# Utilities Layer
+# External Utilities Layer
 
-> **Scope:** src/utils/ | **Updated:** 2026-03-04
+> **Scope:** src/external/ | **Updated:** 2026-05-09
 
-Shared utilities and cross-cutting concerns used across all layers.
+Shared utilities and Functorz backend integration. **NOT src/utils/** - all utilities are here.
 
 ## WHERE TO LOOK
 
 | File                   | Purpose                                                                                            | Used By                  |
 | ---------------------- | -------------------------------------------------------------------------------------------------- | ------------------------ |
-| `graphql-client.ts`    | Primary GQL client — `authState`, `localClient`, `backendClient`, `gqlRequest()`, `gqlSubscribe()` | Tests, job runners, zed/ |
-| `graphql-builder.ts`   | Typed GQL documents (`GoldenSetDocuments`) + legacy string builders                                | Tests, job runners       |
-| ~~`graphql-utils.ts`~~ | **Deleted** — was a deprecated shim; use `graphql-client.ts` directly                              | —                        |
+| `graphql-client.ts`    | Primary GQL client — `authState`, `localClient`, `backendClient`, `gqlRequest()`, `gqlSubscribe()` | Job runners, modules, zed |
 | `login.ts`             | `login(phone, password)` — authenticates and returns `accessToken`                                 | Job runners, zed/        |
-| `console.ts`           | Structured logging (console + caller location)                                                     | All modules              |
-| `types.ts`             | Domain types: `CopilotMessage` union, `copilotType`, `SessionState`, enums                         | Services, jobs, state    |
-| `graph-states.ts`      | Copilot job runtime types: `JobState`, `Task`, `JobStateType`, `RuntimeContext`                    | Job runners              |
-| `validators.ts`        | Zod validators for common input fields                                                             | Services                 |
-| `websocket.ts`         | `WebSocketClient` class — connect/send/receive via `ws`                                            | Job runners              |
-| `formatters.ts`        | Pure formatters: `formatDuration`, `formatTokenCount`, `formatPercentage`                          | Services, jobs           |
-| `zed/`                 | Zed CRDT schema, type system, and Functorz backend helpers                                         | Job runners, services    |
+| `types.ts`             | Domain types: `CopilotMessage` union, `copilotType`, `SessionState`, enums                         | Services, jobs, modules |
+| `schemaIdGeneration.ts`| Schema ID generation utilities                                                                     | Modules                  |
+| `ali-oss.ts`           | Ali OSS integration (if needed)                                                                   | Rare                     |
+| `zed/`                 | Zed CRDT schema, type system, and Functorz backend helpers                                         | Job runners, modules     |
+
+> **Note:** `src/utils/` does not exist. All shared utilities are in `src/external/`.
 
 ## GRAPHQL CLIENT (primary pattern)
 
@@ -28,11 +25,7 @@ import {
   localClient,
   gqlRequest,
   authState,
-} from "../utils/graphql-client.ts";
-import {
-  GoldenSetDocuments,
-  type GetGoldenSetsVariables,
-} from "../utils/graphql-builder.ts";
+} from "./graphql-client.ts";
 
 // Authenticate first (sets 1-hour TTL token)
 authState.setToken(accessToken);
@@ -48,7 +41,7 @@ const data = await gqlRequest<GetGoldenSetsResponse, GetGoldenSetsVariables>(
 **Subscriptions (graphql-ws protocol):**
 
 ```typescript
-import { gqlSubscribe } from "../utils/graphql-client.ts";
+import { gqlSubscribe } from "./graphql-client.ts";
 
 // Subscribe — returns an unsubscribe cleanup function
 const unsubscribe = gqlSubscribe<MyEventData, MyVars>(
@@ -73,36 +66,21 @@ unsubscribe();
 - `backendClient` → Functorz backend (`BACKEND_GRAPHQL_URL`, requires Bearer token)
 - `authState.setToken(token)` / `authState.clearToken()` / `authState.isValid()`
 
-**Never** import from `graphql-utils.ts` — it has been deleted. Import from `graphql-client.ts` directly.
+## TYPES
 
-## GRAPHQL BUILDER
-
-Two tiers:
-
-1. **`GoldenSetDocuments`** — typed `gql`-tagged constants; use with `gqlRequest()` (production)
-2. **`QueryBuilder` / `MutationBuilder`** — fluent string builders for ad-hoc local Apollo queries (tests only)
-3. **`GoldenSetQueries`** — `@deprecated`; retained for compat, use `GoldenSetDocuments` instead
-
-## LOGGER
-
-```typescript
-console.info("Processing evaluation", { sessionId });
-console.error("Failed operation", error);
-console.debug("Trace info"); // Only in development (NODE_ENV check)
-```
-
-- **Never** `console.log` — always use `console`
-- Each call auto-includes `[FILE:LINE]` caller info from stack trace
+Domain types in `types.ts`:
+- `CopilotMessage` union type
+- `copilotType` enum values
+- `SessionState` enum
+- Various domain enums
 
 ## CONVENTIONS
 
 - Pure functions only (no side effects, except console I/O and WebSocket state)
-- `graph-states.ts` types are used by job runners (`EvaluationJobRunner`) for WebSocket message parsing
-- `validators.ts` uses Zod — validators are named `<field>Validator` (e.g., `copilotTypeValidator`)
-- `formatters.ts` — stateless; safe to import anywhere
+- Import paths use `.ts` extension (ESM requirement)
+- All utilities are in `src/external/`, not `src/utils/`
 
 ## NOTES
 
 - `zed/` is the heaviest subdirectory (10k+ lines in `index.ts`) — see `zed/AGENTS.md` for details
-- `graphql-utils.ts` has been **deleted** (was a no-op shim with zero real callers)
 - `login.ts` calls `backendClient` with typed variables — the returned token should be passed to `authState.setToken()`

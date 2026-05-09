@@ -19,12 +19,13 @@ Exposes the evaluation engine via Apollo Server. Orchestrates Golden Set managem
 
 ## Resolver → Module Map
 
-| File                   | DDD Module       | Key Operations                                            |
-| ---------------------- | ---------------- | --------------------------------------------------------- |
-| `GoldenSetResolver.ts` | `copilot-input`  | CRUD for Golden Sets, User Inputs, and Projects           |
-| `SessionResolver.ts`   | `evaluation`     | Session queries, execution results, and audit traces      |
-| `RubricResolver.ts`    | `rubrics`        | Question set generation and human evaluation submission   |
-| `GraphSessionResolver` | `copilot-output` | Execution service, copilot job execution, WebSocket calls |
+| File                        | DDD Module       | Key Operations                                            |
+| --------------------------- | ---------------- | --------------------------------------------------------- |
+| `golden-set-resolver.ts`   | `copilot-input`  | CRUD for Golden Sets, User Inputs, and Projects           |
+| `session-resolver.ts`       | `evaluation`     | Session queries, execution results, and audit traces      |
+| `rubric-resolver.ts`        | `rubrics`        | Question set generation and human evaluation submission   |
+
+> **Note:** GraphSessionResolver does not exist - execution now in copilot-output module.
 
 > **Note:** Resolvers delegate to DDD modules, not legacy services. Modules are in `src/modules/`.
 
@@ -57,8 +58,10 @@ Exposes the evaluation engine via Apollo Server. Orchestrates Golden Set managem
 
 ## Typed Documents
 
-- Use `GoldenSetDocuments` from `src/utils/graphql-client.ts` for internal/backend requests.
+- Use `GoldenSetDocuments` from `src/external/graphql-client.ts` for internal/backend requests.
 - Prefer `gqlRequest()` with typed variables and response shapes.
+
+> **Note:** `src/utils/` does not exist - all utilities are in `src/external/`.
 
 ## Migration Note
 

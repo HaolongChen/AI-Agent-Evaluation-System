@@ -1,48 +1,44 @@
 # Services - Business Logic Layer
 
-> **Scope:** src/services/ | **Status:** MIGRATING TO DDD MODULES
+> **Scope:** src/services/ | **Status:** ⚠️ ALMOST EMPTY - Most services migrated to DDD modules
 
 ## OVERVIEW
 
-**⚠️ DEPRECATED**: This layer is being migrated to DDD modules in `src/modules/`. Prefer modules for new work.
+**⚠️ DEPRECATED**: Most services have migrated to DDD modules in `src/modules/`. This directory is nearly empty.
 
-Legacy business logic and database orchestration layer. GraphQL resolvers delegate here (in transition to modules).
+## CURRENT STATE
 
-## WHERE TO LOOK (LEGACY)
+| File                     | Status           | Notes                               |
+| ------------------------ | ---------------- | ----------------------------------- |
+| `analytics-service.ts`   | ✅ Still here    | No DDD module yet for analytics     |
+| `GraphExecutionService.ts` | ❌ Deleted     | Migrated to evaluation module      |
+| `ExecutionService.ts`    | ❌ Deleted       | Migrated to copilot-output module  |
+| `EvaluationPersistenceService.ts` | ❌ Deleted | Migrated to evaluation module      |
+| `GoldenSetService.ts`    | ❌ Deleted       | Migrated to copilot-input module    |
+| `RubricService.ts`       | ❌ Deleted       | Migrated to rubrics module          |
+| `ProjectService.ts`      | ❌ Deleted       | Moved to `src/modules/copilot-input/application/project-service.ts` |
 
-| Service                           | Responsibility                | Migration Status                  |
-| :-------------------------------- | :---------------------------- | :-------------------------------- |
-| `GraphExecutionService.ts`        | HITL state, thread management | ⏳ Migrating to evaluation module |
-| `ExecutionService.ts`             | Job management, runner init   | ✅ Moved to copilot-output module |
-| `EvaluationPersistenceService.ts` | Result storage                | ⏳ Migrating to evaluation module |
-| `GoldenSetService.ts`             | Dataset CRUD                  | ✅ Moved to copilot-input module  |
-| `RubricService.ts`                | Rubric management             | ✅ Moved to rubrics module        |
-| `AnalyticsService.ts`             | Metrics & reporting           | Still in services (no module yet) |
-| `ProjectService.ts`               | Project lifecycle             | ✅ Moved to copilot-input module  |
-
-## MIGRATION STATUS
+## MIGRATION STATUS (COMPLETE)
 
 - ✅ `copilot-input` module: GoldenSetService, ProjectService migrated
 - ✅ `copilot-output` module: ExecutionService migrated
 - ✅ `rubrics` module: RubricService migrated
-- ⏳ `evaluation` module: GraphExecutionService, EvaluationPersistenceService pending
-- ❌ AnalyticsService: No module yet, stays in services
+- ✅ `evaluation` module: GraphExecutionService, EvaluationPersistenceService migrated
+
+**Only `analytics-service.ts` remains** - no module yet for analytics functionality.
 
 ## CONVENTIONS
 
-- **Singleton Export**: `export const serviceName = new ServiceName();`
-- **Resolver Delegation**: GraphQL resolvers call services (transitioning to modules)
-- **Prisma Encapsulation**: Services own DB logic via `src/config/prisma.ts`
-- **Patch Logic**: `questionPatches` and `answerPatches` merge delta updates
+- **DO NOT add new services here** - use DDD modules in `src/modules/`
+- **Resolver Delegation**: GraphQL resolvers call module use cases, not services
+- **Prisma Access**: Use `src/config/prisma.ts` singleton
 
 ## ANTI-PATTERNS
 
-- **Circular Dependencies**: Services importing each other in a loop
-- **Logic Leaks**: Writing business logic in GraphQL resolvers (use services or modules)
-- **State Mismanagement**: Modifying state outside of GraphExecutionService
+- **New services in this directory** - forbidden, use modules instead
+- **Logic in GraphQL resolvers** - use module use cases
 
 ## NOTES
 
-- Cross-module communication via interface dependencies
-- New features should be built in `src/modules/` (DDD pattern)
-- Services serve as transitional layer until migration complete
+- New features must be built in `src/modules/` (DDD pattern)
+- When analytics module is created, analytics-service.ts will migrate there

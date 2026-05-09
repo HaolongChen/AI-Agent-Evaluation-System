@@ -48,16 +48,15 @@ const patch = async (
         .eq(1)
         .find("ul:first > li")
         .toArray()
-        .map(async (child) => {
-          if (function_(child).children().length === 0) {
-            return {
-              name: function_(child).text(),
-              description:
-                "This is block. Next siblings until the next block are represented as children",
-            };
-          }
-          return await patch(function_(child).children(), function_);
-        }),
+        .map(async (child) =>
+          function_(child).children().length === 0
+            ? {
+                name: function_(child).text(),
+                description:
+                  "This is block. Next siblings until the next block are represented as children",
+              }
+            : await patch(function_(child).children(), function_),
+        ),
     );
   } else {
     throw new Error(

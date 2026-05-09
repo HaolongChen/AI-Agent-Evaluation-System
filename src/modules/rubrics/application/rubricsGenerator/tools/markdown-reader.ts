@@ -182,7 +182,7 @@ const selectBestFile = async (
     const rankedByPath = [...files].toSorted(
       (a, b) => filenameScore(b) - filenameScore(a),
     );
-    const selectedFile = rankedByPath[0] ?? firstFile;
+    const selectedFile = rankedByPath[0];
     return {
       selectedFile,
       markdown: await readFile(selectedFile, "utf8"),

@@ -8,12 +8,12 @@ CLI entry points orchestrating DDD modules. Jobs delegate business logic to modu
 
 ## WHERE TO LOOK
 
-| File | Purpose | Modules Used |
-| ---- | ------- | ------------- |
-| `EvaluationJobRunner.ts` | E2E evaluation batches via WebSocket | copilot-output, evaluation, rubrics |
-| `RubricGenerationJobRunner.ts` | Automated rubric drafting workflows | rubrics, copilot-output |
-| `RubricReviewJobRunner.ts` | Batch rubric approval/rejection | rubrics, evaluation |
-| `HumanEvaluationJobRunner.ts` | Batch human-in-the-loop scoring | evaluation, rubrics |
+| File                           | Purpose                              | Modules Used                        |
+| ------------------------------ | ------------------------------------ | ----------------------------------- |
+| `EvaluationJobRunner.ts`       | E2E evaluation batches via WebSocket | copilot-output, evaluation, rubrics |
+| `RubricGenerationJobRunner.ts` | Automated rubric drafting workflows  | rubrics, copilot-output             |
+| `RubricReviewJobRunner.ts`     | Batch rubric approval/rejection      | rubrics, evaluation                 |
+| `HumanEvaluationJobRunner.ts`  | Batch human-in-the-loop scoring      | evaluation, rubrics                 |
 
 ## MODULE INTEGRATION
 

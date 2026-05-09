@@ -35,6 +35,11 @@ declare global {
       LANGSMITH_ENDPOINT: string;
       LANGSMITH_API_KEY: string;
       LANGSMITH_PROJECT: string;
+      PROJECT_PATH: string;
+      RUBRICS_GENERATOR_BASE_PATH: string;
+      RUBRICS_GENERATOR_PROMPTS_PATH: string;
+      ZSCHEMA_SRC_PATH: string;
+      ZSCHEMA_DEST_PATH: string;
     }
   }
 }

@@ -1,10 +1,11 @@
 import type { SubAgent } from "@HaolongChen/deepagents";
 import { Feedback } from "./feedback.service.ts";
-import { read_markdown_documentations } from "../../../../deep-agents/rubricsGenerator/tools/markdown-reader.ts";
-import { read_json_schema } from "../../../../deep-agents/rubricsGenerator/tools/schema-reader.ts";
+import { read_markdown_documentations } from "../../application/rubricsGenerator/tools/markdown-reader.ts";
+import { read_json_schema } from "../../application/rubricsGenerator/tools/schema-reader.ts";
 import fs from "node:fs/promises";
+import { rubricsGeneratorEnvironment } from "../config/agent-environment.ts";
 
-const promptsBasePath = new URL("prompts/", import.meta.url);
+const promptsBasePath = new URL(rubricsGeneratorEnvironment.promptsPath);
 const feedbackPrompt = await fs.readFile(
   new URL("feedbackPrompt.md", promptsBasePath),
   "utf8",
@@ -26,6 +27,12 @@ export const schemaLookupPromptText = schemaLookupPromptTemplate.replace(
   "${feedbackPrompt}",
   feedbackPrompt,
 );
+export const documentationsLookupDescription =
+  "This sub-agent is responsible for looking up and explaining the Momen official documentation to assist the main agent in generating accurate and relevant rubrics for evaluating copilot's performance based on the provided crdt schema model and user input.";
+
+export const schemaLookupDescription =
+  "This sub-agent is responsible for explaining crdt schema models that rubrics-generator-agent owns by looking up its own reference schema of crdt schema models with jq queries.";
+
 export const rubricsGeneratorPromptText =
   rubricsGeneratorPromptTemplate.replace("${feedbackPrompt}", feedbackPrompt);
 export const documentationsLookupPromptText =

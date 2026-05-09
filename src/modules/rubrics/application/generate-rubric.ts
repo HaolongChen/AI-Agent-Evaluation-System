@@ -1,4 +1,4 @@
-import { generateRubrics } from "./rubrics-generator.ts";
+import { generateRubrics } from "./rubricsGenerator/rubrics-generator.ts";
 import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/golden-set.interface.ts";
 import type { IRubricRepository } from "../domain/interface/rubric.interface.ts";
 import { RubricAggregate } from "../domain/aggregate/rubric.aggregate.ts";

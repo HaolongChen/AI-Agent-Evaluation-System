@@ -6,13 +6,13 @@ Vertical DDD slices for domain logic. Each module owns its entities, application
 
 ## MODULE MAP
 
-| Module | Domain | Entities |
-|--------|--------|----------|
-| `copilot-input` | Golden Sets & User Inputs | GoldenSetEntity, UserInputEntity |
-| `copilot-output` | Copilot Job Execution | CopilotJobEntity, CopilotOutputEntity |
-| `evaluation` | Sessions & Results | SessionEntity, RecordEntity, ResultEntity |
-| `rubrics` | Evaluation Criteria | RubricEntity, AgentFeedbackEntity |
-| `shared` | DDD Foundations | Entity base, AggregateRoot, IRepository, ValueObjects |
+| Module           | Domain                    | Entities                                              |
+| ---------------- | ------------------------- | ----------------------------------------------------- |
+| `copilot-input`  | Golden Sets & User Inputs | GoldenSetEntity, UserInputEntity                      |
+| `copilot-output` | Copilot Job Execution     | CopilotJobEntity, CopilotOutputEntity                 |
+| `evaluation`     | Sessions & Results        | SessionEntity, RecordEntity, ResultEntity             |
+| `rubrics`        | Evaluation Criteria       | RubricEntity, AgentFeedbackEntity                     |
+| `shared`         | DDD Foundations           | Entity base, AggregateRoot, IRepository, ValueObjects |
 
 ## LAYER CONVENTION
 

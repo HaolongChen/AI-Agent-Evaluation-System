@@ -29,28 +29,28 @@ AI-Agent-Evaluation-System/
 
 ## DDD MODULES (PRIMARY)
 
-| Module | Domain | Purpose |
-|--------|--------|---------|
-| `copilot-input` | Golden Sets & User Inputs | Manages evaluation datasets |
-| `copilot-output` | Copilot Job Execution | Executes copilot queries, captures outputs |
-| `evaluation` | Sessions & Results | Evaluation lifecycle, scoring, reports |
-| `rubrics` | Evaluation Criteria | Rubric generation via deep agents |
-| `shared` | DDD Foundations | Entity base, Repository interfaces, Value Objects |
+| Module           | Domain                    | Purpose                                           |
+| ---------------- | ------------------------- | ------------------------------------------------- |
+| `copilot-input`  | Golden Sets & User Inputs | Manages evaluation datasets                       |
+| `copilot-output` | Copilot Job Execution     | Executes copilot queries, captures outputs        |
+| `evaluation`     | Sessions & Results        | Evaluation lifecycle, scoring, reports            |
+| `rubrics`        | Evaluation Criteria       | Rubric generation via deep agents                 |
+| `shared`         | DDD Foundations           | Entity base, Repository interfaces, Value Objects |
 
 **See `src/modules/AGENTS.md`** for full DDD architecture documentation.
 
 ## WHERE TO LOOK
 
-| Task | Location | Notes |
-|------|----------|-------|
-| Add DDD module/layer | `src/modules/<module>/` | Follow domain/application/infrastructure |
-| Add GraphQL resolver | `src/graphql/resolvers/` | Thin layer → delegates to modules |
-| Add business logic | `src/modules/<module>/domain/service/` | Domain services in modules |
-| Change DB schema | `prisma/schema.prisma` | Run `pnpm db:generate` after |
-| Add utility | `src/external/` or `src/modules/shared/` | Utilities in external |
-| Add LLM agent tool | `src/deep-agents/` | Deep agent tooling |
-| Add CLI job | `src/jobs/` | Job runners consuming modules |
-| Add tests | `tests/` | Script-based, use tsx |
+| Task                 | Location                                 | Notes                                    |
+| -------------------- | ---------------------------------------- | ---------------------------------------- |
+| Add DDD module/layer | `src/modules/<module>/`                  | Follow domain/application/infrastructure |
+| Add GraphQL resolver | `src/graphql/resolvers/`                 | Thin layer → delegates to modules        |
+| Add business logic   | `src/modules/<module>/domain/service/`   | Domain services in modules               |
+| Change DB schema     | `prisma/schema.prisma`                   | Run `pnpm db:generate` after             |
+| Add utility          | `src/external/` or `src/modules/shared/` | Utilities in external                    |
+| Add LLM agent tool   | `src/deep-agents/`                       | Deep agent tooling                       |
+| Add CLI job          | `src/jobs/`                              | Job runners consuming modules            |
+| Add tests            | `tests/`                                 | Script-based, use tsx                    |
 
 ## CONVENTIONS
 

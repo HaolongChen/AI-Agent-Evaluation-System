@@ -29,7 +29,9 @@ class User extends Entity<typeof UserSchema> {
 import { AggregateRoot } from "./aggregate/aggregate-root.ts";
 
 class UserAggregate extends AggregateRoot<typeof UserSchema> {
-  constructor(entity: User) { super(entity); }
+  constructor(entity: User) {
+    super(entity);
+  }
 }
 ```
 
@@ -41,8 +43,12 @@ class UserAggregate extends AggregateRoot<typeof UserSchema> {
 import { IRepository } from "./interface/repository.interface.ts";
 
 class UserRepository implements IRepository<User> {
-  async save(entity: User): Promise<void> { /* ... */ }
-  async findById(id: string): Promise<User> { /* ... */ }
+  async save(entity: User): Promise<void> {
+    /* ... */
+  }
+  async findById(id: string): Promise<User> {
+    /* ... */
+  }
 }
 ```
 
@@ -55,7 +61,9 @@ import { ValueObject } from "./value-object/base.vo.ts";
 
 const EmailVO = z.object({ value: z.string().email() });
 class Email extends ValueObject<typeof EmailVO> {
-  constructor(email: string) { super({ value: email }, EmailVO); }
+  constructor(email: string) {
+    super({ value: email }, EmailVO);
+  }
 }
 ```
 

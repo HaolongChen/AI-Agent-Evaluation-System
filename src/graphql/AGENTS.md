@@ -19,12 +19,12 @@ Exposes the evaluation engine via Apollo Server. Orchestrates Golden Set managem
 
 ## Resolver → Module Map
 
-| File                    | DDD Module           | Key Operations                                            |
-| ---------------------- | -------------------- | -------------------------------------------------------- |
-| `GoldenSetResolver.ts`  | `copilot-input`      | CRUD for Golden Sets, User Inputs, and Projects          |
-| `SessionResolver.ts`    | `evaluation`         | Session queries, execution results, and audit traces     |
-| `RubricResolver.ts`     | `rubrics`            | Question set generation and human evaluation submission  |
-| `GraphSessionResolver`  | `copilot-output`     | Execution service, copilot job execution, WebSocket calls |
+| File                   | DDD Module       | Key Operations                                            |
+| ---------------------- | ---------------- | --------------------------------------------------------- |
+| `GoldenSetResolver.ts` | `copilot-input`  | CRUD for Golden Sets, User Inputs, and Projects           |
+| `SessionResolver.ts`   | `evaluation`     | Session queries, execution results, and audit traces      |
+| `RubricResolver.ts`    | `rubrics`        | Question set generation and human evaluation submission   |
+| `GraphSessionResolver` | `copilot-output` | Execution service, copilot job execution, WebSocket calls |
 
 > **Note:** Resolvers delegate to DDD modules, not legacy services. Modules are in `src/modules/`.
 

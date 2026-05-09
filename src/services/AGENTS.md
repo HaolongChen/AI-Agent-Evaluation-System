@@ -10,15 +10,15 @@ Legacy business logic and database orchestration layer. GraphQL resolvers delega
 
 ## WHERE TO LOOK (LEGACY)
 
-| Service | Responsibility | Migration Status |
-| :------ | :------------ | :--------------- |
-| `GraphExecutionService.ts` | HITL state, thread management | ⏳ Migrating to evaluation module |
-| `ExecutionService.ts` | Job management, runner init | ✅ Moved to copilot-output module |
-| `EvaluationPersistenceService.ts` | Result storage | ⏳ Migrating to evaluation module |
-| `GoldenSetService.ts` | Dataset CRUD | ✅ Moved to copilot-input module |
-| `RubricService.ts` | Rubric management | ✅ Moved to rubrics module |
-| `AnalyticsService.ts` | Metrics & reporting | Still in services (no module yet) |
-| `ProjectService.ts` | Project lifecycle | ✅ Moved to copilot-input module |
+| Service                           | Responsibility                | Migration Status                  |
+| :-------------------------------- | :---------------------------- | :-------------------------------- |
+| `GraphExecutionService.ts`        | HITL state, thread management | ⏳ Migrating to evaluation module |
+| `ExecutionService.ts`             | Job management, runner init   | ✅ Moved to copilot-output module |
+| `EvaluationPersistenceService.ts` | Result storage                | ⏳ Migrating to evaluation module |
+| `GoldenSetService.ts`             | Dataset CRUD                  | ✅ Moved to copilot-input module  |
+| `RubricService.ts`                | Rubric management             | ✅ Moved to rubrics module        |
+| `AnalyticsService.ts`             | Metrics & reporting           | Still in services (no module yet) |
+| `ProjectService.ts`               | Project lifecycle             | ✅ Moved to copilot-input module  |
 
 ## MIGRATION STATUS
 

@@ -1,7 +1,7 @@
 import { tool } from "langchain";
-import * as z from "zod";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import { markdownReaderToolField } from "../../../domain/schema/markdown-reader.schema.ts";
 
 const DEFAULT_MAX_CHARS = 1800;
 const DOCS_ROOT = `${process.cwd()}/local_shell/momen_docs`;
@@ -244,7 +244,6 @@ export const read_markdown_documentations = tool(
     filePath,
     heading,
     keyword,
-    maxChars,
   }: {
     filePath?: string;
     heading?: string;
@@ -252,21 +251,10 @@ export const read_markdown_documentations = tool(
     maxChars?: number;
   }) => {
     try {
-      const resolvedMaxChars =
-        typeof maxChars === "number" &&
-        Number.isFinite(maxChars) &&
-        maxChars > 0
-          ? Math.floor(maxChars)
-          : DEFAULT_MAX_CHARS;
+      const resolvedMaxChars = DEFAULT_MAX_CHARS;
 
       const { files, usingSummaryFiles } =
         await loadCandidateDocumentations(filePath);
-
-      if (files.length === 0) {
-        return {
-          message: "No markdown documents were found under /momen_docs/.",
-        };
-      }
 
       const { selectedFile, markdown } = await selectBestFile(
         files,
@@ -279,9 +267,9 @@ export const read_markdown_documentations = tool(
       const selectedSection =
         heading && heading.trim()
           ? extractByHeading(markdown, heading.trim())
-          : keyword && keyword.trim()
+          : (keyword && keyword.trim()
             ? extractByKeyword(markdown, keyword.trim())
-            : markdown;
+            : markdown);
 
       const normalizedExcerpt = normalizeText(selectedSection || markdown);
       const { excerpt, truncated } = truncateContent(
@@ -320,31 +308,5 @@ export const read_markdown_documentations = tool(
       };
     }
   },
-  {
-    name: "read_markdown_documentations",
-    description:
-      "Read large markdown documentations lazily by heading or keyword with bounded output.",
-    schema: z.object({
-      filePath: z
-        .string()
-        .optional()
-        .describe(
-          "Relative path under /momen_docs, for example '/introduction.md'. Omit to auto-select a file.",
-        ),
-      heading: z
-        .string()
-        .optional()
-        .describe("Optional markdown heading to extract as a focused section."),
-      keyword: z
-        .string()
-        .optional()
-        .describe("Optional keyword to extract nearby text windows."),
-      maxChars: z
-        .number()
-        .optional()
-        .describe(
-          "Maximum returned excerpt length. Defaults to 1800 characters.",
-        ),
-    }),
-  },
+  markdownReaderToolField,
 );

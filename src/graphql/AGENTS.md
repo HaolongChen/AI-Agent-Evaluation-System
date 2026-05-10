@@ -19,11 +19,11 @@ Exposes the evaluation engine via Apollo Server. Orchestrates Golden Set managem
 
 ## Resolver → Module Map
 
-| File                        | DDD Module       | Key Operations                                            |
-| --------------------------- | ---------------- | --------------------------------------------------------- |
-| `golden-set-resolver.ts`   | `copilot-input`  | CRUD for Golden Sets, User Inputs, and Projects           |
-| `session-resolver.ts`       | `evaluation`     | Session queries, execution results, and audit traces      |
-| `rubric-resolver.ts`        | `rubrics`        | Question set generation and human evaluation submission   |
+| File                     | DDD Module      | Key Operations                                          |
+| ------------------------ | --------------- | ------------------------------------------------------- |
+| `golden-set-resolver.ts` | `copilot-input` | CRUD for Golden Sets, User Inputs, and Projects         |
+| `session-resolver.ts`    | `evaluation`    | Session queries, execution results, and audit traces    |
+| `rubric-resolver.ts`     | `rubrics`       | Question set generation and human evaluation submission |
 
 > **Note:** GraphSessionResolver does not exist - execution now in copilot-output module.
 

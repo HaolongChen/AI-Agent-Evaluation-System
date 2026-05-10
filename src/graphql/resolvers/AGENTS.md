@@ -10,11 +10,11 @@ Thin resolver layer that delegates to **DDD module use cases** (NOT legacy servi
 
 ## WHERE TO LOOK
 
-| File                      | Responsibility                               | Module Use Case                         |
-| ------------------------- | -------------------------------------------- | ---------------------------------------- |
-| `golden-set-resolver.ts` | Golden Set CRUD and input management         | `copilot-input` module use cases         |
-| `session-resolver.ts`    | Session queries and shared transformations   | `evaluation` module (pending migration) |
-| `rubric-resolver.ts`      | Rubric management and review status          | `rubrics` module (pending migration)     |
+| File                     | Responsibility                             | Module Use Case                         |
+| ------------------------ | ------------------------------------------ | --------------------------------------- |
+| `golden-set-resolver.ts` | Golden Set CRUD and input management       | `copilot-input` module use cases        |
+| `session-resolver.ts`    | Session queries and shared transformations | `evaluation` module (pending migration) |
+| `rubric-resolver.ts`     | Rubric management and review status        | `rubrics` module (pending migration)    |
 
 > **Note:** AnalyticResolver and GraphSessionResolver do not exist - resolvers migrated to DDD modules.
 

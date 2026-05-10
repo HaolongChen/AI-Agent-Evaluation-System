@@ -2,7 +2,7 @@
   "extends": "@tsconfig/node-ts/tsconfig.json",
   "compilerOptions": {
     "rootDir": "./",
-    "outDir": "./dist",
+    // "outDir": "./dist",
     "module": "nodenext",
     "target": "esnext",
     "resolvePackageJsonImports": false,
@@ -17,6 +17,7 @@
     "importHelpers": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
+    "noEmit": true,
     "lib": ["ESNext"]
   },
   "include": [

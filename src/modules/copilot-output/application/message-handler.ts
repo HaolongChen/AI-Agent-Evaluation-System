@@ -1,21 +1,11 @@
 import type { Data } from "ws";
 import {
   CopilotMessageType,
-  type AIResponseMessage,
   type CopilotMessage,
   type EditableTextMessage,
-  type ErrorMessage,
-  type ExecErrorMessage,
-  type FeedbackMessage,
   type HumanInputMessage,
-  type HumanOperationMessage,
   type InitialStateMessage,
   type StateChangeMessage,
-  type StopMessage,
-  type SystemStatusMessage,
-  type TaskMessage,
-  type TaskRevertSuccessMessage,
-  type TerminateMessage,
   type ToolCall,
   type ToolCallsMessage,
   type ToolResponseMessage,
@@ -30,49 +20,15 @@ import {
 } from "../../../external/zed/TypeSystem.ts";
 import type { ToolResult } from "../../shared/domain/interface/graph-states.ts";
 
-type MessageHandlerTypeMap = {
-  [K in CopilotMessageType]: (
-    message: Extract<CopilotMessage, { type: K }>,
-  ) => void;
-};
+export interface MessageHandlerResponse {
+  messagesToSend: CopilotMessage[];
+  shouldTerminate?: boolean;
+  result?: string;
+}
 
 export class MessageHandler extends CopilotJobEntity {
-  private readonly messageTypeToHandlerMap: MessageHandlerTypeMap = {
-    [CopilotMessageType.AI_RESPONSE]: this.handleAIResponseMessage.bind(this),
-    [CopilotMessageType.EDITABLE_TEXT]:
-      this.handleEditableTextMessage.bind(this),
-    [CopilotMessageType.ERROR]: this.handleErrorMessage.bind(this),
-    [CopilotMessageType.EXEC_ERROR]: this.handleExecErrorMessage.bind(this),
-    [CopilotMessageType.FEEDBACK]: this.handleFeedbackMessage.bind(this),
-    [CopilotMessageType.HUMAN_INPUT]: this.handleHumanInputMessage.bind(this),
-    [CopilotMessageType.HUMAN_OPERATION]:
-      this.handleHumanOperationMessage.bind(this),
-    [CopilotMessageType.INITIAL_STATE]:
-      this.handleInitialStateMessage.bind(this),
-    [CopilotMessageType.STATE_CHANGE]: this.handleStateChangeMessage.bind(this),
-    [CopilotMessageType.STOP]: this.handleStopMessage.bind(this),
-    [CopilotMessageType.SYSTEM_STATUS]:
-      this.handleSystemStatusMessage.bind(this),
-    [CopilotMessageType.TASK]: this.handleTaskMessage.bind(this),
-    [CopilotMessageType.TASK_REVERT_SUCCESS]:
-      this.handleTaskRevertSuccessMessage.bind(this),
-    [CopilotMessageType.TERMINATE]: this.handleTerminateMessage.bind(this),
-    [CopilotMessageType.TOOL_CALLS]: this.handleToolCallsMessage.bind(this),
-    [CopilotMessageType.TOOL_RESPONSE]:
-      this.handleToolResponseMessage.bind(this),
-  };
-
-  constructor(
-    private readonly send: (data: CopilotMessage) => void,
-    copilotJobEntity: CopilotJobEntity,
-    private resolve: (result: string | PromiseLike<string>) => void,
-  ) {
+  constructor(copilotJobEntity: CopilotJobEntity) {
     super(copilotJobEntity.data, copilotJobEntity.id);
-  }
-
-  private terminate() {
-    this.send({ type: CopilotMessageType.TERMINATE });
-    this.setTerminate();
   }
 
   private messageExtractor(message: Data): CopilotMessage {
@@ -80,49 +36,67 @@ export class MessageHandler extends CopilotJobEntity {
     return data[0];
   }
 
-  invoke(message: Data) {
+  invoke(message: Data): MessageHandlerResponse | undefined {
+    if (this.isTerminated) {
+      return;
+    }
     const data = this.messageExtractor(message);
-    const handler = this.messageTypeToHandlerMap[data.type];
-    if (handler && !this.isTerminated) {
-      // Type assertion necessary as the mapped type isn't fully narrowed in the assignment constraint
-      (handler as (message: typeof data) => void)(data);
-    } else {
-      console.warn(`No handler found for message: ${data}`);
+
+    console.log(
+      "🚀 ------------------------------------------------------------------🚀",
+    );
+    console.log(
+      "🚀 ~ message-handler.ts:44 ~ MessageHandler ~ invoke ~ data:",
+      data,
+    );
+    console.log(
+      "🚀 ------------------------------------------------------------------🚀",
+    );
+
+    switch (data.type) {
+      case CopilotMessageType.EDITABLE_TEXT: {
+        return this.handleEditableTextMessage(data);
+        break;
+      }
+      case CopilotMessageType.INITIAL_STATE: {
+        return this.handleInitialStateMessage(data);
+        break;
+      }
+      case CopilotMessageType.STATE_CHANGE: {
+        return this.handleStateChangeMessage(data);
+        break;
+      }
+      case CopilotMessageType.TOOL_CALLS: {
+        return this.handleToolCallsMessage(data);
+        break;
+      }
+      case CopilotMessageType.TOOL_RESPONSE: {
+        return this.handleToolResponseMessage(data);
+        break;
+      }
+      default: {
+        console.warn("Unhandled message type:", data.type);
+        console.warn("Full message:", data);
+        break;
+      }
     }
   }
 
-  handleAIResponseMessage(message: AIResponseMessage) {
-    console.log(message);
-  }
-
-  handleEditableTextMessage(message: EditableTextMessage) {
+  handleEditableTextMessage(
+    message: EditableTextMessage,
+  ): MessageHandlerResponse {
     this.editableText = message.content;
-    this.resolve(message.content);
-    this.terminate();
+    this.setTerminate();
+    return {
+      messagesToSend: [],
+      result: message.content,
+      shouldTerminate: true,
+    };
   }
 
-  handleErrorMessage(message: ErrorMessage) {
-    console.log(message);
-    throw new Error(message.content);
-  }
-
-  handleExecErrorMessage(message: ExecErrorMessage) {
-    console.log(message);
-  }
-
-  handleFeedbackMessage(message: FeedbackMessage) {
-    console.log(message);
-  }
-
-  handleHumanInputMessage(message: HumanInputMessage) {
-    console.log(message);
-  }
-
-  handleHumanOperationMessage(message: HumanOperationMessage) {
-    console.log(message);
-  }
-
-  handleInitialStateMessage(message: InitialStateMessage) {
+  handleInitialStateMessage(
+    message: InitialStateMessage,
+  ): MessageHandlerResponse {
     if (message.terminated) {
       throw new Error(
         "Received initial state message for a terminated session. This likely indicates an issue with the backend job execution.",
@@ -132,36 +106,19 @@ export class MessageHandler extends CopilotJobEntity {
       type: CopilotMessageType.HUMAN_INPUT,
       content: this.data.query,
     };
-    this.send(response);
+    return { messagesToSend: [response] };
   }
 
-  handleStateChangeMessage(message: StateChangeMessage) {
+  handleStateChangeMessage(
+    message: StateChangeMessage,
+  ): MessageHandlerResponse {
     if (message.currentJobIsRunning === false) {
       throw new Error("Current job is not running.");
     }
+    return { messagesToSend: [], shouldTerminate: false };
   }
 
-  handleStopMessage(message: StopMessage) {
-    console.log(message);
-  }
-
-  handleSystemStatusMessage(message: SystemStatusMessage) {
-    console.log(message);
-  }
-
-  handleTaskMessage(message: TaskMessage) {
-    this.addTask(message);
-  }
-
-  handleTaskRevertSuccessMessage(message: TaskRevertSuccessMessage) {
-    console.log(message);
-  }
-
-  handleTerminateMessage(message: TerminateMessage) {
-    console.log(message);
-  }
-
-  handleToolCallsMessage(message: ToolCallsMessage) {
+  handleToolCallsMessage(message: ToolCallsMessage): MessageHandlerResponse {
     const { result, successful, errorMessage } = this.runToolCalls(
       message.toolCalls,
     );
@@ -171,14 +128,23 @@ export class MessageHandler extends CopilotJobEntity {
         result: result!,
         toolCallsId: message.toolCallsId,
       };
-      this.send(responseMessage);
+      return { messagesToSend: [responseMessage], shouldTerminate: false };
     } else {
       console.error("Error executing tool calls:", errorMessage);
+      this.setTerminate();
+      return {
+        messagesToSend: [],
+        shouldTerminate: true,
+        result: `Error executing tool calls: ${errorMessage}`,
+      };
     }
   }
 
-  handleToolResponseMessage(message: ToolResponseMessage) {
+  handleToolResponseMessage(
+    message: ToolResponseMessage,
+  ): MessageHandlerResponse {
     console.log(message);
+    return { messagesToSend: [], shouldTerminate: false };
   }
 
   private runToolCalls(toolCalls: ToolCall[]) {

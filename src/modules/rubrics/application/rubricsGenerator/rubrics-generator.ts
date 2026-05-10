@@ -1,18 +1,21 @@
 import { createDeepAgent, StateBackend } from "@HaolongChen/deepagents";
 import * as z from "zod";
-import { HumanMessage } from "langchain";
+import { HumanMessage, toolStrategy } from "langchain";
 import { MemorySaver } from "@langchain/langgraph";
-import { responseSchema } from "../../domain/schema/deep-agents.schema.ts";
+import {
+  contextSchema,
+  responseSchema,
+} from "../../domain/schema/deep-agents.schema.ts";
 import { documentationsLookupAgent } from "./subagents/documentations-lookup-agent.ts";
 import { schemaLookupAgent } from "./subagents/schema-lookup-agent.ts";
 import { setupEnvironment } from "./service/environment-setup.ts";
 import { gemini } from "../../../shared/infrastructure/llm-providers.ts";
-import { rubricsGeneratorAgentConfig } from "../../domain/config/agent-environment.ts";
 import { save_agent_feedbacks } from "./tools/feedback.ts";
 import {
   feedbackDistributor,
   type Feedbacks,
 } from "../../domain/service/feedback.service.js";
+import { rubricsGeneratorPromptText } from "../../domain/service/prompts.service.ts";
 
 const checkpointer = new MemorySaver();
 
@@ -29,10 +32,6 @@ export const generateRubrics = async (
     feedbackDistributor(feedbacks),
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { subagents: _, ...agentConfig } =
-    rubricsGeneratorAgentConfig.agents[0];
-
   const rubrics_generator_agent = createDeepAgent({
     model: gemini,
     backend: () => new StateBackend(),
@@ -48,7 +47,10 @@ export const generateRubrics = async (
       },
     ],
     checkpointer,
-    ...agentConfig,
+    name: "rubrics-generator-agent",
+    systemPrompt: rubricsGeneratorPromptText,
+    responseFormat: toolStrategy(responseSchema),
+    contextSchema: contextSchema,
   });
 
   const response = await rubrics_generator_agent.invoke(

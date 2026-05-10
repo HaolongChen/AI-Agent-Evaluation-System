@@ -9,7 +9,10 @@ export type FieldDescriptor =
 export type JsErrorMessage = ztype.com.functorz.ztype.typesystem.JsErrorMessage;
 export type OpaqueSchemaGraph =
   ztype.com.functorz.ztype.typesystem.OpaqueSchemaGraph;
+export type OpaqueZSchema = ztype.com.functorz.ztype.typesystem.OpaqueZSchema;
 export type OpaqueType = ztype.com.functorz.ztype.typesystem.types.OpaqueType;
+export type ObjectTypeBuilder =
+  ztype.com.functorz.ztype.typesystem.types.ObjectTypeBuilder;
 export type UpdateSchemaGraphResults =
   ztype.com.functorz.ztype.typesystem.UpdateSchemaGraphResults;
 export type TypeDescriptor =
@@ -22,12 +25,18 @@ export type OpaqueTypeSelectorContext =
   ztype.com.functorz.ztype.typesystem.OpaqueTypeSelectorContext;
 export type CopyPasteMenuItemStatus =
   ztype.com.functorz.ztype.application.data.CopyPasteMenuItemStatus;
-export type DataBindingSelectorOptionJS =
+export type DataBindingSelectorOptionJs =
   ztype.com.functorz.ztype.application.editor.databinding.DataBindingSelectorOptionJs;
 export type TypeSelectorOptionJs =
   ztype.com.functorz.ztype.application.editor.type.TypeSelectorOptionJs;
+export type TypeSelectorTypeOptionJs =
+  ztype.com.functorz.ztype.application.editor.type.TypeSelectorTypeOptionJs;
+export type FormulaOperatorOption =
+  ztype.com.functorz.ztype.application.copilot.apis.FormulaOperatorOption;
 export type DataBindingSelectorOptionResult =
   ztype.com.functorz.ztype.application.editor.databinding.DataBindingSelectorOptionResult;
+export type DataBindingPreGeneratedOptionWrapperJs =
+  ztype.com.functorz.ztype.application.editor.databinding.PreGeneratedOptionWrapperJs;
 export type TypeSelectorOptionResult =
   ztype.com.functorz.ztype.application.editor.type.TypeSelectorOptionResult;
 export type CodeComponentInputMutationResult =
@@ -46,6 +55,13 @@ export type ClipboardActionFlowFormatJs =
   ztype.com.functorz.ztype.application.data.ClipboardActionFlowFormatJs;
 export type ClipboardTpaConfigFormatJs =
   ztype.com.functorz.ztype.application.data.ClipboardTpaConfigFormatJs;
+export type OpaqueOverviewGraphNode =
+  ztype.com.functorz.ztype.typesystem.OpaqueOverviewGraphNode;
+export type PrimitiveTypeLiteralAvailability =
+  ztype.com.functorz.ztype.application.editor.databinding.PrimitiveTypeLiteralAvailability;
+
+export const PathResolution =
+  ztype.com.functorz.ztype.typesystem.schema.diff.PathResolution;
 export const { TypeNamespace } = ztype.com.functorz.ztype.typesystem.schema;
 export const { TypeKind } = ztype.com.functorz.ztype.typesystem.schema;
 
@@ -71,6 +87,7 @@ export const {
   ActionAnalyzer,
   SchemaContentWithPathWrapperJs,
   RequestAnalyzer,
+  TypeAnalyzer,
 } = ztypePackage.application.analyzer;
 
 export const {
@@ -86,9 +103,15 @@ export const {
   SchemaData,
 } = ztype.com.functorz.ztype.typesystem.schema;
 export const { Locale, IdUtilsJs } = ztype.com.functorz.ztype.typesystem.utils;
-export const { DataModelEditingStateInfoJs } =
-  ztype.com.functorz.ztype.application.editor.databinding;
 export const {
+  DataBindingSelectorBuilderJs,
+  DataBindingBuilderJs,
+  DataBindingSelectorCategoryOptionJs,
+  DataBindingSelectorDataBindingOptionJs,
+  DataModelEditingStateInfoJs,
+} = ztype.com.functorz.ztype.application.editor.databinding;
+export const {
+  TypeSelectorBuilderJs,
   TypeSelectorTypeOption,
   TypeSelectorTypeOptionJs,
   TypeSelectorObjectOptionJs,
@@ -115,7 +138,7 @@ export const {
 
 export const { CopilotJs } = ztype.com.functorz.ztype.application.copilot;
 
-export const { KtList, KtMap, KtSet } = ztype.kotlin.collections;
+export const { KtList, KtMap } = ztype.kotlin.collections;
 
 export const { ClonedComponentData } =
   ztype.com.functorz.ztype.application.data;

@@ -1,10 +1,16 @@
+import dotenv from "dotenv";
+import dotenvExpand from "dotenv-expand";
+
+dotenvExpand.expand(dotenv.config());
 import type { SubAgent } from "@HaolongChen/deepagents";
 import { read_markdown_documentations } from "../../application/rubricsGenerator/tools/markdown-reader.ts";
 import { read_json_schema } from "../../application/rubricsGenerator/tools/schema-reader.ts";
 import fs from "node:fs/promises";
-import { rubricsGeneratorEnvironment } from "../config/agent-environment.ts";
+import { pathToFileURL } from "node:url";
 
-const promptsBasePath = new URL(rubricsGeneratorEnvironment.promptsPath);
+const promptsBasePath = pathToFileURL(
+  process.env.RUBRICS_GENERATOR_PROMPTS_PATH,
+);
 const feedbackPrompt = await fs.readFile(
   new URL("feedbackPrompt.md", promptsBasePath),
   "utf8",

@@ -1,10 +1,12 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import dotenvExpand from "dotenv-expand";
+
+dotenvExpand.expand(dotenv.config());
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
 import express from "express";
 import cors from "cors";
 import { typeDefs, resolvers } from "./graphql/schema.ts";
-
 import { login } from "./external/login.ts";
 import { authState } from "./external/graphql-client.ts";
 

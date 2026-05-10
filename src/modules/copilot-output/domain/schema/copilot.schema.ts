@@ -1,10 +1,8 @@
 import z from "zod";
 
 export const copilotJobSchema = z.object({
-  projectExId: z.uuidv4(),
+  projectExId: z.string(),
   wsUrl: z.url(),
   query: z.string(),
-  schemaGraph: z.object({
-    z614s35s6cfl: z.string(),
-  }),
+  schemaGraph: z.any(),
 });

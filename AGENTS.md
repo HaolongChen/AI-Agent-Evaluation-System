@@ -40,14 +40,14 @@ AI-Agent-Evaluation-System/
 
 ## WHERE TO LOOK
 
-| Task                 | Location                                 | Notes                                    |
-| -------------------- | ---------------------------------------- | ---------------------------------------- |
-| Add DDD module/layer | `src/modules/<module>/`                  | Follow domain/application/infrastructure |
+| Task                 | Location                                 | Notes                                      |
+| -------------------- | ---------------------------------------- | ------------------------------------------ |
+| Add DDD module/layer | `src/modules/<module>/`                  | Follow domain/application/infrastructure   |
 | Add GraphQL resolver | `src/graphql/resolvers/`                 | Thin layer → delegates to module use cases |
-| Add business logic   | `src/modules/<module>/application/`      | Use cases in modules                     |
-| Change DB schema     | `prisma/schema.prisma`                   | Run `pnpm db:generate` after             |
-| Add utility          | `src/external/` or `src/modules/shared/` | Utilities in external                   |
-| Add CLI job          | `src/jobs/`                              | Job runners consuming modules            |
+| Add business logic   | `src/modules/<module>/application/`      | Use cases in modules                       |
+| Change DB schema     | `prisma/schema.prisma`                   | Run `pnpm db:generate` after               |
+| Add utility          | `src/external/` or `src/modules/shared/` | Utilities in external                      |
+| Add CLI job          | `src/jobs/`                              | Job runners consuming modules              |
 
 ## CONVENTIONS
 

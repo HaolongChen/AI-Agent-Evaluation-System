@@ -1,21 +1,22 @@
 import { WebSocket } from "ws";
-import { type CopilotMessage } from "../../../external/types.ts";
+import {
+  CopilotMessageType,
+  type CopilotMessage,
+} from "../../../external/types.ts";
 import { MessageHandler } from "./message-handler.js";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 
 export class EvaluationJobRunner {
   private messageHandler: MessageHandler;
   private socket: WebSocket;
+  private promise: Promise<string>;
+  private resolve: (result: string | PromiseLike<string>) => void;
 
-  constructor(
-    copilotJobEntity: CopilotJobEntity,
-    private resolve: (result: string | PromiseLike<string>) => void,
-  ) {
-    this.messageHandler = new MessageHandler(
-      this.send,
-      copilotJobEntity,
-      this.resolve,
-    );
+  constructor(copilotJobEntity: CopilotJobEntity) {
+    const { promise, resolve } = Promise.withResolvers<string>();
+    this.promise = promise;
+    this.resolve = resolve;
+    this.messageHandler = new MessageHandler(copilotJobEntity);
     this.socket = new WebSocket(copilotJobEntity.data.wsUrl);
   }
 
@@ -25,7 +26,16 @@ export class EvaluationJobRunner {
     });
 
     this.socket.addEventListener("message", (event) => {
-      this.messageHandler.invoke(event.data);
+      const response = this.messageHandler.invoke(event.data);
+      if (response) {
+        for (const message of response.messagesToSend) this.send(message);
+        if (response.shouldTerminate) {
+          this.send({ type: CopilotMessageType.TERMINATE });
+        }
+        if (response.result) {
+          this.resolve(response.result);
+        }
+      }
     });
 
     this.socket.addEventListener("close", () => {
@@ -42,10 +52,14 @@ export class EvaluationJobRunner {
     });
   }
 
-  private send(data: CopilotMessage): void {
+  private send = (data: CopilotMessage): void => {
     if (this.messageHandler.isTerminated) {
-      throw new Error("Cannot send message after job termination");
+      return;
     }
     this.socket.send(JSON.stringify(data));
+  };
+
+  public async waitForResult(): Promise<string> {
+    return await this.promise;
   }
 }

@@ -1,9 +1,9 @@
 import { gql } from "graphql-request";
 import { WebSocket } from "ws";
-import { v4 as uuidv4 } from "uuid";
 
 import { authState, gqlSubscribe } from "../graphql-client.ts";
 import type { SubscriptionHandlers } from "../graphql-client.ts";
+import { randomUUID } from "node:crypto";
 
 // ---------------------------------------------------------------------------
 // GQL Documents
@@ -188,7 +188,7 @@ export function openApolloSubscription(
     return () => undefined;
   }
 
-  const sessionId = uuidv4();
+  const sessionId = randomUUID();
   const ws = new WebSocket(process.env.SUBSCRIPTION_GRAPHQL_URL, "graphql-ws");
 
   let ackReceived = false;

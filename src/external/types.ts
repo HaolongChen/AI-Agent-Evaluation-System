@@ -1,21 +1,7 @@
-import type { JobState, ToolResult } from "./graph-states.ts";
-
-export type copilotType =
-  | "dataModelBuilder"
-  | "uiBuilder"
-  | "actionFlowBuilder"
-  | "logAnalyzer"
-  | "agentBuilder";
-
-export type interruptType = "rubric_review" | "human_evaluation";
-export type expectedAnswerType = "yes" | "no";
-
-export type rubricContentType = {
-  content: string[];
-  rubricType: string[];
-  category: string[];
-  expectedAnswer: expectedAnswerType[];
-};
+import type {
+  JobState,
+  ToolResult,
+} from "../modules/shared/domain/interface/graph-states.ts";
 
 // --- COPY FROM COPILOT TYPES DEFINITION ---
 

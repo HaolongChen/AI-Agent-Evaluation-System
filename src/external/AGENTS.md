@@ -6,14 +6,14 @@ Shared utilities and Functorz backend integration. **NOT src/utils/** - all util
 
 ## WHERE TO LOOK
 
-| File                   | Purpose                                                                                            | Used By                  |
-| ---------------------- | -------------------------------------------------------------------------------------------------- | ------------------------ |
-| `graphql-client.ts`    | Primary GQL client — `authState`, `localClient`, `backendClient`, `gqlRequest()`, `gqlSubscribe()` | Job runners, modules, zed |
-| `login.ts`             | `login(phone, password)` — authenticates and returns `accessToken`                                 | Job runners, zed/        |
-| `types.ts`             | Domain types: `CopilotMessage` union, `copilotType`, `SessionState`, enums                         | Services, jobs, modules |
-| `schemaIdGeneration.ts`| Schema ID generation utilities                                                                     | Modules                  |
-| `ali-oss.ts`           | Ali OSS integration (if needed)                                                                   | Rare                     |
-| `zed/`                 | Zed CRDT schema, type system, and Functorz backend helpers                                         | Job runners, modules     |
+| File                    | Purpose                                                                                            | Used By                   |
+| ----------------------- | -------------------------------------------------------------------------------------------------- | ------------------------- |
+| `graphql-client.ts`     | Primary GQL client — `authState`, `localClient`, `backendClient`, `gqlRequest()`, `gqlSubscribe()` | Job runners, modules, zed |
+| `login.ts`              | `login(phone, password)` — authenticates and returns `accessToken`                                 | Job runners, zed/         |
+| `types.ts`              | Domain types: `CopilotMessage` union, `copilotType`, `SessionState`, enums                         | Services, jobs, modules   |
+| `schemaIdGeneration.ts` | Schema ID generation utilities                                                                     | Modules                   |
+| `ali-oss.ts`            | Ali OSS integration (if needed)                                                                    | Rare                      |
+| `zed/`                  | Zed CRDT schema, type system, and Functorz backend helpers                                         | Job runners, modules      |
 
 > **Note:** `src/utils/` does not exist. All shared utilities are in `src/external/`.
 
@@ -69,6 +69,7 @@ unsubscribe();
 ## TYPES
 
 Domain types in `types.ts`:
+
 - `CopilotMessage` union type
 - `copilotType` enum values
 - `SessionState` enum

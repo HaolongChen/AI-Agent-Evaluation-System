@@ -267,7 +267,7 @@ export class TypeSystemStore {
 
     // 6. Parse to ZSchema and create SchemaGraph
     const zSchema = ZTypeSystem.parseZSchemaFromJsObject(fullSchema);
-    const schemaGraph = this.withEnabledFeatures<OpaqueSchemaGraph>(() => {
+    const schemaGraph = this.withEnabledFeatures(() => {
       const extraContext = genExtraContext(
         this.supportedCustomModelDescriptor,
         this.afCustomCodeTemplates,
@@ -290,7 +290,7 @@ export const getTypeSystemStoreForCopilot = async (
   schemaId: string,
 ): Promise<TypeSystemStore> => {
   const typeSystemStore = new TypeSystemStore();
-  await Promise.allSettled([
+  await Promise.all([
     typeSystemStore.getAFCustomCodeTemplates(),
     typeSystemStore.getSupportedCustomModelDescriptor(),
     typeSystemStore.rehydrate(schemaId),

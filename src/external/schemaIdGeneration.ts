@@ -2,6 +2,10 @@ import { projectService } from "../modules/copilot-input/application/project-ser
 import { TypeSystemStore } from "./zed/TypeSystemStore.ts";
 import { authState } from "./graphql-client.ts";
 import { login } from "./login.ts";
+import dotenv from "dotenv";
+import dotenvExpand from "dotenv-expand";
+
+dotenvExpand.expand(dotenv.config());
 
 try {
   if (!process.env.FUNCTORZ_PHONE_NUMBER || !process.env.FUNCTORZ_PASSWORD) {

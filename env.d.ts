@@ -28,6 +28,7 @@ declare global {
       LLM_TEMPERATURE: string;
       LLM_MAX_OUTPUT_TOKENS: string;
       clientType: string;
+      DANGEROUS_TOKEN: string;
       AZURE_OPENAI_ENDPOINT: string;
       AZURE_OPENAI_DEPLOYMENT: string;
       AZURE_OPENAI_API_VERSION: string;

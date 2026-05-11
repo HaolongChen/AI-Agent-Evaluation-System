@@ -29,7 +29,8 @@ type Mutation {
 
   submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
 
-  createProject(projectName: String!): String!
+  createProject(number: Int!): String!
+  runCrdtTest(number: Int!): String
 
   deleteProject(projectExId: String!): Boolean!
 }

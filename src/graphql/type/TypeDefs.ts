@@ -24,7 +24,7 @@ export const typeDefs = gql`
 
     createUserInput(input: UserInputInput!): UserInput!
 
-    linkGoldenSetToUserInput(context: CopilotInput!): GoldenSetWithInputs!
+    linkGoldenSetToUserInput(context: CopilotInput!): Boolean!
 
     generateRubric(context: CopilotInput!): Rubric!
 
@@ -32,7 +32,8 @@ export const typeDefs = gql`
 
     submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
 
-    createProject(projectName: String!): String!
+    createProject(number: Int!): String!
+    runCrdtTest(number: Int!): String
 
     deleteProject(projectExId: String!): Boolean!
   }

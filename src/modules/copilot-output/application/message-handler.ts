@@ -42,17 +42,6 @@ export class MessageHandler extends CopilotJobEntity {
     }
     const data = this.messageExtractor(message);
 
-    console.log(
-      "🚀 ------------------------------------------------------------------🚀",
-    );
-    console.log(
-      "🚀 ~ message-handler.ts:44 ~ MessageHandler ~ invoke ~ data:",
-      data,
-    );
-    console.log(
-      "🚀 ------------------------------------------------------------------🚀",
-    );
-
     switch (data.type) {
       case CopilotMessageType.EDITABLE_TEXT: {
         return this.handleEditableTextMessage(data);

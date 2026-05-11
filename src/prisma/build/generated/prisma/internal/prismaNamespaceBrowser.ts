@@ -86,6 +86,7 @@ export type TransactionIsolationLevel =
 export const GoldenSetScalarFieldEnum = {
   id: "id",
   schemaId: "schemaId",
+  projectExId: "projectExId",
   copilotType: "copilotType",
   modelName: "modelName",
   updatedAt: "updatedAt",

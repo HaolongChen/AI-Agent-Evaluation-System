@@ -34,6 +34,7 @@ enum EvaluatorType {
 model goldenSet {
   id          String                @id @default(uuid())
   schemaId    String                @map("schema_id")
+  projectExId   String?                @map("project_ex_id") // corresponds to the projectExId in LangGraph
   copilotType CopilotType           @default(dataModelBuilder) @map("copilot_type") // e.g., 'dataModelBuilder', 'uiBuilder', 'actionFlowBuilder', 'logAnalyzer', 'agentBuilder'
   modelName   String                @default("undefined") @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
   userInputs  goldenSet_userInput[]

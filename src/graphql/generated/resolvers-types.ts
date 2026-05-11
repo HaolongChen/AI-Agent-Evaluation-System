@@ -202,12 +202,13 @@ export type Mutation = {
   executeCopilot: CopilotOutput;
   generateRubric: Rubric;
   initializeGoldenSet: GoldenSet;
-  linkGoldenSetToUserInput: GoldenSetWithInputs;
+  linkGoldenSetToUserInput: Scalars["Boolean"]["output"];
+  runCrdtTest?: Maybe<Scalars["String"]["output"]>;
   submitHumanEvaluation: EvaluationSession;
 };
 
 export type MutationCreateProjectArgs = {
-  projectName: Scalars["String"]["input"];
+  number: Scalars["Int"]["input"];
 };
 
 export type MutationCreateUserInputArgs = {
@@ -232,6 +233,10 @@ export type MutationInitializeGoldenSetArgs = {
 
 export type MutationLinkGoldenSetToUserInputArgs = {
   context: CopilotInput;
+};
+
+export type MutationRunCrdtTestArgs = {
+  number: Scalars["Int"]["input"];
 };
 
 export type MutationSubmitHumanEvaluationArgs = {

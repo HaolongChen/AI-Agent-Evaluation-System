@@ -225,28 +225,3 @@ export const goldenSetResolver = {
     },
   },
 };
-
-// fetch("https://zionbackend.functorz.work/api/graphql", {
-// 	headers: {
-// 		accept: "*/*",
-// 		"accept-language": "en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh;q=0.6",
-// 		authorization:
-// 			"Bearer eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ6aW9uYmFja2VuZCIsInJvbGVzIjpbInVzZXIiXSwicmYiOiIwcWsyUTREIiwic3ViIjoiRXptR1ExcTFRTlAiLCJpYXQiOjE3Nzg0ODY0MTQsImV4cCI6MTc3ODU3MjgxNH0.6GOLWEeRNjspmFZ7CjqPuPMFHiUAYk4y1OoeggwveVQ",
-// 		"content-type": "application/json",
-// 		priority: "u=1, i",
-// 		"sec-ch-ua":
-// 			'"Chromium";v="148", "Google Chrome";v="148", "Not/A)Brand";v="99"',
-// 		"sec-ch-ua-mobile": "?0",
-// 		"sec-ch-ua-platform": '"macOS"',
-// 		"sec-fetch-dest": "empty",
-// 		"sec-fetch-mode": "cors",
-// 		"sec-fetch-site": "same-site",
-// 		"user-locale": "ZH",
-// 		"x-react-app-version": "app_version_2019/12/01",
-// 		"x-session-id": "2b481af5-b506-4976-9b65-777b8c57e0fa",
-// 		"x-zed-version": "2.0.7",
-// 		Referer: "https://zion.functorz.work/",
-// 	},
-// 	body: '{"operationName":"LogToServer","variables":{"logs":[{"eventId":"2002e679-b40d-4ac6-a058-98a7ed70057b","timestamp":1778486547998,"category":"ZED","data":{"sessionId":"2b481af5-b506-4976-9b65-777b8c57e0fa","loggerSessionId":"8209027f-0aa8-4513-a3bb-1aafcdef3bfd","event":"left-side-bar-icon-on-select","user":{"exId":"EzmGQ1q1QNP","username":"111"},"selectedIcon":"pages","userAgent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36","appVersion":"app_version_2019/12/01","isMobile":false},"env":{"NODE_ENV":"production","ZION_ENV":"staging","environment":{"httpServerAddress":"https://zionbackend.functorz.work","wsServerAddress":"wss://zionbackend.functorz.work","graphqlServerAddress":"https://zionbackend.functorz.work/api/graphql","webSocketServerAddress":"wss://zionbackend.functorz.work/api/graphql-subscription","editorAddress":"https://zion.functorz.work","mirrorAddress":"https://mirror.functorz.work","rrWebAddress":"https://rrweb-recording.functorz.com/record/events","httpCopilotAddress":"https://copilot.functorz.work","wsCopilotAddress":"wss://copilot.functorz.work","authDomain":"https://auth.functorz.work/login"}}}]},"query":"mutation LogToServer($logs: [ClientLogEntryInput]!) {\\n  log(logs: $logs)\\n}\\n"}',
-// 	method: "POST",
-// });

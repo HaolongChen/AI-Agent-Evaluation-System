@@ -12,7 +12,10 @@ import { projectService } from "../../modules/copilot-input/application/project-
 import {
   CopilotType,
   type GoldenSet,
+  type Mutation,
   type MutationCreateUserInputArgs as MutationCreateUserInputArguments,
+  type MutationDeleteProjectByIdsArgs as MutationDeleteProjectByIdsArguments,
+  type MutationFixAliPayDataBindingArgs as MutationFixAliPayDataBindingArguments,
   type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
   type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
   type QueryGetGoldenSetByIdArgs as QueryGetGoldenSetByIdArguments,
@@ -21,6 +24,14 @@ import {
 } from "../generated/resolvers-types.ts";
 import { GraphQLError } from "graphql";
 import { prisma } from "../../config/prisma.ts";
+import {
+  dangerousBackendClient,
+  gqlRequest,
+} from "../../external/graphql-client.ts";
+import {
+  GQL_DELETE_PROJECT_BY_IDS,
+  GQL_FIX_ALIPAY_DATA_BINDING,
+} from "../../external/zed/createProject.ts";
 
 const copilotTypeMapper = {
   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -46,6 +57,7 @@ export const goldenSetResolver = {
       return {
         ...goldenSet,
         copilotType: copilotTypeMapper[goldenSet.copilotType],
+        __typename: "GoldenSet",
       };
     },
     getGoldenSets: async (
@@ -61,6 +73,7 @@ export const goldenSetResolver = {
       return goldenSets.map((goldenSet) => ({
         ...goldenSet,
         copilotType: copilotTypeMapper[goldenSet.copilotType],
+        __typename: "GoldenSet",
       }));
     },
   },
@@ -81,6 +94,7 @@ export const goldenSetResolver = {
       return {
         ...goldenSet,
         copilotType: copilotTypeMapper[goldenSet.copilotType],
+        __typename: "GoldenSet",
       };
     },
     createUserInput: async (
@@ -94,7 +108,11 @@ export const goldenSetResolver = {
         arguments_.input.content,
         arguments_.input.createdBy,
       );
-      return { ...userInput, createdAt: userInput.createdAt!.toISOString() };
+      return {
+        ...userInput,
+        createdAt: userInput.createdAt!.toISOString(),
+        __typename: "UserInput",
+      };
     },
     linkGoldenSetToUserInput: async (
       _: unknown,
@@ -140,21 +158,26 @@ export const goldenSetResolver = {
       return JSON.stringify(results);
     },
     deleteProject: async (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       _: unknown,
-      arguments_: { projectExId: string },
     ): Promise<boolean> => {
-      const projects = await prisma.goldenSet.findMany({
-        where: { projectExId: arguments_.projectExId },
+      const zionDatabase = new Client({
+        connectionString: process.env.DATABASE_URL_PRODUCTION,
       });
-      await Promise.all(
-        projects.map(async (project) => {
-          await projectService.deleteProject(project.projectExId!);
-        }),
-      );
-      await prisma.goldenSet.deleteMany({
-        where: { projectExId: arguments_.projectExId },
-      });
-      return true;
+      await zionDatabase.connect();
+      const fetchProjectId = {
+        name: "delete-projects",
+        text: `SELECT id FROM project where project_name LIKE 'temp-project-1a91a63a-3bde-4cea%'`,
+      };
+      const result = await zionDatabase.query(fetchProjectId);
+      await zionDatabase.end();
+      const ids = result.rows.map(({ id }) => id);
+      const response = await gqlRequest<
+        Mutation["deleteProjectByIds"],
+        MutationDeleteProjectByIdsArguments
+      >(dangerousBackendClient, GQL_DELETE_PROJECT_BY_IDS, { ids });
+
+      return response;
     },
     runCrdtTest: async (
       _: unknown,
@@ -165,59 +188,25 @@ export const goldenSetResolver = {
           connectionString: process.env.DATABASE_URL_PRODUCTION,
         });
         await zionDatabase.connect();
-        const query = `
-        mutation FixAliPayDataBinding($projectId: Long!) {
-          fixAliPayDataBinding(projectId: $projectId)
-        }
-      `;
-        const bodies: string[] = [];
         const fetchProjectId = {
           name: "fetch-project-ids",
-          text: `SELECT project_id FROM project_schema GROUP BY project_id LIMIT ${arguments_.number}`,
+          text: `SELECT id FROM project ORDER BY id DESC LIMIT ${arguments_.number}`,
         };
         const result = await zionDatabase.query(fetchProjectId);
-        for (const { project_id } of result.rows) {
-          const variables = { projectId: project_id };
-          bodies.push(JSON.stringify({ query, variables }));
-        }
-        console.log("Generated GraphQL request bodies:", bodies);
-        const results = await Promise.all(
-          bodies.map(async (body) => {
-            const response = await fetch(process.env.BACKEND_GRAPHQL_URL, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.DANGEROUS_TOKEN}`,
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": '"macOS"',
-                "sec-fetch-dest": "empty",
-                "sec-fetch-mode": "cors",
-                "sec-fetch-site": "same-site",
-                "user-locale": "ZH",
-                "x-react-app-version": "app_version_2019/12/01",
-                "x-session-id": "2b481af5-b506-4976-9b65-777b8c57e0fa",
-                "x-zed-version": "2.0.7",
-                Referer: "https://zion.functorz.work/",
-              },
-              body: body,
+        const results = await Promise.allSettled(
+          result.rows.map(async ({ id }) => {
+            const response = await gqlRequest<
+              Mutation["fixAliPayDataBinding"],
+              MutationFixAliPayDataBindingArguments
+            >(dangerousBackendClient, GQL_FIX_ALIPAY_DATA_BINDING, {
+              projectId: id,
             });
-            const responseData = await response.json();
-            if (!response.ok) {
-              console.log(
-                "GraphQL request failed with response:",
-                responseData,
-              );
-              console.log(body);
-              throw new Error(`Network response was not ok: ${response}`);
-            }
-
-            return JSON.stringify(responseData);
+            return `Project ID: ${id}, Response: ${JSON.stringify(response)}`;
           }),
         );
 
         await zionDatabase.end();
         return results.join("\n");
-        // const values = [ schemaIds.map( ( item ) => item.schemaId ) ];
       } catch (error) {
         console.error("Error in runCrdtTest:", error);
         throw new GraphQLError(`Error in runCrdtTest: ${error}`);

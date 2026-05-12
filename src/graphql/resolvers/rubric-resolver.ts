@@ -19,6 +19,7 @@ const toGraphqlRubric = (
   rubric: ReturnType<RubricAggregate["toJSON"]>,
 ): Rubric => {
   return {
+    __typename: "Rubric",
     id: rubric.id,
     goldenSetId: rubric.goldenSetId,
     userInputId: rubric.userInputId,
@@ -29,6 +30,7 @@ const toGraphqlRubric = (
       expectation: item.expectedAnswer,
       weight: Number(item.weight),
       createdAt: item.createdAt!.toISOString(),
+      __typename: "Criteria",
     })),
   };
 };
@@ -39,6 +41,7 @@ const toGraphqlCopilotOutput = (
   return {
     ...output,
     createdAt: output.createdAt!.toISOString(),
+    __typename: "CopilotOutput",
   };
 };
 

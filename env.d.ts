@@ -29,6 +29,9 @@ declare global {
       LLM_MAX_OUTPUT_TOKENS: string;
       clientType: string;
       DANGEROUS_TOKEN: string;
+      DATABASE_URL_CANARY: string;
+      CANARY_BACKEND_GRAPHQL_URL: string;
+      CANARY_DANGEROUS_TOKEN: string;
       AZURE_OPENAI_ENDPOINT: string;
       AZURE_OPENAI_DEPLOYMENT: string;
       AZURE_OPENAI_API_VERSION: string;

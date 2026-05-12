@@ -56,6 +56,18 @@ export const GQL_DELETE_PROJECT = gql`
   }
 `;
 
+export const GQL_DELETE_PROJECT_BY_IDS = gql`
+  mutation DeleteProjectByIds($ids: [Long!]!) {
+    deleteProjectByIds(ids: $ids)
+  }
+`;
+
+export const GQL_FIX_ALIPAY_DATA_BINDING = gql`
+  mutation FixAliPayDataBinding($projectId: Long!) {
+    fixAliPayDataBinding(projectId: $projectId)
+  }
+`;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

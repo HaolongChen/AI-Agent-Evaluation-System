@@ -49,6 +49,18 @@ function makeHeaders(): Record<string, string> {
   return headers;
 }
 
+function makeDangerousHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Zed-Version": "2.1.0",
+  };
+  const token = process.env.DANGEROUS_TOKEN;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 // ---------------------------------------------------------------------------
 // HTTP clients
 //   localClient   → our own Apollo Server (no auth required)
@@ -63,6 +75,13 @@ export const backendClient = new GraphQLClient(
   process.env.BACKEND_GRAPHQL_URL,
   {
     headers: makeHeaders,
+  },
+);
+
+export const dangerousBackendClient = new GraphQLClient(
+  process.env.BACKEND_GRAPHQL_URL,
+  {
+    headers: makeDangerousHeaders,
   },
 );
 

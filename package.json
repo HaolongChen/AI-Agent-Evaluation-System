@@ -31,7 +31,7 @@
     "db:reset": "pnpm dlx prisma migrate reset --force",
     "db:delete": "tsx scripts/delete-golden-sets.ts",
     "db:format": "pnpm dlx prisma format",
-    "codegen": "pnpm run gql:schema:sync && graphql-codegen --config codegen.yml",
+    "codegen": "pnpm gql:schema:sync && graphql-codegen --config codegen.ts",
     "gql:schema:sync": "tsx scripts/graphql-schema-sync.ts"
   },
   "keywords": [],

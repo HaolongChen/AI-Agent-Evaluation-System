@@ -18,6 +18,7 @@ export default defineConfig([
       ".dependency-cruiser.cjs",
       "dependency-graph.svg",
       "momen_doc/**",
+      "src/graphql/generated/resolvers-types.ts",
     ],
     plugins: { js, codeComplete },
     extends: ["js/recommended"],
@@ -38,7 +39,13 @@ export default defineConfig([
       ".dependency-cruiser.cjs",
       "dependency-graph.svg",
       "momen_doc/**",
+      "src/graphql/generated/resolvers-types.ts",
     ],
   },
-  tseslint.configs.recommended,
+  tseslint.configs.recommended.map((config) => {
+    return {
+      ...config,
+      ignores: ["src/graphql/generated/resolvers-types.ts"],
+    };
+  }),
 ]);

@@ -1,10 +1,10 @@
 {
   "client": {
     "service": {
-      "name": "ai-agent-evaluation-system",
-      "url": "./src/graphql/type/schema.graphql",
-      "skipSSLValidation": true
+      "localSchemaFile": "src/graphql/type/schema.graphql",
+      "name": "ai-agent-evaluation-system"
     },
+    "includes": ["src/*"],
     "excludes": ["**/node_modules", "**/__tests__", "**/dist", "**/generated"]
   }
 }

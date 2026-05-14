@@ -3,7 +3,9 @@ export { ProjectNameDuplicateError } from "../../../external/zed/createProject.t
 import { randomUUID } from "node:crypto";
 import {
   backendClient,
+  dangerousBackendClient,
   gqlRequest,
+  publicGQLClient,
 } from "../../shared/application/graphql-client.ts";
 import {
   GQL_CHECK_PROJECT_NAME_DUPLICATE,
@@ -31,7 +33,7 @@ import {
 export class ProjectService {
   async createProject(
     projectName: string,
-    { useModernProtocol = false }: { useModernProtocol?: boolean } = {},
+    { useModernProtocol = true }: { useModernProtocol?: boolean } = {},
   ): Promise<string> {
     const organizationExId = process.env.ORGANIZATION_EX_ID;
     if (!organizationExId) {
@@ -42,7 +44,7 @@ export class ProjectService {
     const nameCheckData = await gqlRequest<
       Query["checkProjectNameDuplicate"],
       QueryCheckProjectNameDuplicateArguments
-    >(backendClient, GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
+    >(publicGQLClient, GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
 
     if (nameCheckData) {
       throw new ProjectNameDuplicateError(projectName);
@@ -179,7 +181,7 @@ export class ProjectService {
     const isDeleted = await gqlRequest<
       Mutation["deleteProject"],
       MutationDeleteProjectArguments
-    >(backendClient, GQL_DELETE_PROJECT, { projectExId });
+    >(dangerousBackendClient, GQL_DELETE_PROJECT, { projectExId });
     if (!isDeleted) {
       throw new Error(`Failed to delete project with exId ${projectExId}`);
     }

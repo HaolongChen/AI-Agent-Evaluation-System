@@ -184,3 +184,165 @@ export interface SubscriptionHandlers<TData> {
 //   // Later, to stop listening:
 //   unsubscribe();
 // ---------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------
+// Shared auth and request helpers
+// ---------------------------------------------------------------------------
+
+export class AuthState {
+  private token: string | undefined;
+  private expiresAt: number | undefined;
+  private readonly ttlMs = 60 * 60 * 1000;
+
+  setToken(token: string): void {
+    this.token = token;
+    this.expiresAt = Date.now() + this.ttlMs;
+  }
+
+  clearToken(): void {
+    this.token = undefined;
+    this.expiresAt = undefined;
+  }
+
+  getToken(): string | undefined {
+    if (!this.isValid()) {
+      return undefined;
+    }
+    return this.token;
+  }
+
+  isValid(): boolean {
+    return Boolean(this.token && this.expiresAt && Date.now() < this.expiresAt);
+  }
+}
+
+export const authState = new AuthState();
+
+export interface GraphQLRequestClient {
+  gqlRequest<TData>(document: string): Promise<TData>;
+  gqlRequest<TData, TVariables extends object>(
+    document: string,
+    variables: TVariables,
+  ): Promise<TData>;
+}
+
+const buildAuthHeaders = (): Record<string, string> => {
+  const token = authState.getToken();
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: 'Bearer ' + token,
+  };
+};
+
+class AuthenticatedGQLClient implements GraphQLRequestClient {
+  async gqlRequest<TData>(document: string): Promise<TData>;
+  async gqlRequest<TData, TVariables extends object>(
+    document: string,
+    variables: TVariables,
+  ): Promise<TData>;
+  async gqlRequest<TData>(
+    document: string,
+    variables?: unknown,
+  ): Promise<TData> {
+    const headers = buildAuthHeaders();
+    if (!headers.Authorization) {
+      throw new Error('No access token available');
+    }
+
+    const client = new GraphQLClient(process.env.BACKEND_GRAPHQL_URL, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Zed-Version': '2.1.0',
+        ...headers,
+      },
+    });
+
+    try {
+      if (variables !== undefined) {
+        return await client.request<TData>(
+          document,
+          variables as Record<string, unknown>,
+        );
+      }
+
+      return await client.request<TData>(document);
+    } catch (error) {
+      if (error instanceof ClientError) {
+        console.error('GraphQL error:', { errors: error.response.errors });
+      } else {
+        console.error('GraphQL request failed:', error);
+      }
+      throw error;
+    }
+  }
+}
+
+export const localClient = publicGQLClient;
+export const localWsClient = publicWsClient;
+export const backendClient = new AuthenticatedGQLClient();
+export const dangerousBackendClient = backendClient;
+
+export async function gqlRequest<TData, TVariables extends object>(
+  client: GraphQLRequestClient,
+  document: string,
+  variables: TVariables,
+): Promise<TData>;
+export async function gqlRequest<TData>(
+  client: GraphQLRequestClient,
+  document: string,
+): Promise<TData>;
+export async function gqlRequest<TData>(
+  client: GraphQLRequestClient,
+  document: string,
+  variables?: unknown,
+): Promise<TData> {
+  if (variables !== undefined) {
+    return await client.gqlRequest<TData, Record<string, unknown>>(
+      document,
+      variables as Record<string, unknown>,
+    );
+  }
+
+  return await client.gqlRequest<TData>(document);
+}
+
+export function gqlSubscribe<TData>(
+  document: string,
+  handlers: SubscriptionHandlers<TData>,
+): () => void;
+export function gqlSubscribe<TData, TVariables extends Record<string, unknown>>(
+  document: string,
+  variables: TVariables,
+  handlers: SubscriptionHandlers<TData>,
+): () => void;
+export function gqlSubscribe<TData>(
+  document: string,
+  variablesOrHandlers:
+    | Record<string, unknown>
+    | SubscriptionHandlers<TData>,
+  maybeHandlers?: SubscriptionHandlers<TData>,
+): () => void {
+  const headers = buildAuthHeaders();
+  const client = headers.Authorization
+    ? new WebSocketClient(
+        new NetworkClient(undefined, headers).buildWsClient(),
+      )
+    : publicWsClient;
+
+  if (maybeHandlers === undefined) {
+    return client.gqlSubscribe<TData>(
+      document,
+      variablesOrHandlers as SubscriptionHandlers<TData>,
+    );
+  }
+
+  return client.gqlSubscribe<TData, Record<string, unknown>>(
+    document,
+    variablesOrHandlers as Record<string, unknown>,
+    maybeHandlers,
+  );
+}

@@ -5,6 +5,7 @@ import {
   authState,
   backendClient,
   gqlRequest,
+  publicGQLClient,
 } from "../../modules/shared/application/graphql-client.ts";
 import { Crdt } from "@functorz/crdt-helper";
 import { login } from "../login.ts";
@@ -13,7 +14,6 @@ import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from "./AfCus
 import { getSchemaModelById } from "../ali-oss.ts";
 import { assertNotNull, genExtraContext } from "./helpers.ts";
 import type {
-  AfCustomCodeTemplatesQueryVariables,
   FetchAppDetailByExIdQuery,
   FetchAppDetailByExIdQueryVariables,
   SupportedCustomModelDescriptor,
@@ -161,6 +161,14 @@ const SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY = gql`
   }
 `;
 
+interface AfCustomCodeTemplatesQueryResult {
+  visibleAfCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[];
+}
+
+interface SupportedCustomModelDescriptorQueryResult {
+  supportedCustomModelDescriptor: SupportedCustomModelDescriptor;
+}
+
 // ---------------------------------------------------------------------------
 // TypeSystemStore
 // ---------------------------------------------------------------------------
@@ -248,10 +256,8 @@ export class TypeSystemStore {
     try {
       if (this.afCustomCodeTemplates.length > 0)
         return this.afCustomCodeTemplates;
-      await this.ensureAuthenticated();
-
-      const data = await gqlRequest<AfCustomCodeTemplatesQueryVariables>(
-        backendClient,
+      const data = await gqlRequest<AfCustomCodeTemplatesQueryResult>(
+        publicGQLClient,
         AF_CUSTOM_CODE_TEMPLATES_QUERY,
       );
 
@@ -267,16 +273,14 @@ export class TypeSystemStore {
     try {
       if (this.supportedCustomModelDescriptor)
         return this.supportedCustomModelDescriptor;
-      await this.ensureAuthenticated();
+      const supportedCustomModelDescriptor = await gqlRequest<SupportedCustomModelDescriptorQueryResult>(
+        publicGQLClient,
+        SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
+      );
 
-      const SupportedCustomModelDescriptor =
-        await gqlRequest<SupportedCustomModelDescriptor>(
-          backendClient,
-          SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
-        );
-
-      this.supportedCustomModelDescriptor = SupportedCustomModelDescriptor;
-      return SupportedCustomModelDescriptor;
+      this.supportedCustomModelDescriptor =
+        supportedCustomModelDescriptor.supportedCustomModelDescriptor;
+      return this.supportedCustomModelDescriptor;
     } catch (error) {
       console.error("Error fetching supported custom model descriptor:", error);
       throw error;

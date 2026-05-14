@@ -12,15 +12,18 @@ import {
   openApolloSubscription,
   subscribeViaModernProtocol,
 } from "../../../external/zed/createProject.ts";
-import type {
-  ProjectCreationStatus,
-  CheckProjectNameDuplicateResponse,
-  CheckProjectNameDuplicateVariables,
-  CreateProjectMutationResponse,
-  CreateProjectMutationVariables,
-  DeleteProjectResponse,
-  DeleteProjectVariables,
-} from "../../../external/zed/createProject.ts";
+import type { ProjectCreationStatus } from "../../../external/zed/createProject.ts";
+import {
+  Platform,
+  ProjectContentCategory,
+  ProjectSpaceType,
+  type CreateProjectInOrganizationMutation,
+  type CreateProjectInOrganizationMutationVariables,
+  type Mutation,
+  type MutationDeleteProjectArgs as MutationDeleteProjectArguments,
+  type Query,
+  type QueryCheckProjectNameDuplicateArgs as QueryCheckProjectNameDuplicateArguments,
+} from "../../../graphql/generated/resolvers-types.ts";
 
 export class ProjectService {
   async createProject(
@@ -34,31 +37,35 @@ export class ProjectService {
 
     console.info("Checking project name availability", { projectName });
     const nameCheckData = await gqlRequest<
-      CheckProjectNameDuplicateResponse,
-      CheckProjectNameDuplicateVariables
+      Query["checkProjectNameDuplicate"],
+      QueryCheckProjectNameDuplicateArguments
     >(backendClient, GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
 
-    if (nameCheckData.checkProjectNameDuplicate) {
+    if (nameCheckData) {
       throw new ProjectNameDuplicateError(projectName);
     }
 
     console.info("Creating project", { projectName, organizationExId });
     const mutationData = await gqlRequest<
-      CreateProjectMutationResponse,
-      CreateProjectMutationVariables
+      CreateProjectInOrganizationMutation,
+      CreateProjectInOrganizationMutationVariables
     >(backendClient, GQL_CREATE_PROJECT_IN_ORGANIZATION, {
       projectName,
-      platform: "WEB",
-      projectSpaceType: "PERSONAL",
+      platform: Platform.Web,
+      projectSpaceType: ProjectSpaceType.Personal,
       organizationExId,
-      category: "OTHERS",
+      category: ProjectContentCategory.Others,
     });
 
     const taskId = mutationData.createProjectInOrganizationAsync;
+    if (!taskId) {
+      throw new Error("Failed to initiate project creation");
+    }
     console.info("Project creation task started", { taskId, projectName });
 
     // No DB upsert — project table has been removed.
     const onProjectCreated = async (projectExId: string): Promise<void> => {
+      // TODO: write to database
       console.info("Project creation completed", { projectExId, projectName });
     };
 
@@ -166,11 +173,13 @@ export class ProjectService {
 
   async deleteProject(projectExId: string): Promise<void> {
     console.info("Deleting project", { projectExId });
-    await gqlRequest<DeleteProjectResponse, DeleteProjectVariables>(
-      backendClient,
-      GQL_DELETE_PROJECT,
-      { projectExId },
-    );
+    const isDeleted = await gqlRequest<
+      Mutation["deleteProject"],
+      MutationDeleteProjectArguments
+    >(backendClient, GQL_DELETE_PROJECT, { projectExId });
+    if (!isDeleted) {
+      throw new Error(`Failed to delete project with exId ${projectExId}`);
+    }
     console.info("Project deleted", { projectExId });
   }
 }

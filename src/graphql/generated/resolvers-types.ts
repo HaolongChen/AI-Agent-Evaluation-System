@@ -217,6 +217,18 @@ export type DeleteProjectMutationVariables = Exact<{
 
 export type DeleteProjectMutation = { deleteProject: boolean };
 
+export type DeleteProjectByIdsMutationVariables = Exact<{
+  ids: Array<Scalars["Long"]["input"]> | Scalars["Long"]["input"];
+}>;
+
+export type DeleteProjectByIdsMutation = { deleteProjectByIds: boolean };
+
+export type FixAliPayDataBindingMutationVariables = Exact<{
+  projectId: Scalars["Long"]["input"];
+}>;
+
+export type FixAliPayDataBindingMutation = { fixAliPayDataBinding: boolean };
+
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: { input: string; output: string };

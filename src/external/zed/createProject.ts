@@ -268,7 +268,19 @@ export function openApolloSubscription(
       return;
     }
 
-    if (msg.type === "data" && msg.id === subscriptionId) {
+    if (msg.id !== subscriptionId) {
+      console.warn(
+        "Subscription WS: received message for unknown subscription ID",
+        {
+          expectedId: subscriptionId,
+          receivedId: msg.id,
+          msg,
+        },
+      );
+      return;
+    }
+
+    if (msg.type === "data") {
       const statusPayload = msg.payload?.data?.onProjectCreationStatusChanged;
       if (statusPayload) {
         onData(statusPayload);
@@ -276,14 +288,14 @@ export function openApolloSubscription(
       return;
     }
 
-    if (msg.type === "error" && msg.id === subscriptionId) {
+    if (msg.type === "error") {
       console.error("Subscription WS: error message", { payload: msg.payload });
       onError(msg.payload);
       cleanup();
       return;
     }
 
-    if (msg.type === "complete" && msg.id === subscriptionId) {
+    if (msg.type === "complete") {
       console.info("Subscription WS: complete", { operationName });
       onComplete();
       cleanup();

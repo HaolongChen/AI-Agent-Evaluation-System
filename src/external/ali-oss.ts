@@ -1,6 +1,6 @@
 import OSS from "ali-oss";
 
-export async function getSchemaModel(schemaId: string) {
+export async function getSchemaModelById(schemaId: string) {
   try {
     const client = new OSS({
       region: "oss-cn-shanghai",

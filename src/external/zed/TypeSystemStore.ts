@@ -6,41 +6,61 @@ import { Crdt } from "@functorz/crdt-helper";
 import { login } from "../login.ts";
 import { fromUint8Array } from "js-base64";
 import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from "./AfCustomCodeTemplates.ts";
-import type { SupportedCustomModelDescriptor_supportedCustomModelDescriptor } from "./ZSchema.ts";
-import { getSchemaModel } from "../ali-oss.ts";
+import { getSchemaModelById } from "../ali-oss.ts";
 import { assertNotNull, genExtraContext } from "./helpers.ts";
+import type {
+  AfCustomCodeTemplatesQueryVariables,
+  FetchAppDetailByExIdQuery,
+  FetchAppDetailByExIdQueryVariables,
+  SupportedCustomModelDescriptor,
+} from "../../graphql/generated/resolvers-types.ts";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface LatestSchema {
-  crdtModelUrl: string;
-  crdtPatches?: {
-    lastPatchExId: string;
-    patches: Array<{ patchBase64: string }>;
-  };
-}
-
-interface FetchAppDetailResponse {
-  fetchAppDetailByExId?: {
-    latestSchema?: LatestSchema;
-  };
-}
-
-interface FetchAppDetailVariables {
-  projectExId: string;
-  appExId: null;
-  appVersionExId: null;
-}
-
-interface AfCustomCodeTemplatesResponse {
-  visibleAfCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[];
-}
-
-interface SupportedCustomModelDescriptorResponse {
-  supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor;
-}
+type LatestSchema =
+  | {
+      __typename: "CrdtSchema";
+      crdtModelUrl?: string | undefined;
+      crdtPatches?:
+        | {
+            __typename: "SchemaCrdtPatches";
+            lastPatchExId?: string | undefined;
+            patches?:
+              | Array<
+                  | { __typename: "SchemaCrdtPatch"; patchBase64: string }
+                  | undefined
+                >
+              | undefined;
+          }
+        | undefined;
+    }
+  | {
+      __typename: "CrdtSchema";
+      crdtModelUrl?: string | undefined;
+      crdtPatches?:
+        | {
+            __typename: "SchemaCrdtPatches";
+            lastPatchExId?: string | undefined;
+            patches?:
+              | Array<
+                  | { __typename: "SchemaCrdtPatch"; patchBase64: string }
+                  | undefined
+                >
+              | undefined;
+          }
+        | undefined;
+    }
+  | {
+      __typename: "CrdtSchema";
+      crdtModelUrl?: string | undefined;
+      crdtPatches?: {
+        __typename: "SchemaCrdtPatches";
+        lastPatchExId?: string | undefined;
+        patches?:
+          | Array<
+              { __typename: "SchemaCrdtPatch"; patchBase64: string } | undefined
+            >
+          | undefined;
+      };
+    };
 
 // ---------------------------------------------------------------------------
 // Documents
@@ -145,7 +165,7 @@ export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
   public afCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[] =
     [];
-  public supportedCustomModelDescriptor: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null =
+  public supportedCustomModelDescriptor: SupportedCustomModelDescriptor | null =
     null;
 
   get schemaGraph(): OpaqueSchemaGraph | null {
@@ -179,15 +199,27 @@ export class TypeSystemStore {
   ): Promise<LatestSchema | null> {
     try {
       await this.ensureAuthenticated();
-
       const data = await gqlRequest<
-        FetchAppDetailResponse,
-        FetchAppDetailVariables
+        FetchAppDetailByExIdQuery,
+        FetchAppDetailByExIdQueryVariables
       >(backendClient, FETCH_APP_DETAIL_QUERY, {
         projectExId,
-        appExId: null,
-        appVersionExId: null,
       });
+      if (!data || !data.fetchAppDetailByExId) {
+        console.error(
+          "No data returned from fetchAppDetailByExId query for projectExId:",
+          projectExId,
+        );
+        return null;
+      }
+
+      if (data.fetchAppDetailByExId.__typename === "MobileApp") {
+        console.error(
+          "fetchAppDetailByExId returned MobileApp which is unexpected for projectExId:",
+          projectExId,
+        );
+        return null;
+      }
 
       const latestSchema = data.fetchAppDetailByExId?.latestSchema;
       console.info("GraphQL response for fetchAppDetailByExId:", data);
@@ -214,7 +246,7 @@ export class TypeSystemStore {
         return this.afCustomCodeTemplates;
       await this.ensureAuthenticated();
 
-      const data = await gqlRequest<AfCustomCodeTemplatesResponse>(
+      const data = await gqlRequest<AfCustomCodeTemplatesQueryVariables>(
         backendClient,
         AF_CUSTOM_CODE_TEMPLATES_QUERY,
       );
@@ -227,19 +259,20 @@ export class TypeSystemStore {
     }
   }
 
-  async getSupportedCustomModelDescriptor(): Promise<SupportedCustomModelDescriptor_supportedCustomModelDescriptor> {
+  async getSupportedCustomModelDescriptor(): Promise<SupportedCustomModelDescriptor> {
     try {
       if (this.supportedCustomModelDescriptor)
         return this.supportedCustomModelDescriptor;
       await this.ensureAuthenticated();
 
-      const data = await gqlRequest<SupportedCustomModelDescriptorResponse>(
-        backendClient,
-        SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
-      );
+      const SupportedCustomModelDescriptor =
+        await gqlRequest<SupportedCustomModelDescriptor>(
+          backendClient,
+          SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
+        );
 
-      this.supportedCustomModelDescriptor = data.supportedCustomModelDescriptor;
-      return this.supportedCustomModelDescriptor;
+      this.supportedCustomModelDescriptor = SupportedCustomModelDescriptor;
+      return SupportedCustomModelDescriptor;
     } catch (error) {
       console.error("Error fetching supported custom model descriptor:", error);
       throw error;
@@ -247,7 +280,7 @@ export class TypeSystemStore {
   }
 
   async rehydrate(schemaId: string): Promise<OpaqueSchemaGraph> {
-    const arrayBuffer = await getSchemaModel(schemaId);
+    const arrayBuffer = await getSchemaModelById(schemaId);
     const modelBinary = new Uint8Array(arrayBuffer);
 
     console.debug("step 2 done, modelBinary length: " + modelBinary.length);
@@ -269,7 +302,16 @@ export class TypeSystemStore {
     const zSchema = ZTypeSystem.parseZSchemaFromJsObject(fullSchema);
     const schemaGraph = this.withEnabledFeatures(() => {
       const extraContext = genExtraContext(
-        this.supportedCustomModelDescriptor,
+        {
+          chatModelDescriptors:
+            this.supportedCustomModelDescriptor?.chatModelDescriptors ?? null,
+          embeddingModelDescriptors:
+            this.supportedCustomModelDescriptor?.embeddingModelDescriptors ??
+            null,
+          __typename:
+            this.supportedCustomModelDescriptor?.__typename ??
+            "SupportedCustomModelDescriptor",
+        },
         this.afCustomCodeTemplates,
       );
       return ZTypeSystem.resolveZSchemaToSchemaGraph(

@@ -23,7 +23,7 @@ const config: CodegenConfig = {
         useIndexSignature: true,
         enumAsTypes: true,
         useTypeImports: true,
-        contextType: "unknown",
+        contextType: "undefined",
         maybeValue: "T | undefined",
         maybeType: "T | undefined",
       },

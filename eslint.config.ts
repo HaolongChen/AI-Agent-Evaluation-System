@@ -19,6 +19,7 @@ export default defineConfig([
       "dependency-graph.svg",
       "momen_doc/**",
       "src/graphql/generated/resolvers-types.ts",
+      "src/prisma/staging/**",
     ],
     plugins: { js, codeComplete },
     extends: ["js/recommended"],
@@ -40,12 +41,27 @@ export default defineConfig([
       "dependency-graph.svg",
       "momen_doc/**",
       "src/graphql/generated/resolvers-types.ts",
+      "src/prisma/staging/**",
     ],
   },
   tseslint.configs.recommended.map((config) => {
     return {
       ...config,
-      ignores: ["src/graphql/generated/resolvers-types.ts"],
+      ignores: [
+        "src/graphql/generated/resolvers-types.ts",
+        "node_modules/**",
+        "dist/**",
+        "**/generated/**/*",
+        "local_shell/**",
+        "scripts/**",
+        "env.d.ts",
+        "**/external/**",
+        "src/graphql/type/**",
+        ".dependency-cruiser.cjs",
+        "dependency-graph.svg",
+        "momen_doc/**",
+        "src/prisma/staging/**",
+      ],
     };
   }),
 ]);

@@ -1,8 +1,11 @@
 import { gql } from "graphql-request";
 import { WebSocket } from "ws";
 
-import { authState, gqlSubscribe } from "../graphql-client.ts";
-import type { SubscriptionHandlers } from "../graphql-client.ts";
+import {
+  authState,
+  gqlSubscribe,
+} from "../../modules/shared/application/graphql-client.ts";
+import type { SubscriptionHandlers } from "../../modules/shared/application/graphql-client.ts";
 import { randomUUID } from "node:crypto";
 
 // ---------------------------------------------------------------------------

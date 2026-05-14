@@ -27,7 +27,7 @@ import { prisma } from "../../config/prisma.ts";
 import {
   dangerousBackendClient,
   gqlRequest,
-} from "../../external/graphql-client.ts";
+} from "../../modules/shared/application/graphql-client.ts";
 import {
   GQL_DELETE_PROJECT_BY_IDS,
   GQL_FIX_ALIPAY_DATA_BINDING,

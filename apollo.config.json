@@ -1,10 +1,10 @@
 {
   "client": {
+    "name": "ai agent evaluation system",
     "service": {
-      "localSchemaFile": "src/graphql/type/schema.graphql",
-      "name": "ai-agent-evaluation-system"
+      "url": "https://zionbackend.functorz.work/api/graphql",
+      "skipSSLValidation": true
     },
-    "includes": ["src/*"],
-    "excludes": ["**/node_modules", "**/__tests__", "**/dist", "**/generated"]
+    "includes": ["src/**/*.{ts,tsx,graphql}"]
   }
 }

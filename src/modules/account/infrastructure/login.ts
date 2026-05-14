@@ -1,21 +1,18 @@
 import { gql } from "graphql-request";
+import type {
+  AccountInfo,
+  LoginWithPhoneNumberMutation,
+  LoginWithPhoneNumberMutationVariables,
+} from "../../../graphql/generated/resolvers-types.ts";
+import { publicGQLClient } from "../../shared/application/graphql-client.ts";
 
-import { backendClient, gqlRequest } from "./graphql-client.ts";
-
-// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface LoginVariables {
-  phoneNumber: string;
-  password: string;
-}
-
-interface LoginResponse {
-  loginWithPhoneNumber: {
-    accessToken: string;
-  };
-}
+type AttachAccountInfo<
+  T extends LoginWithPhoneNumberMutation,
+  K extends AccountInfo["account"],
+> = T & { loginWithPhoneNumber?: { account?: K } };
 
 // ---------------------------------------------------------------------------
 // Document
@@ -25,6 +22,9 @@ const LOGIN_MUTATION = gql`
   mutation LoginWithPhoneNumber($phoneNumber: String!, $password: String!) {
     loginWithPhoneNumber(phoneNumber: $phoneNumber, password: $password) {
       accessToken
+      account {
+        exId
+      }
     }
   }
 `;
@@ -36,27 +36,25 @@ const LOGIN_MUTATION = gql`
 export const login = async (
   phoneNumber: string,
   password: string,
-): Promise<string> => {
+): Promise<AccountInfo> => {
   try {
     console.info(
       "Attempting login for phone number:",
       `***${phoneNumber.slice(-4)}`,
     );
 
-    const data = await gqlRequest<LoginResponse, LoginVariables>(
-      backendClient,
-      LOGIN_MUTATION,
-      { phoneNumber, password },
-    );
+    const data = await publicGQLClient.gqlRequest<
+      AttachAccountInfo<LoginWithPhoneNumberMutation, AccountInfo["account"]>,
+      LoginWithPhoneNumberMutationVariables
+    >(LOGIN_MUTATION, { phoneNumber, password });
 
-    const accessToken = data.loginWithPhoneNumber.accessToken;
+    const accountInfo = data.loginWithPhoneNumber as AccountInfo;
 
-    if (!accessToken) {
-      throw new Error("No access token received from login");
+    if (!accountInfo || !accountInfo.accessToken) {
+      throw new Error("Login failed: No access token received");
     }
 
-    console.info("Login successful");
-    return accessToken;
+    return accountInfo;
   } catch (error) {
     console.error("Error during login:", error);
     throw new Error("Failed to login", { cause: error });

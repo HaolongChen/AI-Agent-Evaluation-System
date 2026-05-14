@@ -1,7 +1,11 @@
 import { gql } from "graphql-request";
 import { ZTypeSystem, type OpaqueSchemaGraph } from "./TypeSystem.ts";
 
-import { authState, backendClient, gqlRequest } from "../graphql-client.ts";
+import {
+  authState,
+  backendClient,
+  gqlRequest,
+} from "../../modules/shared/application/graphql-client.ts";
 import { Crdt } from "@functorz/crdt-helper";
 import { login } from "../login.ts";
 import { fromUint8Array } from "js-base64";

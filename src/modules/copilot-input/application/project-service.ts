@@ -1,7 +1,10 @@
 export { ProjectNameDuplicateError } from "../../../external/zed/createProject.ts";
 
 import { randomUUID } from "node:crypto";
-import { backendClient, gqlRequest } from "../../../external/graphql-client.ts";
+import {
+  backendClient,
+  gqlRequest,
+} from "../../shared/application/graphql-client.ts";
 import {
   GQL_CHECK_PROJECT_NAME_DUPLICATE,
   GQL_CREATE_PROJECT_IN_ORGANIZATION,

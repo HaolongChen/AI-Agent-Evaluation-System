@@ -1933,6 +1933,7 @@ export enum CopilotSessionType {
   AfcodeTool = "AFCODE_TOOL",
   Copilot = "COPILOT",
   LogTool = "LOG_TOOL",
+  PromptOptimizer = "PROMPT_OPTIMIZER",
   SetDataBinding = "SET_DATA_BINDING",
 }
 
@@ -3570,6 +3571,7 @@ export type MessageArgsInputInput = {
   afCodeToolArgs?: InputMaybe<AfCodeToolArgsInput>;
   copilotArgs?: InputMaybe<CopilotArgsInput>;
   logToolArgs?: InputMaybe<LogToolArgsInput>;
+  promptOptimizerToolArgs?: InputMaybe<PromptOptimizerToolArgsInput>;
   setDataBindingToolArgs?: InputMaybe<SetDataBindingToolArgsInput>;
 };
 
@@ -8328,6 +8330,16 @@ export enum PromotionType {
   Ai = "AI",
   Others = "OTHERS",
 }
+
+export type PromptOptimizerToolArgsInput = {
+  humanInputMessage?: InputMaybe<CopilotHumanInputMessageInput>;
+  initUserPromptSchemaPath: Array<InputMaybe<SchemaPathItemInput>>;
+  initUserPromptValueBindings: Array<InputMaybe<Scalars["Json"]["input"]>>;
+  systemPromptSchemaPath: Array<InputMaybe<SchemaPathItemInput>>;
+  systemPromptValueBindings: Array<InputMaybe<Scalars["Json"]["input"]>>;
+  toolCallBatchExecErrorMessage?: InputMaybe<CopilotToolCallBatchExecErrorMessageInput>;
+  toolCallBatchResponseMessage?: InputMaybe<CopilotToolCallBatchResponseMessageInput>;
+};
 
 export type PurchaseItemDetailInputInput = {
   additionalClientPurchaseItemDetail?: InputMaybe<AdditionalClientPurchaseItemDetailInput>;

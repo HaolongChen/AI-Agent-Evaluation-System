@@ -25,13 +25,15 @@
     "scripts/**/*",
     "tests/**/*",
     "*.config.ts",
-    "env.d.ts"
+    "env.d.ts",
+    "apollo.config.js"
   ],
   "exclude": [
     "node_modules/**/*",
     "local_shell/**/*",
     "dist/**/*",
     "**/generated/**",
+    "**/staging/**",
     ".dependency-cruiser.cjs",
     "dependency-graph.svg",
     "momen_doc/**"

@@ -7,11 +7,10 @@ import { expressMiddleware } from "@as-integrations/express5";
 import express from "express";
 import cors from "cors";
 import { typeDefs, resolvers } from "./graphql/schema.ts";
-import { login } from "./external/login.ts";
-import { authState } from "./external/graphql-client.ts";
+import { NetworkClientWithAuth } from "./modules/shared/application/graphql-client.ts";
+import { AccountService } from "./modules/account/domain/service/account.service.ts";
 
 const app = express();
-console.info("Starting server...");
 const server = new ApolloServer({
   typeDefs,
   resolvers,
@@ -36,21 +35,12 @@ app.listen({ port: process.env.PORT }, () => {
   );
 });
 
-try {
-  if (!process.env.FUNCTORZ_PHONE_NUMBER || !process.env.FUNCTORZ_PASSWORD) {
-    throw new Error(
-      "FUNCTORZ_PHONE_NUMBER and FUNCTORZ_PASSWORD are required for initial login",
-    );
-  }
-  const token = await login(
-    process.env.FUNCTORZ_PHONE_NUMBER,
-    process.env.FUNCTORZ_PASSWORD,
-  );
-  console.info("Initial login successful, token obtained");
-  authState.setToken(token);
-} catch (error) {
-  console.error(
-    "Initial login failed — server will continue, TypeSystemStore will re-auth on demand",
-    error,
-  );
-}
+const personalAccount = new AccountService(
+  process.env.FUNCTORZ_PHONE_NUMBER,
+  process.env.FUNCTORZ_PASSWORD,
+);
+
+const networkClient = new NetworkClientWithAuth(
+  process.env.BACKEND_GRAPHQL_URL,
+  personalAccount,
+);

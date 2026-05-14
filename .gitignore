@@ -152,3 +152,4 @@ local_shell
 
 ZSchema_Flattened.json
 .codegraphy/
+src/prisma/staging

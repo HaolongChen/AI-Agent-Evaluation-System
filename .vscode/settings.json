@@ -17,5 +17,6 @@
     "**/*.svg": true,
     "**/*.cjs": true,
     "**/AGENT.md": true
-  }
+  },
+  "markdown.validate.enabled": true
 }

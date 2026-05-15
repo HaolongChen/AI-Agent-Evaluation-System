@@ -7,8 +7,8 @@
   "scripts": {
     "initialize": "rm -rf node_modules dist pnpm-*.yaml && pnpm install",
     "clean": "rm -rf dist",
-    "typecheck": "tsc --noEmit",
-    "build": "pnpm run clean && tsc",
+    "typecheck": "tsgo --noEmit",
+    "build": "pnpm run clean && tsgo",
     "depgen": "dependency-cruiser --config .dependency-cruiser.cjs src --output-type dot | dot -T svg > dependency-graph.svg",
     "start": "node dist/index.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/index.ts",
@@ -61,6 +61,7 @@
     "@types/pg": "^8.20.0",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/parser": "^8.59.3",
+    "@typescript/native-preview": "7.0.0-dev.20260514.1",
     "dependency-cruiser": "^17.4.0",
     "dotenv-expand": "^13.0.0",
     "eslint": "^9.39.4",

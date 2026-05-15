@@ -30,7 +30,11 @@ export class RubricRepository implements IRubricRepository {
     return repositoryDateMapper(
       criteria,
       new CriteriaEntity(
-        { ...criteria, weight: Number(criteria.weight) },
+        {
+          ...criteria,
+          weight: Number(criteria.weight),
+          reasoning: criteria.reasoning ?? undefined,
+        },
         criteria.id,
       ),
     );

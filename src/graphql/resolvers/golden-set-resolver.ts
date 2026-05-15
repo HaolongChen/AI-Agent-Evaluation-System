@@ -8,7 +8,7 @@ import {
   GetGoldenSetByIdUseCase,
   GetGoldenSetsByFilterUseCase,
 } from "../../modules/copilot-input/application/get-golden-set.ts";
-import { projectService } from "../../modules/copilot-input/application/project-service.ts";
+import { ProjectService } from "../../modules/copilot-input/application/project-service.ts";
 import {
   CopilotType,
   type GoldenSet,
@@ -25,13 +25,11 @@ import {
 import { GraphQLError } from "graphql";
 import { prisma } from "../../config/prisma.ts";
 import {
-  dangerousBackendClient,
-  gqlRequest,
-} from "../../modules/shared/application/graphql-client.ts";
-import {
   GQL_DELETE_PROJECT_BY_IDS,
   GQL_FIX_ALIPAY_DATA_BINDING,
 } from "../../external/zed/createProject.ts";
+import { Account } from "../../modules/account/application/account-handler.ts";
+import { NetworkClient } from "../../modules/shared/application/graphql-client.ts";
 
 const copilotTypeMapper = {
   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -138,7 +136,12 @@ export const goldenSetResolver = {
       for (let index = 0; index < arguments_.number; index++) {
         projectNames.push("CRDT-Evaluation-" + Date.now());
       }
-      const typeSystemStore = new TypeSystemStore();
+      const account = new Account(
+        process.env.ADMIN_PHONE_NUMBER!,
+        process.env.ADMIN_PASSWORD!,
+      );
+      const projectService = new ProjectService(account);
+      const typeSystemStore = new TypeSystemStore(account);
       await Promise.all(
         projectNames.map(async (projectName) => {
           const projectExId = await projectService.createProject(projectName);
@@ -169,13 +172,20 @@ export const goldenSetResolver = {
         name: "delete-projects",
         text: `SELECT id FROM project where project_name LIKE 'temp-project-1a91a63a-3bde-4cea%'`,
       };
+      const dangerousNetworkClient = new NetworkClient();
+      dangerousNetworkClient.setHeader(
+        "Authorization",
+        `Bearer ${process.env.DANGEROUS_TOKEN}`,
+      );
       const result = await zionDatabase.query(fetchProjectId);
       await zionDatabase.end();
       const ids = result.rows.map(({ id }) => id);
-      const response = await gqlRequest<
-        Mutation["deleteProjectByIds"],
-        MutationDeleteProjectByIdsArguments
-      >(dangerousBackendClient, GQL_DELETE_PROJECT_BY_IDS, { ids });
+      const response = await dangerousNetworkClient
+        .buildGQLClient()
+        .gqlRequest<
+          Mutation["deleteProjectByIds"],
+          MutationDeleteProjectByIdsArguments
+        >(GQL_DELETE_PROJECT_BY_IDS, { ids });
 
       return response;
     },
@@ -192,13 +202,19 @@ export const goldenSetResolver = {
           name: "fetch-project-ids",
           text: `SELECT id FROM project ORDER BY id DESC LIMIT ${arguments_.number}`,
         };
+        const dangerousNetworkClient = new NetworkClient();
+        dangerousNetworkClient.setHeader(
+          "Authorization",
+          `Bearer ${process.env.DANGEROUS_TOKEN}`,
+        );
+        const gqlClient = dangerousNetworkClient.buildGQLClient();
         const result = await zionDatabase.query(fetchProjectId);
         const results = await Promise.allSettled(
           result.rows.map(async ({ id }) => {
-            const response = await gqlRequest<
+            const response = await gqlClient.gqlRequest<
               Mutation["fixAliPayDataBinding"],
               MutationFixAliPayDataBindingArguments
-            >(dangerousBackendClient, GQL_FIX_ALIPAY_DATA_BINDING, {
+            >(GQL_FIX_ALIPAY_DATA_BINDING, {
               projectId: id,
             });
             return `Project ID: ${id}, Response: ${JSON.stringify(response)}`;

@@ -7,8 +7,6 @@ import { expressMiddleware } from "@as-integrations/express5";
 import express from "express";
 import cors from "cors";
 import { typeDefs, resolvers } from "./graphql/schema.ts";
-import { NetworkClientWithAuth } from "./modules/shared/application/graphql-client.ts";
-import { AccountService } from "./modules/account/domain/service/account.service.ts";
 
 const app = express();
 const server = new ApolloServer({
@@ -34,13 +32,3 @@ app.listen({ port: process.env.PORT }, () => {
     `🚀 Server ready at http://localhost:${process.env.PORT}/graphql`,
   );
 });
-
-const personalAccount = new AccountService(
-  process.env.FUNCTORZ_PHONE_NUMBER,
-  process.env.FUNCTORZ_PASSWORD,
-);
-
-const networkClient = new NetworkClientWithAuth(
-  process.env.BACKEND_GRAPHQL_URL,
-  personalAccount,
-);

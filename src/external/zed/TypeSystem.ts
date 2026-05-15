@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/filename-case */
 import ztype from "@functorz/ztype";
 
 const ztypePackage = ztype.com.functorz.ztype;

@@ -3,7 +3,6 @@ import { createClient as createWsClient } from "graphql-ws";
 import { WebSocket } from "ws";
 
 export class NetworkClient {
-  // private account: Account | undefined;
   private _defaultWsHandler = {
     connected: () => console.info("GraphQL subscription WS connected"),
     closed: () => console.info("GraphQL subscription WS closed"),
@@ -16,24 +15,23 @@ export class NetworkClient {
   };
   constructor(
     private readonly _url: string = process.env.BACKEND_GRAPHQL_URL,
-    // accountArguments?: z.infer<typeof accountSchema>,
     headers?: Record<string, string>,
   ) {
-    // if( accountArguments )
-    // {
-    //   this.account = new Account( accountArguments.phoneNumber, accountArguments.password );
-    // }
     if (headers) {
       this._headers = { ...this._headers, ...headers };
     }
   }
 
-  buildGQLClient(newUrl?: string): GraphQLClient {
-    // await this.ensureLoggedIn();
-    // this._headers["Authorization"] = `Bearer ${this.accessToken}`;
-    return new GraphQLClient(newUrl || this._url, {
-      headers: this._headers,
-    });
+  setHeader(key: string, value: string) {
+    this._headers[key] = value;
+  }
+
+  buildGQLClient(newUrl?: string): GQLClient {
+    return new GQLClient(
+      new GraphQLClient(newUrl || this._url, {
+        headers: this._headers,
+      }),
+    );
   }
 
   buildWsClient(
@@ -44,19 +42,19 @@ export class NetworkClient {
       error?: (error: unknown) => void;
     },
     ws?: typeof WebSocket,
-  ): ReturnType<typeof createWsClient> {
-    // await this.ensureLoggedIn();
-    // this._headers["Authorization"] = `Bearer ${this.accessToken}`;
-    return createWsClient({
-      url: wsUrl,
-      webSocketImpl: ws || WebSocket,
-      connectionParams: this._headers,
-      on: {
-        ...this._defaultWsHandler,
-        ...on,
-      },
-      lazy: true, // Only connect when the first subscription is made
-    });
+  ): WebSocketClient {
+    return new WebSocketClient(
+      createWsClient({
+        url: wsUrl,
+        webSocketImpl: ws || WebSocket,
+        connectionParams: this._headers,
+        on: {
+          ...this._defaultWsHandler,
+          ...on,
+        },
+        lazy: true, // Only connect when the first subscription is made
+      }),
+    );
   }
 }
 
@@ -98,7 +96,6 @@ export class WebSocketClient {
           }
         },
         error: (error) => {
-          console.error("GraphQL subscription error:", error);
           handlers.error(error);
         },
         complete: () => {
@@ -144,14 +141,6 @@ export class GQLClient {
     }
   }
 }
-
-export const publicWsClient = new WebSocketClient(
-  publicNetworkClient.buildWsClient(),
-);
-export const publicGQLClient = new GQLClient(
-  publicNetworkClient.buildGQLClient(),
-);
-
 // ---------------------------------------------------------------------------
 // Subscription event callbacks
 // ---------------------------------------------------------------------------

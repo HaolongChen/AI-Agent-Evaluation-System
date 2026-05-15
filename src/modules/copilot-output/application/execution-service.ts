@@ -1,6 +1,7 @@
 import { assertNotNull } from "../../../external/zed/helpers.ts";
 import { getTypeSystemStoreForCopilot } from "../../../external/zed/TypeSystemStore.ts";
-import { projectService } from "../../copilot-input/application/project-service.ts";
+import type { Account } from "../../account/application/account-handler.ts";
+import { ProjectService } from "../../copilot-input/application/project-service.ts";
 import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/golden-set.interface.ts";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
@@ -13,6 +14,7 @@ export class ExecuteCopilotUseCase {
       copilotOutputRepository: ICopilotOutputRepository;
       goldenSetRepository: IGoldenSetRepository;
     },
+    private readonly account: Account,
   ) {}
 
   private generateProjectName(
@@ -30,8 +32,10 @@ export class ExecuteCopilotUseCase {
       );
     const typeSystemStore = await getTypeSystemStoreForCopilot(
       goldenSetEntity.data.schemaId,
+      this.account,
     );
     const projectName = this.generateProjectName(goldenSetId, userInputId);
+    const projectService = new ProjectService(this.account);
     const projectExId = await projectService.createProject(projectName);
     const wsUrl = `${process.env.BACKEND_WS_URL}projectExId=${projectExId}&userToken=${process.env.userToken}&clientType=${process.env.clientType}`;
     const copilotJobEntity = new CopilotJobEntity({

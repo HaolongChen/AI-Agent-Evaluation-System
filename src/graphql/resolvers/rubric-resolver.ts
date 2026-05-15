@@ -1,3 +1,4 @@
+import { myAccount } from "../../DI/account.ts";
 import { repository } from "../../DI/repository.ts";
 import { ExecuteCopilotUseCase } from "../../modules/copilot-output/application/execution-service.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-output/domain/entity/copilot-output.entity.ts";
@@ -76,10 +77,13 @@ export const rubricResolver = {
       _: unknown,
       arguments_: MutationExecuteCopilotArguments,
     ): Promise<CopilotOutput> => {
-      const executeCopilotUseCase = new ExecuteCopilotUseCase({
-        copilotOutputRepository: repository.copilotOutputRepository,
-        goldenSetRepository: repository.goldenSetRepository,
-      });
+      const executeCopilotUseCase = new ExecuteCopilotUseCase(
+        {
+          copilotOutputRepository: repository.copilotOutputRepository,
+          goldenSetRepository: repository.goldenSetRepository,
+        },
+        myAccount,
+      );
       const copilotOutput = await executeCopilotUseCase.execute(
         arguments_.context.goldenSetId,
         arguments_.context.userInputId,

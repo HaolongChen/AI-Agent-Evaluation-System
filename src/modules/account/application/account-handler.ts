@@ -1,9 +1,38 @@
 import { login } from "../infrastructure/login.ts";
 import { AccountService } from "../domain/service/account.service.ts";
+import { NetworkClient } from "../../shared/application/graphql-client.ts";
 
 export class Account extends AccountService {
-  constructor(phoneNumber: string, password: string) {
+  private networkClient: NetworkClient;
+  private _sessionId: string;
+  constructor(
+    phoneNumber: string,
+    password: string,
+    _url?: string,
+    headers?: Record<string, string>,
+  ) {
     super(phoneNumber, password);
+    this._sessionId = crypto.randomUUID();
+    this.networkClient = new NetworkClient(_url, {
+      ...headers,
+      "X-Session-ID": this._sessionId,
+    });
+  }
+
+  get sessionId(): string {
+    return this._sessionId;
+  }
+
+  async getGQLClient() {
+    await this.ensureLoggedIn();
+    this.networkClient.setHeader("Authorization", `Bearer ${this.accessToken}`);
+    return this.networkClient.buildGQLClient();
+  }
+
+  async getWsClient() {
+    await this.ensureLoggedIn();
+    this.networkClient.setHeader("Authorization", `Bearer ${this.accessToken}`);
+    return this.networkClient.buildWsClient();
   }
 
   async login() {

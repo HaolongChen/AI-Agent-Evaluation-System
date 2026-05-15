@@ -13,7 +13,7 @@ export async function getSchemaModelById(schemaId: string) {
     // List all buckets in all regions within the current Alibaba Cloud account.
     const result = await client.get(`schema/${schemaId}/model.bin`);
     return result.content;
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
   }
 }

@@ -1,3 +1,5 @@
+/* eslint-disable unicorn/prevent-abbreviations */
+/* eslint-disable unicorn/no-null */
 import { isNull, isUndefined, isNil } from "lodash-es";
 import {
   ActionFlowTemplateCodeDescriptor,
@@ -5,12 +7,12 @@ import {
   CustomChatCompletionFeatures,
   CustomChatModelDescriptor,
   CustomEmbeddingModelDescriptor,
-  CustomModelParam,
+  CustomModelParam as CustomModelParameter,
   ExtraContext,
   Identifier,
   KtList,
   KtMap,
-  ModelCustomParamDescriptor,
+  ModelCustomParamDescriptor as ModelCustomParameterDescriptor,
   Variable,
   ZTypeSystem,
 } from "./TypeSystem.ts";
@@ -26,16 +28,18 @@ import type {
 
 export type Nullable<T> = T | null | undefined;
 
-export function isNotNull<T>(obj: T | null): obj is T {
-  return !isNull(obj);
+export function isNotNull<T>(object: T | null): object is T {
+  return !isNull(object);
 }
 
-export function isDefined<T>(obj: T | undefined): obj is T {
-  return !isUndefined(obj);
+export function isDefined<T>(object: T | undefined): object is T {
+  return !isUndefined(object);
 }
 
-export function isDefinedAndNotNull<T>(obj: T | undefined | null): obj is T {
-  return !isNil(obj);
+export function isDefinedAndNotNull<T>(
+  object: T | undefined | null,
+): object is T {
+  return !isNil(object);
 }
 
 export function filterNotNullOrUndefined<T>(
@@ -51,8 +55,8 @@ export type RequiredNonNullable<P> = {
     : NonNullable<P[K]>;
 };
 
-export const assertUnreachable = (err: string): never => {
-  throw new Error(err);
+export const assertUnreachable = (error: string): never => {
+  throw new Error(error);
 };
 
 export function assertNotNull<T>(value: T | null | undefined): T {
@@ -108,7 +112,7 @@ export function genExtraContext(
             new CustomChatModelDescriptor(
               item.provider,
               item.name,
-              fetchCustomModelParam(item.paramToConfigure),
+              fetchCustomModelParameter(item.paramToConfigure),
               item.delisted,
               new CustomChatCompletionFeatures(
                 item.features.streamResponse,
@@ -141,7 +145,7 @@ export function genExtraContext(
             new CustomEmbeddingModelDescriptor(
               item.provider,
               item.name,
-              fetchCustomModelParam(item.paramToConfigure),
+              fetchCustomModelParameter(item.paramToConfigure),
               item.provider === SYSTEM_MODEL_PROVIDER
                 ? new Identifier(
                     item.customModelIdentifier.id,
@@ -173,36 +177,36 @@ export function genExtraContext(
   );
 }
 
-const fetchCustomModelParam = (paramToConfigure: any) =>
-  new CustomModelParam(
-    new ModelCustomParamDescriptor(
-      paramToConfigure.serverUrl.name,
+const fetchCustomModelParameter = (parameterToConfigure: any) =>
+  new CustomModelParameter(
+    new ModelCustomParameterDescriptor(
+      parameterToConfigure.serverUrl.name,
       KtMap.fromJsMap(
-        new Map(Object.entries(paramToConfigure.serverUrl.displayName)),
+        new Map(Object.entries(parameterToConfigure.serverUrl.displayName)),
       ),
-      paramToConfigure.serverUrl.type,
+      parameterToConfigure.serverUrl.type,
       KtMap.fromJsMap(
-        new Map(Object.entries(paramToConfigure.serverUrl.description)),
+        new Map(Object.entries(parameterToConfigure.serverUrl.description)),
       ),
     ),
-    new ModelCustomParamDescriptor(
-      paramToConfigure.apiToken.name,
+    new ModelCustomParameterDescriptor(
+      parameterToConfigure.apiToken.name,
       KtMap.fromJsMap(
-        new Map(Object.entries(paramToConfigure.apiToken.displayName)),
+        new Map(Object.entries(parameterToConfigure.apiToken.displayName)),
       ),
-      paramToConfigure.apiToken.type,
+      parameterToConfigure.apiToken.type,
       KtMap.fromJsMap(
-        new Map(Object.entries(paramToConfigure.apiToken.description)),
+        new Map(Object.entries(parameterToConfigure.apiToken.description)),
       ),
     ),
     KtList.fromJsArray(
-      (paramToConfigure.extensionParams as any[]).map(
-        (param) =>
-          new ModelCustomParamDescriptor(
-            param.name,
-            KtMap.fromJsMap(new Map(Object.entries(param.displayName))),
-            param.type,
-            KtMap.fromJsMap(new Map(Object.entries(param.displayName))),
+      (parameterToConfigure.extensionParams as any[]).map(
+        (parameter) =>
+          new ModelCustomParameterDescriptor(
+            parameter.name,
+            KtMap.fromJsMap(new Map(Object.entries(parameter.displayName))),
+            parameter.type,
+            KtMap.fromJsMap(new Map(Object.entries(parameter.displayName))),
           ),
       ),
     ),

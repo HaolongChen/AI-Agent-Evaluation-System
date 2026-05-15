@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prevent-abbreviations */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 export enum BackendOnlyActionFlowNodeType {

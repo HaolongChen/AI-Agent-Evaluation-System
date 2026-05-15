@@ -149,7 +149,7 @@ export type CopilotMessage =
   | ExecErrorMessage
   | TaskRevertSuccessMessage;
 
-const MESSAGE_TYPES_TO_SAVE = [
+const MESSAGE_TYPES_TO_SAVE = new Set([
   CopilotMessageType.SYSTEM_STATUS,
   CopilotMessageType.AI_RESPONSE,
   CopilotMessageType.EDITABLE_TEXT,
@@ -157,14 +157,12 @@ const MESSAGE_TYPES_TO_SAVE = [
   CopilotMessageType.HUMAN_INPUT,
   CopilotMessageType.HUMAN_OPERATION,
   CopilotMessageType.FEEDBACK,
-];
+]);
 
 export const filterCopilotMessagesToSave = (
   copilotMessages: CopilotMessage[],
 ): CopilotMessage[] =>
-  copilotMessages.filter((message) =>
-    MESSAGE_TYPES_TO_SAVE.includes(message.type),
-  );
+  copilotMessages.filter((message) => MESSAGE_TYPES_TO_SAVE.has(message.type));
 
 // ------------------------------------------------------------
 

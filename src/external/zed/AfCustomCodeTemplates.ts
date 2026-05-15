@@ -1,3 +1,5 @@
+/* eslint-disable unicorn/filename-case */
+/* eslint-disable unicorn/no-abusive-eslint-disable */
 /* tslint:disable */
 /* eslint-disable */
 // @generated

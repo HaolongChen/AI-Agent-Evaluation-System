@@ -1,13 +1,10 @@
-import { gql } from "graphql-request";
-import { ZTypeSystem, type OpaqueSchemaGraph } from "./TypeSystem.ts";
+/* eslint-disable unicorn/filename-case */
+/* eslint-disable unicorn/no-null */
 
-import {
-  authState,
-  backendClient,
-  gqlRequest,
-} from "../../modules/shared/application/graphql-client.ts";
+import { gql } from "graphql-request";
+import { ZTypeSystem } from "./TypeSystem.ts";
+import type { OpaqueSchemaGraph } from "./TypeSystem.ts";
 import { Crdt } from "@functorz/crdt-helper";
-import { login } from "../login.ts";
 import { fromUint8Array } from "js-base64";
 import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from "./AfCustomCodeTemplates.ts";
 import { getSchemaModelById } from "../ali-oss.ts";
@@ -18,6 +15,7 @@ import type {
   FetchAppDetailByExIdQueryVariables,
   SupportedCustomModelDescriptor,
 } from "../../graphql/generated/resolvers-types.ts";
+import type { Account } from "../../modules/account/application/account-handler.ts";
 
 type LatestSchema =
   | {
@@ -176,53 +174,27 @@ export class TypeSystemStore {
     return this.currSchemaGraph;
   }
 
-  private async ensureAuthenticated(): Promise<void> {
-    if (authState.isValid()) {
-      console.info("Access token is still valid");
-      return;
-    }
+  constructor(private account: Account) {}
 
-    console.info("Access token expired or missing, logging in...");
-
-    if (!process.env.FUNCTORZ_PHONE_NUMBER || !process.env.FUNCTORZ_PASSWORD) {
-      throw new Error(
-        "Missing FUNCTORZ_PHONE_NUMBER or FUNCTORZ_PASSWORD in environment variables",
-      );
-    }
-
-    const accessToken = await login(
-      process.env.FUNCTORZ_PHONE_NUMBER,
-      process.env.FUNCTORZ_PASSWORD,
-    );
-    authState.setToken(accessToken);
-    console.info("Successfully authenticated");
-  }
-
-  async fetchAppDetailByExId(
-    projectExId: string,
-  ): Promise<LatestSchema | null> {
+  async fetchAppDetailByExId(projectExId: string): Promise<LatestSchema> {
     try {
-      await this.ensureAuthenticated();
-      const data = await gqlRequest<
+      const gqlClient = await this.account.getGQLClient();
+      const data = await gqlClient.gqlRequest<
         FetchAppDetailByExIdQuery,
         FetchAppDetailByExIdQueryVariables
-      >(backendClient, FETCH_APP_DETAIL_QUERY, {
+      >(FETCH_APP_DETAIL_QUERY, {
         projectExId,
       });
       if (!data || !data.fetchAppDetailByExId) {
-        console.error(
-          "No data returned from fetchAppDetailByExId query for projectExId:",
-          projectExId,
+        throw new Error(
+          `No data returned for fetchAppDetailByExId with projectExId: ${projectExId}`,
         );
-        return null;
       }
 
       if (data.fetchAppDetailByExId.__typename === "MobileApp") {
-        console.error(
-          "fetchAppDetailByExId returned MobileApp which is unexpected for projectExId:",
-          projectExId,
+        throw new Error(
+          `fetchAppDetailByExId returned MobileApp which is unexpected for projectExId: ${projectExId}`,
         );
-        return null;
       }
 
       const latestSchema = data.fetchAppDetailByExId?.latestSchema;
@@ -232,9 +204,9 @@ export class TypeSystemStore {
         console.info("Fetched latestSchema:", latestSchema);
         return latestSchema;
       } else {
-        console.error("No latestSchema found for project:", projectExId);
-        console.debug("All information:");
-        return null;
+        throw new Error(
+          `No latestSchema found in fetchAppDetailByExId response for projectExId: ${projectExId}`,
+        );
       }
     } catch (error) {
       console.error("Error fetching app detail:", error);
@@ -248,12 +220,12 @@ export class TypeSystemStore {
     try {
       if (this.afCustomCodeTemplates.length > 0)
         return this.afCustomCodeTemplates;
-      await this.ensureAuthenticated();
+      const gqlClient = await this.account.getGQLClient();
 
-      const data = await gqlRequest<AfCustomCodeTemplatesQueryVariables>(
-        backendClient,
-        AF_CUSTOM_CODE_TEMPLATES_QUERY,
-      );
+      const data =
+        await gqlClient.gqlRequest<AfCustomCodeTemplatesQueryVariables>(
+          AF_CUSTOM_CODE_TEMPLATES_QUERY,
+        );
 
       this.afCustomCodeTemplates = data.visibleAfCustomCodeTemplates;
       return this.afCustomCodeTemplates;
@@ -267,11 +239,10 @@ export class TypeSystemStore {
     try {
       if (this.supportedCustomModelDescriptor)
         return this.supportedCustomModelDescriptor;
-      await this.ensureAuthenticated();
+      const gqlClient = await this.account.getGQLClient();
 
       const SupportedCustomModelDescriptor =
-        await gqlRequest<SupportedCustomModelDescriptor>(
-          backendClient,
+        await gqlClient.gqlRequest<SupportedCustomModelDescriptor>(
           SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
         );
 
@@ -327,15 +298,16 @@ export class TypeSystemStore {
     return schemaGraph;
   }
 
-  public withEnabledFeatures = <T>(func: () => T): T => {
-    return ZTypeSystem.withEnabledFeatures<T>([], func);
+  public withEnabledFeatures = <T>(function_: () => T): T => {
+    return ZTypeSystem.withEnabledFeatures<T>([], function_);
   };
 }
 
 export const getTypeSystemStoreForCopilot = async (
   schemaId: string,
+  account: Account,
 ): Promise<TypeSystemStore> => {
-  const typeSystemStore = new TypeSystemStore();
+  const typeSystemStore = new TypeSystemStore(account);
   await Promise.all([
     typeSystemStore.getAFCustomCodeTemplates(),
     typeSystemStore.getSupportedCustomModelDescriptor(),

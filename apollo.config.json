@@ -1,12 +1,20 @@
 {
   "client": {
-    "name": "ai agent evaluation system",
     "service": {
-      "localSchemaFile": [
-        "src/graphql/functorz/schema.graphql",
-        "src/graphql/type/schema.graphql"
-      ]
+      "localSchemaFile": "src/graphql/generated/merged-schema.graphql",
+      "name": "ai agent evaluation system"
     },
-    "includes": ["src/**/*.{ts,tsx,graphql}"]
+    "includes": ["src/**/*.{ts,tsx}"],
+    "excludes": [
+      "node_modules/**",
+      "**/__tests__",
+      "**/tests",
+      "**/dist",
+      "**/prisma",
+      "**/scripts",
+      "local_shell/**",
+      "**/generated/**",
+      "src/graphql/generated/**/*"
+    ]
   }
 }

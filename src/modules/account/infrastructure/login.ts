@@ -2,7 +2,7 @@ import { gql } from "graphql-request";
 import type {
   LoginWithPhoneNumberMutation,
   LoginWithPhoneNumberMutationVariables,
-} from "../../../graphql/generated/resolvers-types.ts";
+} from "../../../graphql/generated/types.ts";
 import { publicNetworkClient } from "../../shared/application/graphql-client.ts";
 import type { AccountInfo } from "../domain/schema/account.schema.ts";
 

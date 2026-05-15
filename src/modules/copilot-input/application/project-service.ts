@@ -3,19 +3,18 @@ import {
   GQL_CREATE_PROJECT_IN_ORGANIZATION,
   GQL_DELETE_PROJECT,
   createProjectSubscription,
-} from "../../../external/zed/createProject.ts";
+} from "../infrastructure/project-manager.ts";
 import {
-  Platform,
-  ProjectContentCategory,
-  ProjectSpaceType,
-  type CreateProjectInOrganizationMutation,
-  type CreateProjectInOrganizationMutationVariables,
-  type Mutation,
-  type MutationDeleteProjectArgs as MutationDeleteProjectArguments,
-  type Query,
-  type QueryCheckProjectNameDuplicateArgs as QueryCheckProjectNameDuplicateArguments,
-} from "../../../graphql/generated/resolvers-types.ts";
+  type CreateProjectInOrganizationAsyncMutation,
+  type CreateProjectInOrganizationAsyncMutationVariables,
+} from "../../../graphql/generated/types.ts";
 import type { Account } from "../../account/application/account-handler.ts";
+import type {
+  CheckProjectNameDuplicateQuery,
+  CheckProjectNameDuplicateQueryVariables,
+  DeleteProjectMutation,
+  DeleteProjectMutationVariables,
+} from "../../../graphql/generated/types.ts";
 
 export class ProjectService {
   constructor(private account: Account) {}
@@ -28,8 +27,8 @@ export class ProjectService {
 
     console.info("Checking project name availability", { projectName });
     const nameCheckData = await gqlClient.gqlRequest<
-      Query["checkProjectNameDuplicate"],
-      QueryCheckProjectNameDuplicateArguments
+      CheckProjectNameDuplicateQuery,
+      CheckProjectNameDuplicateQueryVariables
     >(GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
 
     if (nameCheckData) {
@@ -40,14 +39,14 @@ export class ProjectService {
 
     console.info("Creating project", { projectName, organizationExId });
     const mutationData = await gqlClient.gqlRequest<
-      CreateProjectInOrganizationMutation,
-      CreateProjectInOrganizationMutationVariables
+      CreateProjectInOrganizationAsyncMutation,
+      CreateProjectInOrganizationAsyncMutationVariables
     >(GQL_CREATE_PROJECT_IN_ORGANIZATION, {
       projectName,
-      platform: Platform.Web,
-      projectSpaceType: ProjectSpaceType.Personal,
+      platform: "WEB",
+      projectSpaceType: "PERSONAL",
       organizationExId,
-      category: ProjectContentCategory.Others,
+      category: "OTHERS",
     });
 
     const taskId = mutationData.createProjectInOrganizationAsync;
@@ -63,8 +62,8 @@ export class ProjectService {
     const gqlClient = await this.account.getGQLClient();
     console.info("Deleting project", { projectExId });
     const isDeleted = await gqlClient.gqlRequest<
-      Mutation["deleteProject"],
-      MutationDeleteProjectArguments
+      DeleteProjectMutation,
+      DeleteProjectMutationVariables
     >(GQL_DELETE_PROJECT, { projectExId });
     if (!isDeleted) {
       throw new Error(`Failed to delete project with exId ${projectExId}`);

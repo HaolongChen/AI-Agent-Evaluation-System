@@ -93,7 +93,6 @@ export const {
 
 export const {
   Product,
-  Platform,
   CustomChatModelDescriptor,
   CustomEmbeddingModelDescriptor,
   ModelCustomParamDescriptor,

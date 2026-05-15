@@ -1,5 +1,5 @@
 import { fromUint8Array } from "js-base64";
-import { getSchemaModelById } from "../../../../../external/ali-oss.ts";
+import { getSchemaModelById } from "../../../../shared/infrastructure/ali-oss.ts";
 import { Crdt } from "@functorz/crdt-helper";
 import { fetchSideBar } from "../tools/documentation-reader.ts";
 import fs from "node:fs/promises";

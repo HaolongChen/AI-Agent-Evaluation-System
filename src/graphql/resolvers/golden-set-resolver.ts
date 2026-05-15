@@ -12,10 +12,7 @@ import { ProjectService } from "../../modules/copilot-input/application/project-
 import {
   CopilotType,
   type GoldenSet,
-  type Mutation,
   type MutationCreateUserInputArgs as MutationCreateUserInputArguments,
-  type MutationDeleteProjectByIdsArgs as MutationDeleteProjectByIdsArguments,
-  type MutationFixAliPayDataBindingArgs as MutationFixAliPayDataBindingArguments,
   type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
   type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
   type QueryGetGoldenSetByIdArgs as QueryGetGoldenSetByIdArguments,
@@ -27,9 +24,15 @@ import { prisma } from "../../config/prisma.ts";
 import {
   GQL_DELETE_PROJECT_BY_IDS,
   GQL_FIX_ALIPAY_DATA_BINDING,
-} from "../../external/zed/createProject.ts";
-import { Account } from "../../modules/account/application/account-handler.ts";
+} from "../../modules/copilot-input/infrastructure/project-manager.ts";
 import { NetworkClient } from "../../modules/shared/application/graphql-client.ts";
+import { myAccount } from "../../DI/account.ts";
+import type {
+  DeleteProjectByIdsMutation,
+  DeleteProjectByIdsMutationVariables,
+  FixAliPayDataBindingMutation,
+  FixAliPayDataBindingMutationVariables,
+} from "../generated/types.ts";
 
 const copilotTypeMapper = {
   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -136,12 +139,8 @@ export const goldenSetResolver = {
       for (let index = 0; index < arguments_.number; index++) {
         projectNames.push("CRDT-Evaluation-" + Date.now());
       }
-      const account = new Account(
-        process.env.ADMIN_PHONE_NUMBER!,
-        process.env.ADMIN_PASSWORD!,
-      );
-      const projectService = new ProjectService(account);
-      const typeSystemStore = new TypeSystemStore(account);
+      const projectService = new ProjectService(myAccount);
+      const typeSystemStore = new TypeSystemStore(myAccount);
       await Promise.all(
         projectNames.map(async (projectName) => {
           const projectExId = await projectService.createProject(projectName);
@@ -183,11 +182,11 @@ export const goldenSetResolver = {
       const response = await dangerousNetworkClient
         .buildGQLClient()
         .gqlRequest<
-          Mutation["deleteProjectByIds"],
-          MutationDeleteProjectByIdsArguments
+          DeleteProjectByIdsMutation,
+          DeleteProjectByIdsMutationVariables
         >(GQL_DELETE_PROJECT_BY_IDS, { ids });
 
-      return response;
+      return response.deleteProjectByIds;
     },
     runCrdtTest: async (
       _: unknown,
@@ -212,8 +211,8 @@ export const goldenSetResolver = {
         const results = await Promise.allSettled(
           result.rows.map(async ({ id }) => {
             const response = await gqlClient.gqlRequest<
-              Mutation["fixAliPayDataBinding"],
-              MutationFixAliPayDataBindingArguments
+              FixAliPayDataBindingMutation,
+              FixAliPayDataBindingMutationVariables
             >(GQL_FIX_ALIPAY_DATA_BINDING, {
               projectId: id,
             });

@@ -1,14 +1,18 @@
-/* eslint-disable unicorn/filename-case */
 /* eslint-disable unicorn/no-null */
 import { gql } from "graphql-request";
 
-import type { SubscriptionHandlers } from "../../modules/shared/application/graphql-client.ts";
-import type { Account } from "../../modules/account/application/account-handler.ts";
-import {
-  ProjectCreationStatus,
-  type OnProjectCreationStatusChangedSubscription,
-  type OnProjectCreationStatusChangedSubscriptionVariables,
-} from "../../graphql/generated/resolvers-types.ts";
+import type { SubscriptionHandlers } from "../../shared/application/graphql-client.ts";
+import type { Account } from "../../account/application/account-handler.ts";
+import type {
+  OnProjectCreationStatusChangedSubscription,
+  OnProjectCreationStatusChangedSubscriptionVariables,
+} from "../../../graphql/generated/types.ts";
+// import {
+//   ProjectCreationStatus,
+//   type SubscriptionOnProjectCreationStatusChangedArgs as OnProjectCreationStatusChangedSubscriptionVariables,
+//   type ProjectCreationResult,
+//   type Subscription,
+// } from "../../../graphql/generated/resolvers-types.ts";
 
 // ---------------------------------------------------------------------------
 // GQL Documents
@@ -21,7 +25,7 @@ export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
 `;
 
 export const GQL_CREATE_PROJECT_IN_ORGANIZATION = gql`
-  mutation CreateProjectInOrganization(
+  mutation CreateProjectInOrganizationAsync(
     $projectName: String!
     $templateExId: String
     $platform: Platform
@@ -94,9 +98,9 @@ export const createProjectSubscription = async (
           return;
         }
         const { projectExId, status } = data.onProjectCreationStatusChanged;
-        if (status === ProjectCreationStatus.Completed) {
+        if (status === "COMPLETED") {
           resolve(projectExId);
-        } else if (status === ProjectCreationStatus.Failed) {
+        } else if (status === "FAILED") {
           reject(taskId);
           unsubscribe?.();
         }

@@ -30,6 +30,7 @@ const toGraphqlRubric = (
       content: item.content,
       expectation: item.expectedAnswer,
       weight: Number(item.weight),
+      reasoning: item.reasoning,
       createdAt: item.createdAt!.toISOString(),
       __typename: "Criteria",
     })),

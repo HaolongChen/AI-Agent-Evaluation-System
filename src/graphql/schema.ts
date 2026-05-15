@@ -2,7 +2,9 @@ import { goldenSetResolver } from "./resolvers/golden-set-resolver.ts";
 import { rubricResolver } from "./resolvers/rubric-resolver.ts";
 import { sessionResolver } from "./resolvers/session-resolver.ts";
 
-const resolvers = {
+import { readFile } from "node:fs/promises";
+
+export const resolvers = {
   Query: {
     ...goldenSetResolver.Query,
     ...sessionResolver.Query,
@@ -15,6 +17,6 @@ const resolvers = {
   },
 };
 
-export { resolvers };
-
-export { typeDefs } from "./type/TypeDefs.ts";
+export const typeDefs = await readFile("./type/schema.graphql", {
+  encoding: "utf8",
+});

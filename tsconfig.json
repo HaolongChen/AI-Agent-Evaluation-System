@@ -1,8 +1,8 @@
 {
   "extends": "@tsconfig/node-ts/tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./",
-    // "outDir": "./dist",
+    "rootDir": "./src",
+    "outDir": "./dist",
     "module": "nodenext",
     "target": "esnext",
     "resolvePackageJsonImports": false,
@@ -20,22 +20,14 @@
     "noEmit": true,
     "lib": ["ESNext"]
   },
-  "include": [
-    "src/**/*",
-    "scripts/**/*",
-    "tests/**/*",
-    "*.config.ts",
-    "env.d.ts",
-    "apollo.config.js"
-  ],
+  "include": ["./src/**/*", "./env.d.ts"],
   "exclude": [
     "node_modules/**/*",
     "local_shell/**/*",
     "dist/**/*",
-    "**/generated/**",
-    "**/staging/**",
     ".dependency-cruiser.cjs",
     "dependency-graph.svg",
-    "momen_doc/**"
+    "momen_doc/**",
+    "src/prisma/build/**/*"
   ]
 }

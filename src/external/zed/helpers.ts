@@ -16,15 +16,11 @@ import {
   Variable,
   ZTypeSystem,
 } from "./TypeSystem.ts";
-import {
-  SYSTEM_MODEL_PROVIDER,
-  type SupportedCustomModelDescriptor_supportedCustomModelDescriptor,
-} from "./ZSchema.ts";
+const SYSTEM_MODEL_PROVIDER = "Functorz";
 import type {
-  AfCustomCodeTemplates_visibleAfCustomCodeTemplates,
-  AfCustomCodeTemplates_visibleAfCustomCodeTemplates_inputType,
-  AfCustomCodeTemplates_visibleAfCustomCodeTemplates_outputType,
-} from "./AfCustomCodeTemplates.ts";
+  AfCustomCodeTemplatesQuery,
+  SupportedCustomModelDescriptorQuery,
+} from "../../graphql/generated/types.ts";
 
 export type Nullable<T> = T | null | undefined;
 
@@ -66,6 +62,8 @@ export function assertNotNull<T>(value: T | null | undefined): T {
   return value;
 }
 
+export type ExtractArray<T extends any[]> = T extends (infer U)[] ? U : never;
+
 export const getError = (errorMessage: string, result: unknown) => {
   const error = new Error(errorMessage);
   (error as unknown as { result: unknown }).result = result;
@@ -73,14 +71,44 @@ export const getError = (errorMessage: string, result: unknown) => {
 };
 
 export function genExtraContext(
-  aiModelDescriptors: SupportedCustomModelDescriptor_supportedCustomModelDescriptor | null,
-  afTemplateCodeDescriptors: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[],
+  aiModelDescriptors:
+    | SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"]
+    | null,
+  afTemplateCodeDescriptors: Exclude<
+    ExtractArray<
+      Exclude<AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"], null>
+    >,
+    null
+  >[],
 ) {
   const getAFTemplateCodeInputOutputMap = (
-    inputOrOutputType: (
-      | AfCustomCodeTemplates_visibleAfCustomCodeTemplates_inputType
-      | AfCustomCodeTemplates_visibleAfCustomCodeTemplates_outputType
-    )[],
+    inputOrOutputType: Array<
+      Exclude<
+        | ExtractArray<
+            Exclude<
+              ExtractArray<
+                Exclude<
+                  AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"],
+                  null
+                >
+              >,
+              null
+            >["inputType"]
+          >
+        | ExtractArray<
+            Exclude<
+              ExtractArray<
+                Exclude<
+                  AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"],
+                  null
+                >
+              >,
+              null
+            >["outputType"]
+          >,
+        null
+      >
+    >,
   ) => {
     const inputOrOutputTypeMap = new Map(
       inputOrOutputType.map((item) => {

@@ -6,64 +6,19 @@ import { ZTypeSystem } from "./TypeSystem.ts";
 import type { OpaqueSchemaGraph } from "./TypeSystem.ts";
 import { Crdt } from "@functorz/crdt-helper";
 import { fromUint8Array } from "js-base64";
-import type { AfCustomCodeTemplates_visibleAfCustomCodeTemplates } from "./AfCustomCodeTemplates.ts";
-import { getSchemaModelById } from "../ali-oss.ts";
-import { assertNotNull, genExtraContext } from "./helpers.ts";
+import { getSchemaModelById } from "../../modules/shared/infrastructure/ali-oss.ts";
+import {
+  assertNotNull,
+  genExtraContext,
+  type ExtractArray,
+} from "./helpers.ts";
+import type { Account } from "../../modules/account/application/account-handler.ts";
 import type {
-  AfCustomCodeTemplatesQueryVariables,
+  AfCustomCodeTemplatesQuery,
   FetchAppDetailByExIdQuery,
   FetchAppDetailByExIdQueryVariables,
-  SupportedCustomModelDescriptor,
-} from "../../graphql/generated/resolvers-types.ts";
-import type { Account } from "../../modules/account/application/account-handler.ts";
-
-type LatestSchema =
-  | {
-      __typename: "CrdtSchema";
-      crdtModelUrl?: string | undefined;
-      crdtPatches?:
-        | {
-            __typename: "SchemaCrdtPatches";
-            lastPatchExId?: string | undefined;
-            patches?:
-              | Array<
-                  | { __typename: "SchemaCrdtPatch"; patchBase64: string }
-                  | undefined
-                >
-              | undefined;
-          }
-        | undefined;
-    }
-  | {
-      __typename: "CrdtSchema";
-      crdtModelUrl?: string | undefined;
-      crdtPatches?:
-        | {
-            __typename: "SchemaCrdtPatches";
-            lastPatchExId?: string | undefined;
-            patches?:
-              | Array<
-                  | { __typename: "SchemaCrdtPatch"; patchBase64: string }
-                  | undefined
-                >
-              | undefined;
-          }
-        | undefined;
-    }
-  | {
-      __typename: "CrdtSchema";
-      crdtModelUrl?: string | undefined;
-      crdtPatches?: {
-        __typename: "SchemaCrdtPatches";
-        lastPatchExId?: string | undefined;
-        patches?:
-          | Array<
-              { __typename: "SchemaCrdtPatch"; patchBase64: string } | undefined
-            >
-          | undefined;
-      };
-    };
-
+  SupportedCustomModelDescriptorQuery,
+} from "../../graphql/generated/types.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -102,6 +57,17 @@ const FETCH_APP_DETAIL_QUERY = gql`
         }
       }
       ... on WebApp {
+        latestSchema {
+          crdtModelUrl
+          crdtPatches {
+            lastPatchExId
+            patches {
+              patchBase64
+            }
+          }
+        }
+      }
+      ... on MobileApp {
         latestSchema {
           crdtModelUrl
           crdtPatches {
@@ -165,10 +131,15 @@ const SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY = gql`
 
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
-  public afCustomCodeTemplates: AfCustomCodeTemplates_visibleAfCustomCodeTemplates[] =
-    [];
-  public supportedCustomModelDescriptor: SupportedCustomModelDescriptor | null =
-    null;
+  public afCustomCodeTemplates: Exclude<
+    ExtractArray<
+      Exclude<AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"], null>
+    >,
+    null
+  >[] = [];
+  public supportedCustomModelDescriptor:
+    | SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"]
+    | null = null;
 
   get schemaGraph(): OpaqueSchemaGraph | null {
     return this.currSchemaGraph;
@@ -176,7 +147,7 @@ export class TypeSystemStore {
 
   constructor(private account: Account) {}
 
-  async fetchAppDetailByExId(projectExId: string): Promise<LatestSchema> {
+  async fetchAppDetailByExId(projectExId: string) {
     try {
       const gqlClient = await this.account.getGQLClient();
       const data = await gqlClient.gqlRequest<
@@ -188,12 +159,6 @@ export class TypeSystemStore {
       if (!data || !data.fetchAppDetailByExId) {
         throw new Error(
           `No data returned for fetchAppDetailByExId with projectExId: ${projectExId}`,
-        );
-      }
-
-      if (data.fetchAppDetailByExId.__typename === "MobileApp") {
-        throw new Error(
-          `fetchAppDetailByExId returned MobileApp which is unexpected for projectExId: ${projectExId}`,
         );
       }
 
@@ -215,19 +180,30 @@ export class TypeSystemStore {
   }
 
   async getAFCustomCodeTemplates(): Promise<
-    AfCustomCodeTemplates_visibleAfCustomCodeTemplates[]
+    Exclude<
+      ExtractArray<
+        Exclude<
+          AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"],
+          null
+        >
+      >,
+      null
+    >[]
   > {
     try {
       if (this.afCustomCodeTemplates.length > 0)
         return this.afCustomCodeTemplates;
       const gqlClient = await this.account.getGQLClient();
 
-      const data =
-        await gqlClient.gqlRequest<AfCustomCodeTemplatesQueryVariables>(
-          AF_CUSTOM_CODE_TEMPLATES_QUERY,
-        );
-
-      this.afCustomCodeTemplates = data.visibleAfCustomCodeTemplates;
+      const data = await gqlClient.gqlRequest<AfCustomCodeTemplatesQuery>(
+        AF_CUSTOM_CODE_TEMPLATES_QUERY,
+      );
+      if (!data.visibleAfCustomCodeTemplates) {
+        throw new Error("No data returned for visibleAfCustomCodeTemplates");
+      }
+      this.afCustomCodeTemplates = data.visibleAfCustomCodeTemplates.filter(
+        (item) => item !== null,
+      );
       return this.afCustomCodeTemplates;
     } catch (error) {
       console.error("Error fetching AF custom code templates:", error);
@@ -235,19 +211,22 @@ export class TypeSystemStore {
     }
   }
 
-  async getSupportedCustomModelDescriptor(): Promise<SupportedCustomModelDescriptor> {
+  async getSupportedCustomModelDescriptor(): Promise<
+    SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"]
+  > {
     try {
       if (this.supportedCustomModelDescriptor)
         return this.supportedCustomModelDescriptor;
       const gqlClient = await this.account.getGQLClient();
 
       const SupportedCustomModelDescriptor =
-        await gqlClient.gqlRequest<SupportedCustomModelDescriptor>(
+        await gqlClient.gqlRequest<SupportedCustomModelDescriptorQuery>(
           SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
         );
 
-      this.supportedCustomModelDescriptor = SupportedCustomModelDescriptor;
-      return SupportedCustomModelDescriptor;
+      this.supportedCustomModelDescriptor =
+        SupportedCustomModelDescriptor.supportedCustomModelDescriptor;
+      return this.supportedCustomModelDescriptor;
     } catch (error) {
       console.error("Error fetching supported custom model descriptor:", error);
       throw error;
@@ -279,13 +258,10 @@ export class TypeSystemStore {
       const extraContext = genExtraContext(
         {
           chatModelDescriptors:
-            this.supportedCustomModelDescriptor?.chatModelDescriptors ?? null,
+            this.supportedCustomModelDescriptor?.chatModelDescriptors,
           embeddingModelDescriptors:
-            this.supportedCustomModelDescriptor?.embeddingModelDescriptors ??
-            null,
-          __typename:
-            this.supportedCustomModelDescriptor?.__typename ??
-            "SupportedCustomModelDescriptor",
+            this.supportedCustomModelDescriptor?.embeddingModelDescriptors,
+          __typename: this.supportedCustomModelDescriptor?.__typename,
         },
         this.afCustomCodeTemplates,
       );

@@ -8,7 +8,6 @@ declare global {
       PORT: string;
       GOOGLE_API_KEY: string;
       AZURE_API_KEY: string;
-      TEST_DB_URL: string;
       WS_URL: string;
       userToken: string;
       projectExId: string;

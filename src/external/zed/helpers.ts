@@ -72,7 +72,14 @@ export const getError = (errorMessage: string, result: unknown) => {
 
 export function genExtraContext(
   aiModelDescriptors:
-    | SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"]
+    | {
+        [K in keyof Exclude<
+          SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"],
+          null
+        >]: K extends "__typename"
+          ? "SupportedCustomModelDescriptor"
+          : (any | null)[] | null;
+      }
     | null,
   afTemplateCodeDescriptors: Exclude<
     ExtractArray<

@@ -1,4 +1,5 @@
 /* eslint-disable unicorn/filename-case */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable unicorn/no-null */
 
 import { gql } from "graphql-request";
@@ -138,7 +139,14 @@ export class TypeSystemStore {
     null
   >[] = [];
   public supportedCustomModelDescriptor:
-    | SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"]
+    | {
+        [K in keyof Exclude<
+          SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"],
+          null
+        >]: K extends "__typename"
+          ? "SupportedCustomModelDescriptor"
+          : (any | null)[] | null;
+      }
     | null = null;
 
   get schemaGraph(): OpaqueSchemaGraph | null {
@@ -212,7 +220,7 @@ export class TypeSystemStore {
   }
 
   async getSupportedCustomModelDescriptor(): Promise<
-    SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"]
+    typeof this.supportedCustomModelDescriptor
   > {
     try {
       if (this.supportedCustomModelDescriptor)
@@ -258,10 +266,13 @@ export class TypeSystemStore {
       const extraContext = genExtraContext(
         {
           chatModelDescriptors:
-            this.supportedCustomModelDescriptor?.chatModelDescriptors,
+            this.supportedCustomModelDescriptor?.chatModelDescriptors ?? null,
           embeddingModelDescriptors:
-            this.supportedCustomModelDescriptor?.embeddingModelDescriptors,
-          __typename: this.supportedCustomModelDescriptor?.__typename,
+            this.supportedCustomModelDescriptor?.embeddingModelDescriptors ??
+            null,
+          __typename:
+            this.supportedCustomModelDescriptor?.__typename ??
+            "SupportedCustomModelDescriptor",
         },
         this.afCustomCodeTemplates,
       );

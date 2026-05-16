@@ -15,12 +15,12 @@ import {
   ModelCustomParamDescriptor as ModelCustomParameterDescriptor,
   Variable,
   ZTypeSystem,
-} from "./TypeSystem.ts";
+} from "../interface/type-system.ts";
 const SYSTEM_MODEL_PROVIDER = "Functorz";
 import type {
   AfCustomCodeTemplatesQuery,
   SupportedCustomModelDescriptorQuery,
-} from "../../graphql/generated/types.ts";
+} from "../../../../graphql/generated/types.ts";
 
 export type Nullable<T> = T | null | undefined;
 

@@ -2,7 +2,7 @@ import { WebSocket } from "ws";
 import {
   CopilotMessageType,
   type CopilotMessage,
-} from "../../../external/types.ts";
+} from "../../shared/domain/interface/types.ts";
 import { MessageHandler } from "./message-handler.js";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 

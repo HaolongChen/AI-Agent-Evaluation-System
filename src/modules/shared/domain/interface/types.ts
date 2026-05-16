@@ -1,7 +1,4 @@
-import type {
-  JobState,
-  ToolResult,
-} from "../modules/shared/domain/interface/graph-states.ts";
+import type { JobState, ToolResult } from "./graph-states.ts";
 
 // --- COPY FROM COPILOT TYPES DEFINITION ---
 

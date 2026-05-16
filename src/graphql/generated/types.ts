@@ -29,6 +29,13 @@ export type ColumnType =
   | "UNKNOWN"
   | "VIDEO";
 
+export type CopilotSessionType =
+  | "AFCODE_TOOL"
+  | "COPILOT"
+  | "LOG_TOOL"
+  | "PROMPT_OPTIMIZER"
+  | "SET_DATA_BINDING";
+
 export type Platform = "MOBILE" | "WEB" | "WECHAT";
 
 export type ProjectContentCategory =
@@ -276,4 +283,13 @@ export type SupportedCustomModelDescriptorQuery = {
 
 export type SupportedCustomModelDescriptorQueryVariables = Exact<{
   [key: string]: never;
+}>;
+
+export type GetCopilotSubscriptionCountQuery = {
+  copilotSubscriptionCount: unknown;
+} & { __typename: "Query" };
+
+export type GetCopilotSubscriptionCountQueryVariables = Exact<{
+  projectExId: string;
+  sessionType: CopilotSessionType;
 }>;

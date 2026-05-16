@@ -1,4 +1,3 @@
-import { assertNotNull } from "../../../external/zed/helpers.ts";
 import { getTypeSystemStoreForCopilot } from "../../copilot-input/infrastructure/type-system-store.ts";
 import type { Account } from "../../account/application/account-handler.ts";
 import { ProjectService } from "../../copilot-input/application/project-service.ts";
@@ -7,12 +6,15 @@ import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
 import { EvaluationJobRunner } from "./evaluation-job.ts";
+import type { IProjectRepository } from "../../copilot-input/domain/interface/project.interface.ts";
+import { assertNotNull } from "../../shared/domain/service/type-system.service.ts";
 
 export class ExecuteCopilotUseCase {
   constructor(
     private readonly repository: {
       copilotOutputRepository: ICopilotOutputRepository;
       goldenSetRepository: IGoldenSetRepository;
+      projectRepository: IProjectRepository;
     },
     private readonly account: Account,
   ) {}
@@ -35,11 +37,20 @@ export class ExecuteCopilotUseCase {
       this.account,
     );
     const projectName = this.generateProjectName(goldenSetId, userInputId);
-    const projectService = new ProjectService(this.account);
-    const projectExId = await projectService.createProject(projectName);
-    const wsUrl = `${process.env.BACKEND_WS_URL}projectExId=${projectExId}&userToken=${process.env.userToken}&clientType=${process.env.clientType}`;
+    const projectService = new ProjectService(
+      this.account,
+      this.repository.projectRepository,
+    );
+    const project = await projectService.createProject(projectName);
+    await this.account.ensureLoggedIn();
+    const wsUrl = buildCopilotExecutionUrl(
+      process.env.BACKEND_GRAPHQL_URL,
+      project.projectExId,
+      this.account.accessToken,
+      "copilot-output",
+    );
     const copilotJobEntity = new CopilotJobEntity({
-      projectExId,
+      projectExId: project.projectExId,
       query: userInputEntity.data.content,
       wsUrl,
       schemaGraph: assertNotNull(typeSystemStore.schemaGraph),
@@ -47,7 +58,7 @@ export class ExecuteCopilotUseCase {
     const evaluationJobRunner = new EvaluationJobRunner(copilotJobEntity);
     evaluationJobRunner.start();
     const editableText = await evaluationJobRunner.waitForResult();
-    await projectService.deleteProject(projectExId);
+    await projectService.deleteProject(project.projectExId);
     const copilotOutputEntity = new CopilotOutputEntity({
       goldenSetId,
       userInputId,
@@ -57,3 +68,12 @@ export class ExecuteCopilotUseCase {
     return copilotOutputEntity.toJSON();
   }
 }
+
+export const buildCopilotExecutionUrl = (
+  hostname: string,
+  projectExId: string,
+  userToken: string,
+  clientType: string,
+): string => {
+  return `${hostname}projectExId=${projectExId}&userToken=${userToken}&clientType=${clientType}`;
+};

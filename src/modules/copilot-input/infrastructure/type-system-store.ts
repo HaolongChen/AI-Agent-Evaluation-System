@@ -2,8 +2,8 @@
 /* eslint-disable unicorn/no-null */
 
 import { gql } from "graphql-request";
-import { ZTypeSystem } from "../../../external/zed/TypeSystem.ts";
-import type { OpaqueSchemaGraph } from "../../../external/zed/TypeSystem.ts";
+import { ZTypeSystem } from "../../shared/domain/interface/type-system.ts";
+import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-system.ts";
 import { Crdt } from "@functorz/crdt-helper";
 import { fromUint8Array } from "js-base64";
 import { getSchemaModelById } from "../../shared/infrastructure/ali-oss.ts";

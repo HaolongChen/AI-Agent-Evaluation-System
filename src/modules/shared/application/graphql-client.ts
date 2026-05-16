@@ -47,7 +47,11 @@ export class NetworkClient {
       createWsClient({
         url: wsUrl,
         webSocketImpl: ws || WebSocket,
-        connectionParams: this._headers,
+        connectionParams: {
+          "X-SESSION-ID": this._headers["X-Session-Id"] || "",
+          "X-ZED-VERSION": this._headers["X-Zed-Version"] || "",
+          authToken: this._headers["Authorization"] || "",
+        },
         on: {
           ...this._defaultWsHandler,
           ...on,

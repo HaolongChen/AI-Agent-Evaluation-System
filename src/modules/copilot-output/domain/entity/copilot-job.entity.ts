@@ -1,7 +1,7 @@
 import type z from "zod";
 import { Entity } from "../../../shared/domain/entity/entity.ts";
 import { copilotJobSchema } from "../schema/copilot.schema.ts";
-import type { TaskMessage } from "../../../../external/types.ts";
+import type { TaskMessage } from "../../../shared/domain/interface/types.ts";
 
 export class CopilotJobEntity extends Entity<typeof copilotJobSchema> {
   private _editableText: string | undefined;

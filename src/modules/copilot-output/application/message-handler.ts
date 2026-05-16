@@ -9,7 +9,7 @@ import {
   type ToolCall,
   type ToolCallsMessage,
   type ToolResponseMessage,
-} from "../../../external/types.ts";
+} from "../../shared/domain/interface/types.ts";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import {
   ClientType,
@@ -17,7 +17,7 @@ import {
   Locale,
   Product,
   type CopilotApiResultJs,
-} from "../../../external/zed/TypeSystem.ts";
+} from "../../shared/domain/interface/type-system.ts";
 import type { ToolResult } from "../../shared/domain/interface/graph-states.ts";
 
 export interface MessageHandlerResponse {

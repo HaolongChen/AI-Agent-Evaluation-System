@@ -1,6 +1,5 @@
 import { Client } from "pg";
 import { repository } from "../../DI/repository.ts";
-import { TypeSystemStore } from "../../external/zed/TypeSystemStore.ts";
 import { CreateGoldenSetUseCase } from "../../modules/copilot-input/application/create-golden-set.ts";
 import { CreateUserInputUseCase } from "../../modules/copilot-input/application/create-user-input.ts";
 import { FormCopilotInputUseCase } from "../../modules/copilot-input/application/form-copilot-input.ts";
@@ -13,6 +12,7 @@ import {
   CopilotType,
   type GoldenSet,
   type MutationCreateUserInputArgs as MutationCreateUserInputArguments,
+  type MutationDeleteProjectArgs as MutationDeleteProjectArguments,
   type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
   type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
   type QueryGetGoldenSetByIdArgs as QueryGetGoldenSetByIdArguments,
@@ -20,16 +20,10 @@ import {
   type UserInput,
 } from "../generated/resolvers-types.ts";
 import { GraphQLError } from "graphql";
-import { prisma } from "../../config/prisma.ts";
-import {
-  GQL_DELETE_PROJECT_BY_IDS,
-  GQL_FIX_ALIPAY_DATA_BINDING,
-} from "../../modules/copilot-input/infrastructure/project-manager.ts";
+import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/copilot-input/infrastructure/project-manager.ts";
 import { NetworkClient } from "../../modules/shared/application/graphql-client.ts";
 import { myAccount } from "../../DI/account.ts";
 import type {
-  DeleteProjectByIdsMutation,
-  DeleteProjectByIdsMutationVariables,
   FixAliPayDataBindingMutation,
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
@@ -137,56 +131,31 @@ export const goldenSetResolver = {
       let results: string = "";
       const projectNames: string[] = [];
       for (let index = 0; index < arguments_.number; index++) {
-        projectNames.push("CRDT-Evaluation-" + Date.now());
+        projectNames.push("AI-EVAL-" + Date.now() + "-" + index);
       }
-      const projectService = new ProjectService(myAccount);
-      const typeSystemStore = new TypeSystemStore(myAccount);
+      const projectService = new ProjectService(
+        myAccount,
+        repository.projectRepository,
+      );
       await Promise.all(
         projectNames.map(async (projectName) => {
-          const projectExId = await projectService.createProject(projectName);
-          const schema =
-            await typeSystemStore.fetchAppDetailByExId(projectExId);
-          if (!schema?.crdtModelUrl) {
-            throw new GraphQLError(
-              `Failed to create project with name ${projectName}`,
-            );
-          }
-          const path = new URL(schema.crdtModelUrl).pathname.split("/");
-          results += await prisma.goldenSet.create({
-            data: { schemaId: path[2], projectExId: projectExId },
-          });
+          const project = await projectService.createProject(projectName);
+          results += JSON.stringify(project) + "\n";
         }),
       );
-      return JSON.stringify(results);
+      return results;
     },
     deleteProject: async (
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       _: unknown,
+      arguments_: MutationDeleteProjectArguments,
     ): Promise<boolean> => {
-      const zionDatabase = new Client({
-        connectionString: process.env.DATABASE_URL_PRODUCTION,
-      });
-      await zionDatabase.connect();
-      const fetchProjectId = {
-        name: "delete-projects",
-        text: `SELECT id FROM project where project_name LIKE 'temp-project-1a91a63a-3bde-4cea%'`,
-      };
-      const dangerousNetworkClient = new NetworkClient();
-      dangerousNetworkClient.setHeader(
-        "Authorization",
-        `Bearer ${process.env.DANGEROUS_TOKEN}`,
+      const projectExId = arguments_.projectExId;
+      const projectService = new ProjectService(
+        myAccount,
+        repository.projectRepository,
       );
-      const result = await zionDatabase.query(fetchProjectId);
-      await zionDatabase.end();
-      const ids = result.rows.map(({ id }) => id);
-      const response = await dangerousNetworkClient
-        .buildGQLClient()
-        .gqlRequest<
-          DeleteProjectByIdsMutation,
-          DeleteProjectByIdsMutationVariables
-        >(GQL_DELETE_PROJECT_BY_IDS, { ids });
-
-      return response.deleteProjectByIds;
+      await projectService.deleteProjectInDatabase(projectExId);
+      return true;
     },
     runCrdtTest: async (
       _: unknown,

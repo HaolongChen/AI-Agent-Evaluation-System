@@ -53,6 +53,85 @@ export type ProjectSpaceType =
   | "SHARE"
   | "TEAM";
 
+export type LoginWithPhoneNumberMutation_loginWithPhoneNumber_account = {
+  exId: string;
+} & { __typename: "Account" };
+
+export type LoginWithPhoneNumberMutation_loginWithPhoneNumber = {
+  accessToken: string | null;
+  account: LoginWithPhoneNumberMutation_loginWithPhoneNumber_account | null;
+} & { __typename: "AccountInfo" };
+
+export type LoginWithPhoneNumberMutation = {
+  loginWithPhoneNumber: LoginWithPhoneNumberMutation_loginWithPhoneNumber | null;
+} & { __typename: "Mutation" };
+
+export type LoginWithPhoneNumberMutationVariables = Exact<{
+  phoneNumber: string;
+  password: string;
+}>;
+
+export type CheckProjectNameDuplicateQuery = {
+  checkProjectNameDuplicate: boolean;
+} & { __typename: "Query" };
+
+export type CheckProjectNameDuplicateQueryVariables = Exact<{
+  projectName: string;
+}>;
+
+export type CreateProjectInOrganizationAsyncMutation = {
+  createProjectInOrganizationAsync: string | null;
+} & { __typename: "Mutation" };
+
+export type CreateProjectInOrganizationAsyncMutationVariables = Exact<{
+  projectName: string;
+  templateExId?: string | undefined;
+  platform?: Platform | undefined;
+  projectSpaceType: ProjectSpaceType;
+  organizationExId: string;
+  forBeginnerGuide?: boolean | undefined;
+  category?: ProjectContentCategory | undefined;
+  useRefactoredComponent?: boolean | undefined;
+  useNewType?: boolean | undefined;
+}>;
+
+export type OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged =
+  { projectExId: string | null; status: ProjectCreationStatus | null } & {
+    __typename: "ProjectCreationResult";
+  };
+
+export type OnProjectCreationStatusChangedSubscription = {
+  onProjectCreationStatusChanged: OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged | null;
+} & { __typename: "Subscription" };
+
+export type OnProjectCreationStatusChangedSubscriptionVariables = Exact<{
+  uniqueId: string;
+}>;
+
+export type DeleteProjectMutation = { deleteProject: boolean } & {
+  __typename: "Mutation";
+};
+
+export type DeleteProjectMutationVariables = Exact<{
+  projectExId: string;
+}>;
+
+export type DeleteProjectByIdsMutation = { deleteProjectByIds: boolean } & {
+  __typename: "Mutation";
+};
+
+export type DeleteProjectByIdsMutationVariables = Exact<{
+  ids: Array<unknown> | unknown;
+}>;
+
+export type FixAliPayDataBindingMutation = { fixAliPayDataBinding: boolean } & {
+  __typename: "Mutation";
+};
+
+export type FixAliPayDataBindingMutationVariables = Exact<{
+  projectId: unknown;
+}>;
+
 export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_latestSchema_crdtPatches_patches =
   { patchBase64: string } & { __typename: "SchemaCrdtPatch" };
 
@@ -197,83 +276,4 @@ export type SupportedCustomModelDescriptorQuery = {
 
 export type SupportedCustomModelDescriptorQueryVariables = Exact<{
   [key: string]: never;
-}>;
-
-export type LoginWithPhoneNumberMutation_loginWithPhoneNumber_account = {
-  exId: string;
-} & { __typename: "Account" };
-
-export type LoginWithPhoneNumberMutation_loginWithPhoneNumber = {
-  accessToken: string | null;
-  account: LoginWithPhoneNumberMutation_loginWithPhoneNumber_account | null;
-} & { __typename: "AccountInfo" };
-
-export type LoginWithPhoneNumberMutation = {
-  loginWithPhoneNumber: LoginWithPhoneNumberMutation_loginWithPhoneNumber | null;
-} & { __typename: "Mutation" };
-
-export type LoginWithPhoneNumberMutationVariables = Exact<{
-  phoneNumber: string;
-  password: string;
-}>;
-
-export type CheckProjectNameDuplicateQuery = {
-  checkProjectNameDuplicate: boolean;
-} & { __typename: "Query" };
-
-export type CheckProjectNameDuplicateQueryVariables = Exact<{
-  projectName: string;
-}>;
-
-export type CreateProjectInOrganizationAsyncMutation = {
-  createProjectInOrganizationAsync: string | null;
-} & { __typename: "Mutation" };
-
-export type CreateProjectInOrganizationAsyncMutationVariables = Exact<{
-  projectName: string;
-  templateExId?: string | undefined;
-  platform?: Platform | undefined;
-  projectSpaceType: ProjectSpaceType;
-  organizationExId: string;
-  forBeginnerGuide?: boolean | undefined;
-  category?: ProjectContentCategory | undefined;
-  useRefactoredComponent?: boolean | undefined;
-  useNewType?: boolean | undefined;
-}>;
-
-export type OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged =
-  { projectExId: string | null; status: ProjectCreationStatus | null } & {
-    __typename: "ProjectCreationResult";
-  };
-
-export type OnProjectCreationStatusChangedSubscription = {
-  onProjectCreationStatusChanged: OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged | null;
-} & { __typename: "Subscription" };
-
-export type OnProjectCreationStatusChangedSubscriptionVariables = Exact<{
-  uniqueId: string;
-}>;
-
-export type DeleteProjectMutation = { deleteProject: boolean } & {
-  __typename: "Mutation";
-};
-
-export type DeleteProjectMutationVariables = Exact<{
-  projectExId: string;
-}>;
-
-export type DeleteProjectByIdsMutation = { deleteProjectByIds: boolean } & {
-  __typename: "Mutation";
-};
-
-export type DeleteProjectByIdsMutationVariables = Exact<{
-  ids: Array<unknown> | unknown;
-}>;
-
-export type FixAliPayDataBindingMutation = { fixAliPayDataBinding: boolean } & {
-  __typename: "Mutation";
-};
-
-export type FixAliPayDataBindingMutationVariables = Exact<{
-  projectId: unknown;
 }>;

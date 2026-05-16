@@ -7,7 +7,7 @@ export const accountSchema = z.object({
 
 export interface AccountInfo {
   accessToken: string;
-  account?: {
+  account: {
     exId: string;
   };
 }

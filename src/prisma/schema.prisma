@@ -44,6 +44,19 @@ model goldenSet {
   @@unique([schemaId, copilotType, modelName], map: "unique_golden_set")
 }
 
+model project {
+  id          String   @id @default(uuid())
+  projectExId String   @map("project_ex_id") // corresponds to the projectExId in LangGraph
+  schemaId    String   @map("schema_id")
+  name        String   @map("name")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy   String   @default("unknown") @map("created_by") // userId or "system" for system-generated projects
+
+  @@unique([projectExId], map: "unique_project_ex_id")
+  @@unique([schemaId], map: "unique_project_schema_id")
+  @@unique([name], map: "unique_project_name")
+}
+
 model userInput {
   id         String                @id @default(uuid())
   // description String?

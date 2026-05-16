@@ -1,5 +1,5 @@
 import { assertNotNull } from "../../../external/zed/helpers.ts";
-import { getTypeSystemStoreForCopilot } from "../../../external/zed/TypeSystemStore.ts";
+import { getTypeSystemStoreForCopilot } from "../../copilot-input/infrastructure/type-system-store.ts";
 import type { Account } from "../../account/application/account-handler.ts";
 import { ProjectService } from "../../copilot-input/application/project-service.ts";
 import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/golden-set.interface.ts";

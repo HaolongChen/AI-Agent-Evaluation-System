@@ -1,25 +1,24 @@
-/* eslint-disable unicorn/filename-case */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable unicorn/no-null */
 
 import { gql } from "graphql-request";
-import { ZTypeSystem } from "./TypeSystem.ts";
-import type { OpaqueSchemaGraph } from "./TypeSystem.ts";
+import { ZTypeSystem } from "../../../external/zed/TypeSystem.ts";
+import type { OpaqueSchemaGraph } from "../../../external/zed/TypeSystem.ts";
 import { Crdt } from "@functorz/crdt-helper";
 import { fromUint8Array } from "js-base64";
-import { getSchemaModelById } from "../../modules/shared/infrastructure/ali-oss.ts";
+import { getSchemaModelById } from "../../shared/infrastructure/ali-oss.ts";
 import {
   assertNotNull,
   genExtraContext,
   type ExtractArray,
-} from "./helpers.ts";
-import type { Account } from "../../modules/account/application/account-handler.ts";
+} from "../../../external/zed/helpers.ts";
+import type { Account } from "../../account/application/account-handler.ts";
 import type {
   AfCustomCodeTemplatesQuery,
   FetchAppDetailByExIdQuery,
   FetchAppDetailByExIdQueryVariables,
   SupportedCustomModelDescriptorQuery,
-} from "../../graphql/generated/types.ts";
+} from "../../../graphql/generated/types.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -154,6 +153,27 @@ export class TypeSystemStore {
   }
 
   constructor(private account: Account) {}
+
+  simpleSchemaIdValidation(schemaId: string): boolean {
+    // Simple validation to check if the schemaId is a non-empty string
+    if (schemaId.trim().length === 0) {
+      console.error("Invalid schemaId: Schema ID cannot be an empty string.");
+      return false;
+    }
+    if (!/^[0-9]+$/.test(schemaId)) {
+      console.error("Invalid schemaId: Schema ID must be a numeric string.");
+      return false;
+    }
+    return true;
+  }
+
+  getSchemaIdFromCrdtModelUrl(crdtModelUrl: string): string {
+    const path = new URL(crdtModelUrl).pathname.split("/");
+    if (this.simpleSchemaIdValidation(path[2])) {
+      return path[2];
+    }
+    throw new Error(`Invalid schemaId extracted from crdtModelUrl: ${path[2]}`);
+  }
 
   async fetchAppDetailByExId(projectExId: string) {
     try {

@@ -15,10 +15,19 @@ import type {
   DeleteProjectMutation,
   DeleteProjectMutationVariables,
 } from "../../../graphql/generated/types.ts";
+import { TypeSystemStore } from "../infrastructure/type-system-store.ts";
+import { GetSchemaIdUseCase } from "./get-schema-id.ts";
+import type { IProjectRepository } from "../domain/interface/project.interface.ts";
+import { ProjectEntity } from "../domain/entity/project.entity.ts";
 
 export class ProjectService {
-  constructor(private account: Account) {}
-  async createProject(projectName: string): Promise<string> {
+  constructor(
+    private account: Account,
+    private repository: IProjectRepository,
+  ) {}
+  async createProject(
+    projectName: string,
+  ): Promise<ReturnType<ProjectEntity["toJSON"]>> {
     const gqlClient = await this.account.getGQLClient();
     const organizationExId = process.env.ORGANIZATION_EX_ID;
     if (!organizationExId) {
@@ -55,7 +64,18 @@ export class ProjectService {
     }
     console.info("Project creation task started", { taskId, projectName });
     console.info("Using modern graphql-ws subscription path", { taskId });
-    return await createProjectSubscription(taskId, this.account);
+    const projectExId = await createProjectSubscription(taskId, this.account);
+    const typeSystemStore = new TypeSystemStore(this.account);
+    const getSchemaIdUseCase = new GetSchemaIdUseCase(typeSystemStore);
+    const schemaId = await getSchemaIdUseCase.execute(projectExId);
+    const projectEntity = new ProjectEntity({
+      projectExId,
+      name: projectName,
+      schemaId,
+      createdBy: this.account.exId!,
+    });
+    await this.repository.save(projectEntity);
+    return projectEntity.toJSON();
   }
 
   async deleteProject(projectExId: string): Promise<void> {
@@ -69,5 +89,22 @@ export class ProjectService {
       throw new Error(`Failed to delete project with exId ${projectExId}`);
     }
     console.info("Project deleted", { projectExId });
+  }
+
+  async deleteProjectInDatabase(projectExId: string): Promise<void> {
+    const project = await this.repository.getByUniqueField(
+      "projectExId",
+      projectExId,
+    );
+    await this.account.ensureLoggedIn();
+    if (project.data.createdBy !== this.account.exId) {
+      throw new Error(
+        `Unauthorized: You can only delete projects created by yourself. ProjectExId: ${projectExId}`,
+      );
+    }
+    await Promise.all([
+      this.repository.deleteById(project.id!),
+      this.deleteProject(projectExId),
+    ]);
   }
 }

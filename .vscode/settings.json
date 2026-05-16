@@ -18,5 +18,6 @@
     "**/*.cjs": true,
     "**/AGENT.md": true
   },
-  "markdown.validate.enabled": true
+  "markdown.validate.enabled": true,
+  "typescript.native-preview.tsdk": "/Users/haolong/AI-Agent-Evaluation-System/node_modules/@typescript/native-preview"
 }

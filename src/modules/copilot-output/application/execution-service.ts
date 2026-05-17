@@ -5,7 +5,7 @@ import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
-import { EvaluationJobRunner } from "./evaluation-job.ts";
+import { EvaluationJobRunner } from "./execution-job.ts";
 import type { IProjectRepository } from "../../copilot-input/domain/interface/project.interface.ts";
 import { assertNotNull } from "../../shared/domain/service/type-system.service.ts";
 

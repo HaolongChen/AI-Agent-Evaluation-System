@@ -13,12 +13,6 @@
     "start": "node dist/index.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'tsx' src/index.ts",
     "debug": "tsx --inspect src/index.ts",
-    "test:unit": "tsx ./tests/unit.test.ts",
-    "test:rubric-quality": "tsx ./tests/rubric-quality.test.ts",
-    "test:tooling-context": "tsx ./tests/tooling-context.test.ts",
-    "test:db": "tsx ./tests/verify-patch-persistence.ts",
-    "test:partial-update": "tsx ./tests/partial-update-test.ts",
-    "test:jq": "tsx ./tests/jq.test.ts",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "format": "prettier --write . && eslint --fix && pnpm depgen && prisma format",
@@ -30,12 +24,10 @@
     "db:pull": "pnpm dlx prisma db pull",
     "db:studio": "pnpm dlx prisma studio",
     "db:reset": "pnpm dlx prisma migrate reset --force",
-    "db:delete": "tsx scripts/delete-golden-sets.ts",
-    "db:format": "pnpm dlx prisma format",
     "codegen": "graphql-codegen --config codegen.ts"
   },
   "keywords": [],
-  "author": "",
+  "author": "Haolong Chen Ciallo (~(∠・ω< )⌒★)",
   "license": "ISC",
   "packageManager": "pnpm@11.1.2+sha512.415a1cc25974731e75455c1468371be74c5aa5fb7621b50d4056d222451609f11412f23fd602e6169f1e060466641f798597e1be961a10688836a67b16569499",
   "devDependencies": {
@@ -65,6 +57,7 @@
     "dependency-cruiser": "^17.4.0",
     "dotenv-expand": "^13.0.0",
     "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-github": "^6.0.0",
     "eslint-plugin-unicorn": "^64.0.0",
     "globals": "^16.5.0",
@@ -116,6 +109,7 @@
     "langsmith": "^0.5.26",
     "node-jq": "6.3.1",
     "pg": "^8.20.0",
+    "ts-event-target": "^0.1.5",
     "ws": "^8.20.1",
     "zod": "^4.4.3"
   }

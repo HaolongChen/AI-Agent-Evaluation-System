@@ -1,0 +1,129 @@
+import type { Account } from "../../account/application/account-handler.ts";
+import type { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
+import type {
+  GQLClient,
+  SubscriptionHandlers,
+  WebSocketClient,
+} from "../../shared/application/graphql-client.ts";
+import type {
+  GetCopilotSubscriptionCountQuery,
+  GetCopilotSubscriptionCountQueryVariables,
+  OnCopilotSessionUpdatesSubscription,
+  OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content,
+  OnCopilotSessionUpdatesSubscriptionVariables,
+} from "../../../graphql/generated/types.ts";
+import {
+  GET_COPILOT_SUBSCRIPTION_COUNT,
+  ON_COPILOT_SESSION_UPDATES,
+} from "../infrastructure/copilot-network.ts";
+import { z } from "zod";
+import { Event } from "ts-event-target";
+
+type CopilotMessageContent =
+  OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content;
+
+type CopilotMessageContentMap = {
+  [T in CopilotMessageContent as T["__typename"]]: {
+    [K in Exclude<keyof T, "__typename">]: T[K];
+  };
+};
+
+class CopilotEvent<T extends keyof CopilotMessageContentMap> extends Event<T> {
+  constructor(
+    type: T,
+    readonly content: CopilotMessageContentMap[T],
+  ) {
+    super(type);
+  }
+}
+
+export class ExecutionJobRunnerV2 {
+  private _gqlClient: GQLClient | undefined;
+  private _wsClient: WebSocketClient | undefined;
+  private unsubscribe: (() => void) | undefined;
+  constructor(
+    private copilotJobEntity: CopilotJobEntity,
+    private account: Account,
+    // private copilotEventTarget: EventTarget<
+    // 	CopilotEvent<keyof CopilotMessageContentMap>[]
+    // >,
+    private _copilotEventPublisher: (
+      event: CopilotEvent<keyof CopilotMessageContentMap>,
+    ) => void,
+  ) {}
+
+  async gqlClient(): Promise<GQLClient> {
+    if (this._gqlClient) return this._gqlClient;
+    await this.account.ensureLoggedIn();
+    this._gqlClient = await this.account.getGQLClient();
+    return this._gqlClient;
+  }
+
+  async wsClient(): Promise<WebSocketClient> {
+    if (this._wsClient) return this._wsClient;
+    await this.account.ensureLoggedIn();
+    this._wsClient = await this.account.getWsClient();
+    return this._wsClient;
+  }
+
+  async verifySession() {
+    const gqlClient = await this.gqlClient();
+    const copilotSubscriptionCount = await gqlClient.gqlRequest<
+      GetCopilotSubscriptionCountQuery,
+      GetCopilotSubscriptionCountQueryVariables
+    >(GET_COPILOT_SUBSCRIPTION_COUNT, {
+      projectExId: this.copilotJobEntity.data.projectExId,
+      sessionType: "COPILOT",
+    });
+    const count = z.coerce
+      .number()
+      .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
+    if (count.success && count.data === 0) {
+      return;
+    }
+    if (!count.success) {
+      throw new Error(count.error.message);
+    }
+    throw new Error(
+      "An active Copilot session already exists for this project. Please close it before starting a new one.",
+    );
+  }
+
+  private handler(
+    publish: (event: CopilotEvent<keyof CopilotMessageContentMap>) => void,
+  ): SubscriptionHandlers<OnCopilotSessionUpdatesSubscription> {
+    return {
+      next: (data) => {
+        console.log("Received subscription data:", data);
+        const content = data.onCopilotSessionUpdate?.content;
+        if (!content) {
+          console.warn("Received session update without content", { data });
+          return;
+        }
+        const event = new CopilotEvent(content.__typename, content);
+
+        publish(event);
+      },
+      error: (error) => {
+        console.error("Subscription error:", error);
+      },
+      complete: () => {
+        console.info("Subscription completed");
+      },
+    };
+  }
+
+  execute() {
+    if (!this._wsClient) {
+      throw new Error("WebSocket client is not initialized");
+    }
+    this.unsubscribe = this._wsClient.gqlSubscribe<
+      OnCopilotSessionUpdatesSubscription,
+      OnCopilotSessionUpdatesSubscriptionVariables
+    >(
+      ON_COPILOT_SESSION_UPDATES,
+      { sessionExId: this.account.sessionId },
+      this.handler(this._copilotEventPublisher),
+    );
+  }
+}

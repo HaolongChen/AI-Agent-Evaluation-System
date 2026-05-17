@@ -3,7 +3,7 @@ import {
   CopilotMessageType,
   type CopilotMessage,
 } from "../../shared/domain/interface/types.ts";
-import { MessageHandler } from "./message-handler.js";
+import { MessageHandler } from "./message-handler.ts";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 
 export class EvaluationJobRunner {

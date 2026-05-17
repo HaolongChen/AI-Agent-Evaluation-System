@@ -1,10 +1,13 @@
 import { GraphQLClient, ClientError } from "graphql-request";
-import { createClient as createWsClient } from "graphql-ws";
+import { createClient as createWsClient, type Message } from "graphql-ws";
 import { WebSocket } from "ws";
 
 export class NetworkClient {
   private _defaultWsHandler = {
     connected: () => console.info("GraphQL subscription WS connected"),
+    message: (message: Message) => {
+      console.info("GraphQL subscription received message:", message);
+    },
     closed: () => console.info("GraphQL subscription WS closed"),
     error: (error: unknown) =>
       console.error("GraphQL subscription WS error:", error),

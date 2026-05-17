@@ -5,6 +5,7 @@ import { defineConfig } from "eslint/config";
 import codeComplete from "eslint-plugin-code-complete";
 import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import graphqlPlugin from "@graphql-eslint/eslint-plugin";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
 
 export default defineConfig([
   {
@@ -44,4 +45,5 @@ export default defineConfig([
     ...eslintPluginUnicorn.configs.recommended,
   },
   tseslint.configs.recommended,
+  eslintConfigPrettier,
 ]);

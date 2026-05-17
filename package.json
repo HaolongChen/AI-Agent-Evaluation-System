@@ -106,7 +106,7 @@
     "jsdom": "^29.1.1",
     "json-joy": "^16.27.2",
     "langchain": "^1.4.0",
-    "langsmith": "^0.5.26",
+    "langsmith": "^0.7.1",
     "node-jq": "6.3.1",
     "pg": "^8.20.0",
     "ts-event-target": "^0.1.5",

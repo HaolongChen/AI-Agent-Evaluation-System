@@ -19,7 +19,7 @@ import {
 import { z } from "zod";
 import { Event } from "ts-event-target";
 
-type CopilotMessageContent =
+export type CopilotMessageContent =
   OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content;
 
 type CopilotMessageContentMap = {
@@ -28,7 +28,9 @@ type CopilotMessageContentMap = {
   };
 };
 
-class CopilotEvent<T extends keyof CopilotMessageContentMap> extends Event<T> {
+export class CopilotEvent<
+  T extends keyof CopilotMessageContentMap = keyof CopilotMessageContentMap,
+> extends Event<T> {
   constructor(
     type: T,
     readonly content: CopilotMessageContentMap[T],
@@ -117,13 +119,13 @@ export class ExecutionJobRunnerV2 {
     if (!this._wsClient) {
       throw new Error("WebSocket client is not initialized");
     }
-    this.unsubscribe = this._wsClient.gqlSubscribe<
+    return (this.unsubscribe = this._wsClient.gqlSubscribe<
       OnCopilotSessionUpdatesSubscription,
       OnCopilotSessionUpdatesSubscriptionVariables
     >(
       ON_COPILOT_SESSION_UPDATES,
       { sessionExId: this.account.sessionId },
       this.handler(this._copilotEventPublisher),
-    );
+    ));
   }
 }

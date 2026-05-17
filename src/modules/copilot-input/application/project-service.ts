@@ -27,6 +27,7 @@ export class ProjectService {
   ) {}
   async createProject(
     projectName: string,
+    existingSchemaId?: string,
   ): Promise<ReturnType<ProjectEntity["toJSON"]>> {
     const gqlClient = await this.account.getGQLClient();
     const organizationExId = process.env.ORGANIZATION_EX_ID;
@@ -35,12 +36,12 @@ export class ProjectService {
     }
 
     console.info("Checking project name availability", { projectName });
-    const nameCheckData = await gqlClient.gqlRequest<
+    const isNameDuplicated = await gqlClient.gqlRequest<
       CheckProjectNameDuplicateQuery,
       CheckProjectNameDuplicateQueryVariables
     >(GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
 
-    if (nameCheckData) {
+    if (isNameDuplicated) {
       throw new Error(
         projectName + " is already taken, please choose a different name",
       );
@@ -65,9 +66,10 @@ export class ProjectService {
     console.info("Project creation task started", { taskId, projectName });
     console.info("Using modern graphql-ws subscription path", { taskId });
     const projectExId = await createProjectSubscription(taskId, this.account);
-    const typeSystemStore = new TypeSystemStore(this.account);
-    const getSchemaIdUseCase = new GetSchemaIdUseCase(typeSystemStore);
-    const schemaId = await getSchemaIdUseCase.execute(projectExId);
+    const getSchemaIdUseCase = () =>
+      new GetSchemaIdUseCase(new TypeSystemStore(this.account));
+    const schemaId =
+      existingSchemaId ?? (await getSchemaIdUseCase().execute(projectExId));
     const projectEntity = new ProjectEntity({
       projectExId,
       name: projectName,

@@ -11,7 +11,7 @@ import {
   assertNotNull,
   genExtraContext,
   type ExtractArray,
-} from "../../../external/zed/helpers.ts";
+} from "../../shared/domain/service/type-system.service.ts";
 import type { Account } from "../../account/application/account-handler.ts";
 import type {
   AfCustomCodeTemplatesQuery,

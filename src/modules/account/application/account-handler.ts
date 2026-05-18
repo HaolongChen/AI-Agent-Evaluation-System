@@ -23,6 +23,11 @@ export class Account extends AccountService {
     return this._sessionId;
   }
 
+  set sessionId(value: string) {
+    this._sessionId = value;
+    this.networkClient.setHeader("X-Session-ID", value);
+  }
+
   async getGQLClient() {
     await this.ensureLoggedIn();
     this.networkClient.setHeader("Authorization", `Bearer ${this.accessToken}`);

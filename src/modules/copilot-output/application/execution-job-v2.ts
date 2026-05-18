@@ -6,14 +6,20 @@ import type {
   WebSocketClient,
 } from "../../shared/application/graphql-client.ts";
 import type {
+  CreateCopilotSessionMutation,
+  CreateCopilotSessionMutationVariables,
   GetCopilotSubscriptionCountQuery,
   GetCopilotSubscriptionCountQueryVariables,
+  GetLatestSessionMutation,
+  GetLatestSessionMutationVariables,
   OnCopilotSessionUpdatesSubscription,
   OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content,
   OnCopilotSessionUpdatesSubscriptionVariables,
 } from "../../../graphql/generated/types.ts";
 import {
+  CREATE_COPILOT_SESSION,
   GET_COPILOT_SUBSCRIPTION_COUNT,
+  GET_LATEST_SESSION,
   ON_COPILOT_SESSION_UPDATES,
 } from "../infrastructure/copilot-network.ts";
 import { z } from "zod";
@@ -68,7 +74,7 @@ export class ExecutionJobRunnerV2 {
     return this._wsClient;
   }
 
-  async verifySession() {
+  async getSubscriptionCount(): Promise<number> {
     const gqlClient = await this.gqlClient();
     const copilotSubscriptionCount = await gqlClient.gqlRequest<
       GetCopilotSubscriptionCountQuery,
@@ -80,15 +86,35 @@ export class ExecutionJobRunnerV2 {
     const count = z.coerce
       .number()
       .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
-    if (count.success && count.data === 0) {
-      return;
-    }
     if (!count.success) {
       throw new Error(count.error.message);
     }
-    throw new Error(
-      "An active Copilot session already exists for this project. Please close it before starting a new one.",
-    );
+    return count.data;
+    // TODO: get last session
+  }
+
+  async getLatestSession(): Promise<string | null> {
+    const gqlClient = await this.gqlClient();
+    const latestSessionResult = await gqlClient.gqlRequest<
+      GetLatestSessionMutation,
+      GetLatestSessionMutationVariables
+    >(GET_LATEST_SESSION, {
+      projectExId: this.copilotJobEntity.data.projectExId,
+      sessionType: "COPILOT",
+    });
+    return latestSessionResult.latestSession;
+  }
+
+  async createNewSession() {
+    const gqlClient = await this.gqlClient();
+    const newCopilotSessionExId = await gqlClient.gqlRequest<
+      CreateCopilotSessionMutation,
+      CreateCopilotSessionMutationVariables
+    >(CREATE_COPILOT_SESSION, {
+      projectExId: this.copilotJobEntity.data.projectExId,
+      sessionType: "COPILOT",
+    });
+    return newCopilotSessionExId.createCopilotSession;
   }
 
   private handler(
@@ -115,7 +141,7 @@ export class ExecutionJobRunnerV2 {
     };
   }
 
-  execute() {
+  execute(sessionExId: string): () => void {
     if (!this._wsClient) {
       throw new Error("WebSocket client is not initialized");
     }
@@ -124,7 +150,7 @@ export class ExecutionJobRunnerV2 {
       OnCopilotSessionUpdatesSubscriptionVariables
     >(
       ON_COPILOT_SESSION_UPDATES,
-      { sessionExId: this.account.sessionId },
+      { sessionExId },
       this.handler(this._copilotEventPublisher),
     ));
   }

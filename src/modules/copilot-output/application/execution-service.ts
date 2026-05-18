@@ -115,8 +115,11 @@ export class ExecuteCopilotUseCase {
       this.account,
       copilotEvent.dispatchEvent.bind(copilotEvent),
     );
-    await copilotExecutionService.verifySession();
-    const unsubscribe = copilotExecutionService.execute();
+    // await copilotExecutionService.verifySession();
+    const latestSession = await copilotExecutionService.getLatestSession();
+    const currentSessionExId =
+      latestSession ?? (await copilotExecutionService.createNewSession());
+    const unsubscribe = copilotExecutionService.execute(currentSessionExId);
     copilotEvent.addEventListener("unsubscribe", unsubscribe);
   }
 }

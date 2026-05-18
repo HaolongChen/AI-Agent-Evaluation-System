@@ -12,6 +12,24 @@ export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
   }
 `;
 
+export const CREATE_COPILOT_SESSION = gql`
+  mutation CreateCopilotSession(
+    $projectExId: String!
+    $sessionType: CopilotSessionType!
+  ) {
+    createCopilotSession(projectExId: $projectExId, sessionType: $sessionType)
+  }
+`;
+
+export const GET_LATEST_SESSION = gql`
+  mutation GetLatestSession(
+    $projectExId: String!
+    $sessionType: CopilotSessionType!
+  ) {
+    latestSession(projectExId: $projectExId, sessionType: $sessionType)
+  }
+`;
+
 export const SEND_MESSAGE_TO_SESSION = gql`
   mutation SendMessageToSession(
     $sessionExId: String!

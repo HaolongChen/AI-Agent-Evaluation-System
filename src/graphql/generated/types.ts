@@ -519,6 +519,26 @@ export type GetCopilotSubscriptionCountQueryVariables = Exact<{
   sessionType: CopilotSessionType;
 }>;
 
+export type CreateCopilotSessionMutation = {
+  __typename: "Mutation";
+  createCopilotSession: string;
+};
+
+export type CreateCopilotSessionMutationVariables = Exact<{
+  projectExId: string;
+  sessionType: CopilotSessionType;
+}>;
+
+export type GetLatestSessionMutation = {
+  __typename: "Mutation";
+  latestSession: string | null;
+};
+
+export type GetLatestSessionMutationVariables = Exact<{
+  projectExId: string;
+  sessionType: CopilotSessionType;
+}>;
+
 export type SendMessageToSessionMutation = {
   __typename: "Mutation";
   sendMessageToSession: boolean;

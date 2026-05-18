@@ -9,13 +9,15 @@ import { EvaluationJobRunner } from "./execution-job.ts";
 import type { IProjectRepository } from "../../copilot-input/domain/interface/project.interface.ts";
 import { assertNotNull } from "../../shared/domain/service/type-system.service.ts";
 import {
+  CopilotEvent,
   ExecutionJobRunnerV2,
   type CopilotEventsList,
 } from "./execution-job-v2.ts";
-import { EventTarget, type Event } from "ts-event-target";
+import { Event, EventTarget } from "ts-event-target";
 import type {
   CopilotHumanInputContextInput,
   CopilotHumanInputMessageInput,
+  CopilotMessageContent_CopilotTerminateMessage_Fragment,
   CopilotTerminateMessageInput,
   CopilotToolCallBatchResponseMessageInput,
   MessageArgsInputInput as MessageArgumentsInput,
@@ -131,6 +133,9 @@ export class ExecuteCopilotUseCase {
     copilotEvent.addEventListener("unsubscribe", unsubscribe);
     copilotEvent.addEventListener("CopilotEditableTextMessage", (event) => {
       console.log(event);
+      copilotEvent.dispatchEvent(new TerminateEvent());
+      copilotEvent.dispatchEvent(new UnsubscribeEvent());
+      return event.data.content;
     });
   }
 }
@@ -170,7 +175,7 @@ export const buildHumanInputMessage = (data: {
   return data as CopilotHumanInputMessageInput;
 };
 
-export const buildTerminateMessage = (data: { reason?: string }) => {
+export const buildTerminateMessage = (data?: { reason?: string }) => {
   return data as CopilotTerminateMessageInput;
 };
 
@@ -181,3 +186,19 @@ export const buildToolCallBatchMessage = (data: {
 }) => {
   return data as CopilotToolCallBatchResponseMessageInput;
 };
+
+export class TerminateEvent extends CopilotEvent<"CopilotTerminateMessage"> {
+  constructor(data?: { reason?: string }) {
+    const message = buildTerminateMessage(data);
+    super(
+      "CopilotTerminateMessage",
+      message as CopilotMessageContent_CopilotTerminateMessage_Fragment,
+    );
+  }
+}
+
+export class UnsubscribeEvent extends Event<"unsubscribe"> {
+  constructor() {
+    super("unsubscribe");
+  }
+}

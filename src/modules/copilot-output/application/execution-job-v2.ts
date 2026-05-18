@@ -30,7 +30,7 @@ export type CopilotMessageContent =
 
 type CopilotMessageContentMap = {
   [T in CopilotMessageContent as T["__typename"]]: {
-    [K in Exclude<keyof T, "__typename">]: T[K];
+    [K in Exclude<keyof T, "__typename" | "messageType">]: T[K];
   };
 };
 

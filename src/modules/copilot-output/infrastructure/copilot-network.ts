@@ -258,3 +258,48 @@ export const ON_COPILOT_SESSION_UPDATES = gql`
     }
   }
 `;
+
+// export type VoidTypeConverter<
+// 	T extends Record<string, any>,
+// 	E extends null | undefined,
+// > = {
+// 	[K in keyof T]: T[K] extends null | undefined ?
+// 		T[K] extends Record<string, any> ?
+// 			VoidTypeConverter<T[K], E> | E
+// 		:	Exclude<T[K], null | undefined> | E
+// 	: T[K] extends Record<string, any> ? VoidTypeConverter<T[K], E>
+// 	: T[K];
+// };
+// export type VoidTypeGeneralizer<T extends Record<string, any>> = {
+// 	[K in keyof T]: T[K] extends null | undefined ?
+// 		T[K] extends Record<string, any> ?
+// 			VoidTypeGeneralizer<T[K]> | undefined | null
+// 		:	T[K] | undefined | null
+// 	: T[K] extends Record<string, any> ? VoidTypeGeneralizer<T[K]>
+// 	: T[K];
+// };
+
+// export const voidTypeConverter = <
+// 	T extends Record<string, any>,
+// 	E extends null | undefined,
+// >(
+// 	data: T,
+// ): VoidTypeConverter<T, E> => {
+// 	const result: VoidTypeConverter<T, E> = data as VoidTypeConverter<T, E>;
+// 	return result;
+// };
+
+// export const newConverter = <T extends Record<string, any>, K extends {[KEY in keyof T]: any}> ( source: T ): K =>
+// {
+//   const result = {} as K;
+//   for ( const key in source )
+//   {
+//     if ( source[ key ] === null || source[ key ] === undefined )
+//     {
+//       type ValueType = K[ typeof key ];
+//       const tmp: ValueType = undefined;
+//     }
+//   }
+// }
+
+// export type Conflict<T extends Record<Q, any>, K extends Record<Q, any>, Q extends string> =

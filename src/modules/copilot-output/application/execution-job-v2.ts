@@ -34,16 +34,41 @@ type CopilotMessageContentMap = {
   };
 };
 
-export class CopilotEvent<
-  T extends keyof CopilotMessageContentMap = keyof CopilotMessageContentMap,
-> extends Event<T> {
+export const typeNameList = [
+  "CopilotAiResponseMessage",
+  "CopilotEditableTextMessage",
+  "CopilotErrorMessage",
+  "CopilotFeedbackMessage",
+  "CopilotHumanInputMessage",
+  "CopilotHumanOperationMessage",
+  "CopilotInitialStateMessage",
+  "CopilotStateChangeMessage",
+  "CopilotStopMessage",
+  "CopilotSystemStatusMessage",
+  "CopilotTaskMessage",
+  "CopilotTaskRevertSuccessMessage",
+  "CopilotTerminateMessage",
+  "CopilotToolCallBatchExecErrorMessage",
+  "CopilotToolCallBatchMessage",
+  "CopilotToolCallBatchResponseMessage",
+] as const;
+
+export class CopilotEvent<T extends keyof TypeNameList> extends Event<T> {
   constructor(
     type: T,
-    readonly content: CopilotMessageContentMap[T],
+    readonly data: CopilotMessageContentMap[T],
   ) {
     super(type);
   }
 }
+
+export type TypeNameList = {
+  [K in (typeof typeNameList)[number]]: K extends CopilotMessageContent["__typename"]
+    ? K
+    : never;
+};
+
+export type CopilotEventsList = { [K in keyof TypeNameList]: CopilotEvent<K> };
 
 export class ExecutionJobRunnerV2 {
   private _gqlClient: GQLClient | undefined;
@@ -56,7 +81,7 @@ export class ExecutionJobRunnerV2 {
     // 	CopilotEvent<keyof CopilotMessageContentMap>[]
     // >,
     private _copilotEventPublisher: (
-      event: CopilotEvent<keyof CopilotMessageContentMap>,
+      event: CopilotEventsList[keyof CopilotEventsList],
     ) => void,
   ) {}
 
@@ -118,7 +143,7 @@ export class ExecutionJobRunnerV2 {
   }
 
   private handler(
-    publish: (event: CopilotEvent<keyof CopilotMessageContentMap>) => void,
+    publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
   ): SubscriptionHandlers<OnCopilotSessionUpdatesSubscription> {
     return {
       next: (data) => {
@@ -128,8 +153,10 @@ export class ExecutionJobRunnerV2 {
           console.warn("Received session update without content", { data });
           return;
         }
-        const event = new CopilotEvent(content.__typename, content);
-
+        const event = new CopilotEvent(
+          content.__typename,
+          content,
+        ) as CopilotEventsList[keyof CopilotEventsList];
         publish(event);
       },
       error: (error) => {

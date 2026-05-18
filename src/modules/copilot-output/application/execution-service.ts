@@ -8,14 +8,22 @@ import type { ICopilotOutputRepository } from "../domain/interface/copilot-outpu
 import { EvaluationJobRunner } from "./execution-job.ts";
 import type { IProjectRepository } from "../../copilot-input/domain/interface/project.interface.ts";
 import { assertNotNull } from "../../shared/domain/service/type-system.service.ts";
-import { ExecutionJobRunnerV2, type CopilotEvent } from "./execution-job-v2.ts";
+import {
+  ExecutionJobRunnerV2,
+  type CopilotEventsList,
+} from "./execution-job-v2.ts";
 import { EventTarget, type Event } from "ts-event-target";
 import type {
+  CopilotHumanInputContextInput,
+  CopilotHumanInputMessageInput,
+  CopilotTerminateMessageInput,
+  CopilotToolCallBatchResponseMessageInput,
   MessageArgsInputInput as MessageArgumentsInput,
   SendMessageToSessionMutation,
   SendMessageToSessionMutationVariables,
 } from "../../../graphql/generated/types.ts";
 import { SEND_MESSAGE_TO_SESSION } from "../infrastructure/copilot-network.ts";
+import type { GQLClient } from "../../shared/application/graphql-client.ts";
 
 export class ExecuteCopilotUseCase {
   private projectService: ProjectService;
@@ -108,7 +116,7 @@ export class ExecuteCopilotUseCase {
       schemaGraph: assertNotNull(typeSystemStore.schemaGraph),
     });
     const copilotEvent = new EventTarget<
-      [CopilotEvent, Event<"unsubscribe">]
+      [CopilotEventsList[keyof CopilotEventsList], Event<"unsubscribe">]
     >(); // TODO: implement handlers
     const copilotExecutionService = new ExecutionJobRunnerV2(
       copilotJobEntity,
@@ -121,6 +129,9 @@ export class ExecuteCopilotUseCase {
       latestSession ?? (await copilotExecutionService.createNewSession());
     const unsubscribe = copilotExecutionService.execute(currentSessionExId);
     copilotEvent.addEventListener("unsubscribe", unsubscribe);
+    copilotEvent.addEventListener("CopilotEditableTextMessage", (event) => {
+      console.log(event);
+    });
   }
 }
 
@@ -131,4 +142,42 @@ export const buildCopilotExecutionUrl = (
   clientType: string,
 ): string => {
   return `${hostname}projectExId=${projectExId}&userToken=${userToken}&clientType=${clientType}`;
+};
+
+export const sendMessageToSession = async (
+  sessionExId: string,
+  copilotArgumentsInput: MessageArgumentsInput["copilotArgs"],
+  client: GQLClient,
+) => {
+  const response = await client.gqlRequest<
+    SendMessageToSessionMutation,
+    SendMessageToSessionMutationVariables
+  >(SEND_MESSAGE_TO_SESSION, {
+    sessionExId,
+    argsInput: {
+      copilotArgs: copilotArgumentsInput,
+    },
+  });
+  if (!response.sendMessageToSession) {
+    throw new Error("Failed to send message to session");
+  }
+};
+
+export const buildHumanInputMessage = (data: {
+  content: string;
+  context?: CopilotHumanInputContextInput;
+}) => {
+  return data as CopilotHumanInputMessageInput;
+};
+
+export const buildTerminateMessage = (data: { reason?: string }) => {
+  return data as CopilotTerminateMessageInput;
+};
+
+export const buildToolCallBatchMessage = (data: {
+  responseByToolCallId: string;
+  toolCallBatchId: string;
+  schemaDiff: unknown;
+}) => {
+  return data as CopilotToolCallBatchResponseMessageInput;
 };

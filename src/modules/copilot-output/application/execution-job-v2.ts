@@ -85,61 +85,11 @@ export class ExecutionJobRunnerV2 {
     ) => void,
   ) {}
 
-  async gqlClient(): Promise<GQLClient> {
-    if (this._gqlClient) return this._gqlClient;
-    await this.account.ensureLoggedIn();
-    this._gqlClient = await this.account.getGQLClient();
-    return this._gqlClient;
-  }
-
   async wsClient(): Promise<WebSocketClient> {
     if (this._wsClient) return this._wsClient;
     await this.account.ensureLoggedIn();
     this._wsClient = await this.account.getWsClient();
     return this._wsClient;
-  }
-
-  async getSubscriptionCount(): Promise<number> {
-    const gqlClient = await this.gqlClient();
-    const copilotSubscriptionCount = await gqlClient.gqlRequest<
-      GetCopilotSubscriptionCountQuery,
-      GetCopilotSubscriptionCountQueryVariables
-    >(GET_COPILOT_SUBSCRIPTION_COUNT, {
-      projectExId: this.copilotJobEntity.data.projectExId,
-      sessionType: "COPILOT",
-    });
-    const count = z.coerce
-      .number()
-      .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
-    if (!count.success) {
-      throw new Error(count.error.message);
-    }
-    return count.data;
-    // TODO: get last session
-  }
-
-  async getLatestSession(): Promise<string | null> {
-    const gqlClient = await this.gqlClient();
-    const latestSessionResult = await gqlClient.gqlRequest<
-      GetLatestSessionMutation,
-      GetLatestSessionMutationVariables
-    >(GET_LATEST_SESSION, {
-      projectExId: this.copilotJobEntity.data.projectExId,
-      sessionType: "COPILOT",
-    });
-    return latestSessionResult.latestSession;
-  }
-
-  async createNewSession() {
-    const gqlClient = await this.gqlClient();
-    const newCopilotSessionExId = await gqlClient.gqlRequest<
-      CreateCopilotSessionMutation,
-      CreateCopilotSessionMutationVariables
-    >(CREATE_COPILOT_SESSION, {
-      projectExId: this.copilotJobEntity.data.projectExId,
-      sessionType: "COPILOT",
-    });
-    return newCopilotSessionExId.createCopilotSession;
   }
 
   private handler(

@@ -19,13 +19,15 @@ import type {
   CopilotHumanInputMessageInput,
   CopilotMessageContent_CopilotTerminateMessage_Fragment,
   CopilotTerminateMessageInput,
-  CopilotToolCallBatchResponseMessageInput,
+  CopilotToolCallBatchResponseMessageFragment,
   MessageArgsInputInput as MessageArgumentsInput,
   SendMessageToSessionMutation,
   SendMessageToSessionMutationVariables,
 } from "../../../graphql/generated/types.ts";
 import { SEND_MESSAGE_TO_SESSION } from "../infrastructure/copilot-network.ts";
 import type { GQLClient } from "../../shared/application/graphql-client.ts";
+import type { ToolCall } from "../../shared/domain/interface/types.ts";
+import { runToolCalls } from "./message-handler.ts";
 
 export class ExecuteCopilotUseCase {
   private projectService: ProjectService;
@@ -137,6 +139,32 @@ export class ExecuteCopilotUseCase {
       copilotEvent.dispatchEvent(new UnsubscribeEvent());
       return event.data.content;
     });
+    copilotEvent.addEventListener("CopilotToolCallBatchMessage", (event) => {
+      const toolCalls: ToolCall[] = event.data.toolCalls.map(
+        (toolCall): ToolCall => {
+          return {
+            toolCallId: toolCall.id,
+            args: toolCall.args as Record<string, unknown>,
+            name: toolCall.name,
+          };
+        },
+      );
+      const { result, successful, errorMessage } = runToolCalls(
+        toolCalls,
+        typeSystemStore.schemaGraph,
+      );
+      if (successful && result) {
+        copilotEvent.dispatchEvent(
+          new ToolResponseEvent({
+            toolCallBatchId: event.data.toolCallBatchId,
+            responseByToolCallId: result.data,
+            schemaDiff: result.schemaDiff,
+          }),
+        );
+      } else {
+        throw new Error(`Error executing tool calls: ${errorMessage}`);
+      }
+    });
   }
 }
 
@@ -182,10 +210,21 @@ export const buildTerminateMessage = (data?: { reason?: string }) => {
 export const buildToolCallBatchMessage = (data: {
   responseByToolCallId: string;
   toolCallBatchId: string;
-  schemaDiff: unknown;
-}) => {
-  return data as CopilotToolCallBatchResponseMessageInput;
+  schemaDiff?: unknown;
+}): CopilotToolCallBatchResponseMessageFragment => {
+  return data as CopilotToolCallBatchResponseMessageFragment;
 };
+
+export class ToolResponseEvent extends CopilotEvent<"CopilotToolCallBatchResponseMessage"> {
+  constructor(data: {
+    responseByToolCallId: string;
+    toolCallBatchId: string;
+    schemaDiff?: unknown;
+  }) {
+    const message = buildToolCallBatchMessage(data);
+    super("CopilotToolCallBatchResponseMessage", message);
+  }
+}
 
 export class TerminateEvent extends CopilotEvent<"CopilotTerminateMessage"> {
   constructor(data?: { reason?: string }) {

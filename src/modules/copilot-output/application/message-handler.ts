@@ -108,8 +108,9 @@ export class MessageHandler extends CopilotJobEntity {
   }
 
   handleToolCallsMessage(message: ToolCallsMessage): MessageHandlerResponse {
-    const { result, successful, errorMessage } = this.runToolCalls(
+    const { result, successful, errorMessage } = runToolCalls(
       message.toolCalls,
+      this.data.schemaGraph,
     );
     if (successful) {
       const responseMessage: ToolResponseMessage = {
@@ -135,30 +136,31 @@ export class MessageHandler extends CopilotJobEntity {
     console.log(message);
     return { messagesToSend: [], shouldTerminate: false };
   }
+}
 
-  private runToolCalls(toolCalls: ToolCall[]) {
-    const product = Product.ZION;
-    const clientType = ClientType.WEB;
-    const locale = Locale.ZH;
-    try {
-      const result: CopilotApiResultJs = CopilotJs.toolCalls(
-        this.data.schemaGraph,
-        undefined,
-        product,
-        clientType,
-        "WEB", // clientExId: wechat mini program, web, etc.
-        locale,
-        toolCalls,
-      );
-      // probably not necessary to apply schema diff in evaluation job runner
-      return { result: result as unknown as ToolResult, successful: true };
-    } catch (error: unknown) {
-      console.error("toolCall---error:", error, toolCalls);
-      return {
-        successful: false,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        result: (error as { result?: ToolResult }).result,
-      };
-    }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function runToolCalls(toolCalls: ToolCall[], schemaGraph: any) {
+  const product = Product.ZION;
+  const clientType = ClientType.WEB;
+  const locale = Locale.ZH;
+  try {
+    const result: CopilotApiResultJs = CopilotJs.toolCalls(
+      schemaGraph,
+      undefined,
+      product,
+      clientType,
+      "WEB", // clientExId: wechat mini program, web, etc.
+      locale,
+      toolCalls,
+    );
+    // probably not necessary to apply schema diff in evaluation job runner
+    return { result: result as unknown as ToolResult, successful: true };
+  } catch (error: unknown) {
+    console.error("toolCall---error:", error, toolCalls);
+    return {
+      successful: false,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      result: (error as { result?: ToolResult }).result,
+    };
   }
 }

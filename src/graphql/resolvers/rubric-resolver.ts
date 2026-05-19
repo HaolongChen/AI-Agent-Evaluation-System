@@ -77,7 +77,9 @@ export const rubricResolver = {
     executeCopilot: async (
       _: unknown,
       arguments_: MutationExecuteCopilotArguments,
-    ): Promise<CopilotOutput> => {
+    ): Promise<CopilotOutput> =>
+    {
+      await myAccount.ensureLoggedIn();
       const executeCopilotUseCase = new ExecuteCopilotUseCase(
         {
           copilotOutputRepository: repository.copilotOutputRepository,

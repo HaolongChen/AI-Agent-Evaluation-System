@@ -36,12 +36,12 @@ export class ProjectService {
     }
 
     console.info("Checking project name availability", { projectName });
-    const isNameDuplicated = await gqlClient.gqlRequest<
+    const isNameProper = await gqlClient.gqlRequest<
       CheckProjectNameDuplicateQuery,
       CheckProjectNameDuplicateQueryVariables
     >(GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
 
-    if (isNameDuplicated) {
+    if (!isNameProper) {
       throw new Error(
         projectName + " is already taken, please choose a different name",
       );

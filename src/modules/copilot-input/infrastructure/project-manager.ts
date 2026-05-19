@@ -4,8 +4,8 @@ import { gql } from "graphql-request";
 import type { SubscriptionHandlers } from "../../shared/application/graphql-client.ts";
 import type { Account } from "../../account/application/account-handler.ts";
 import type {
-  OnProjectCreationStatusChangedSubscription,
-  OnProjectCreationStatusChangedSubscriptionVariables,
+	OnProjectCreationStatusChangedSubscription,
+	OnProjectCreationStatusChangedSubscriptionVariables,
 } from "../../../graphql/generated/types.ts";
 // import {
 //   ProjectCreationStatus,
@@ -19,117 +19,124 @@ import type {
 // ---------------------------------------------------------------------------
 
 export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
-  query CheckProjectNameDuplicate($projectName: String!) {
-    checkProjectNameDuplicate(projectName: $projectName)
-  }
+	query CheckProjectNameDuplicate($projectName: String!) {
+		checkProjectNameDuplicate(projectName: $projectName)
+	}
 `;
 
 export const GQL_CREATE_PROJECT_IN_ORGANIZATION = gql`
-  mutation CreateProjectInOrganizationAsync(
-    $projectName: String!
-    $templateExId: String
-    $platform: Platform
-    $projectSpaceType: ProjectSpaceType!
-    $organizationExId: String!
-    $forBeginnerGuide: Boolean
-    $category: ProjectContentCategory
-    $useRefactoredComponent: Boolean
-    $useNewType: Boolean
-  ) {
-    createProjectInOrganizationAsync(
-      projectName: $projectName
-      templateExId: $templateExId
-      platform: $platform
-      projectSpaceType: $projectSpaceType
-      organizationExId: $organizationExId
-      forBeginnerGuide: $forBeginnerGuide
-      category: $category
-      useRefactoredComponent: $useRefactoredComponent
-      useNewType: $useNewType
-    )
-  }
+	mutation CreateProjectInOrganizationAsync(
+		$projectName: String!
+		$templateExId: String
+		$platform: Platform
+		$projectSpaceType: ProjectSpaceType!
+		$organizationExId: String!
+		$forBeginnerGuide: Boolean
+		$category: ProjectContentCategory
+		$useRefactoredComponent: Boolean
+		$useNewType: Boolean
+	) {
+		createProjectInOrganizationAsync(
+			projectName: $projectName
+			templateExId: $templateExId
+			platform: $platform
+			projectSpaceType: $projectSpaceType
+			organizationExId: $organizationExId
+			forBeginnerGuide: $forBeginnerGuide
+			category: $category
+			useRefactoredComponent: $useRefactoredComponent
+			useNewType: $useNewType
+		)
+	}
 `;
 
 export const GQL_ON_PROJECT_CREATION_STATUS_CHANGED = gql`
-  subscription OnProjectCreationStatusChanged($uniqueId: String!) {
-    onProjectCreationStatusChanged(uniqueId: $uniqueId) {
-      projectExId
-      status
-    }
-  }
+	subscription OnProjectCreationStatusChanged($uniqueId: String!) {
+		onProjectCreationStatusChanged(uniqueId: $uniqueId) {
+			projectExId
+			status
+		}
+	}
 `;
 
 export const GQL_DELETE_PROJECT = gql`
-  mutation DeleteProject($projectExId: String!) {
-    deleteProject(projectExId: $projectExId)
-  }
+	mutation DeleteProject($projectExId: String!) {
+		deleteProject(projectExId: $projectExId)
+	}
 `;
 
 export const GQL_DELETE_PROJECT_BY_IDS = gql`
-  mutation DeleteProjectByIds($ids: [Long!]!) {
-    deleteProjectByIds(ids: $ids)
-  }
+	mutation DeleteProjectByIds($ids: [Long!]!) {
+		deleteProjectByIds(ids: $ids)
+	}
 `;
 
 export const GQL_FIX_ALIPAY_DATA_BINDING = gql`
-  mutation FixAliPayDataBinding($projectId: Long!) {
-    fixAliPayDataBinding(projectId: $projectId)
-  }
+	mutation FixAliPayDataBinding($projectId: Long!) {
+		fixAliPayDataBinding(projectId: $projectId)
+	}
 `;
 
 export const createProjectSubscription = async (
-  taskId: string,
-  account: Account,
+	taskId: string,
+	account: Account,
 ): Promise<string> => {
-  let unsubscribe: (() => void) | null = null;
+	let unsubscribe: (() => void) | null = null;
+	const wsClient = await account.getWsClient();
 
-  const { promise, resolve, reject } = Promise.withResolvers<string>();
-  promise.finally(unsubscribe);
+	const promise = new Promise<string>((resolve, reject) => {
+		try {
+			const handlers: SubscriptionHandlers<OnProjectCreationStatusChangedSubscription> =
+				{
+					next: (data) => {
+						if (
+							!data.onProjectCreationStatusChanged?.projectExId ||
+							!data.onProjectCreationStatusChanged.status
+						) {
+							reject(
+								new Error(`Invalid subscription payload for task ${taskId}`),
+							);
+						} else {
+							const { projectExId, status } =
+								data.onProjectCreationStatusChanged;
+							if (status === "COMPLETED") {
+								resolve(projectExId);
+							} else if (status === "FAILED") {
+								reject(taskId);
+							}
+						}
+						// PROCESSING → keep waiting
+					},
+					error: (error) => {
+						console.error("Project creation subscription error (modern)", {
+							taskId,
+							err: error,
+						});
+						reject(
+							error instanceof Error ? error : new Error("Subscription error"),
+						);
+					},
+					complete: () => {
+						reject(
+							new Error(
+								`Subscription completed without COMPLETED status for task ${taskId}`,
+							),
+						);
+					},
+				};
 
-  const handlers: SubscriptionHandlers<OnProjectCreationStatusChangedSubscription> =
-    {
-      next: (data) => {
-        if (
-          !data.onProjectCreationStatusChanged?.projectExId ||
-          !data.onProjectCreationStatusChanged.status
-        ) {
-          reject(new Error(`Invalid subscription payload for task ${taskId}`));
-          unsubscribe?.();
-          return;
-        }
-        const { projectExId, status } = data.onProjectCreationStatusChanged;
-        if (status === "COMPLETED") {
-          resolve(projectExId);
-        } else if (status === "FAILED") {
-          reject(taskId);
-          unsubscribe?.();
-        }
-        // PROCESSING → keep waiting
-      },
-      error: (error) => {
-        console.error("Project creation subscription error (modern)", {
-          taskId,
-          err: error,
-        });
-        reject(
-          error instanceof Error ? error : new Error("Subscription error"),
-        );
-      },
-      complete: () => {
-        reject(
-          new Error(
-            `Subscription completed without COMPLETED status for task ${taskId}`,
-          ),
-        );
-      },
-    };
-
-  const wsClient = await account.getWsClient();
-
-  unsubscribe = wsClient.gqlSubscribe<
-    OnProjectCreationStatusChangedSubscription,
-    OnProjectCreationStatusChangedSubscriptionVariables
-  >(GQL_ON_PROJECT_CREATION_STATUS_CHANGED, { uniqueId: taskId }, handlers);
-
-  return promise;
+			unsubscribe = wsClient.gqlSubscribe<
+				OnProjectCreationStatusChangedSubscription,
+				OnProjectCreationStatusChangedSubscriptionVariables
+			>(GQL_ON_PROJECT_CREATION_STATUS_CHANGED, { uniqueId: taskId }, handlers);
+		} catch (error) {
+			console.error("Failed to set up subscription for project creation", {
+				taskId,
+				err: error,
+			});
+		} finally {
+			unsubscribe?.();
+		}
+	});
+	return await promise;
 };

@@ -8,22 +8,11 @@ import type { ICopilotOutputRepository } from "../domain/interface/copilot-outpu
 import { EvaluationJobRunner } from "./execution-job.ts";
 import type { IProjectRepository } from "../../copilot-input/domain/interface/project.interface.ts";
 import { assertNotNull } from "../../shared/domain/service/type-system.service.ts";
-import {
-  CopilotEvent,
-  ExecutionJobRunnerV2,
-  type CopilotEventsList,
-} from "./execution-job-v2.ts";
-import { Event, EventTarget } from "ts-event-target";
+import { CopilotInputEvent, ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import type {
-  CopilotHumanInputContextInput,
-  CopilotHumanInputMessageInput,
-  CopilotMessageContent_CopilotTerminateMessage_Fragment,
-  CopilotTerminateMessageInput,
-  CopilotToolCallBatchResponseMessageFragment,
   CreateCopilotSessionMutation,
   CreateCopilotSessionMutationVariables,
   GetCopilotSubscriptionCountQuery,
-  GetCopilotSubscriptionCountQueryVariables,
   GetCopilotSubscriptionCountQueryVariables,
   GetLatestSessionMutation,
   GetLatestSessionMutationVariables,
@@ -41,6 +30,7 @@ import type { GQLClient } from "../../shared/application/graphql-client.ts";
 import type { ToolCall } from "../../shared/domain/interface/types.ts";
 import { runToolCalls } from "./message-handler.ts";
 import { z } from "zod";
+import { Event } from "ts-event-target";
 
 export class ExecuteCopilotUseCase {
   private projectService: ProjectService;
@@ -59,40 +49,11 @@ export class ExecuteCopilotUseCase {
     );
   }
 
-  private generateProjectName(
+  async setupEnvironment(
     goldenSetId: string,
     userInputId: string,
-  ): string {
-    return `temp-project-${goldenSetId}-${userInputId}-${Date.now()}`;
-  }
-  async gqlClient(): Promise<GQLClient> {
-    if (this._gqlClient) return this._gqlClient;
-    await this.account.ensureLoggedIn();
-    this._gqlClient = await this.account.getGQLClient();
-    return this._gqlClient;
-  }
-
-  async getSubscriptionCount(
-    copilotJobEntity: CopilotJobEntity,
-  ): Promise<number> {
-    const gqlClient = await this.gqlClient();
-    const copilotSubscriptionCount = await gqlClient.gqlRequest<
-      GetCopilotSubscriptionCountQuery,
-      GetCopilotSubscriptionCountQueryVariables
-    >(GET_COPILOT_SUBSCRIPTION_COUNT, {
-      projectExId: copilotJobEntity.data.projectExId,
-      sessionType: "COPILOT",
-    });
-    const count = z.coerce
-      .number()
-      .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
-    if (!count.success) {
-      throw new Error(count.error.message);
-    }
-    return count.data;
-    // TODO: get last session
-  }
-  async setupEnvironment(goldenSetId: string, userInputId: string) {
+    legacy: boolean = false,
+  ): Promise<CopilotJobEntity> {
     const { goldenSetEntity, userInputEntity } =
       await this.repository.goldenSetRepository.getCopilotInputByGoldenSetIdAndUserInputId(
         goldenSetId,
@@ -107,29 +68,47 @@ export class ExecuteCopilotUseCase {
       projectName,
       goldenSetEntity.data.schemaId,
     );
-    return { project, userInputEntity, typeSystemStore };
-  }
-
-  async execute(goldenSetId: string, userInputId: string) {
-    const { project, userInputEntity, typeSystemStore } =
-      await this.setupEnvironment(goldenSetId, userInputId);
-    await this.account.ensureLoggedIn();
-    const wsUrl = buildCopilotExecutionUrl(
-      process.env.BACKEND_GRAPHQL_URL,
-      project.projectExId,
-      this.account.accessToken,
-      "copilot-output",
-    );
     const copilotJobEntity = new CopilotJobEntity({
       projectExId: project.projectExId,
       query: userInputEntity.data.content,
-      wsUrl,
+      wsUrl: legacy
+        ? buildCopilotExecutionUrl(
+            process.env.BACKEND_GRAPHQL_URL,
+            project.projectExId,
+            this.account.accessToken,
+            "copilot-output",
+          )
+        : process.env.SUBSCRIPTION_GRAPHQL_URL,
       schemaGraph: assertNotNull(typeSystemStore.schemaGraph),
     });
+
+    return copilotJobEntity;
+  }
+
+  private generateProjectName(
+    goldenSetId: string,
+    userInputId: string,
+  ): string {
+    return `temp-project-${goldenSetId}-${userInputId}-${Date.now()}`;
+  }
+  async gqlClient(): Promise<GQLClient> {
+    if (this._gqlClient) return this._gqlClient;
+    await this.account.ensureLoggedIn();
+    this._gqlClient = await this.account.getGQLClient();
+    return this._gqlClient;
+  }
+
+  async execute(goldenSetId: string, userInputId: string) {
+    const copilotJobEntity = await this.setupEnvironment(
+      goldenSetId,
+      userInputId,
+    );
+    await this.account.ensureLoggedIn();
+
     const evaluationJobRunner = new EvaluationJobRunner(copilotJobEntity);
     evaluationJobRunner.start();
     const editableText = await evaluationJobRunner.waitForResult();
-    await this.projectService.deleteProject(project.projectExId);
+    await this.projectService.deleteProject(copilotJobEntity.data.projectExId);
     const copilotOutputEntity = new CopilotOutputEntity({
       goldenSetId,
       userInputId,
@@ -150,109 +129,171 @@ export class ExecuteCopilotUseCase {
     });
   }
 
-  async executeV2(goldenSetId: string, userInputId: string) {
-    const { project, userInputEntity, typeSystemStore } =
-      await this.setupEnvironment(goldenSetId, userInputId);
-    const copilotJobEntity = new CopilotJobEntity({
-      projectExId: project.projectExId,
-      query: userInputEntity.data.content,
-      wsUrl: process.env.SUBSCRIPTION_GRAPHQL_URL,
-      schemaGraph: assertNotNull(typeSystemStore.schemaGraph),
-    });
-    const copilotEvent = new EventTarget<
-      [CopilotEventsList[keyof CopilotEventsList], Event<"unsubscribe">]
-    >(); // TODO: implement handlers
-    const copilotExecutionService = new ExecutionJobRunnerV2(
-      copilotJobEntity,
-      this.account,
-      copilotEvent.dispatchEvent.bind(copilotEvent),
-    );
-    // await copilotExecutionService.verifySession();
-    const latestSession = await this.getLatestSession();
-    const currentSessionExId = latestSession ?? (await this.createNewSession());
-    const unsubscribe = copilotExecutionService.execute(currentSessionExId);
-    copilotEvent.addEventListener("unsubscribe", unsubscribe);
-    copilotEvent.addEventListener("CopilotEditableTextMessage", (event) => {
-      console.log(event);
-      copilotEvent.dispatchEvent(new TerminateEvent());
-      copilotEvent.dispatchEvent(new UnsubscribeEvent());
-      return event.data.content;
-    });
-    copilotEvent.addEventListener("CopilotToolCallBatchMessage", (event) => {
-      const toolCalls: ToolCall[] = event.data.toolCalls.map(
-        (toolCall): ToolCall => {
-          return {
-            toolCallId: toolCall.id,
-            args: toolCall.args as Record<string, unknown>,
-            name: toolCall.name,
-          };
-        },
-      );
-      const { result, successful, errorMessage } = runToolCalls(
-        toolCalls,
-        typeSystemStore.schemaGraph,
-      );
-      if (successful && result) {
-        copilotEvent.dispatchEvent(
-          new ToolResponseEvent({
-            toolCallBatchId: event.data.toolCallBatchId,
-            responseByToolCallId: result.data,
-            schemaDiff: result.schemaDiff,
-          }),
-        );
-      } else {
-        throw new Error(`Error executing tool calls: ${errorMessage}`);
-      }
-    });
-
-    copilotEvent.addEventListener("CopilotInitialStateMessage", (event) => {
-      if (event.data.currentJobIsRunning || event.data.terminated) {
-        console.error(
-          "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
-        );
-        throw new Error(
-          "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
-        );
-      }
-      if (event.data.copilotMessages.length > 0) {
-        console.warn(
-          "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
-        );
-        throw new Error(
-          "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
-        );
-      }
-    });
-
-    copilotEvent.addEventListener(
-      "CopilotToolCallBatchResponseMessage",
-      (event) => {},
-    );
-  }
-  async getLatestSession(
-    copilotJobEntity: CopilotJobEntity,
-  ): Promise<string | null> {
+  async getLatestSession(projectExId: string): Promise<string | null> {
     const gqlClient = await this.gqlClient();
     const latestSessionResult = await gqlClient.gqlRequest<
       GetLatestSessionMutation,
       GetLatestSessionMutationVariables
     >(GET_LATEST_SESSION, {
-      projectExId: copilotJobEntity.data.projectExId,
+      projectExId,
       sessionType: "COPILOT",
     });
     return latestSessionResult.latestSession;
   }
 
-  async createNewSession(copilotJobEntity: CopilotJobEntity) {
+  async createNewSession(projectExId: string): Promise<string> {
     const gqlClient = await this.gqlClient();
     const newCopilotSessionExId = await gqlClient.gqlRequest<
       CreateCopilotSessionMutation,
       CreateCopilotSessionMutationVariables
     >(CREATE_COPILOT_SESSION, {
-      projectExId: copilotJobEntity.data.projectExId,
+      projectExId,
       sessionType: "COPILOT",
     });
     return newCopilotSessionExId.createCopilotSession;
+  }
+
+  async getSubscriptionCount(projectExId: string): Promise<number> {
+    const gqlClient = await this.gqlClient();
+    const copilotSubscriptionCount = await gqlClient.gqlRequest<
+      GetCopilotSubscriptionCountQuery,
+      GetCopilotSubscriptionCountQueryVariables
+    >(GET_COPILOT_SUBSCRIPTION_COUNT, {
+      projectExId,
+      sessionType: "COPILOT",
+    });
+    const count = z.coerce
+      .number()
+      .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
+    if (!count.success) {
+      throw new Error(count.error.message);
+    }
+    return count.data;
+    // TODO: get last session
+  }
+
+  copilotJobEntityToCopilotOutputEntity(
+    copilotJobEntity: CopilotJobEntity,
+    goldenSetId: string,
+    userInputId: string,
+  ): CopilotOutputEntity {
+    if (!copilotJobEntity.editableText) {
+      throw new Error(
+        "Copilot job has not produced editable text or has not terminated yet.",
+      );
+    }
+    return new CopilotOutputEntity({
+      goldenSetId,
+      userInputId,
+      content: copilotJobEntity.editableText,
+    });
+  }
+
+  async executeV2(goldenSetId: string, userInputId: string) {
+    const copilotJobEntity = await this.setupEnvironment(
+      goldenSetId,
+      userInputId,
+    );
+
+    const sessionExId =
+      (await this.getLatestSession(copilotJobEntity.data.projectExId)) ??
+      (await this.createNewSession(copilotJobEntity.data.projectExId));
+    const copilotExecutionService = new ExecutionJobRunnerV2(
+      sessionExId,
+      await this.account.getWsClient(),
+      await this.account.getGQLClient(),
+    );
+    const { publish, listen } = copilotExecutionService.execute();
+    try {
+      listen("CopilotEditableTextMessage", async (event) => {
+        console.log(event);
+
+        copilotJobEntity.editableText = event.data.content;
+        publish(new CopilotInputEvent("TERMINATE", {}));
+        await this.repository.copilotOutputRepository.save(
+          this.copilotJobEntityToCopilotOutputEntity(
+            copilotJobEntity,
+            goldenSetId,
+            userInputId,
+          ),
+        );
+      });
+      listen("CopilotToolCallBatchMessage", (event) => {
+        const toolCalls: ToolCall[] = event.data.toolCalls.map(
+          (toolCall): ToolCall => {
+            return {
+              toolCallId: toolCall.id,
+              args: toolCall.args as Record<string, unknown>,
+              name: toolCall.name,
+            };
+          },
+        );
+        const { result, successful, errorMessage } = runToolCalls(
+          toolCalls,
+          copilotJobEntity.data.schemaGraph,
+        );
+        if (successful && result) {
+          publish(
+            new CopilotInputEvent("TOOL_CALL_BATCH_RESPONSE", {
+              responseByToolCallId: event.data.toolCallBatchId,
+              toolCallBatchId: result.data,
+              schemaDiff: result.schemaDiff,
+            }),
+          );
+        } else {
+          throw new Error(`Error executing tool calls: ${errorMessage}`);
+        }
+      });
+
+      listen("CopilotTaskMessage", (event) => {
+        copilotJobEntity.addTask({ ...event.data, timestamp: event.timeStamp });
+      });
+
+      listen("CopilotTerminateMessage", () => {
+        copilotJobEntity.setTerminate();
+        publish(new Event("unsubscribe"));
+      });
+
+      listen("CopilotStateChangeMessage", (event) => {
+        if (!event.data.currentJobIsRunning && !copilotJobEntity.isTerminated) {
+          console.error(
+            "Current job is not running, but session is not marked as terminated. This likely indicates an issue with the backend job execution.",
+          );
+        }
+      });
+
+      listen("CopilotInitialStateMessage", (event) => {
+        if (event.data.currentJobIsRunning || event.data.terminated) {
+          console.error(
+            "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
+          );
+          throw new Error(
+            "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
+          );
+        }
+        if (event.data.copilotMessages.length > 0) {
+          console.warn(
+            "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
+          );
+          throw new Error(
+            "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
+          );
+        }
+        publish(
+          new CopilotInputEvent("HUMAN_INPUT", {
+            content: copilotJobEntity.data.query,
+          }),
+        );
+      });
+    } catch (error) {
+      console.error("Error during copilot session execution:", error);
+      copilotJobEntity.setTerminate();
+      publish(new CopilotInputEvent("TERMINATE", {}));
+    } finally {
+      await this.projectService.deleteProject(
+        copilotJobEntity.data.projectExId,
+      );
+    }
   }
 }
 
@@ -264,68 +305,3 @@ export const buildCopilotExecutionUrl = (
 ): string => {
   return `${hostname}projectExId=${projectExId}&userToken=${userToken}&clientType=${clientType}`;
 };
-
-export const sendMessageToSession = async (
-  sessionExId: string,
-  copilotArgumentsInput: MessageArgumentsInput["copilotArgs"],
-  client: GQLClient,
-) => {
-  const response = await client.gqlRequest<
-    SendMessageToSessionMutation,
-    SendMessageToSessionMutationVariables
-  >(SEND_MESSAGE_TO_SESSION, {
-    sessionExId,
-    argsInput: {
-      copilotArgs: copilotArgumentsInput,
-    },
-  });
-  if (!response.sendMessageToSession) {
-    throw new Error("Failed to send message to session");
-  }
-};
-
-export const buildHumanInputMessage = (data: {
-  content: string;
-  context?: CopilotHumanInputContextInput;
-}) => {
-  return data as CopilotHumanInputMessageInput;
-};
-
-export const buildTerminateMessage = (data?: { reason?: string }) => {
-  return data as CopilotTerminateMessageInput;
-};
-
-export const buildToolCallBatchMessage = (data: {
-  responseByToolCallId: string;
-  toolCallBatchId: string;
-  schemaDiff?: unknown;
-}): CopilotToolCallBatchResponseMessageFragment => {
-  return data as CopilotToolCallBatchResponseMessageFragment;
-};
-
-export class ToolResponseEvent extends CopilotEvent<"CopilotToolCallBatchResponseMessage"> {
-  constructor(data: {
-    responseByToolCallId: string;
-    toolCallBatchId: string;
-    schemaDiff?: unknown;
-  }) {
-    const message = buildToolCallBatchMessage(data);
-    super("CopilotToolCallBatchResponseMessage", message);
-  }
-}
-
-export class TerminateEvent extends CopilotEvent<"CopilotTerminateMessage"> {
-  constructor(data?: { reason?: string }) {
-    const message = buildTerminateMessage(data);
-    super(
-      "CopilotTerminateMessage",
-      message as CopilotMessageContent_CopilotTerminateMessage_Fragment,
-    );
-  }
-}
-
-export class UnsubscribeEvent extends Event<"unsubscribe"> {
-  constructor() {
-    super("unsubscribe");
-  }
-}

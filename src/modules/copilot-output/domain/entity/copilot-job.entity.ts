@@ -1,7 +1,10 @@
 import type z from "zod";
 import { Entity } from "../../../shared/domain/entity/entity.ts";
 import { copilotJobSchema } from "../schema/copilot.schema.ts";
-import type { TaskMessage } from "../../../shared/domain/interface/types.ts";
+import {
+  CopilotMessageType,
+  type TaskMessage,
+} from "../../../shared/domain/interface/types.ts";
 
 export class CopilotJobEntity extends Entity<typeof copilotJobSchema> {
   private _editableText: string | undefined;
@@ -17,8 +20,8 @@ export class CopilotJobEntity extends Entity<typeof copilotJobSchema> {
     this._isTerminated = true;
   }
 
-  public addTask(task: TaskMessage): void {
-    this._tasks.push(task);
+  public addTask(task: Omit<TaskMessage, "type">): void {
+    this._tasks.push({ ...task, type: CopilotMessageType.TASK });
   }
 
   public get tasks(): TaskMessage[] {

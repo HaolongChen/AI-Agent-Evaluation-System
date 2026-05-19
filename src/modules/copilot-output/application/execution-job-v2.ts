@@ -1,29 +1,29 @@
-import type { Account } from "../../account/application/account-handler.ts";
-import type { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import type {
   GQLClient,
   SubscriptionHandlers,
   WebSocketClient,
 } from "../../shared/application/graphql-client.ts";
-import type {
-  CreateCopilotSessionMutation,
-  CreateCopilotSessionMutationVariables,
-  GetCopilotSubscriptionCountQuery,
-  GetCopilotSubscriptionCountQueryVariables,
-  GetLatestSessionMutation,
-  GetLatestSessionMutationVariables,
-  OnCopilotSessionUpdatesSubscription,
-  OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content,
-  OnCopilotSessionUpdatesSubscriptionVariables,
+import {
+  type OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content,
+  type OnCopilotSessionUpdatesSubscriptionVariables,
+  type SendMessageToSessionMutation,
+  type SendMessageToSessionMutationVariables,
+  type OnCopilotSessionUpdatesSubscription,
+  CopilotMessageType,
+  type CopilotFeedbackMessageInput,
+  type CopilotHumanInputMessageInput,
+  type CopilotHumanOperationMessageInput,
+  type CopilotStopMessageInput,
+  type CopilotToolCallBatchResponseMessageInput,
+  type CopilotToolCallBatchExecErrorMessageInput,
+  type CopilotTerminateMessageInput,
+  type CopilotTaskRevertSuccessMessageInput,
 } from "../../../graphql/generated/types.ts";
 import {
-  CREATE_COPILOT_SESSION,
-  GET_COPILOT_SUBSCRIPTION_COUNT,
-  GET_LATEST_SESSION,
   ON_COPILOT_SESSION_UPDATES,
+  SEND_MESSAGE_TO_SESSION,
 } from "../infrastructure/copilot-network.ts";
-import { z } from "zod";
-import { Event } from "ts-event-target";
+import { Event, EventTarget } from "ts-event-target";
 
 export type CopilotMessageContent =
   OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content;
@@ -53,10 +53,32 @@ export const typeNameList = [
   "CopilotToolCallBatchResponseMessage",
 ] as const;
 
+export type CopilotInputMessage = {
+  [CopilotMessageType.Feedback]: CopilotFeedbackMessageInput;
+  [CopilotMessageType.HumanInput]: CopilotHumanInputMessageInput;
+  [CopilotMessageType.HumanOperation]: CopilotHumanOperationMessageInput;
+  [CopilotMessageType.Stop]: CopilotStopMessageInput;
+  [CopilotMessageType.ToolCallBatchResponse]: CopilotToolCallBatchResponseMessageInput;
+  [CopilotMessageType.ToolCallBatchExecError]: CopilotToolCallBatchExecErrorMessageInput;
+  [CopilotMessageType.Terminate]: CopilotTerminateMessageInput;
+  [CopilotMessageType.TaskRevertSuccess]: CopilotTaskRevertSuccessMessageInput;
+};
+
 export class CopilotEvent<T extends keyof TypeNameList> extends Event<T> {
   constructor(
     type: T,
     readonly data: CopilotMessageContentMap[T],
+  ) {
+    super(type);
+  }
+}
+
+export class CopilotInputEvent<
+  T extends keyof CopilotInputMessage,
+> extends Event<T> {
+  constructor(
+    type: T,
+    readonly data: CopilotInputMessage[T],
   ) {
     super(type);
   }
@@ -69,28 +91,51 @@ export type TypeNameList = {
 };
 
 export type CopilotEventsList = { [K in keyof TypeNameList]: CopilotEvent<K> };
+export type CopilotInputEventsList = {
+  [K in keyof CopilotInputMessage]: CopilotInputEvent<K>;
+};
 
 export class ExecutionJobRunnerV2 {
-  private _gqlClient: GQLClient | undefined;
-  private _wsClient: WebSocketClient | undefined;
   private unsubscribe: (() => void) | undefined;
+  private copilotInputEvent: EventTarget<
+    [CopilotInputEventsList[keyof CopilotInputEventsList], Event<"unsubscribe">]
+  >;
+  private copilotEvent: EventTarget<
+    [CopilotEventsList[keyof CopilotEventsList]]
+  >;
   constructor(
-    private copilotJobEntity: CopilotJobEntity,
-    private account: Account,
-    // private copilotEventTarget: EventTarget<
-    // 	CopilotEvent<keyof CopilotMessageContentMap>[]
-    // >,
-    private _copilotEventPublisher: (
-      event: CopilotEventsList[keyof CopilotEventsList],
-    ) => void,
-  ) {}
-
-  async wsClient(): Promise<WebSocketClient> {
-    if (this._wsClient) return this._wsClient;
-    await this.account.ensureLoggedIn();
-    this._wsClient = await this.account.getWsClient();
-    return this._wsClient;
+    private sessionExId: string,
+    private wsClient: WebSocketClient,
+    private gqlClient: GQLClient,
+  ) {
+    this.copilotInputEvent = new EventTarget<
+      [
+        CopilotInputEventsList[keyof CopilotInputEventsList],
+        Event<"unsubscribe">,
+      ]
+    >();
+    this.copilotEvent = new EventTarget<
+      [CopilotEventsList[keyof CopilotEventsList]]
+    >();
   }
+
+  sendMessageToSession = async <T extends keyof CopilotInputMessage>(
+    type: T,
+    message: CopilotInputMessage[T],
+  ) => {
+    const response = await this.gqlClient.gqlRequest<
+      SendMessageToSessionMutation,
+      SendMessageToSessionMutationVariables
+    >(SEND_MESSAGE_TO_SESSION, {
+      sessionExId: this.sessionExId,
+      argsInput: {
+        copilotArgs: { ...message, copilotMessageType: type },
+      },
+    });
+    if (!response.sendMessageToSession) {
+      throw new Error("Failed to send message to session");
+    }
+  };
 
   private handler(
     publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
@@ -99,10 +144,22 @@ export class ExecutionJobRunnerV2 {
       next: (data) => {
         console.log("Received subscription data:", data);
         const content = data.onCopilotSessionUpdate?.content;
+
         if (!content) {
           console.warn("Received session update without content", { data });
           return;
         }
+        console.log(
+          "🚀 ---------------------------------------------------------------------------------🚀",
+        );
+        console.log(
+          "🚀 ~ execution-job-v2.ts:140 ~ ExecutionJobRunnerV2 ~ handler ~ content:",
+          content,
+        );
+        console.log(
+          "🚀 ---------------------------------------------------------------------------------🚀",
+        );
+
         const event = new CopilotEvent(
           content.__typename,
           content,
@@ -118,17 +175,42 @@ export class ExecutionJobRunnerV2 {
     };
   }
 
-  execute(sessionExId: string): () => void {
-    if (!this._wsClient) {
-      throw new Error("WebSocket client is not initialized");
-    }
-    return (this.unsubscribe = this._wsClient.gqlSubscribe<
+  execute() {
+    const unsubscribe = this.wsClient.gqlSubscribe<
       OnCopilotSessionUpdatesSubscription,
       OnCopilotSessionUpdatesSubscriptionVariables
     >(
       ON_COPILOT_SESSION_UPDATES,
-      { sessionExId },
-      this.handler(this._copilotEventPublisher),
-    ));
+      { sessionExId: this.sessionExId },
+      this.handler(this.copilotEvent.dispatchEvent),
+    );
+    this.copilotInputEvent.addEventListener("unsubscribe", () => {
+      unsubscribe();
+      for (const copilotEventName in typeNameList) {
+        this.copilotEvent.removeAllEventListeners(
+          copilotEventName as keyof TypeNameList,
+        );
+      }
+    });
+    this.copilotInputEvent.addEventListener("TERMINATE", (event) => {
+      this.sendMessageToSession(event.type, event.data);
+      this.copilotInputEvent.dispatchEvent(new Event("unsubscribe"));
+    });
+    this.copilotInputEvent.addEventListener(
+      "TOOL_CALL_BATCH_RESPONSE",
+      (event) => {
+        this.sendMessageToSession(event.type, event.data);
+      },
+    );
+
+    this.copilotInputEvent.addEventListener("HUMAN_INPUT", (event) => {
+      this.sendMessageToSession(event.type, event.data);
+    });
+    return {
+      publish: this.copilotInputEvent.dispatchEvent.bind(
+        this.copilotInputEvent,
+      ),
+      listen: this.copilotEvent.addEventListener.bind(this.copilotEvent),
+    };
   }
 }

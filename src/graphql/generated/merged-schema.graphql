@@ -3168,9 +3168,13 @@ type McConfig {
 }
 
 enum MediaFormat {
+  AAC
+  AIFF
   CSS
+  CSV
   DOC
   DOCX
+  FLAC
   GIF
   HTML
   ICO
@@ -3178,10 +3182,13 @@ enum MediaFormat {
   JPG
   JS
   JSON
+  M4A
+  M4B
   MARKDOWN
   MOV
   MP3
   MP4
+  OGG
   OTHER
   PDF
   PNG
@@ -7161,6 +7168,7 @@ input SchemaPathItemInput {
 }
 
 enum SchemaSynchronizedFeature {
+  AIRWALLEX_PAYMENT_CONFIG
   ALIPAY_CONFIG
   OPEN_PAYMENT @deprecated(reason: "Deprecated")
   OPEN_ZAI @deprecated(reason: "Deprecated")

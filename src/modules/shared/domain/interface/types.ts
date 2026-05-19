@@ -72,9 +72,9 @@ export interface TaskMessage {
   type: CopilotMessageType.TASK;
   taskId: string;
   name: string;
-  description?: string;
-  diff?: unknown;
-  isDiffReverted?: boolean;
+  description?: string | null;
+  diff?: unknown | null;
+  isDiffReverted?: boolean | null;
   timestamp: number;
 }
 export interface ErrorMessage {

@@ -189,7 +189,13 @@ export class ExecuteCopilotUseCase {
         await this.account.getGQLClient(),
       );
       const { publish, listen } = copilotExecutionService.execute();
-      const jobPromise = new Promise<CopilotOutputEntity>((resolve) => {
+      const jobPromise = new Promise<CopilotOutputEntity>((resolve, reject) => {
+        const timer = setTimeout(
+          () => {
+            reject("timeout");
+          },
+          5 * 60 * 1000,
+        );
         try {
           listen("CopilotEditableTextMessage", async (event) => {
             console.log(event);
@@ -253,6 +259,8 @@ export class ExecuteCopilotUseCase {
               );
             }
           });
+          listen("CopilotErrorMessage", reject);
+          listen("CopilotToolCallBatchExecErrorMessage", reject);
 
           listen("CopilotInitialStateMessage", (event) => {
             if (event.data.currentJobIsRunning || event.data.terminated) {
@@ -281,6 +289,8 @@ export class ExecuteCopilotUseCase {
           console.error("Error during copilot session execution:", error);
           copilotJobEntity.setTerminate();
           publish(new CopilotInputEvent("TERMINATE", {}));
+        } finally {
+          timer.close();
         }
       });
       const result = await jobPromise;

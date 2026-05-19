@@ -82,10 +82,11 @@ export const rubricResolver = {
         {
           copilotOutputRepository: repository.copilotOutputRepository,
           goldenSetRepository: repository.goldenSetRepository,
+          projectRepository: repository.projectRepository,
         },
         myAccount,
       );
-      const copilotOutput = await executeCopilotUseCase.execute(
+      const copilotOutput = await executeCopilotUseCase.executeV2(
         arguments_.context.goldenSetId,
         arguments_.context.userInputId,
       );

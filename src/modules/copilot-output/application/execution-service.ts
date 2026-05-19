@@ -16,15 +16,11 @@ import type {
   GetCopilotSubscriptionCountQueryVariables,
   GetLatestSessionMutation,
   GetLatestSessionMutationVariables,
-  MessageArgsInputInput as MessageArgumentsInput,
-  SendMessageToSessionMutation,
-  SendMessageToSessionMutationVariables,
 } from "../../../graphql/generated/types.ts";
 import {
   CREATE_COPILOT_SESSION,
   GET_COPILOT_SUBSCRIPTION_COUNT,
   GET_LATEST_SESSION,
-  SEND_MESSAGE_TO_SESSION,
 } from "../infrastructure/copilot-network.ts";
 import type { GQLClient } from "../../shared/application/graphql-client.ts";
 import type { ToolCall } from "../../shared/domain/interface/types.ts";
@@ -118,17 +114,6 @@ export class ExecuteCopilotUseCase {
     return copilotOutputEntity.toJSON();
   }
 
-  async sendMessageToSession(argumentsInput: MessageArgumentsInput) {
-    const gqlClient = await this.account.getGQLClient();
-    await gqlClient.gqlRequest<
-      SendMessageToSessionMutation,
-      SendMessageToSessionMutationVariables
-    >(SEND_MESSAGE_TO_SESSION, {
-      sessionExId: this.account.sessionId,
-      argsInput: argumentsInput,
-    });
-  }
-
   async getLatestSession(projectExId: string): Promise<string | null> {
     const gqlClient = await this.gqlClient();
     const latestSessionResult = await gqlClient.gqlRequest<
@@ -194,101 +179,116 @@ export class ExecuteCopilotUseCase {
       goldenSetId,
       userInputId,
     );
-
-    const sessionExId =
-      (await this.getLatestSession(copilotJobEntity.data.projectExId)) ??
-      (await this.createNewSession(copilotJobEntity.data.projectExId));
-    const copilotExecutionService = new ExecutionJobRunnerV2(
-      sessionExId,
-      await this.account.getWsClient(),
-      await this.account.getGQLClient(),
-    );
-    const { publish, listen } = copilotExecutionService.execute();
     try {
-      listen("CopilotEditableTextMessage", async (event) => {
-        console.log(event);
+      const sessionExId =
+        (await this.getLatestSession(copilotJobEntity.data.projectExId)) ??
+        (await this.createNewSession(copilotJobEntity.data.projectExId));
+      const copilotExecutionService = new ExecutionJobRunnerV2(
+        sessionExId,
+        await this.account.getWsClient(),
+        await this.account.getGQLClient(),
+      );
+      const { publish, listen } = copilotExecutionService.execute();
+      const jobPromise = new Promise<CopilotOutputEntity>((resolve) => {
+        try {
+          listen("CopilotEditableTextMessage", async (event) => {
+            console.log(event);
 
-        copilotJobEntity.editableText = event.data.content;
-        publish(new CopilotInputEvent("TERMINATE", {}));
-        await this.repository.copilotOutputRepository.save(
-          this.copilotJobEntityToCopilotOutputEntity(
-            copilotJobEntity,
-            goldenSetId,
-            userInputId,
-          ),
-        );
-      });
-      listen("CopilotToolCallBatchMessage", (event) => {
-        const toolCalls: ToolCall[] = event.data.toolCalls.map(
-          (toolCall): ToolCall => {
-            return {
-              toolCallId: toolCall.id,
-              args: toolCall.args as Record<string, unknown>,
-              name: toolCall.name,
-            };
-          },
-        );
-        const { result, successful, errorMessage } = runToolCalls(
-          toolCalls,
-          copilotJobEntity.data.schemaGraph,
-        );
-        if (successful && result) {
-          publish(
-            new CopilotInputEvent("TOOL_CALL_BATCH_RESPONSE", {
-              responseByToolCallId: event.data.toolCallBatchId,
-              toolCallBatchId: result.data,
-              schemaDiff: result.schemaDiff,
-            }),
-          );
-        } else {
-          throw new Error(`Error executing tool calls: ${errorMessage}`);
+            copilotJobEntity.editableText = event.data.content;
+            publish(new CopilotInputEvent("TERMINATE", {}));
+            const copilotOutputEntity =
+              this.copilotJobEntityToCopilotOutputEntity(
+                copilotJobEntity,
+                goldenSetId,
+                userInputId,
+              );
+            resolve(copilotOutputEntity);
+          });
+          listen("CopilotToolCallBatchMessage", (event) => {
+            const toolCalls: ToolCall[] = event.data.toolCalls.map(
+              (toolCall): ToolCall => {
+                return {
+                  toolCallId: toolCall.id,
+                  args: toolCall.args as Record<string, unknown>,
+                  name: toolCall.name,
+                };
+              },
+            );
+            const { result, successful, errorMessage } = runToolCalls(
+              toolCalls,
+              copilotJobEntity.data.schemaGraph,
+            );
+            if (successful && result) {
+              publish(
+                new CopilotInputEvent("TOOL_CALL_BATCH_RESPONSE", {
+                  responseByToolCallId: event.data.toolCallBatchId,
+                  toolCallBatchId: result.data,
+                  schemaDiff: result.schemaDiff,
+                }),
+              );
+            } else {
+              throw new Error(`Error executing tool calls: ${errorMessage}`);
+            }
+          });
+
+          listen("CopilotTaskMessage", (event) => {
+            copilotJobEntity.addTask({
+              ...event.data,
+              timestamp: event.timeStamp,
+            });
+          });
+
+          listen("CopilotTerminateMessage", () => {
+            copilotJobEntity.setTerminate();
+            publish(new Event("unsubscribe"));
+          });
+
+          listen("CopilotStateChangeMessage", (event) => {
+            if (
+              !event.data.currentJobIsRunning &&
+              !copilotJobEntity.isTerminated
+            ) {
+              console.error(
+                "Current job is not running, but session is not marked as terminated. This likely indicates an issue with the backend job execution.",
+              );
+            }
+          });
+
+          listen("CopilotInitialStateMessage", (event) => {
+            if (event.data.currentJobIsRunning || event.data.terminated) {
+              console.error(
+                "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
+              );
+              throw new Error(
+                "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
+              );
+            }
+            if (event.data.copilotMessages.length > 0) {
+              console.warn(
+                "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
+              );
+              throw new Error(
+                "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
+              );
+            }
+            publish(
+              new CopilotInputEvent("HUMAN_INPUT", {
+                content: copilotJobEntity.data.query,
+              }),
+            );
+          });
+        } catch (error) {
+          console.error("Error during copilot session execution:", error);
+          copilotJobEntity.setTerminate();
+          publish(new CopilotInputEvent("TERMINATE", {}));
         }
       });
-
-      listen("CopilotTaskMessage", (event) => {
-        copilotJobEntity.addTask({ ...event.data, timestamp: event.timeStamp });
-      });
-
-      listen("CopilotTerminateMessage", () => {
-        copilotJobEntity.setTerminate();
-        publish(new Event("unsubscribe"));
-      });
-
-      listen("CopilotStateChangeMessage", (event) => {
-        if (!event.data.currentJobIsRunning && !copilotJobEntity.isTerminated) {
-          console.error(
-            "Current job is not running, but session is not marked as terminated. This likely indicates an issue with the backend job execution.",
-          );
-        }
-      });
-
-      listen("CopilotInitialStateMessage", (event) => {
-        if (event.data.currentJobIsRunning || event.data.terminated) {
-          console.error(
-            "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
-          );
-          throw new Error(
-            "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
-          );
-        }
-        if (event.data.copilotMessages.length > 0) {
-          console.warn(
-            "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
-          );
-          throw new Error(
-            "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
-          );
-        }
-        publish(
-          new CopilotInputEvent("HUMAN_INPUT", {
-            content: copilotJobEntity.data.query,
-          }),
-        );
-      });
+      const result = await jobPromise;
+      await this.repository.copilotOutputRepository.save(result);
+      return result.toJSON();
     } catch (error) {
-      console.error("Error during copilot session execution:", error);
-      copilotJobEntity.setTerminate();
-      publish(new CopilotInputEvent("TERMINATE", {}));
+      console.error("Error setting up copilot execution environment:", error);
+      throw error;
     } finally {
       await this.projectService.deleteProject(
         copilotJobEntity.data.projectExId,

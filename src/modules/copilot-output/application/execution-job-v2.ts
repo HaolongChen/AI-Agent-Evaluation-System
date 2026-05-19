@@ -96,7 +96,6 @@ export type CopilotInputEventsList = {
 };
 
 export class ExecutionJobRunnerV2 {
-  private unsubscribe: (() => void) | undefined;
   private copilotInputEvent: EventTarget<
     [CopilotInputEventsList[keyof CopilotInputEventsList], Event<"unsubscribe">]
   >;

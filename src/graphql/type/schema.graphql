@@ -3,6 +3,10 @@ type Query {
 
   getGoldenSets(filters: GoldenSetFilters): [GoldenSet]!
 
+  getUserInputById(id: String!): UserInput!
+
+  getUserInputs: [UserInput]!
+
   getEvaluationSessionById(id: String!): EvaluationSession!
 
   getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!

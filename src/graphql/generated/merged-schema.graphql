@@ -6716,6 +6716,8 @@ type Query {
   getRubricByContext(context: CopilotInput!): [Rubric]!
   getRubricById(id: String!): Rubric!
   getTabBarIcons: [StoredImage]!
+  getUserInputById(id: String!): UserInput!
+  getUserInputs: [UserInput]!
   getVideoByExId(
     appExId: String
     projectExId: String!

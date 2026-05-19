@@ -257,6 +257,8 @@ export type Query = {
   getGoldenSets: Array<Maybe<GoldenSet>>;
   getRubricByContext: Array<Maybe<Rubric>>;
   getRubricById: Rubric;
+  getUserInputById: UserInput;
+  getUserInputs: Array<Maybe<UserInput>>;
 };
 
 export type QueryGetEvaluationResultByIdArgs = {
@@ -288,6 +290,10 @@ export type QueryGetRubricByContextArgs = {
 };
 
 export type QueryGetRubricByIdArgs = {
+  id: Scalars["String"]["input"];
+};
+
+export type QueryGetUserInputByIdArgs = {
   id: Scalars["String"]["input"];
 };
 
@@ -734,6 +740,17 @@ export type QueryResolvers<
     ParentType,
     ContextType,
     RequireFields<QueryGetRubricByIdArgs, "id">
+  >;
+  getUserInputById: Resolver<
+    ResolversTypes["UserInput"],
+    ParentType,
+    ContextType,
+    RequireFields<QueryGetUserInputByIdArgs, "id">
+  >;
+  getUserInputs: Resolver<
+    Array<Maybe<ResolversTypes["UserInput"]>>,
+    ParentType,
+    ContextType
   >;
 }>;
 

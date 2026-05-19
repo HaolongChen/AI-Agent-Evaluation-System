@@ -17,6 +17,6 @@ export const resolvers = {
   },
 };
 
-export const typeDefs = await readFile("./type/schema.graphql", {
+export const typeDefs = await readFile("./src/graphql/type/schema.graphql", {
   encoding: "utf8",
 });

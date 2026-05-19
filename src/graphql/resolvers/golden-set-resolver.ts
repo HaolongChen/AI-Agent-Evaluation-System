@@ -17,6 +17,7 @@ import {
   type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
   type QueryGetGoldenSetByIdArgs as QueryGetGoldenSetByIdArguments,
   type QueryGetGoldenSetsArgs as QueryGetGoldenSetsArguments,
+  type QueryGetUserInputByIdArgs as QueryGetUserInputByIdArguments,
   type UserInput,
 } from "../generated/resolvers-types.ts";
 import { GraphQLError } from "graphql";
@@ -27,6 +28,10 @@ import type {
   FixAliPayDataBindingMutation,
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
+import {
+  GetUserInputByIdUseCase,
+  GetUserInputsUseCase,
+} from "../../modules/copilot-input/application/get-user-input.ts";
 
 const copilotTypeMapper = {
   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -38,6 +43,36 @@ const copilotTypeMapper = {
 
 export const goldenSetResolver = {
   Query: {
+    getUserInputById: async (
+      _: unknown,
+      arguments_: QueryGetUserInputByIdArguments,
+    ): Promise<UserInput> => {
+      const getUserInputByIdUseCase = new GetUserInputByIdUseCase(
+        repository.userInputRepository,
+      );
+      const userInput = await getUserInputByIdUseCase.execute(arguments_.id);
+      if (!userInput) {
+        throw new GraphQLError(`UserInput with id ${arguments_.id} not found`);
+      }
+      return {
+        ...userInput,
+        createdAt: userInput.createdAt!.toISOString(),
+        __typename: "UserInput",
+      };
+    },
+
+    getUserInputs: async (): Promise<UserInput[]> => {
+      const getUserInputsUseCase = new GetUserInputsUseCase(
+        repository.userInputRepository,
+      );
+      const userInputs = await getUserInputsUseCase.execute();
+      return userInputs.map((userInput) => ({
+        ...userInput,
+        createdAt: userInput.createdAt!.toISOString(),
+        __typename: "UserInput",
+      }));
+    },
+
     getGoldenSetById: async (
       _: unknown,
       arguments_: QueryGetGoldenSetByIdArguments,

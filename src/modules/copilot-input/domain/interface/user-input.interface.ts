@@ -8,4 +8,6 @@ export interface IUserInputRepository extends IRepository<UserInputEntity> {
     userInputId: string,
     goldenSetId: string,
   ): Promise<void>;
+
+  getAll(): Promise<Array<UserInputEntity>>;
 }

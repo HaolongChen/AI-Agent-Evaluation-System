@@ -16,6 +16,17 @@ export class UserInputRepository implements IUserInputRepository {
       ),
     );
   }
+
+  async getAll(): Promise<Array<UserInputEntity>> {
+    const userInputs = await prisma.userInput.findMany();
+    return userInputs.map((userInput) =>
+      repositoryDateMapper(
+        userInput,
+        new UserInputEntity(userInput, userInput.id),
+      ),
+    );
+  }
+
   async addGoldenSetAssociation(
     userInputId: string,
     goldenSetId: string,

@@ -12,7 +12,17 @@ import {
 	type EventPongListener,
 	type Message,
 } from "graphql-ws";
-import { WebSocket } from "ws";
+import WebSocket from "ws";
+
+// Custom WebSocket wrapper that handles legacy "ka" (keepalive) messages
+// The server sends "ka" but graphql-ws expects "ping"
+class GraphQLWsWebSocket extends WebSocket {
+	constructor(address: string | URL, _protocols?: string | string[]) {
+		void _protocols;
+		super(address, "graphql-ws");
+
+	}
+}
 
 export class NetworkClient {
 	private _defaultWsHandler: Partial<{
@@ -27,7 +37,11 @@ export class NetworkClient {
 	}> = {
 		connected: (data) => {
 			console.info("GraphQL subscription WS connected" + JSON.stringify(data));
-		},
+    },
+    opened: ( data ) =>
+    {
+      console.info("GraphQL subscription WS opened" + JSON.stringify(data));
+    },
 		message: (message: Message) => {
 			console.info("GraphQL subscription received message:", message);
 		},
@@ -62,27 +76,22 @@ export class NetworkClient {
 
 	buildWsClient(
 		wsUrl: string = process.env.SUBSCRIPTION_GRAPHQL_URL,
-		on?: {
-			connected?: () => void;
-			closed?: () => void;
-			error?: (error: unknown) => void;
-		},
-		ws?: typeof WebSocket,
+		on?: typeof this._defaultWsHandler,
+		wsImpl?: typeof WebSocket,
 	): WebSocketClient {
+		console.log(this._headers);
 		return new WebSocketClient(
 			createWsClient({
 				url: wsUrl,
-				webSocketImpl: ws || WebSocket,
+				webSocketImpl: wsImpl || GraphQLWsWebSocket,
 				connectionParams: {
-					"X-SESSION-ID": this._headers["X-Session-Id"] || "",
-					"X-ZED-VERSION": this._headers["X-Zed-Version"] || "",
-					authToken: this._headers["Authorization"] || "",
+					authentication: this._headers["Authorization"],
 				},
 				on: {
 					...this._defaultWsHandler,
 					...on,
 				},
-				// lazy: true, // Only connect when the first subscription is made
+				lazy: true,
 			}),
 		);
 	}
@@ -90,10 +99,7 @@ export class NetworkClient {
 
 export const publicNetworkClient = new NetworkClient();
 export class WebSocketClient {
-	constructor(
-		private websocket: Client,
-		initialData?: Record<string, unknown>,
-	) {}
+	constructor(private websocket: Client) {}
 
 	gqlSubscribe<TData>(
 		document: string,

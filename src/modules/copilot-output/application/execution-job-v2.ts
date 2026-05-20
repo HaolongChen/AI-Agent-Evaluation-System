@@ -142,7 +142,7 @@ export class ExecutionJobRunnerV2 {
     return {
       next: (data) => {
         console.log("Received subscription data:", data);
-        const content = data.onCopilotSessionUpdate?.content;
+        const content = data?.onCopilotSessionUpdate?.content;
 
         if (!content) {
           console.warn("Received session update without content", { data });
@@ -175,13 +175,12 @@ export class ExecutionJobRunnerV2 {
   }
 
   execute() {
-    const unsubscribe = this.wsClient.gqlSubscribe<
+    const observer = this.wsClient.gqlSubscribe<
       OnCopilotSessionUpdatesSubscription,
       OnCopilotSessionUpdatesSubscriptionVariables
-    >(
-      ON_COPILOT_SESSION_UPDATES,
-      { sessionExId: this.sessionExId },
-      this.handler(this.copilotEvent.dispatchEvent),
+    >(ON_COPILOT_SESSION_UPDATES, { sessionExId: this.sessionExId });
+    const unsubscribe = observer(
+      this.handler(this.copilotEvent.dispatchEvent.bind(this.copilotEvent)),
     );
     this.copilotInputEvent.addEventListener("unsubscribe", () => {
       unsubscribe();

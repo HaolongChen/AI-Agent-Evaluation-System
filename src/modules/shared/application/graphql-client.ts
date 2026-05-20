@@ -1,196 +1,154 @@
 import { GraphQLClient, ClientError } from "graphql-request";
-import {
-	createClient as createWsClient,
-	type Client,
-	type EventClosedListener,
-	type EventConnectedListener,
-	type EventConnectingListener,
-	type EventErrorListener,
-	type EventMessageListener,
-	type EventOpenedListener,
-	type EventPingListener,
-	type EventPongListener,
-	type Message,
-} from "graphql-ws";
 import WebSocket from "ws";
-
-// Custom WebSocket wrapper that handles legacy "ka" (keepalive) messages
-// The server sends "ka" but graphql-ws expects "ping"
-class GraphQLWsWebSocket extends WebSocket {
-	constructor(address: string | URL, _protocols?: string | string[]) {
-		void _protocols;
-		super(address, "graphql-ws");
-
-	}
-}
+import {
+  SubscriptionClient,
+  type Observable,
+} from "subscriptions-transport-ws";
+import type { ExecutionResult } from "graphql";
 
 export class NetworkClient {
-	private _defaultWsHandler: Partial<{
-		closed: EventClosedListener;
-		connected: EventConnectedListener;
-		connecting: EventConnectingListener;
-		error: EventErrorListener;
-		message: EventMessageListener;
-		opened: EventOpenedListener;
-		ping: EventPingListener;
-		pong: EventPongListener;
-	}> = {
-		connected: (data) => {
-			console.info("GraphQL subscription WS connected" + JSON.stringify(data));
-    },
-    opened: ( data ) =>
-    {
-      console.info("GraphQL subscription WS opened" + JSON.stringify(data));
-    },
-		message: (message: Message) => {
-			console.info("GraphQL subscription received message:", message);
-		},
-		closed: () => console.info("GraphQL subscription WS closed"),
-		error: (error: unknown) =>
-			console.error("GraphQL subscription WS error:", error),
-	};
-	private _headers: Record<string, string> = {
-		"Content-Type": "application/json",
-		"X-Zed-Version": "2.1.0",
-	};
-	constructor(
-		private readonly _url: string = process.env.BACKEND_GRAPHQL_URL,
-		headers?: Record<string, string>,
-	) {
-		if (headers) {
-			this._headers = { ...this._headers, ...headers };
-		}
-	}
+  private _headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Zed-Version": "2.1.0",
+  };
+  constructor(
+    private readonly _url: string = process.env.BACKEND_GRAPHQL_URL,
+    headers?: Record<string, string>,
+  ) {
+    if (headers) {
+      this._headers = { ...this._headers, ...headers };
+    }
+  }
 
-	setHeader(key: string, value: string) {
-		this._headers[key] = value;
-	}
+  setHeader(key: string, value: string) {
+    this._headers[key] = value;
+  }
 
-	buildGQLClient(newUrl?: string): GQLClient {
-		return new GQLClient(
-			new GraphQLClient(newUrl || this._url, {
-				headers: this._headers,
-			}),
-		);
-	}
+  buildGQLClient(newUrl?: string): GQLClient {
+    return new GQLClient(
+      new GraphQLClient(newUrl || this._url, {
+        headers: this._headers,
+      }),
+    );
+  }
 
-	buildWsClient(
-		wsUrl: string = process.env.SUBSCRIPTION_GRAPHQL_URL,
-		on?: typeof this._defaultWsHandler,
-		wsImpl?: typeof WebSocket,
-	): WebSocketClient {
-		console.log(this._headers);
-		return new WebSocketClient(
-			createWsClient({
-				url: wsUrl,
-				webSocketImpl: wsImpl || GraphQLWsWebSocket,
-				connectionParams: {
-					authentication: this._headers["Authorization"],
-				},
-				on: {
-					...this._defaultWsHandler,
-					...on,
-				},
-				lazy: true,
-			}),
-		);
-	}
+  buildWsClient(
+    wsUrl: string = process.env.SUBSCRIPTION_GRAPHQL_URL,
+    wsImpl?: typeof WebSocket,
+  ): WebSocketClient {
+    return new WebSocketClient(
+      new SubscriptionClient(
+        wsUrl,
+        {
+          reconnect: true,
+          connectionParams: {
+            authToken: this._headers["Authorization"] || "",
+            "X-ZED-VERSION": this._headers["X-Zed-Version"] || "",
+            "X-SESSION-ID": this._headers["X-Session-Id"] || "",
+          },
+          lazy: true,
+        },
+        wsImpl ?? undefined,
+      ),
+    );
+  }
 }
 
 export const publicNetworkClient = new NetworkClient();
 export class WebSocketClient {
-	constructor(private websocket: Client) {}
+  constructor(private websocket: SubscriptionClient) {}
 
-	gqlSubscribe<TData>(
-		document: string,
-		handlers: SubscriptionHandlers<TData>,
-	): () => void;
-	gqlSubscribe<TData, TVariables extends Record<string, unknown>>(
-		document: string,
-		variables: TVariables,
-		handlers: SubscriptionHandlers<TData>,
-	): () => void;
-	gqlSubscribe<TData>(
-		document: string,
-		variablesOrHandlers: Record<string, unknown> | SubscriptionHandlers<TData>,
-		maybeHandlers?: SubscriptionHandlers<TData>,
-	): () => void {
-		let variables: Record<string, unknown> | undefined;
-		let handlers: SubscriptionHandlers<TData>;
+  gqlSubscribe<TData, TVariables extends Record<string, unknown>>(
+    document: string,
+    variables?: TVariables,
+  ) {
+    return this.subscribe<TData>(
+      this.websocket.request({
+        query: document,
+        variables,
+      }) as Observable<ExecutionResult<TData>>,
+    );
+  }
 
-		if (maybeHandlers === undefined) {
-			variables = undefined;
-			handlers = variablesOrHandlers as SubscriptionHandlers<TData>;
-		} else {
-			variables = variablesOrHandlers as Record<string, unknown>;
-			handlers = maybeHandlers;
-		}
+  private subscribe<TData>(observer: Observable<ExecutionResult<TData>>) {
+    return (handlers: SubscriptionHandlers<TData>): (() => void) => {
+      const { unsubscribe } = observer.subscribe({
+        next: (data) => {
+          if (handlers.next && data.data) {
+            console.log(
+              "🚀 ---------------------------------------------------------------------🚀",
+            );
+            console.log(
+              "🚀 ~ graphql-client.ts:97 ~ WebSocketClient ~ subscribe ~ data:",
+              data,
+            );
+            console.log(
+              "🚀 ---------------------------------------------------------------------🚀",
+            );
+            handlers.next(data.data);
+          }
+        },
+        error: (error) => {
+          if (handlers.error) {
+            handlers.error(error);
+          }
+        },
+        complete: () => {
+          if (handlers.complete) {
+            handlers.complete();
+          }
+        },
+      });
 
-		const unsubscribe = this.websocket.subscribe<TData>(
-			{ query: document, variables },
-			{
-				next: (result) => {
-					if (result.data !== undefined && result.data !== null) {
-						handlers.next(result.data);
-					}
-				},
-				error: (error) => {
-					handlers.error(error);
-				},
-				complete: () => {
-					handlers.complete();
-				},
-			},
-		);
-
-		return unsubscribe;
-	}
+      return unsubscribe;
+    };
+  }
 }
 
 export class GQLClient {
-	constructor(private client: GraphQLClient) {}
+  constructor(private client: GraphQLClient) {}
 
-	async gqlRequest<TData>(document: string): Promise<TData>;
-	async gqlRequest<TData, TVariables extends object>(
-		document: string,
-		variables: TVariables,
-	): Promise<TData>;
-	// Implementation signature — uses `unknown` to bypass the VariablesAndRequestHeadersArgs
-	// conditional-type constraint that TypeScript cannot resolve for generic TVariables.
-	// The two public overloads above enforce correct typing for all callers.
-	async gqlRequest<TData>(
-		document: string,
-		variables?: unknown,
-	): Promise<TData> {
-		try {
-			if (variables !== undefined) {
-				return await this.client.request<TData>(
-					document,
-					variables as Record<string, unknown>,
-				);
-			}
-			return await this.client.request<TData>(document);
-		} catch (error) {
-			if (error instanceof ClientError) {
-				console.error("GraphQL error:", { errors: error.response.errors });
-			} else {
-				console.error("GraphQL request failed:", error);
-			}
-			throw error;
-		}
-	}
+  async gqlRequest<TData>(document: string): Promise<TData>;
+  async gqlRequest<TData, TVariables extends object>(
+    document: string,
+    variables: TVariables,
+  ): Promise<TData>;
+  // Implementation signature — uses `unknown` to bypass the VariablesAndRequestHeadersArgs
+  // conditional-type constraint that TypeScript cannot resolve for generic TVariables.
+  // The two public overloads above enforce correct typing for all callers.
+  async gqlRequest<TData>(
+    document: string,
+    variables?: unknown,
+  ): Promise<TData> {
+    try {
+      if (variables !== undefined) {
+        return await this.client.request<TData>(
+          document,
+          variables as Record<string, unknown>,
+        );
+      }
+      return await this.client.request<TData>(document);
+    } catch (error) {
+      if (error instanceof ClientError) {
+        console.error("GraphQL error:", { errors: error.response.errors });
+      } else {
+        console.error("GraphQL request failed:", error);
+      }
+      throw error;
+    }
+  }
 }
 // ---------------------------------------------------------------------------
 // Subscription event callbacks
 // ---------------------------------------------------------------------------
 
 export interface SubscriptionHandlers<TData> {
-	/** Called for every data event received from the server. */
-	next: (data: TData) => void;
-	/** Called when the subscription terminates with an error. */
-	error: (error: unknown) => void;
-	/** Called when the subscription completes cleanly. */
-	complete: () => void;
+  /** Called for every data event received from the server. */
+  next?: (data: TData) => void;
+  /** Called when the subscription terminates with an error. */
+  error?: (error: Error) => void;
+  /** Called when the subscription completes cleanly. */
+  complete?: () => void;
 }
 
 // ---------------------------------------------------------------------------

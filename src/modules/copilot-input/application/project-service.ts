@@ -65,7 +65,10 @@ export class ProjectService {
     }
     console.info("Project creation task started", { taskId, projectName });
     console.info("Using modern graphql-ws subscription path", { taskId });
-    const projectExId = await createProjectSubscription(taskId, this.account);
+    const projectExId = await createProjectSubscription(
+      taskId,
+      await this.account.getWsClient(),
+    );
     const getSchemaIdUseCase = () =>
       new GetSchemaIdUseCase(new TypeSystemStore(this.account));
     const schemaId =

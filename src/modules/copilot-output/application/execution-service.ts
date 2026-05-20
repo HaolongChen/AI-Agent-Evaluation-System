@@ -104,7 +104,9 @@ export class ExecuteCopilotUseCase {
     const evaluationJobRunner = new EvaluationJobRunner(copilotJobEntity);
     evaluationJobRunner.start();
     const editableText = await evaluationJobRunner.waitForResult();
-    await this.projectService.deleteProjectInDatabase(copilotJobEntity.data.projectExId);
+    await this.projectService.deleteProjectInDatabase(
+      copilotJobEntity.data.projectExId,
+    );
     const copilotOutputEntity = new CopilotOutputEntity({
       goldenSetId,
       userInputId,

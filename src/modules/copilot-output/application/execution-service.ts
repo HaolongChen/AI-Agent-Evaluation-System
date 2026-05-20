@@ -54,19 +54,18 @@ export class ExecuteCopilotUseCase {
         goldenSetId,
         userInputId,
       );
-    const typeSystemStore = await getTypeSystemStoreForCopilot(
-      goldenSetEntity.data.schemaId,
-      this.account,
-    );
     const projectName = this.generateProjectName(goldenSetId, userInputId);
     const projectEntity = await this.projectService.createProject(
       projectName,
       goldenSetEntity.data.schemaId,
     );
-
-    await typeSystemStore.importSchemaJsonManual(
+    const typeSystemStore = await getTypeSystemStoreForCopilot(
       projectEntity.data.projectExId,
+      goldenSetEntity.data.schemaId,
+      this.account,
     );
+
+    await typeSystemStore.importSchemaManual();
     const copilotJobEntity = new CopilotJobEntity({
       projectExId: projectEntity.data.projectExId,
       query: userInputEntity.data.content,

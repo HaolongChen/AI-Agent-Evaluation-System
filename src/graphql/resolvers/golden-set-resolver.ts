@@ -189,7 +189,7 @@ export const goldenSetResolver = {
         myAccount,
         repository.projectRepository,
       );
-      await projectService.deleteProjectInDatabase(projectExId);
+      await projectService.deleteProjectInDatabase("projectExId", projectExId);
       return true;
     },
     runCrdtTest: async (

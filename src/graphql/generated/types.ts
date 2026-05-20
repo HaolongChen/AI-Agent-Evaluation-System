@@ -356,92 +356,159 @@ export type ImportProjectSchemaJsonManualMutationVariables = Exact<{
   versionExId?: string | undefined;
 }>;
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_latestSchema_crdtPatches_patches =
+export type WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches_patches =
   { __typename: "SchemaCrdtPatch"; patchBase64: string };
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_latestSchema_crdtPatches =
-  {
-    __typename: "SchemaCrdtPatches";
-    lastPatchExId: string | null;
-    patches: Array<FetchAppDetailByExIdQuery_fetchAppDetailByExId_latestSchema_crdtPatches_patches | null> | null;
-  };
-
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_latestSchema = {
-  __typename: "CrdtSchema";
-  crdtModelUrl: string | null;
-  crdtPatches: FetchAppDetailByExIdQuery_fetchAppDetailByExId_latestSchema_crdtPatches | null;
+export type WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches = {
+  __typename: "SchemaCrdtPatches";
+  lastPatchExId: string | null;
+  patches: Array<WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
 };
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project_latestSchema_crdtPatches_patches =
-  { __typename: "SchemaCrdtPatch"; patchBase64: string };
+export type WechatMiniProgramAppDetailFragment_latestSchema = {
+  __typename: "CrdtSchema";
+  crdtModelUrl: string | null;
+  crdtPatches: WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches | null;
+};
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project_latestSchema_crdtPatches =
-  {
-    __typename: "SchemaCrdtPatches";
-    lastPatchExId: string | null;
-    patches: Array<FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project_latestSchema_crdtPatches_patches | null> | null;
-  };
+export type WechatMiniProgramAppDetailFragment = {
+  __typename: "WechatMiniProgramApp";
+  exId: string | null;
+  projectExId: string;
+  name: string;
+  appExId: string | null;
+  latestSchema: WechatMiniProgramAppDetailFragment_latestSchema | null;
+};
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project_latestSchema =
-  {
-    __typename: "CrdtSchema";
-    crdtModelUrl: string | null;
-    crdtPatches: FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project_latestSchema_crdtPatches | null;
-  };
+export type WechatMiniProgramAppDetailFragmentVariables = Exact<{
+  [key: string]: never;
+}>;
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp_latestSchema_crdtPatches_patches =
-  { __typename: "SchemaCrdtPatch"; patchBase64: string };
+export type ProjectAppDetailFragment_latestSchema_crdtPatches_patches = {
+  __typename: "SchemaCrdtPatch";
+  patchBase64: string;
+};
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp_latestSchema_crdtPatches =
-  {
-    __typename: "SchemaCrdtPatches";
-    lastPatchExId: string | null;
-    patches: Array<FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp_latestSchema_crdtPatches_patches | null> | null;
-  };
+export type ProjectAppDetailFragment_latestSchema_crdtPatches = {
+  __typename: "SchemaCrdtPatches";
+  lastPatchExId: string | null;
+  patches: Array<ProjectAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
+};
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp_latestSchema =
-  {
-    __typename: "CrdtSchema";
-    crdtModelUrl: string | null;
-    crdtPatches: FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp_latestSchema_crdtPatches | null;
-  };
+export type ProjectAppDetailFragment_latestSchema = {
+  __typename: "CrdtSchema";
+  crdtModelUrl: string | null;
+  crdtPatches: ProjectAppDetailFragment_latestSchema_crdtPatches | null;
+};
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp_latestSchema_crdtPatches_patches =
-  { __typename: "SchemaCrdtPatch"; patchBase64: string };
+export type ProjectAppDetailFragment = {
+  __typename: "Project";
+  projectExId: string;
+  schemaExId: string | null;
+  zeroUrl: string | null;
+  zeroSubscriptionUrl: string | null;
+  projectName: string;
+  appExId: string | null;
+  adminToken: string | null;
+  latestSchema: ProjectAppDetailFragment_latestSchema | null;
+};
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp_latestSchema_crdtPatches =
-  {
-    __typename: "SchemaCrdtPatches";
-    lastPatchExId: string | null;
-    patches: Array<FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp_latestSchema_crdtPatches_patches | null> | null;
-  };
+export type ProjectAppDetailFragmentVariables = Exact<{ [key: string]: never }>;
 
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp_latestSchema =
-  {
-    __typename: "CrdtSchema";
-    crdtModelUrl: string | null;
-    crdtPatches: FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp_latestSchema_crdtPatches | null;
-  };
+export type WebAppDetailFragment_latestSchema_crdtPatches_patches = {
+  __typename: "SchemaCrdtPatch";
+  patchBase64: string;
+};
+
+export type WebAppDetailFragment_latestSchema_crdtPatches = {
+  __typename: "SchemaCrdtPatches";
+  lastPatchExId: string | null;
+  patches: Array<WebAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
+};
+
+export type WebAppDetailFragment_latestSchema = {
+  __typename: "CrdtSchema";
+  crdtModelUrl: string | null;
+  crdtPatches: WebAppDetailFragment_latestSchema_crdtPatches | null;
+};
+
+export type WebAppDetailFragment = {
+  __typename: "WebApp";
+  exId: string | null;
+  name: string;
+  projectExId: string;
+  appExId: string | null;
+  latestSchema: WebAppDetailFragment_latestSchema | null;
+};
+
+export type WebAppDetailFragmentVariables = Exact<{ [key: string]: never }>;
+
+export type MobileAppDetailFragment_latestSchema_crdtPatches_patches = {
+  __typename: "SchemaCrdtPatch";
+  patchBase64: string;
+};
+
+export type MobileAppDetailFragment_latestSchema_crdtPatches = {
+  __typename: "SchemaCrdtPatches";
+  lastPatchExId: string | null;
+  patches: Array<MobileAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
+};
+
+export type MobileAppDetailFragment_latestSchema = {
+  __typename: "CrdtSchema";
+  crdtModelUrl: string | null;
+  crdtPatches: MobileAppDetailFragment_latestSchema_crdtPatches | null;
+};
+
+export type MobileAppDetailFragment = {
+  __typename: "MobileApp";
+  exId: string | null;
+  name: string;
+  projectExId: string;
+  appExId: string | null;
+  latestSchema: MobileAppDetailFragment_latestSchema | null;
+};
+
+export type MobileAppDetailFragmentVariables = Exact<{ [key: string]: never }>;
 
 export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_MobileApp = {
   __typename: "MobileApp";
-  latestSchema: FetchAppDetailByExIdQuery_fetchAppDetailByExId_latestSchema | null;
+  exId: string | null;
+  name: string;
+  projectExId: string;
+  appExId: string | null;
+  latestSchema: MobileAppDetailFragment_latestSchema | null;
 };
 
 export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project = {
   __typename: "Project";
-  latestSchema: FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project_latestSchema | null;
+  projectExId: string;
+  schemaExId: string | null;
+  zeroUrl: string | null;
+  zeroSubscriptionUrl: string | null;
+  projectName: string;
+  appExId: string | null;
+  adminToken: string | null;
+  latestSchema: ProjectAppDetailFragment_latestSchema | null;
 };
 
 export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp = {
   __typename: "WebApp";
-  latestSchema: FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp_latestSchema | null;
+  exId: string | null;
+  name: string;
+  projectExId: string;
+  appExId: string | null;
+  latestSchema: WebAppDetailFragment_latestSchema | null;
 };
 
 export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp =
   {
     __typename: "WechatMiniProgramApp";
-    latestSchema: FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp_latestSchema | null;
+    exId: string | null;
+    projectExId: string;
+    name: string;
+    appExId: string | null;
+    latestSchema: WechatMiniProgramAppDetailFragment_latestSchema | null;
   };
 
 export type FetchAppDetailByExIdQuery_fetchAppDetailByExId =

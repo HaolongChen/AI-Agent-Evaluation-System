@@ -43,6 +43,81 @@ const IMPORT_PROJECT_SCHEMA_JSON_MANUAL = gql`
   }
 `;
 
+const WECHAT_MINI_PROGRAM_APP_DETAIL_FRAGMENT = gql`
+  fragment WechatMiniProgramAppDetail on WechatMiniProgramApp {
+    latestSchema {
+      crdtModelUrl
+      crdtPatches {
+        lastPatchExId
+        patches {
+          patchBase64
+        }
+      }
+    }
+    exId
+    projectExId
+    name
+    appExId
+  }
+`;
+
+const PROJECT_APP_DETAIL_FRAGMENT = gql`
+  fragment ProjectAppDetail on Project {
+    latestSchema {
+      crdtModelUrl
+      crdtPatches {
+        lastPatchExId
+        patches {
+          patchBase64
+        }
+      }
+    }
+    projectExId
+    schemaExId
+    zeroUrl
+    zeroSubscriptionUrl
+    projectName
+    appExId
+    adminToken
+  }
+`;
+
+const WEB_APP_DETAIL_FRAGMENT = gql`
+  fragment WebAppDetail on WebApp {
+    latestSchema {
+      crdtModelUrl
+      crdtPatches {
+        lastPatchExId
+        patches {
+          patchBase64
+        }
+      }
+    }
+    exId
+    name
+    projectExId
+    appExId
+  }
+`;
+
+const MOBILE_APP_DETAIL_FRAGMENT = gql`
+  fragment MobileAppDetail on MobileApp {
+    latestSchema {
+      crdtModelUrl
+      crdtPatches {
+        lastPatchExId
+        patches {
+          patchBase64
+        }
+      }
+    }
+    exId
+    name
+    projectExId
+    appExId
+  }
+`;
+
 const FETCH_APP_DETAIL_QUERY = gql`
   query FetchAppDetailByExId(
     $projectExId: String!
@@ -54,52 +129,17 @@ const FETCH_APP_DETAIL_QUERY = gql`
       appExId: $appExId
       appVersionExId: $appVersionExId
     ) {
-      ... on WechatMiniProgramApp {
-        latestSchema {
-          crdtModelUrl
-          crdtPatches {
-            lastPatchExId
-            patches {
-              patchBase64
-            }
-          }
-        }
-      }
-      ... on Project {
-        latestSchema {
-          crdtModelUrl
-          crdtPatches {
-            lastPatchExId
-            patches {
-              patchBase64
-            }
-          }
-        }
-      }
-      ... on WebApp {
-        latestSchema {
-          crdtModelUrl
-          crdtPatches {
-            lastPatchExId
-            patches {
-              patchBase64
-            }
-          }
-        }
-      }
-      ... on MobileApp {
-        latestSchema {
-          crdtModelUrl
-          crdtPatches {
-            lastPatchExId
-            patches {
-              patchBase64
-            }
-          }
-        }
-      }
+      ...WechatMiniProgramAppDetail
+      ...WebAppDetail
+      ...ProjectAppDetail
+      ...MobileAppDetail
     }
   }
+
+  ${WECHAT_MINI_PROGRAM_APP_DETAIL_FRAGMENT}
+  ${WEB_APP_DETAIL_FRAGMENT}
+  ${PROJECT_APP_DETAIL_FRAGMENT}
+  ${MOBILE_APP_DETAIL_FRAGMENT}
 `;
 
 const AF_CUSTOM_CODE_TEMPLATES_QUERY = gql`
@@ -169,6 +209,7 @@ export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
   private schema: object | null = null;
   private crdtSchemaModel: string | null = null;
+  private appDetail: FetchAppDetailByExIdQuery["fetchAppDetailByExId"] = null;
   public afCustomCodeTemplates: Exclude<
     ExtractArray<
       Exclude<AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"], null>
@@ -205,13 +246,12 @@ export class TypeSystemStore {
     return true;
   }
 
-  async importSchemaJsonManual(
-    projectExId: string,
-    appExId?: string,
-    versionExId?: string,
-  ) {
+  async importSchemaJsonManual() {
     if (!this.schema) {
       throw new Error("No schema available to import");
+    }
+    if (!this.appDetail) {
+      throw new Error("App detail is required for importing schema");
     }
     const gqlClient = await this.account.getGQLClient();
     const mutationData = await gqlClient.gqlRequest<
@@ -219,9 +259,8 @@ export class TypeSystemStore {
       ImportProjectSchemaJsonManualMutationVariables
     >(IMPORT_PROJECT_SCHEMA_JSON_MANUAL, {
       schema: this.schema,
-      projectExId,
-      appExId,
-      versionExId,
+      projectExId: this.appDetail.projectExId,
+      appExId: this.appDetail.appExId ?? undefined,
     });
     if (!mutationData.importProjectSchemaJsonManual) {
       throw new Error("Failed to import project schema");
@@ -232,13 +271,12 @@ export class TypeSystemStore {
     );
   }
 
-  async importSchemaManual(
-    projectExId: string,
-    appExId?: string,
-    versionExId?: string,
-  ) {
+  async importSchemaManual() {
     if (!this.crdtSchemaModel) {
       throw new Error("No CRDT schema model available to import");
+    }
+    if (!this.appDetail) {
+      throw new Error("App detail is required for importing schema");
     }
     const gqlClient = await this.account.getGQLClient();
     const mutationData = await gqlClient.gqlRequest<
@@ -246,9 +284,8 @@ export class TypeSystemStore {
       ImportProjectSchemaManualMutationVariables
     >(IMPORT_PROJECT_SCHEMA_MANUAL, {
       crdtModel: this.crdtSchemaModel,
-      projectExId,
-      appExId,
-      versionExId,
+      projectExId: this.appDetail.projectExId,
+      appExId: this.appDetail.appExId ?? undefined,
     });
 
     if (!mutationData.importProjectSchemaManual) {
@@ -261,8 +298,13 @@ export class TypeSystemStore {
     );
   }
 
-  getSchemaIdFromCrdtModelUrl(crdtModelUrl: string): string {
-    const path = new URL(crdtModelUrl).pathname.split("/");
+  getSchemaId(): string {
+    if (!this.appDetail?.latestSchema?.crdtModelUrl) {
+      throw new Error("No crdtModelUrl found in app detail");
+    }
+    const path = new URL(
+      this.appDetail.latestSchema.crdtModelUrl,
+    ).pathname.split("/");
     if (this.simpleSchemaIdValidation(path[2])) {
       return path[2];
     }
@@ -283,6 +325,8 @@ export class TypeSystemStore {
           `No data returned for fetchAppDetailByExId with projectExId: ${projectExId}`,
         );
       }
+
+      this.appDetail = data.fetchAppDetailByExId;
 
       const latestSchema = data.fetchAppDetailByExId?.latestSchema;
       console.info("GraphQL response for fetchAppDetailByExId:", data);
@@ -353,8 +397,8 @@ export class TypeSystemStore {
     }
   }
 
-  async rehydrate(schemaId: string): Promise<OpaqueSchemaGraph> {
-    const arrayBuffer = await getSchemaModelById(schemaId);
+  async rehydrate(): Promise<OpaqueSchemaGraph> {
+    const arrayBuffer = await getSchemaModelById(this.getSchemaId());
     const modelBinary = new Uint8Array(arrayBuffer);
 
     console.debug("step 2 done, modelBinary length: " + modelBinary.length);
@@ -404,14 +448,19 @@ export class TypeSystemStore {
 }
 
 export const getTypeSystemStoreForCopilot = async (
+  projectExId: string,
   schemaId: string,
   account: Account,
 ): Promise<TypeSystemStore> => {
   const typeSystemStore = new TypeSystemStore(account);
+  await typeSystemStore.fetchAppDetailByExId(projectExId);
+  if (typeSystemStore.getSchemaId() !== schemaId) {
+    throw new Error("Schema ID mismatch");
+  }
   await Promise.all([
     typeSystemStore.getAFCustomCodeTemplates(),
     typeSystemStore.getSupportedCustomModelDescriptor(),
-    typeSystemStore.rehydrate(schemaId),
+    typeSystemStore.rehydrate(),
   ]);
   return typeSystemStore;
 };

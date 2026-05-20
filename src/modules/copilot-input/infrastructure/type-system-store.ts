@@ -333,6 +333,17 @@ export class TypeSystemStore {
     }
   }
 
+  async updateAccount() {
+    if (this.appDetail?.__typename === "Project") {
+      if (this.appDetail.adminToken)
+        this.account.setAccessToken(this.appDetail.adminToken);
+      if (this.appDetail.zeroUrl)
+        await this.account.getGQLClient(this.appDetail.zeroUrl);
+      if (this.appDetail.zeroSubscriptionUrl)
+        await this.account.getWsClient(this.appDetail.zeroSubscriptionUrl);
+    }
+  }
+
   async getAFCustomCodeTemplates(): Promise<
     Exclude<
       ExtractArray<
@@ -450,5 +461,6 @@ export const getTypeSystemStoreForCopilot = async (
     typeSystemStore.getSupportedCustomModelDescriptor(),
     typeSystemStore.rehydrate(),
   ]);
+  await typeSystemStore.updateAccount();
   return typeSystemStore;
 };

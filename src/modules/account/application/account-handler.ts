@@ -35,21 +35,36 @@ export class Account extends AccountService {
     this.networkClient.setHeader("X-Session-Id", value);
   }
 
-  async getGQLClient() {
-    await this.ensureLoggedIn();
-
-    this.networkClient.setHeader("Authorization", `Bearer ${this.accessToken}`);
-    return (
-      this.gqlClient || (this.gqlClient = this.networkClient.buildGQLClient())
-    );
+  setAccessToken(token: string) {
+    const exId = this.exId;
+    if (!exId) {
+      throw new Error("Account exId is required to set access token");
+    }
+    this.account.setAccountInfo({
+      accessToken: token,
+      account: { exId: this.exId },
+    });
   }
 
-  async getWsClient() {
+  async getGQLClient(newUrl?: string) {
+    await this.ensureLoggedIn();
+
+    this.networkClient.setHeader("Authorization", `Bearer ${this.accessToken}`);
+    if (!newUrl && this.gqlClient) {
+      return this.gqlClient;
+    }
+    this.gqlClient = this.networkClient.buildGQLClient(newUrl);
+    return this.gqlClient;
+  }
+
+  async getWsClient(newUrl?: string) {
     await this.ensureLoggedIn();
     this.networkClient.setHeader("Authorization", `Bearer ${this.accessToken}`);
-    return (
-      this.wsClient || (this.wsClient = this.networkClient.buildWsClient())
-    );
+    if (!newUrl && this.wsClient) {
+      return this.wsClient;
+    }
+    this.wsClient = this.networkClient.buildWsClient(newUrl);
+    return this.wsClient;
   }
 
   async login() {

@@ -64,7 +64,6 @@ export class ExecuteCopilotUseCase {
       goldenSetEntity.data.schemaId,
       this.account,
     );
-
     await typeSystemStore.importSchemaManual();
     const copilotJobEntity = new CopilotJobEntity({
       projectExId: projectEntity.data.projectExId,

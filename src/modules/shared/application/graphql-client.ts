@@ -153,7 +153,7 @@ export class WebSocketClient {
 					}
 				},
 			});
-
+      console.log("Subscription started with handlers:", handlers);
       return () =>
       {
 				unsubscribe();

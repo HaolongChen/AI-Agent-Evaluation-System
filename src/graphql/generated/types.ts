@@ -521,6 +521,18 @@ export type SupportedCustomModelDescriptorQueryVariables = Exact<{
   [key: string]: never;
 }>;
 
+export type ImportProjectSchemaManualMutation = {
+  __typename: "Mutation";
+  importProjectSchemaManual: string | null;
+};
+
+export type ImportProjectSchemaManualMutationVariables = Exact<{
+  projectExId: string;
+  crdtModel: unknown;
+  appExId?: string | undefined;
+  versionExId?: string | undefined;
+}>;
+
 export type GetCopilotSubscriptionCountQuery = {
   __typename: "Query";
   copilotSubscriptionCount: unknown;

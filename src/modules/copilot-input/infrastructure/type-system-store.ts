@@ -18,6 +18,8 @@ import type {
   FetchAppDetailByExIdQueryVariables,
   ImportProjectSchemaJsonManualMutation,
   ImportProjectSchemaJsonManualMutationVariables,
+  ImportProjectSchemaManualMutation,
+  ImportProjectSchemaManualMutationVariables,
   SupportedCustomModelDescriptorQuery,
 } from "../../../graphql/generated/types.ts";
 import type { Account } from "../../account/application/account-handler.ts";
@@ -25,7 +27,7 @@ import type { Account } from "../../account/application/account-handler.ts";
 // Documents
 // ---------------------------------------------------------------------------
 
-const IMPORT_PROJECT_SCHEMA = gql`
+const IMPORT_PROJECT_SCHEMA_JSON_MANUAL = gql`
   mutation ImportProjectSchemaJsonManual(
     $schema: Json!
     $projectExId: String!
@@ -143,6 +145,22 @@ const SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY = gql`
   }
 `;
 
+const IMPORT_PROJECT_SCHEMA_MANUAL = gql`
+  mutation ImportProjectSchemaManual(
+    $projectExId: String!
+    $crdtModel: Base64String!
+    $appExId: String
+    $versionExId: String
+  ) {
+    importProjectSchemaManual(
+      projectExId: $projectExId
+      crdtModel: $crdtModel
+      appExId: $appExId
+      versionExId: $versionExId
+    )
+  }
+`;
+
 // ---------------------------------------------------------------------------
 // TypeSystemStore
 // ---------------------------------------------------------------------------
@@ -150,6 +168,7 @@ const SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY = gql`
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
   private schema: object | null = null;
+  private crdtSchemaModel: string | null = null;
   public afCustomCodeTemplates: Exclude<
     ExtractArray<
       Exclude<AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"], null>
@@ -198,7 +217,7 @@ export class TypeSystemStore {
     const mutationData = await gqlClient.gqlRequest<
       ImportProjectSchemaJsonManualMutation,
       ImportProjectSchemaJsonManualMutationVariables
-    >(IMPORT_PROJECT_SCHEMA, {
+    >(IMPORT_PROJECT_SCHEMA_JSON_MANUAL, {
       schema: this.schema,
       projectExId,
       appExId,
@@ -210,6 +229,35 @@ export class TypeSystemStore {
     console.log(
       "Successfully imported project schema with response:",
       mutationData.importProjectSchemaJsonManual,
+    );
+  }
+
+  async importSchemaManual(
+    projectExId: string,
+    appExId?: string,
+    versionExId?: string,
+  ) {
+    if (!this.crdtSchemaModel) {
+      throw new Error("No CRDT schema model available to import");
+    }
+    const gqlClient = await this.account.getGQLClient();
+    const mutationData = await gqlClient.gqlRequest<
+      ImportProjectSchemaManualMutation,
+      ImportProjectSchemaManualMutationVariables
+    >(IMPORT_PROJECT_SCHEMA_MANUAL, {
+      crdtModel: this.crdtSchemaModel,
+      projectExId,
+      appExId,
+      versionExId,
+    });
+
+    if (!mutationData.importProjectSchemaManual) {
+      throw new Error("Failed to import project schema using CRDT model");
+    }
+
+    console.log(
+      "Successfully imported project schema using CRDT model with response:",
+      mutationData.importProjectSchemaManual,
     );
   }
 
@@ -311,9 +359,10 @@ export class TypeSystemStore {
 
     console.debug("step 2 done, modelBinary length: " + modelBinary.length);
 
-    const binaryBase64 = fromUint8Array(modelBinary);
+    this.crdtSchemaModel = fromUint8Array(modelBinary);
+
     // Use Crdt.initModel which handles base64 conversion internally
-    const model = Crdt.initModel(binaryBase64);
+    const model = Crdt.initModel(this.crdtSchemaModel);
 
     // 4. Get the schema JSON
     const schemaJson = model.view();

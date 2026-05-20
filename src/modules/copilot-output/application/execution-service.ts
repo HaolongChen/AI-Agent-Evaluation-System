@@ -26,6 +26,7 @@ import type { ToolCall } from "../../shared/domain/interface/types.ts";
 import { runToolCalls } from "./message-handler.ts";
 import { z } from "zod";
 import { Event } from "ts-event-target";
+import { clearTimeout } from "node:timers";
 
 export class ExecuteCopilotUseCase {
   private projectService: ProjectService;
@@ -62,6 +63,10 @@ export class ExecuteCopilotUseCase {
       projectName,
       goldenSetEntity.data.schemaId,
     );
+
+    await typeSystemStore.importSchemaJsonManual(
+      projectEntity.data.projectExId,
+    );
     const copilotJobEntity = new CopilotJobEntity({
       projectExId: projectEntity.data.projectExId,
       query: userInputEntity.data.content,
@@ -96,6 +101,7 @@ export class ExecuteCopilotUseCase {
     evaluationJobRunner.start();
     const editableText = await evaluationJobRunner.waitForResult();
     await this.projectService.deleteProjectInDatabase(
+      "projectExId",
       copilotJobEntity.data.projectExId,
     );
     const copilotOutputEntity = new CopilotOutputEntity({
@@ -187,7 +193,7 @@ export class ExecuteCopilotUseCase {
           () => {
             reject("timeout");
           },
-          5 * 60 * 1000,
+          2 * 60 * 1000,
         );
         try {
           listen("CopilotEditableTextMessage", async (event) => {
@@ -218,10 +224,20 @@ export class ExecuteCopilotUseCase {
               copilotJobEntity.data.schemaGraph,
             );
             if (successful && result) {
+              const toolResponsesMap = new Map<string, string>();
+              for (const [key, value] of Object.entries(
+                JSON.parse(result.data),
+              )) {
+                toolResponsesMap.set(key, value as string);
+              }
+              console.log(
+                "Tool call batch executed successfully",
+                toolResponsesMap,
+              );
               publish(
                 new CopilotInputEvent("TOOL_CALL_BATCH_RESPONSE", {
-                  responseByToolCallId: event.data.toolCallBatchId,
-                  toolCallBatchId: result.data,
+                  toolCallBatchId: event.data.toolCallBatchId,
+                  responseByToolCallId: toolResponsesMap,
                   schemaDiff: result.schemaDiff,
                 }),
               );
@@ -283,7 +299,8 @@ export class ExecuteCopilotUseCase {
           copilotJobEntity.setTerminate();
           publish(new CopilotInputEvent("TERMINATE", {}));
         } finally {
-          timer.close();
+          console.log("Cleaning up copilot session execution environment");
+          clearTimeout(timer);
         }
       });
       const result = await jobPromise;
@@ -291,11 +308,36 @@ export class ExecuteCopilotUseCase {
       return result.toJSON();
     } catch (error) {
       console.error("Error setting up copilot execution environment:", error);
+      await this.projectService
+        .deleteProjectInDatabase(
+          "projectExId",
+          copilotJobEntity.data.projectExId,
+        )
+        .catch((error) => {
+          console.error(
+            "Error occurred while deleting project in database:",
+            error,
+          );
+          return this.projectService.deleteProject(
+            copilotJobEntity.data.projectExId,
+          );
+        });
       throw error;
     } finally {
-      await this.projectService.deleteProjectInDatabase(
-        copilotJobEntity.data.projectExId,
-      );
+      await this.projectService
+        .deleteProjectInDatabase(
+          "projectExId",
+          copilotJobEntity.data.projectExId,
+        )
+        .catch((error) => {
+          console.error(
+            "Error occurred while deleting project in database:",
+            error,
+          );
+          return this.projectService.deleteProject(
+            copilotJobEntity.data.projectExId,
+          );
+        });
     }
   }
 }

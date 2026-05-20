@@ -12,8 +12,8 @@ export type ProjectIdentifiers =
   (typeof ProjectIdentifiers)[keyof typeof ProjectIdentifiers];
 
 export interface IProjectRepository extends IRepository<ProjectEntity> {
-  getByUniqueField(
-    field: ProjectIdentifiers,
+  getByUniqueField<T extends ProjectIdentifiers>(
+    field: T,
     value: string,
   ): Promise<ProjectEntity>;
 

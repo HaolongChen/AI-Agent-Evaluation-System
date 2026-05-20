@@ -17,7 +17,10 @@ import type {
 } from "../../../graphql/generated/types.ts";
 import { TypeSystemStore } from "../infrastructure/type-system-store.ts";
 import { GetSchemaIdUseCase } from "./get-schema-id.ts";
-import type { IProjectRepository } from "../domain/interface/project.interface.ts";
+import type {
+  IProjectRepository,
+  ProjectIdentifiers,
+} from "../domain/interface/project.interface.ts";
 import { ProjectEntity } from "../domain/entity/project.entity.ts";
 
 export class ProjectService {
@@ -57,6 +60,8 @@ export class ProjectService {
       projectSpaceType: "PERSONAL",
       organizationExId,
       category: "OTHERS",
+      useNewType: true,
+      useRefactoredComponent: true,
     });
 
     const taskId = mutationData.createProjectInOrganizationAsync;
@@ -64,21 +69,31 @@ export class ProjectService {
       throw new Error("Failed to initiate project creation");
     }
     console.info("Project creation task started", { taskId, projectName });
-    console.info("Using modern graphql-ws subscription path", { taskId });
     const projectExId = await createProjectSubscription(taskId, this.account);
     console.log("Project creation completed", { projectExId, projectName });
-    const getSchemaIdUseCase = existingSchemaId ? undefined :
-      new GetSchemaIdUseCase(new TypeSystemStore(this.account));
-    const schemaId =
-      existingSchemaId ?? (await getSchemaIdUseCase!.execute(projectExId));
-    const projectEntity = new ProjectEntity({
-      projectExId,
-      name: projectName,
-      schemaId,
-      createdBy: this.account.exId!,
-    });
-    await this.repository.save(projectEntity);
-    return projectEntity;
+    try {
+      const getSchemaIdUseCase = existingSchemaId
+        ? undefined
+        : new GetSchemaIdUseCase(new TypeSystemStore(this.account));
+      const schemaId =
+        existingSchemaId ?? (await getSchemaIdUseCase!.execute(projectExId));
+      const projectEntity = new ProjectEntity({
+        projectExId,
+        name: projectName,
+        schemaId,
+        createdBy: this.account.exId!,
+      });
+      await this.repository.save(projectEntity);
+      return projectEntity;
+    } catch (error) {
+      console.error("Error during project creation, attempting cleanup", {
+        error,
+        projectExId,
+      });
+      await this.deleteProjectInDatabase("schemaId", existingSchemaId!);
+      await this.deleteProject(projectExId);
+      throw error;
+    }
   }
 
   async deleteProject(projectExId: string): Promise<void> {
@@ -88,26 +103,26 @@ export class ProjectService {
       DeleteProjectMutation,
       DeleteProjectMutationVariables
     >(GQL_DELETE_PROJECT, { projectExId });
-    if (!isDeleted) {
+    if (!isDeleted.deleteProject) {
       throw new Error(`Failed to delete project with exId ${projectExId}`);
     }
     console.info("Project deleted", { projectExId });
   }
 
-  async deleteProjectInDatabase(projectExId: string): Promise<void> {
-    const project = await this.repository.getByUniqueField(
-      "projectExId",
-      projectExId,
-    );
+  async deleteProjectInDatabase<T extends ProjectIdentifiers>(
+    identifier: T,
+    id: string,
+  ): Promise<void> {
+    const project = await this.repository.getByUniqueField(identifier, id);
     await this.account.ensureLoggedIn();
     if (project.data.createdBy !== this.account.exId) {
       throw new Error(
-        `Unauthorized: You can only delete projects created by yourself. ProjectExId: ${projectExId}`,
+        `Unauthorized: You can only delete projects created by yourself. id: ${id}`,
       );
     }
     await Promise.all([
       this.repository.deleteById(project.id!),
-      this.deleteProject(projectExId),
+      this.deleteProject(project.data.projectExId),
     ]);
   }
 }

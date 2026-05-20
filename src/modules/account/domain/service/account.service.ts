@@ -11,6 +11,7 @@ export class AccountService {
   }
 
   handleLogin(accountInfo: AccountInfo) {
+    if (this.isLoggedIn) return;
     this.account.setAccountInfo(accountInfo);
     this.timeout = setTimeout(() => {
       this.account.clearToken();

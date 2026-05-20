@@ -6,14 +6,6 @@ import type {
 import { publicNetworkClient } from "../../shared/application/graphql-client.ts";
 import type { AccountInfo } from "../domain/schema/account.schema.ts";
 
-// Types
-// ---------------------------------------------------------------------------
-
-type AttachAccountInfo<
-  T extends LoginWithPhoneNumberMutation,
-  K extends AccountInfo["account"],
-> = T & { loginWithPhoneNumber?: { account?: K } };
-
 // ---------------------------------------------------------------------------
 // Document
 // ---------------------------------------------------------------------------
@@ -38,21 +30,16 @@ export const login = async (
   password: string,
 ): Promise<AccountInfo> => {
   try {
-    console.info(
-      "Attempting login for phone number:",
-      `***${phoneNumber.slice(-4)}`,
-    );
-
     const data = await publicNetworkClient
       .buildGQLClient()
       .gqlRequest<
-        AttachAccountInfo<LoginWithPhoneNumberMutation, AccountInfo["account"]>,
+        LoginWithPhoneNumberMutation,
         LoginWithPhoneNumberMutationVariables
       >(LOGIN_MUTATION, { phoneNumber, password });
 
     const accountInfo = data.loginWithPhoneNumber as AccountInfo;
 
-    if (!accountInfo || !accountInfo.accessToken) {
+    if (!accountInfo.accessToken) {
       throw new Error("Login failed: No access token received");
     }
 

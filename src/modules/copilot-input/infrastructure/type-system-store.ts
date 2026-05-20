@@ -16,12 +16,30 @@ import type {
   AfCustomCodeTemplatesQuery,
   FetchAppDetailByExIdQuery,
   FetchAppDetailByExIdQueryVariables,
+  ImportProjectSchemaJsonManualMutation,
+  ImportProjectSchemaJsonManualMutationVariables,
   SupportedCustomModelDescriptorQuery,
 } from "../../../graphql/generated/types.ts";
 import type { Account } from "../../account/application/account-handler.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
+
+const IMPORT_PROJECT_SCHEMA = gql`
+  mutation ImportProjectSchemaJsonManual(
+    $schema: Json!
+    $projectExId: String!
+    $appExId: String
+    $versionExId: String
+  ) {
+    importProjectSchemaJsonManual(
+      schema: $schema
+      projectExId: $projectExId
+      appExId: $appExId
+      versionExId: $versionExId
+    )
+  }
+`;
 
 const FETCH_APP_DETAIL_QUERY = gql`
   query FetchAppDetailByExId(
@@ -131,6 +149,7 @@ const SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY = gql`
 
 export class TypeSystemStore {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
+  private schema: object | null = null;
   public afCustomCodeTemplates: Exclude<
     ExtractArray<
       Exclude<AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"], null>
@@ -165,6 +184,33 @@ export class TypeSystemStore {
       return false;
     }
     return true;
+  }
+
+  async importSchemaJsonManual(
+    projectExId: string,
+    appExId?: string,
+    versionExId?: string,
+  ) {
+    if (!this.schema) {
+      throw new Error("No schema available to import");
+    }
+    const gqlClient = await this.account.getGQLClient();
+    const mutationData = await gqlClient.gqlRequest<
+      ImportProjectSchemaJsonManualMutation,
+      ImportProjectSchemaJsonManualMutationVariables
+    >(IMPORT_PROJECT_SCHEMA, {
+      schema: this.schema,
+      projectExId,
+      appExId,
+      versionExId,
+    });
+    if (!mutationData.importProjectSchemaJsonManual) {
+      throw new Error("Failed to import project schema");
+    }
+    console.log(
+      "Successfully imported project schema with response:",
+      mutationData.importProjectSchemaJsonManual,
+    );
   }
 
   getSchemaIdFromCrdtModelUrl(crdtModelUrl: string): string {
@@ -273,13 +319,13 @@ export class TypeSystemStore {
     const schemaJson = model.view();
 
     // 5. Merge with backend-only schema if needed
-    const fullSchema = {
+    this.schema = {
       ...schemaJson,
       // server: latestBackendOnlyAppSchema, // For non-backend-editable apps
     };
 
     // 6. Parse to ZSchema and create SchemaGraph
-    const zSchema = ZTypeSystem.parseZSchemaFromJsObject(fullSchema);
+    const zSchema = ZTypeSystem.parseZSchemaFromJsObject(this.schema);
     const schemaGraph = this.withEnabledFeatures(() => {
       const extraContext = genExtraContext(
         {

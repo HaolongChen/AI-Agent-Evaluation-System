@@ -17,6 +17,7 @@ export class Account extends AccountService {
     _url?: string,
     headers?: Record<string, string>,
   ) {
+    console.log("Initializing Account with phoneNumber:", phoneNumber);
     super(phoneNumber, password);
     this._sessionId = crypto.randomUUID();
     this.networkClient = new NetworkClient(_url, {

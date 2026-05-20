@@ -11,7 +11,6 @@ import { myAccount } from "./DI/account.ts";
 
 await myAccount.getWsClient();
 
-
 const app = express();
 const server = new ApolloServer({
   typeDefs,

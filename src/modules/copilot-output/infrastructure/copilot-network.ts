@@ -234,13 +234,8 @@ export const COPILOT_INITIAL_STATE_MESSAGE_FRAGMENT = gql`
       exId
       type
       createdAt
-      content {
-        __typename
-        ...CopilotMessageContent
-      }
     }
   }
-  ${COPILOT_MESSAGE_CONTENT_FRAGMENT}
 `;
 export const ON_COPILOT_SESSION_UPDATES = gql`
   subscription OnCopilotSessionUpdates($sessionExId: String!) {
@@ -257,6 +252,8 @@ export const ON_COPILOT_SESSION_UPDATES = gql`
       }
     }
   }
+  ${COPILOT_MESSAGE_CONTENT_FRAGMENT}
+  ${COPILOT_INITIAL_STATE_MESSAGE_FRAGMENT}
 `;
 
 // export type VoidTypeConverter<

@@ -2,9 +2,9 @@ import { prisma } from "../../../../config/prisma.ts";
 import type { projectWhereUniqueInput } from "../../../../prisma/build/generated/prisma/models.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { ProjectEntity } from "../../domain/entity/project.entity.ts";
-import type {
-  IProjectRepository,
+import {
   ProjectIdentifiers,
+  type IProjectRepository,
 } from "../../domain/interface/project.interface.ts";
 
 export class ProjectRepository implements IProjectRepository {
@@ -29,8 +29,8 @@ export class ProjectRepository implements IProjectRepository {
     );
   }
 
-  async getByUniqueField(
-    field: ProjectIdentifiers,
+  async getByUniqueField<T extends ProjectIdentifiers>(
+    field: T,
     value: string,
   ): Promise<ProjectEntity> {
     const whereClause = {

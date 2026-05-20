@@ -64,6 +64,17 @@ export type CopilotInputMessage = {
   [CopilotMessageType.TaskRevertSuccess]: CopilotTaskRevertSuccessMessageInput;
 };
 
+const inputMessageTypeList: Record<keyof CopilotInputMessage, string> = {
+  [CopilotMessageType.Feedback]: "feedbackMessage",
+  [CopilotMessageType.HumanInput]: "humanInputMessage",
+  [CopilotMessageType.HumanOperation]: "humanOperationMessage",
+  [CopilotMessageType.Stop]: "stopMessage",
+  [CopilotMessageType.ToolCallBatchResponse]: "toolCallBatchResponseMessage",
+  [CopilotMessageType.ToolCallBatchExecError]: "toolCallBatchExecErrorMessage",
+  [CopilotMessageType.Terminate]: "terminateMessage",
+  [CopilotMessageType.TaskRevertSuccess]: "taskRevertSuccessMessage",
+} as const;
+
 export class CopilotEvent<T extends keyof TypeNameList> extends Event<T> {
   constructor(
     type: T,
@@ -128,7 +139,10 @@ export class ExecutionJobRunnerV2 {
     >(SEND_MESSAGE_TO_SESSION, {
       sessionExId: this.sessionExId,
       argsInput: {
-        copilotArgs: { ...message, copilotMessageType: type },
+        copilotArgs: {
+          [inputMessageTypeList[type]]: message,
+          copilotMessageType: type,
+        },
       },
     });
     if (!response.sendMessageToSession) {

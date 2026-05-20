@@ -344,6 +344,18 @@ export type FixAliPayDataBindingMutationVariables = Exact<{
   projectId: unknown;
 }>;
 
+export type ImportProjectSchemaJsonManualMutation = {
+  __typename: "Mutation";
+  importProjectSchemaJsonManual: string | null;
+};
+
+export type ImportProjectSchemaJsonManualMutationVariables = Exact<{
+  schema: unknown;
+  projectExId: string;
+  appExId?: string | undefined;
+  versionExId?: string | undefined;
+}>;
+
 export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_latestSchema_crdtPatches_patches =
   { __typename: "SchemaCrdtPatch"; patchBase64: string };
 
@@ -870,154 +882,11 @@ export type CopilotMessageContentFragmentVariables = Exact<{
   [key: string]: never;
 }>;
 
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotAiResponseMessage =
-  {
-    __typename: "CopilotAiResponseMessage";
-    messageType: CopilotMessageType;
-    content: string;
-    allowEvaluation: boolean;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotEditableTextMessage =
-  {
-    __typename: "CopilotEditableTextMessage";
-    messageType: CopilotMessageType;
-    content: string;
-    allowEvaluation: boolean;
-    title: string | null;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotErrorMessage =
-  {
-    __typename: "CopilotErrorMessage";
-    messageType: CopilotMessageType;
-    content: string;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotFeedbackMessage =
-  {
-    __typename: "CopilotFeedbackMessage";
-    messageType: CopilotMessageType;
-    feedbackCategory: FeedbackCategory;
-    evaluatedMessageExId: string;
-    optionalContent: string | null;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotHumanInputMessage =
-  {
-    __typename: "CopilotHumanInputMessage";
-    messageType: CopilotMessageType;
-    content: string;
-    context: CopilotHumanInputMessageFragment_context | null;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotHumanOperationMessage =
-  {
-    __typename: "CopilotHumanOperationMessage";
-    messageType: CopilotMessageType;
-    optionalContent: string | null;
-    humanOperationType: HumanOperationType;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotInitialStateMessage =
-  { __typename: "CopilotInitialStateMessage"; messageType: CopilotMessageType };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotStateChangeMessage =
-  {
-    __typename: "CopilotStateChangeMessage";
-    messageType: CopilotMessageType;
-    currentJobIsRunning: boolean;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotStopMessage =
-  {
-    __typename: "CopilotStopMessage";
-    messageType: CopilotMessageType;
-    reason: string | null;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotSystemStatusMessage =
-  {
-    __typename: "CopilotSystemStatusMessage";
-    messageType: CopilotMessageType;
-    content: string;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotTaskMessage =
-  {
-    __typename: "CopilotTaskMessage";
-    messageType: CopilotMessageType;
-    taskId: string;
-    name: string;
-    description: string | null;
-    diff: unknown;
-    isDiffReverted: boolean | null;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotTaskRevertSuccessMessage =
-  {
-    __typename: "CopilotTaskRevertSuccessMessage";
-    messageType: CopilotMessageType;
-    taskIds: Array<string | null>;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotTerminateMessage =
-  {
-    __typename: "CopilotTerminateMessage";
-    messageType: CopilotMessageType;
-    reason: string | null;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotToolCallBatchExecErrorMessage =
-  {
-    __typename: "CopilotToolCallBatchExecErrorMessage";
-    messageType: CopilotMessageType;
-    toolCallBatchId: string;
-    error: string | null;
-    context: CopilotToolCallBatchExecErrorMessageFragment_context | null;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotToolCallBatchMessage =
-  {
-    __typename: "CopilotToolCallBatchMessage";
-    messageType: CopilotMessageType;
-    toolCallBatchId: string;
-    toolCalls: Array<CopilotToolCallBatchMessageFragment_toolCalls>;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content_CopilotToolCallBatchResponseMessage =
-  {
-    __typename: "CopilotToolCallBatchResponseMessage";
-    messageType: CopilotMessageType;
-    toolCallBatchId: string;
-    responseByToolCallId: unknown;
-    schemaDiff: unknown;
-  };
-
-export type CopilotInitialStateMessageFragment_copilotMessages_content =
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotAiResponseMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotEditableTextMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotErrorMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotFeedbackMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotHumanInputMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotHumanOperationMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotInitialStateMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotStateChangeMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotStopMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotSystemStatusMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotTaskMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotTaskRevertSuccessMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotTerminateMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotToolCallBatchExecErrorMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotToolCallBatchMessage
-  | CopilotInitialStateMessageFragment_copilotMessages_content_CopilotToolCallBatchResponseMessage;
-
 export type CopilotInitialStateMessageFragment_copilotMessages = {
   __typename: "CopilotMessage";
   exId: string;
   type: CopilotMessageType;
   createdAt: unknown;
-  content: CopilotInitialStateMessageFragment_copilotMessages_content;
 };
 
 export type CopilotInitialStateMessageFragment = {

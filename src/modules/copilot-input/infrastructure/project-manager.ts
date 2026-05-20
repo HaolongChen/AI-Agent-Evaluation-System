@@ -66,59 +66,70 @@ export const GQL_FIX_ALIPAY_DATA_BINDING = gql`
 export const createProjectSubscription = async (
   taskId: string,
   account: Account,
-) => {
+): Promise<string> => {
   const wsClient = await account.getWsClient();
   console.log("get ws client for subscription", { taskId });
   const subscribe = wsClient.gqlSubscribe<
     OnProjectCreationStatusChangedSubscription,
     OnProjectCreationStatusChangedSubscriptionVariables
-    >( GQL_ON_PROJECT_CREATION_STATUS_CHANGED, { uniqueId: taskId } );
+  >(GQL_ON_PROJECT_CREATION_STATUS_CHANGED, { uniqueId: taskId });
   console.log("Setting up subscription for project creation", { taskId });
   let unsubscribeFunction: (() => void) | undefined;
-  return new Promise<string>((resolve, reject) => {
-    try {
-      unsubscribeFunction = subscribe({
-        next: (data) => {
-          if (
-            data.onProjectCreationStatusChanged.status
-          ) {
-            const { projectExId, status } = data.onProjectCreationStatusChanged;
-            if (status === "COMPLETED") {
-              resolve(projectExId);
-            } else if (status === "FAILED") {
-              reject(taskId);
-            }
-          } else {
-            reject(
-              new Error(`Invalid subscription payload for task ${taskId}`),
-            );
+  const { promise, resolve, reject } = Promise.withResolvers<string>();
+  try {
+    unsubscribeFunction = subscribe({
+      next: (data) => {
+        if (!data.onProjectCreationStatusChanged) {
+          console.error(
+            "Received invalid subscription payload for project creation",
+          );
+          reject(new Error(`Invalid subscription payload for task ${taskId}`));
+          return;
+        }
+        if (data.onProjectCreationStatusChanged.status) {
+          const { projectExId, status } = data.onProjectCreationStatusChanged;
+          if (status === "COMPLETED" && projectExId) {
+            resolve(projectExId);
+          } else if (status === "PROCESSING") {
+            console.info("Project creation in progress", {
+              taskId,
+              projectExId,
+            });
           }
-          // PROCESSING → keep waiting
-        },
-        error: (error) => {
-          console.error("Project creation subscription error (modern)", {
-            taskId,
-            err: error,
+        } else {
+          console.error("Received subscription payload with missing fields", {
+            payload: data.onProjectCreationStatusChanged,
           });
-          reject(
-            error instanceof Error ? error : new Error("Subscription error"),
-          );
-        },
-        complete: () => {
-          reject(
-            new Error(
-              `Subscription completed without COMPLETED status for task ${taskId}`,
-            ),
-          );
-        },
-      });
-    } catch (error) {
-      console.error("Failed to set up subscription for project creation", {
-        taskId,
-        err: error,
-      });
-    } finally {
-      unsubscribeFunction?.();
-    }
-  });
+          reject(new Error(`Invalid subscription payload for task ${taskId}`));
+        }
+        // PROCESSING → keep waiting
+      },
+      error: (error) => {
+        console.error("Project creation subscription error (modern)", {
+          taskId,
+          err: error,
+        });
+        reject(
+          error instanceof Error ? error : new Error("Subscription error"),
+        );
+      },
+      complete: () => {
+        console.warn("Project creation subscription completed unexpectedly", {
+          taskId,
+        });
+        reject(
+          new Error(
+            `Subscription completed without COMPLETED status for task ${taskId}`,
+          ),
+        );
+      },
+    });
+    return await promise;
+  } catch (error) {
+    console.error("Error during project creation subscription");
+    throw error instanceof Error ? error : new Error("Unknown error");
+  } finally {
+    console.log("Cleaning up subscription for project creation", { taskId });
+    unsubscribeFunction?.();
+  }
 };

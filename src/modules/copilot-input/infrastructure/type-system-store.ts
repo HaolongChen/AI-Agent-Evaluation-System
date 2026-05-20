@@ -327,18 +327,6 @@ export class TypeSystemStore {
       }
 
       this.appDetail = data.fetchAppDetailByExId;
-
-      const latestSchema = data.fetchAppDetailByExId?.latestSchema;
-      console.info("GraphQL response for fetchAppDetailByExId:", data);
-
-      if (latestSchema) {
-        console.info("Fetched latestSchema:", latestSchema);
-        return latestSchema;
-      } else {
-        throw new Error(
-          `No latestSchema found in fetchAppDetailByExId response for projectExId: ${projectExId}`,
-        );
-      }
     } catch (error) {
       console.error("Error fetching app detail:", error);
       throw error;

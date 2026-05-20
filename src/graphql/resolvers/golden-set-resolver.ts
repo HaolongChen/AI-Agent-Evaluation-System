@@ -174,7 +174,7 @@ export const goldenSetResolver = {
       );
       await Promise.all(
         projectNames.map(async (projectName) => {
-          const project = await projectService.createProject(projectName);
+          const project = await projectService.createProject(projectName, "TO BE IMPLEMENTED");
           results += JSON.stringify(project) + "\n";
         }),
       );

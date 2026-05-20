@@ -15,8 +15,6 @@ import type {
   DeleteProjectMutation,
   DeleteProjectMutationVariables,
 } from "../../../graphql/generated/types.ts";
-import { TypeSystemStore } from "../infrastructure/type-system-store.ts";
-import { GetSchemaIdUseCase } from "./get-schema-id.ts";
 import type {
   IProjectRepository,
   ProjectIdentifiers,
@@ -30,7 +28,7 @@ export class ProjectService {
   ) {}
   async createProject(
     projectName: string,
-    existingSchemaId?: string,
+    schemaId: string,
   ): Promise<ProjectEntity> {
     const gqlClient = await this.account.getGQLClient();
     const organizationExId = process.env.ORGANIZATION_EX_ID;
@@ -72,11 +70,6 @@ export class ProjectService {
     const projectExId = await createProjectSubscription(taskId, this.account);
     console.log("Project creation completed", { projectExId, projectName });
     try {
-      const getSchemaIdUseCase = existingSchemaId
-        ? undefined
-        : new GetSchemaIdUseCase(new TypeSystemStore(this.account));
-      const schemaId =
-        existingSchemaId ?? (await getSchemaIdUseCase!.execute(projectExId));
       const projectEntity = new ProjectEntity({
         projectExId,
         name: projectName,
@@ -90,7 +83,7 @@ export class ProjectService {
         error,
         projectExId,
       });
-      await this.deleteProjectInDatabase("schemaId", existingSchemaId!);
+      await this.deleteProjectInDatabase("schemaId", schemaId);
       await this.deleteProject(projectExId);
       throw error;
     }

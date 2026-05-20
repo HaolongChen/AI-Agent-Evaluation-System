@@ -28,7 +28,7 @@ export class ProjectService {
   async createProject(
     projectName: string,
     existingSchemaId?: string,
-  ): Promise<ReturnType<ProjectEntity["toJSON"]>> {
+  ): Promise<ProjectEntity> {
     const gqlClient = await this.account.getGQLClient();
     const organizationExId = process.env.ORGANIZATION_EX_ID;
     if (!organizationExId) {
@@ -36,12 +36,12 @@ export class ProjectService {
     }
 
     console.info("Checking project name availability", { projectName });
-    const isNameProper = await gqlClient.gqlRequest<
+    const isNameDuplicated = await gqlClient.gqlRequest<
       CheckProjectNameDuplicateQuery,
       CheckProjectNameDuplicateQueryVariables
     >(GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
 
-    if (!isNameProper) {
+    if (isNameDuplicated.checkProjectNameDuplicate) {
       throw new Error(
         projectName + " is already taken, please choose a different name",
       );
@@ -65,14 +65,12 @@ export class ProjectService {
     }
     console.info("Project creation task started", { taskId, projectName });
     console.info("Using modern graphql-ws subscription path", { taskId });
-    const projectExId = await createProjectSubscription(
-      taskId,
-      await this.account.getWsClient(),
-    );
-    const getSchemaIdUseCase = () =>
+    const projectExId = await createProjectSubscription(taskId, this.account);
+    console.log("Project creation completed", { projectExId, projectName });
+    const getSchemaIdUseCase = existingSchemaId ? undefined :
       new GetSchemaIdUseCase(new TypeSystemStore(this.account));
     const schemaId =
-      existingSchemaId ?? (await getSchemaIdUseCase().execute(projectExId));
+      existingSchemaId ?? (await getSchemaIdUseCase!.execute(projectExId));
     const projectEntity = new ProjectEntity({
       projectExId,
       name: projectName,
@@ -80,7 +78,7 @@ export class ProjectService {
       createdBy: this.account.exId!,
     });
     await this.repository.save(projectEntity);
-    return projectEntity.toJSON();
+    return projectEntity;
   }
 
   async deleteProject(projectExId: string): Promise<void> {

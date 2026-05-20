@@ -22,7 +22,6 @@ import {
   GET_COPILOT_SUBSCRIPTION_COUNT,
   GET_LATEST_SESSION,
 } from "../infrastructure/copilot-network.ts";
-import type { GQLClient } from "../../shared/application/graphql-client.ts";
 import type { ToolCall } from "../../shared/domain/interface/types.ts";
 import { runToolCalls } from "./message-handler.ts";
 import { z } from "zod";
@@ -30,7 +29,6 @@ import { Event } from "ts-event-target";
 
 export class ExecuteCopilotUseCase {
   private projectService: ProjectService;
-  private _gqlClient?: GQLClient;
   constructor(
     private readonly repository: {
       copilotOutputRepository: ICopilotOutputRepository;
@@ -60,17 +58,17 @@ export class ExecuteCopilotUseCase {
       this.account,
     );
     const projectName = this.generateProjectName(goldenSetId, userInputId);
-    const project = await this.projectService.createProject(
+    const projectEntity = await this.projectService.createProject(
       projectName,
       goldenSetEntity.data.schemaId,
     );
     const copilotJobEntity = new CopilotJobEntity({
-      projectExId: project.projectExId,
+      projectExId: projectEntity.data.projectExId,
       query: userInputEntity.data.content,
       wsUrl: legacy
         ? buildCopilotExecutionUrl(
             process.env.BACKEND_GRAPHQL_URL,
-            project.projectExId,
+            projectEntity.data.projectExId,
             this.account.accessToken,
             "copilot-output",
           )
@@ -87,13 +85,6 @@ export class ExecuteCopilotUseCase {
   ): string {
     return `temp-project-${goldenSetId}-${userInputId}-${Date.now()}`;
   }
-  async gqlClient(): Promise<GQLClient> {
-    if (this._gqlClient) return this._gqlClient;
-    await this.account.ensureLoggedIn();
-    this._gqlClient = await this.account.getGQLClient();
-    return this._gqlClient;
-  }
-
   async execute(goldenSetId: string, userInputId: string) {
     const copilotJobEntity = await this.setupEnvironment(
       goldenSetId,
@@ -117,7 +108,7 @@ export class ExecuteCopilotUseCase {
   }
 
   async getLatestSession(projectExId: string): Promise<string | null> {
-    const gqlClient = await this.gqlClient();
+    const gqlClient = await this.account.getGQLClient();
     const latestSessionResult = await gqlClient.gqlRequest<
       GetLatestSessionMutation,
       GetLatestSessionMutationVariables
@@ -129,7 +120,7 @@ export class ExecuteCopilotUseCase {
   }
 
   async createNewSession(projectExId: string): Promise<string> {
-    const gqlClient = await this.gqlClient();
+    const gqlClient = await this.account.getGQLClient();
     const newCopilotSessionExId = await gqlClient.gqlRequest<
       CreateCopilotSessionMutation,
       CreateCopilotSessionMutationVariables
@@ -141,7 +132,7 @@ export class ExecuteCopilotUseCase {
   }
 
   async getSubscriptionCount(projectExId: string): Promise<number> {
-    const gqlClient = await this.gqlClient();
+    const gqlClient = await this.account.getGQLClient();
     const copilotSubscriptionCount = await gqlClient.gqlRequest<
       GetCopilotSubscriptionCountQuery,
       GetCopilotSubscriptionCountQueryVariables

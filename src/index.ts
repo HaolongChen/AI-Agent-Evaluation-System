@@ -7,6 +7,10 @@ import { expressMiddleware } from "@as-integrations/express5";
 import express from "express";
 import cors from "cors";
 import { typeDefs, resolvers } from "./graphql/schema.ts";
+import { myAccount } from "./DI/account.ts";
+
+await myAccount.getWsClient();
+
 
 const app = express();
 const server = new ApolloServer({

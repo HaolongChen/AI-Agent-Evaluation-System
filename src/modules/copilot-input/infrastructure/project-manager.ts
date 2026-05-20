@@ -1,14 +1,9 @@
-/* eslint-disable unicorn/no-null */
 import { gql } from "graphql-request";
-
-import type {
-  SubscriptionHandlers,
-  WebSocketClient,
-} from "../../shared/application/graphql-client.ts";
 import type {
   OnProjectCreationStatusChangedSubscription,
   OnProjectCreationStatusChangedSubscriptionVariables,
 } from "../../../graphql/generated/types.ts";
+import type { Account } from "../../account/application/account-handler.ts";
 export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
   query CheckProjectNameDuplicate($projectName: String!) {
     checkProjectNameDuplicate(projectName: $projectName)
@@ -70,63 +65,60 @@ export const GQL_FIX_ALIPAY_DATA_BINDING = gql`
 
 export const createProjectSubscription = async (
   taskId: string,
-  wsClient: WebSocketClient,
-): Promise<string> => {
-  let unsubscribe: (() => void) | null = null;
-
-  const promise = new Promise<string>((resolve, reject) => {
+  account: Account,
+) => {
+  const wsClient = await account.getWsClient();
+  console.log("get ws client for subscription", { taskId });
+  const subscribe = wsClient.gqlSubscribe<
+    OnProjectCreationStatusChangedSubscription,
+    OnProjectCreationStatusChangedSubscriptionVariables
+    >( GQL_ON_PROJECT_CREATION_STATUS_CHANGED, { uniqueId: taskId } );
+  console.log("Setting up subscription for project creation", { taskId });
+  let unsubscribeFunction: (() => void) | undefined;
+  return new Promise<string>((resolve, reject) => {
     try {
-      const handlers: SubscriptionHandlers<OnProjectCreationStatusChangedSubscription> =
-        {
-          next: (data) => {
-            if (
-              !data.onProjectCreationStatusChanged?.projectExId ||
-              !data.onProjectCreationStatusChanged.status
-            ) {
-              reject(
-                new Error(`Invalid subscription payload for task ${taskId}`),
-              );
-            } else {
-              const { projectExId, status } =
-                data.onProjectCreationStatusChanged;
-              if (status === "COMPLETED") {
-                resolve(projectExId);
-              } else if (status === "FAILED") {
-                reject(taskId);
-              }
+      unsubscribeFunction = subscribe({
+        next: (data) => {
+          if (
+            data.onProjectCreationStatusChanged.status
+          ) {
+            const { projectExId, status } = data.onProjectCreationStatusChanged;
+            if (status === "COMPLETED") {
+              resolve(projectExId);
+            } else if (status === "FAILED") {
+              reject(taskId);
             }
-            // PROCESSING → keep waiting
-          },
-          error: (error) => {
-            console.error("Project creation subscription error (modern)", {
-              taskId,
-              err: error,
-            });
+          } else {
             reject(
-              error instanceof Error ? error : new Error("Subscription error"),
+              new Error(`Invalid subscription payload for task ${taskId}`),
             );
-          },
-          complete: () => {
-            reject(
-              new Error(
-                `Subscription completed without COMPLETED status for task ${taskId}`,
-              ),
-            );
-          },
-        };
-
-      unsubscribe = wsClient.gqlSubscribe<
-        OnProjectCreationStatusChangedSubscription,
-        OnProjectCreationStatusChangedSubscriptionVariables
-      >(GQL_ON_PROJECT_CREATION_STATUS_CHANGED, { uniqueId: taskId })(handlers);
+          }
+          // PROCESSING → keep waiting
+        },
+        error: (error) => {
+          console.error("Project creation subscription error (modern)", {
+            taskId,
+            err: error,
+          });
+          reject(
+            error instanceof Error ? error : new Error("Subscription error"),
+          );
+        },
+        complete: () => {
+          reject(
+            new Error(
+              `Subscription completed without COMPLETED status for task ${taskId}`,
+            ),
+          );
+        },
+      });
     } catch (error) {
       console.error("Failed to set up subscription for project creation", {
         taskId,
         err: error,
       });
     } finally {
-      unsubscribe?.();
+      unsubscribeFunction?.();
     }
   });
-  return await promise;
 };

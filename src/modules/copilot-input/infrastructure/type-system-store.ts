@@ -12,13 +12,13 @@ import {
   genExtraContext,
   type ExtractArray,
 } from "../../shared/domain/service/type-system.service.ts";
-import type { Account } from "../../account/application/account-handler.ts";
 import type {
   AfCustomCodeTemplatesQuery,
   FetchAppDetailByExIdQuery,
   FetchAppDetailByExIdQueryVariables,
   SupportedCustomModelDescriptorQuery,
 } from "../../../graphql/generated/types.ts";
+import type { Account } from "../../account/application/account-handler.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -222,7 +222,6 @@ export class TypeSystemStore {
       if (this.afCustomCodeTemplates.length > 0)
         return this.afCustomCodeTemplates;
       const gqlClient = await this.account.getGQLClient();
-
       const data = await gqlClient.gqlRequest<AfCustomCodeTemplatesQuery>(
         AF_CUSTOM_CODE_TEMPLATES_QUERY,
       );
@@ -246,7 +245,6 @@ export class TypeSystemStore {
       if (this.supportedCustomModelDescriptor)
         return this.supportedCustomModelDescriptor;
       const gqlClient = await this.account.getGQLClient();
-
       const SupportedCustomModelDescriptor =
         await gqlClient.gqlRequest<SupportedCustomModelDescriptorQuery>(
           SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,

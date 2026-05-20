@@ -1,9 +1,15 @@
 import { login } from "../infrastructure/login.ts";
 import { AccountService } from "../domain/service/account.service.ts";
-import { NetworkClient } from "../../shared/application/graphql-client.ts";
+import {
+  NetworkClient,
+  type GQLClient,
+  type WebSocketClient,
+} from "../../shared/application/graphql-client.ts";
 
 export class Account extends AccountService {
   private networkClient: NetworkClient;
+  private gqlClient: GQLClient | undefined;
+  private wsClient: WebSocketClient | undefined;
   private _sessionId: string;
   constructor(
     phoneNumber: string,
@@ -15,7 +21,7 @@ export class Account extends AccountService {
     this._sessionId = crypto.randomUUID();
     this.networkClient = new NetworkClient(_url, {
       ...headers,
-      "X-Session-ID": this._sessionId,
+      "X-Session-Id": this._sessionId,
     });
   }
 
@@ -25,19 +31,24 @@ export class Account extends AccountService {
 
   set sessionId(value: string) {
     this._sessionId = value;
-    this.networkClient.setHeader("X-Session-ID", value);
+    this.networkClient.setHeader("X-Session-Id", value);
   }
 
   async getGQLClient() {
     await this.ensureLoggedIn();
+
     this.networkClient.setHeader("Authorization", `Bearer ${this.accessToken}`);
-    return this.networkClient.buildGQLClient();
+    return (
+      this.gqlClient || (this.gqlClient = this.networkClient.buildGQLClient())
+    );
   }
 
   async getWsClient() {
     await this.ensureLoggedIn();
     this.networkClient.setHeader("Authorization", `Bearer ${this.accessToken}`);
-    return this.networkClient.buildWsClient();
+    return (
+      this.wsClient || (this.wsClient = this.networkClient.buildWsClient())
+    );
   }
 
   async login() {
@@ -49,7 +60,7 @@ export class Account extends AccountService {
   }
 
   async ensureLoggedIn() {
-    if (!this.account.getAccountInfo()?.accessToken) {
+    if (!this.isLoggedIn) {
       await this.login();
     }
   }

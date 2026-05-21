@@ -1,22 +1,21 @@
 import type { Account } from "../../account/application/account-handler.ts";
-import { ProjectService } from "../../copilot-input/application/project-service.ts";
 import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/golden-set.interface.ts";
+import type { IProjectLifecycle } from "../../copilot-input/domain/interface/project-lifecycle.interface.ts";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
-import type { IProjectRepository } from "../../copilot-input/domain/interface/project.interface.ts";
-import { assertNotNull } from "../../shared/domain/service/type-system.service.ts";
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { createNewSession } from "../infrastructure/copilot-network.ts";
 
 export class ExecuteCopilotUseCase {
-  private projectService: ProjectService | undefined;
+  private projectExId: string | undefined;
+
   constructor(
     private readonly repository: {
       copilotOutputRepository: ICopilotOutputRepository;
       goldenSetRepository: IGoldenSetRepository;
-      projectRepository: IProjectRepository;
     },
+    private readonly projectLifecycle: IProjectLifecycle,
     private readonly account: Account,
   ) {}
 
@@ -31,30 +30,26 @@ export class ExecuteCopilotUseCase {
         userInputId,
       );
     const projectName = this.generateProjectName(goldenSetId, userInputId);
-    this.projectService = new ProjectService(
-      this.account,
-      this.repository.projectRepository,
-      projectName,
-      goldenSetEntity.data.schemaId,
-    );
-    const projectEntity = await this.projectService.createProject();
-    const copilotJobEntity = new CopilotJobEntity({
-      projectExId: projectEntity.data.projectExId,
+    const { projectExId, schemaGraph } =
+      await this.projectLifecycle.createTemporaryProject(
+        projectName,
+        goldenSetEntity.data.schemaId,
+      );
+    this.projectExId = projectExId;
+
+    return new CopilotJobEntity({
+      projectExId,
       query: userInputEntity.data.content,
       wsUrl: legacy
         ? buildCopilotExecutionUrl(
             process.env.BACKEND_GRAPHQL_URL,
-            projectEntity.data.projectExId,
+            projectExId,
             this.account.accessToken,
             "copilot-output",
           )
         : process.env.SUBSCRIPTION_GRAPHQL_URL,
-      schemaGraph: assertNotNull(
-        this.projectService.getSchemaManager()?.schemaGraph,
-      ),
+      schemaGraph,
     });
-
-    return copilotJobEntity;
   }
 
   private generateProjectName(
@@ -91,7 +86,9 @@ export class ExecuteCopilotUseCase {
       this.account.clearWsClient();
       throw error;
     } finally {
-      await this.projectService?.deleteProjectInDatabase();
+      if (this.projectExId) {
+        await this.projectLifecycle.deleteTemporaryProject(this.projectExId);
+      }
     }
   }
 }

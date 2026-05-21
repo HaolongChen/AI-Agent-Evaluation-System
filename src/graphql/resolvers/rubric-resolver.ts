@@ -3,8 +3,6 @@ import { repository } from "../../DI/repository.ts";
 import { ExecuteCopilotUseCase } from "../../modules/copilot-output/application/execution-service.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-output/domain/entity/copilot-output.entity.ts";
 import { GenerateRubricUseCase } from "../../modules/rubrics/application/generate-rubric.ts";
-import { GetRubricsByCopilotInputUseCase } from "../../modules/rubrics/application/get-by-copilot-input.ts";
-import { GetRubricByIdUseCase } from "../../modules/rubrics/application/get-by-id.ts";
 import type { RubricAggregate } from "../../modules/rubrics/domain/aggregate/rubric.aggregate.ts";
 
 import type {
@@ -53,23 +51,24 @@ export const rubricResolver = {
       _: unknown,
       arguments_: QueryGetRubricByIdArguments,
     ): Promise<Rubric> => {
-      const getRubricByIdUseCase = new GetRubricByIdUseCase(
-        repository.rubricRepository,
+      const rubric = await repository.rubricRepository.findById(
+        arguments_.id,
       );
-      const rubric = await getRubricByIdUseCase.execute(arguments_.id);
-      return toGraphqlRubric(rubric);
+      if (!rubric) {
+        throw new Error(`Rubric with ID ${arguments_.id} not found`);
+      }
+      return toGraphqlRubric(rubric.toJSON());
     },
     getRubricByContext: async (
       _: unknown,
       arguments_: QueryGetRubricByContextArguments,
     ): Promise<Rubric[]> => {
-      const getRubricsByCopilotInputUseCase =
-        new GetRubricsByCopilotInputUseCase(repository.rubricRepository);
-      const rubrics = await getRubricsByCopilotInputUseCase.execute(
-        arguments_.context.goldenSetId,
-        arguments_.context.userInputId,
-      );
-      return rubrics.map((rubric) => toGraphqlRubric(rubric));
+      const rubrics =
+        await repository.rubricRepository.getByGoldenSetIdAndUserInputId(
+          arguments_.context.goldenSetId,
+          arguments_.context.userInputId,
+        );
+      return rubrics.map((rubric) => toGraphqlRubric(rubric.toJSON()));
     },
   },
 

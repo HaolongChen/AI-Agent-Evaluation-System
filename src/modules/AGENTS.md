@@ -8,10 +8,11 @@ Vertical DDD slices for domain logic. Each module owns its entities, application
 
 | Module           | Domain                    | Entities                                              |
 | ---------------- | ------------------------- | ----------------------------------------------------- |
-| `copilot-input`  | Golden Sets & User Inputs | GoldenSetEntity, UserInputEntity                      |
+| `account`        | Functorz Auth             | AccountEntity (login, token, GQL/WS clients)          |
+| `copilot-input`  | Golden Sets & User Inputs | GoldenSetEntity, UserInputEntity, ProjectEntity       |
 | `copilot-output` | Copilot Job Execution     | CopilotJobEntity, CopilotOutputEntity                 |
 | `evaluation`     | Sessions & Results        | SessionEntity, RecordEntity, ResultEntity             |
-| `rubrics`        | Evaluation Criteria       | RubricEntity, AgentFeedbackEntity                     |
+| `rubrics`        | Evaluation Criteria       | RubricEntity, EntryEntity, AgentFeedbackEntity        |
 | `shared`         | DDD Foundations           | Entity base, AggregateRoot, IRepository, ValueObjects |
 
 ## LAYER CONVENTION
@@ -38,7 +39,9 @@ All module entities extend `Entity<T>`. All module repositories implement `IRepo
 
 ## CROSS-MODULE DEPENDENCIES
 
-- `copilot-output` imports `copilot-input` (uses GoldenSetEntity to create projects and run jobs)
+- `account` → `shared` (uses NetworkClient, GQLClient from shared/application)
+- `copilot-output` → `copilot-input` (uses GoldenSetEntity to create projects and run jobs)
+- `copilot-output` → `account` (uses Account for WebSocket auth)
 - `evaluation`, `rubrics` are independent, consumed by GraphQL resolvers
 - Do NOT create circular dependencies between modules
 
@@ -55,7 +58,7 @@ All module entities extend `Entity<T>`. All module repositories implement `IRepo
 ## CONVENTIONS
 
 - All entities extend `Entity<T>` from `shared/`
-- Use `.js` extensions in imports (ESM)
+- Use `.ts` extensions in imports (ESM + nodenext resolution)
 - Schema files are the single source of truth for entity shape
 - Domain services stay in `domain/service/` (no business logic in resolvers)
 - Resolvers in `src/graphql/resolvers/` delegate to module application services

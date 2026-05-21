@@ -1,20 +1,20 @@
 # AGENTS.md - GraphQL API Layer
 
-> **Generated:** 2026-05-08 | **Commit:** 5f7332f | **Branch:** main
+> **Generated:** 2026-05-21 | **Commit:** 4b48ccb | **Branch:** main
 
 Guidelines for schema, resolvers, and typed documents in the GraphQL API.
 
 ## Overview
 
-Exposes the evaluation engine via Apollo Server. Orchestrates Golden Set management, HITL workflow triggers, and result analytics. Resolvers delegate to DDD modules (transitioning from legacy services).
+Exposes the evaluation engine via Apollo Server on Express. Orchestrates Golden Set management, HITL workflow triggers, and result analytics. Resolvers delegate to DDD modules.
 
 ## Structure
 
 | Component        | Location                       | Responsibility                                         |
 | ---------------- | ------------------------------ | ------------------------------------------------------ |
-| **Schema**       | `src/graphql/type/TypeDefs.ts` | Single source of truth for GQL types and documentation |
+| **Schema**       | `src/graphql/type/schema.graphql` | Single source of truth for GQL types and documentation |
 | **Resolvers**    | `src/graphql/resolvers/`       | Thin entry points; delegate to DDD modules             |
-| **Orchestrator** | `src/graphql/schema.ts`        | Combines typeDefs and merged resolver map              |
+| **Orchestrator** | `src/graphql/schema.ts`        | Combines typeDefs (loaded from file) and merged resolver map |
 | **Generated**    | `src/graphql/generated/`       | Auto-generated TypeScript types from schema            |
 
 ## Resolver → Module Map
@@ -26,20 +26,20 @@ Exposes the evaluation engine via Apollo Server. Orchestrates Golden Set managem
 | `rubric-resolver.ts`     | `rubrics`       | Question set generation and human evaluation submission |
 
 > **Note:** GraphSessionResolver does not exist - execution now in copilot-output module.
-
-> **Note:** Resolvers delegate to DDD modules, not legacy services. Modules are in `src/modules/`.
+> **Note:** Resolvers delegate to DDD modules, not legacy services.
 
 ## Resolver Guidelines
 
 ### Schema First
 
-- **Update**: Modify `TypeDefs.ts` first.
-- **Generate**: Run `pnpm codegen` to update `generated/resolvers-types.ts`.
+- **Update**: Modify `type/schema.graphql` first.
+- **Generate**: Run `pnpm codegen` to update `generated/types.ts`.
 - **Implement**: Update resolvers using generated types for strict safety.
 
 ### Module Delegation
 
 - **Zero Logic**: No business logic or Prisma calls in resolvers. Delegate to modules.
+  - ⚠️ Known violation: `golden-set-resolver.ts` line 221 has direct Prisma query.
 - **Transform**: Map module output to GQL types (dates to strings, enums).
 - **Error Handling**: Try-catch; `console.error` for internals, throw clean errors for clients.
 - **Context**: Use `context` for auth and common utilities.
@@ -51,7 +51,7 @@ Exposes the evaluation engine via Apollo Server. Orchestrates Golden Set managem
 
 ## Adding a Query/Mutation
 
-1. Define in `TypeDefs.ts` with docstrings.
+1. Define in `type/schema.graphql` with docstrings.
 2. Run `pnpm codegen`.
 3. Implement in corresponding resolver file in `resolvers/`.
 4. Delegate to the appropriate DDD module.

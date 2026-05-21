@@ -9,11 +9,13 @@ Domain module for evaluation lifecycle: sessions, judge records, and final resul
 ```
 evaluation/
 ├── domain/
-│   ├── aggregate/     # SessionAggregate (aggregate root)
+│   ├── aggregate/     # SessionAggregate (aggregate root), BaseAggregate
 │   ├── entity/        # SessionEntity, RecordEntity, ResultEntity
-│   └── schema/         # Zod schemas for validation
-├── application/       # EMPTY - not yet implemented
-└── infrastructure/   # EMPTY - not yet implemented
+│   ├── interface/     # EMPTY - repository interfaces pending
+│   ├── schema/        # Zod schemas: session.schema.ts, record.schema.ts, result.schema.ts
+│   └── service/       # EMPTY - domain services pending
+├── application/       # EMPTY - use cases pending
+└── infrastructure/    # EMPTY - repository implementations pending
 ```
 
 Domain layer is complete. Application and infrastructure layers are pending.
@@ -36,6 +38,8 @@ All entities extend BaseSessionEntity which provides identifier accessors and in
 - Only allows setting ResultEntity with matching identifier
 - Provides controlled access to child entities via getter methods
 
+**BaseAggregate** provides common aggregate functionality shared across aggregates.
+
 This pattern ensures all related records and results stay consistent under a single transaction boundary.
 
 ## MIGRATION STATUS
@@ -44,6 +48,7 @@ This module is in early stages. Domain layer is defined but:
 
 - No application services yet (use cases, commands, queries)
 - No infrastructure layer (repository implementations, Prisma mappers)
+- Interface and service directories exist but are empty
 
 Currently, evaluation logic lives in legacy services under `src/services/`. Future work involves migrating that logic into this module's application layer.
 

@@ -1,6 +1,6 @@
 # AGENTS.md - GraphQL Resolvers
 
-> **Scope:** src/graphql/resolvers/ | **Generated:** 2026-05-09 | **Status:** UPDATED
+> **Scope:** src/graphql/resolvers/ | **Generated:** 2026-05-21 | **Status:** UPDATED
 
 Guidelines for managing the GraphQL API layer in this repository.
 
@@ -14,7 +14,7 @@ Thin resolver layer that delegates to **DDD module use cases** (NOT legacy servi
 | ------------------------ | ------------------------------------------ | --------------------------------------- |
 | `golden-set-resolver.ts` | Golden Set CRUD and input management       | `copilot-input` module use cases        |
 | `session-resolver.ts`    | Session queries and shared transformations | `evaluation` module (pending migration) |
-| `rubric-resolver.ts`     | Rubric management and review status        | `rubrics` module (pending migration)    |
+| `rubric-resolver.ts`     | Rubric management and review status        | `rubrics` module use cases              |
 
 > **Note:** AnalyticResolver and GraphSessionResolver do not exist - resolvers migrated to DDD modules.
 
@@ -41,3 +41,7 @@ Thin resolver layer that delegates to **DDD module use cases** (NOT legacy servi
 - **`questionPatches`**: Used in `submitRubricReview` to modify specific criteria.
 - **`answerPatches`**: Used in `submitHumanEvaluation` to override specific agent scores.
 - **Validation**: Module use cases merge patches with existing state before persistence.
+
+## KNOWN VIOLATIONS
+
+- `golden-set-resolver.ts` line 221: Direct Prisma query (`zionDatabase.query`) bypasses module layer. Should delegate to use case.

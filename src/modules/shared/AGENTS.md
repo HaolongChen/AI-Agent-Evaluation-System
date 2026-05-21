@@ -2,7 +2,7 @@
 
 ## OVERVIEW
 
-Foundational DDD building blocks (Entity, AggregateRoot, ValueObject, Repository interface) used by all other modules.
+Foundational DDD building blocks (Entity, AggregateRoot, ValueObject, Repository interface) + cross-cutting infrastructure (GraphQL client, LLM providers, Ali OSS).
 
 ## ENTITY BASE
 
@@ -43,12 +43,8 @@ class UserAggregate extends AggregateRoot<typeof UserSchema> {
 import { IRepository } from "./interface/repository.interface.ts";
 
 class UserRepository implements IRepository<User> {
-  async save(entity: User): Promise<void> {
-    /* ... */
-  }
-  async findById(id: string): Promise<User> {
-    /* ... */
-  }
+  async save(entity: User): Promise<void> { /* ... */ }
+  async findById(id: string): Promise<User> { /* ... */ }
 }
 ```
 
@@ -67,16 +63,24 @@ class Email extends ValueObject<typeof EmailVO> {
 }
 ```
 
+## DOMAIN SERVICES
+
+- **type-system.service.ts**: Manages Functorz Zed type system. Contains 2 `any` type violations (lines 215, 238) — technical debt.
+
+## DOMAIN INTERFACES
+
+- **graph-states.ts**: LangGraph state types (misplaced in domain layer — should be in application or external)
+- **type-system.ts**: Re-exports types from `@functorz/ztype` (134-line barrel file)
+
+## APPLICATION LAYER
+
+- **graphql-client.ts**: NetworkClient, GQLClient, WebSocketClient classes + publicNetworkClient singleton. Used by account module for backend communication.
+
 ## INFRASTRUCTURE
 
-`repositoryDateMapper()` hydrates timestamps from DB records.
-
-```typescript
-import { repositoryDateMapper } from "./infrastructure/repository.ts";
-
-const dbUser = await prisma.user.findUnique({ where: { id } });
-repositoryDateMapper(dbUser, new User({ email: "a@b.com", name: "A" }));
-```
+- **repository.ts**: `repositoryDateMapper()` hydrates timestamps from DB records.
+- **ali-oss.ts**: Aliyun OSS client for cloud storage operations.
+- **llm-providers.ts**: LLM provider abstraction (OpenAI, Gemini, Azure OpenAI).
 
 ## USAGE
 

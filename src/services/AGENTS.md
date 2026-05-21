@@ -1,16 +1,16 @@
 # Services - Business Logic Layer
 
-> **Scope:** src/services/ | **Status:** ⚠️ ALMOST EMPTY - Most services migrated to DDD modules
+> **Scope:** src/services/ | **Status:** ⚠️ DEPRECATED - Only analytics-service.ts remains
 
 ## OVERVIEW
 
-**⚠️ DEPRECATED**: Most services have migrated to DDD modules in `src/modules/`. This directory is nearly empty.
+**⚠️ DEPRECATED**: All services have migrated to DDD modules in `src/modules/`. This directory contains only the legacy `analytics-service.ts`.
 
 ## CURRENT STATE
 
 | File                              | Status        | Notes                                                               |
 | --------------------------------- | ------------- | ------------------------------------------------------------------- |
-| `analytics-service.ts`            | ✅ Still here | No DDD module yet for analytics                                     |
+| `analytics-service.ts`            | ✅ Still here | No DDD module yet for analytics. Uses direct Prisma queries.        |
 | `GraphExecutionService.ts`        | ❌ Deleted    | Migrated to evaluation module                                       |
 | `ExecutionService.ts`             | ❌ Deleted    | Migrated to copilot-output module                                   |
 | `EvaluationPersistenceService.ts` | ❌ Deleted    | Migrated to evaluation module                                       |
@@ -24,8 +24,9 @@
 - ✅ `copilot-output` module: ExecutionService migrated
 - ✅ `rubrics` module: RubricService migrated
 - ✅ `evaluation` module: GraphExecutionService, EvaluationPersistenceService migrated
+- ⏳ `analytics-service.ts` — Awaiting analytics module creation
 
-**Only `analytics-service.ts` remains** - no module yet for analytics functionality.
+**Only `analytics-service.ts` remains** — no module yet for analytics functionality.
 
 ## CONVENTIONS
 
@@ -37,6 +38,7 @@
 
 - **New services in this directory** - forbidden, use modules instead
 - **Logic in GraphQL resolvers** - use module use cases
+- **analytics-service.ts** uses 6 `console.error` calls and direct Prisma queries — candidate for structured logger + repository pattern
 
 ## NOTES
 

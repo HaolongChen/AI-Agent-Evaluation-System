@@ -1,4 +1,3 @@
-import { getTypeSystemStoreForCopilot } from "../../copilot-input/infrastructure/type-system-store.ts";
 import type { Account } from "../../account/application/account-handler.ts";
 import { ProjectService } from "../../copilot-input/application/project-service.ts";
 import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/golden-set.interface.ts";
@@ -9,27 +8,14 @@ import { EvaluationJobRunner } from "./execution-job.ts";
 import type { IProjectRepository } from "../../copilot-input/domain/interface/project.interface.ts";
 import { assertNotNull } from "../../shared/domain/service/type-system.service.ts";
 import { CopilotInputEvent, ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
-import type {
-  CreateCopilotSessionMutation,
-  CreateCopilotSessionMutationVariables,
-  GetCopilotSubscriptionCountQuery,
-  GetCopilotSubscriptionCountQueryVariables,
-  GetLatestSessionMutation,
-  GetLatestSessionMutationVariables,
-} from "../../../graphql/generated/types.ts";
-import {
-  CREATE_COPILOT_SESSION,
-  GET_COPILOT_SUBSCRIPTION_COUNT,
-  GET_LATEST_SESSION,
-} from "../infrastructure/copilot-network.ts";
+import { createNewSession } from "../infrastructure/copilot-network.ts";
 import type { ToolCall } from "../../shared/domain/interface/types.ts";
 import { runToolCalls } from "./message-handler.ts";
-import { z } from "zod";
 import { Event } from "ts-event-target";
 import { clearTimeout } from "node:timers";
 
 export class ExecuteCopilotUseCase {
-  private projectService: ProjectService;
+  private projectService: ProjectService | undefined;
   constructor(
     private readonly repository: {
       copilotOutputRepository: ICopilotOutputRepository;
@@ -37,12 +23,7 @@ export class ExecuteCopilotUseCase {
       projectRepository: IProjectRepository;
     },
     private readonly account: Account,
-  ) {
-    this.projectService = new ProjectService(
-      this.account,
-      this.repository.projectRepository,
-    );
-  }
+  ) {}
 
   async setupEnvironment(
     goldenSetId: string,
@@ -55,16 +36,13 @@ export class ExecuteCopilotUseCase {
         userInputId,
       );
     const projectName = this.generateProjectName(goldenSetId, userInputId);
-    const projectEntity = await this.projectService.createProject(
+    this.projectService = new ProjectService(
+      this.account,
+      this.repository.projectRepository,
       projectName,
       goldenSetEntity.data.schemaId,
     );
-    const typeSystemStore = await getTypeSystemStoreForCopilot(
-      projectEntity.data.projectExId,
-      goldenSetEntity.data.schemaId,
-      this.account,
-    );
-    await typeSystemStore.importSchemaManual();
+    const projectEntity = await this.projectService.createProject();
     const copilotJobEntity = new CopilotJobEntity({
       projectExId: projectEntity.data.projectExId,
       query: userInputEntity.data.content,
@@ -76,7 +54,9 @@ export class ExecuteCopilotUseCase {
             "copilot-output",
           )
         : process.env.SUBSCRIPTION_GRAPHQL_URL,
-      schemaGraph: assertNotNull(typeSystemStore.schemaGraph),
+      schemaGraph: assertNotNull(
+        this.projectService.getSchemaManager()?.schemaGraph,
+      ),
     });
 
     return copilotJobEntity;
@@ -98,10 +78,8 @@ export class ExecuteCopilotUseCase {
     const evaluationJobRunner = new EvaluationJobRunner(copilotJobEntity);
     evaluationJobRunner.start();
     const editableText = await evaluationJobRunner.waitForResult();
-    await this.projectService.deleteProjectInDatabase(
-      "projectExId",
-      copilotJobEntity.data.projectExId,
-    );
+    // await this.projectService.deleteProjectInDatabase(
+    // );
     const copilotOutputEntity = new CopilotOutputEntity({
       goldenSetId,
       userInputId,
@@ -109,49 +87,6 @@ export class ExecuteCopilotUseCase {
     });
     await this.repository.copilotOutputRepository.save(copilotOutputEntity);
     return copilotOutputEntity.toJSON();
-  }
-
-  async getLatestSession(projectExId: string): Promise<string | null> {
-    const gqlClient = await this.account.getGQLClient();
-    const latestSessionResult = await gqlClient.gqlRequest<
-      GetLatestSessionMutation,
-      GetLatestSessionMutationVariables
-    >(GET_LATEST_SESSION, {
-      projectExId,
-      sessionType: "COPILOT",
-    });
-    return latestSessionResult.latestSession;
-  }
-
-  async createNewSession(projectExId: string): Promise<string> {
-    const gqlClient = await this.account.getGQLClient();
-    const newCopilotSessionExId = await gqlClient.gqlRequest<
-      CreateCopilotSessionMutation,
-      CreateCopilotSessionMutationVariables
-    >(CREATE_COPILOT_SESSION, {
-      projectExId,
-      sessionType: "COPILOT",
-    });
-    return newCopilotSessionExId.createCopilotSession;
-  }
-
-  async getSubscriptionCount(projectExId: string): Promise<number> {
-    const gqlClient = await this.account.getGQLClient();
-    const copilotSubscriptionCount = await gqlClient.gqlRequest<
-      GetCopilotSubscriptionCountQuery,
-      GetCopilotSubscriptionCountQueryVariables
-    >(GET_COPILOT_SUBSCRIPTION_COUNT, {
-      projectExId,
-      sessionType: "COPILOT",
-    });
-    const count = z.coerce
-      .number()
-      .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
-    if (!count.success) {
-      throw new Error(count.error.message);
-    }
-    return count.data;
-    // TODO: get last session
   }
 
   copilotJobEntityToCopilotOutputEntity(
@@ -176,14 +111,17 @@ export class ExecuteCopilotUseCase {
       goldenSetId,
       userInputId,
     );
+    const gqlClient = await this.account.getGQLClient();
+    const wsClient = await this.account.getWsClient();
     try {
-      const sessionExId =
-        (await this.getLatestSession(copilotJobEntity.data.projectExId)) ??
-        (await this.createNewSession(copilotJobEntity.data.projectExId));
+      const sessionExId = await createNewSession(
+        copilotJobEntity.data.projectExId,
+        gqlClient,
+      );
       const copilotExecutionService = new ExecutionJobRunnerV2(
         sessionExId,
-        await this.account.getWsClient(),
-        await this.account.getGQLClient(),
+        wsClient,
+        gqlClient,
       );
       const { publish, listen } = copilotExecutionService.execute();
       const jobPromise = new Promise<CopilotOutputEntity>((resolve, reject) => {
@@ -306,36 +244,10 @@ export class ExecuteCopilotUseCase {
       return result.toJSON();
     } catch (error) {
       console.error("Error setting up copilot execution environment:", error);
-      await this.projectService
-        .deleteProjectInDatabase(
-          "projectExId",
-          copilotJobEntity.data.projectExId,
-        )
-        .catch((error) => {
-          console.error(
-            "Error occurred while deleting project in database:",
-            error,
-          );
-          return this.projectService.deleteProject(
-            copilotJobEntity.data.projectExId,
-          );
-        });
+      this.account.clearWsClient();
       throw error;
     } finally {
-      await this.projectService
-        .deleteProjectInDatabase(
-          "projectExId",
-          copilotJobEntity.data.projectExId,
-        )
-        .catch((error) => {
-          console.error(
-            "Error occurred while deleting project in database:",
-            error,
-          );
-          return this.projectService.deleteProject(
-            copilotJobEntity.data.projectExId,
-          );
-        });
+      await this.projectService?.deleteProjectInDatabase();
     }
   }
 }

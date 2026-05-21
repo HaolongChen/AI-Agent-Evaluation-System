@@ -67,6 +67,13 @@ export class Account extends AccountService {
     return this.wsClient;
   }
 
+  clearWsClient() {
+    if (this.wsClient) {
+      this.wsClient.close();
+      this.wsClient = undefined;
+    }
+  }
+
   async login() {
     const accountInfo = await login(
       this.account.data.phoneNumber,

@@ -275,85 +275,25 @@ export type LoginWithPhoneNumberMutationVariables = Exact<{
   password: string;
 }>;
 
-export type CheckProjectNameDuplicateQuery = {
-  __typename: "Query";
-  checkProjectNameDuplicate: boolean;
+export type LoginMutation_login_account = {
+  __typename: "Account";
+  exId: string;
 };
 
-export type CheckProjectNameDuplicateQueryVariables = Exact<{
-  projectName: string;
-}>;
+export type LoginMutation_login = {
+  __typename: "AccountInfo";
+  accessToken: string | null;
+  account: LoginMutation_login_account | null;
+};
 
-export type CreateProjectInOrganizationAsyncMutation = {
+export type LoginMutation = {
   __typename: "Mutation";
-  createProjectInOrganizationAsync: string | null;
+  login: LoginMutation_login | null;
 };
 
-export type CreateProjectInOrganizationAsyncMutationVariables = Exact<{
-  projectName: string;
-  templateExId?: string | undefined;
-  platform?: Platform | undefined;
-  projectSpaceType: ProjectSpaceType;
-  organizationExId: string;
-  forBeginnerGuide?: boolean | undefined;
-  category?: ProjectContentCategory | undefined;
-  useRefactoredComponent?: boolean | undefined;
-  useNewType?: boolean | undefined;
-}>;
-
-export type OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged =
-  {
-    __typename: "ProjectCreationResult";
-    projectExId: string | null;
-    status: ProjectCreationStatus | null;
-  };
-
-export type OnProjectCreationStatusChangedSubscription = {
-  __typename: "Subscription";
-  onProjectCreationStatusChanged: OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged | null;
-};
-
-export type OnProjectCreationStatusChangedSubscriptionVariables = Exact<{
-  uniqueId: string;
-}>;
-
-export type DeleteProjectMutation = {
-  __typename: "Mutation";
-  deleteProject: boolean;
-};
-
-export type DeleteProjectMutationVariables = Exact<{
-  projectExId: string;
-}>;
-
-export type DeleteProjectByIdsMutation = {
-  __typename: "Mutation";
-  deleteProjectByIds: boolean;
-};
-
-export type DeleteProjectByIdsMutationVariables = Exact<{
-  ids: Array<unknown> | unknown;
-}>;
-
-export type FixAliPayDataBindingMutation = {
-  __typename: "Mutation";
-  fixAliPayDataBinding: boolean;
-};
-
-export type FixAliPayDataBindingMutationVariables = Exact<{
-  projectId: unknown;
-}>;
-
-export type ImportProjectSchemaJsonManualMutation = {
-  __typename: "Mutation";
-  importProjectSchemaJsonManual: string | null;
-};
-
-export type ImportProjectSchemaJsonManualMutationVariables = Exact<{
-  schema: unknown;
-  projectExId: string;
-  appExId?: string | undefined;
-  versionExId?: string | undefined;
+export type LoginMutationVariables = Exact<{
+  username: string;
+  password: string;
 }>;
 
 export type WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches_patches =
@@ -598,6 +538,75 @@ export type ImportProjectSchemaManualMutationVariables = Exact<{
   crdtModel: unknown;
   appExId?: string | undefined;
   versionExId?: string | undefined;
+}>;
+
+export type CheckProjectNameDuplicateQuery = {
+  __typename: "Query";
+  checkProjectNameDuplicate: boolean;
+};
+
+export type CheckProjectNameDuplicateQueryVariables = Exact<{
+  projectName: string;
+}>;
+
+export type CreateProjectInOrganizationAsyncMutation = {
+  __typename: "Mutation";
+  createProjectInOrganizationAsync: string | null;
+};
+
+export type CreateProjectInOrganizationAsyncMutationVariables = Exact<{
+  projectName: string;
+  templateExId?: string | undefined;
+  platform?: Platform | undefined;
+  projectSpaceType: ProjectSpaceType;
+  organizationExId: string;
+  forBeginnerGuide?: boolean | undefined;
+  category?: ProjectContentCategory | undefined;
+  useRefactoredComponent?: boolean | undefined;
+  useNewType?: boolean | undefined;
+}>;
+
+export type OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged =
+  {
+    __typename: "ProjectCreationResult";
+    projectExId: string | null;
+    status: ProjectCreationStatus | null;
+  };
+
+export type OnProjectCreationStatusChangedSubscription = {
+  __typename: "Subscription";
+  onProjectCreationStatusChanged: OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged | null;
+};
+
+export type OnProjectCreationStatusChangedSubscriptionVariables = Exact<{
+  uniqueId: string;
+}>;
+
+export type DeleteProjectMutation = {
+  __typename: "Mutation";
+  deleteProject: boolean;
+};
+
+export type DeleteProjectMutationVariables = Exact<{
+  projectExId: string;
+}>;
+
+export type DeleteProjectByIdsMutation = {
+  __typename: "Mutation";
+  deleteProjectByIds: boolean;
+};
+
+export type DeleteProjectByIdsMutationVariables = Exact<{
+  ids: Array<unknown> | unknown;
+}>;
+
+export type FixAliPayDataBindingMutation = {
+  __typename: "Mutation";
+  fixAliPayDataBinding: boolean;
+};
+
+export type FixAliPayDataBindingMutationVariables = Exact<{
+  projectId: unknown;
 }>;
 
 export type GetCopilotSubscriptionCountQuery = {

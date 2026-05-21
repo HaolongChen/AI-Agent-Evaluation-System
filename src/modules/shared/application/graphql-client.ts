@@ -63,6 +63,11 @@ export class WebSocketClient {
     // console.log("WebSocketClient initialized with SubscriptionClient:", client);
   }
 
+  close() {
+    this.client.unsubscribeAll();
+    this.client.close();
+  }
+
   gqlSubscribe<TData, TVariables extends Record<string, unknown>>(
     document: string,
     variables?: TVariables,

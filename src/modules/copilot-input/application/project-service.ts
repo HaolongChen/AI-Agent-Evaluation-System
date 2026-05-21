@@ -1,121 +1,115 @@
 import {
-  GQL_CHECK_PROJECT_NAME_DUPLICATE,
-  GQL_CREATE_PROJECT_IN_ORGANIZATION,
   GQL_DELETE_PROJECT,
   createProjectSubscription,
+  createProjectWithTaskIdReturned,
 } from "../infrastructure/project-manager.ts";
-import {
-  type CreateProjectInOrganizationAsyncMutation,
-  type CreateProjectInOrganizationAsyncMutationVariables,
-} from "../../../graphql/generated/types.ts";
+
 import type { Account } from "../../account/application/account-handler.ts";
 import type {
-  CheckProjectNameDuplicateQuery,
-  CheckProjectNameDuplicateQueryVariables,
   DeleteProjectMutation,
   DeleteProjectMutationVariables,
 } from "../../../graphql/generated/types.ts";
-import type {
-  IProjectRepository,
-  ProjectIdentifiers,
-} from "../domain/interface/project.interface.ts";
+import type { IProjectRepository } from "../domain/interface/project.interface.ts";
 import { ProjectEntity } from "../domain/entity/project.entity.ts";
+import { TypeSystemStore } from "../infrastructure/crdt-schema-manager.ts";
 
 export class ProjectService {
+  private projectEntity: ProjectEntity | undefined;
+  private schemaManager: TypeSystemStore | undefined;
   constructor(
     private account: Account,
     private repository: IProjectRepository,
+    private projectName: string,
+    private initialSchemaId?: string,
   ) {}
-  async createProject(
-    projectName: string,
-    schemaId: string,
-  ): Promise<ProjectEntity> {
+
+  public getSchemaManager(): TypeSystemStore | undefined {
+    return this.schemaManager;
+  }
+
+  async createProject(): Promise<ProjectEntity> {
     const gqlClient = await this.account.getGQLClient();
     const organizationExId = process.env.ORGANIZATION_EX_ID;
     if (!organizationExId) {
       throw new Error("ORGANIZATION_EX_ID env var is not set");
     }
 
-    console.info("Checking project name availability", { projectName });
-    const isNameDuplicated = await gqlClient.gqlRequest<
-      CheckProjectNameDuplicateQuery,
-      CheckProjectNameDuplicateQueryVariables
-    >(GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
-
-    if (isNameDuplicated.checkProjectNameDuplicate) {
-      throw new Error(
-        projectName + " is already taken, please choose a different name",
-      );
-    }
-
-    console.info("Creating project", { projectName, organizationExId });
-    const mutationData = await gqlClient.gqlRequest<
-      CreateProjectInOrganizationAsyncMutation,
-      CreateProjectInOrganizationAsyncMutationVariables
-    >(GQL_CREATE_PROJECT_IN_ORGANIZATION, {
-      projectName,
-      platform: "WEB",
-      projectSpaceType: "PERSONAL",
+    const taskId = await createProjectWithTaskIdReturned(
+      this.projectName,
+      gqlClient,
       organizationExId,
-      category: "OTHERS",
-      useNewType: true,
-      useRefactoredComponent: true,
-    });
+    );
 
-    const taskId = mutationData.createProjectInOrganizationAsync;
-    if (!taskId) {
-      throw new Error("Failed to initiate project creation");
-    }
-    console.info("Project creation task started", { taskId, projectName });
+    console.info("Project creation task started", {
+      taskId,
+      projectName: this.projectName,
+    });
     const projectExId = await createProjectSubscription(taskId, this.account);
-    console.log("Project creation completed", { projectExId, projectName });
+    console.log("Project creation completed", {
+      projectExId,
+      projectName: this.projectName,
+    });
+    this.schemaManager = new TypeSystemStore(this.account, projectExId);
+    await this.schemaManager.fetchAppDetailByExId();
+    if (this.initialSchemaId) {
+      await this.schemaManager.importSchemaManual(this.initialSchemaId);
+    }
+    const schemaId = this.schemaManager.getSchemaId();
     try {
-      const projectEntity = new ProjectEntity({
+      this.projectEntity = new ProjectEntity({
         projectExId,
-        name: projectName,
+        name: this.projectName,
         schemaId,
         createdBy: this.account.exId!,
       });
-      await this.repository.save(projectEntity);
-      return projectEntity;
+      await this.repository.save(this.projectEntity);
+      return this.projectEntity;
     } catch (error) {
       console.error("Error during project creation, attempting cleanup", {
         error,
         projectExId,
       });
-      await this.deleteProjectInDatabase("schemaId", schemaId);
-      await this.deleteProject(projectExId);
+      await this.deleteProjectInDatabase();
       throw error;
     }
   }
 
-  async deleteProject(projectExId: string): Promise<void> {
+  async deleteProject(): Promise<void> {
+    if (!this.projectEntity) {
+      throw new Error(
+        "Project entity is not initialized, cannot delete project",
+      );
+    }
     const gqlClient = await this.account.getGQLClient();
-    console.info("Deleting project", { projectExId });
+    console.info("Deleting project", {
+      projectExId: this.projectEntity.data.projectExId,
+    });
     const isDeleted = await gqlClient.gqlRequest<
       DeleteProjectMutation,
       DeleteProjectMutationVariables
-    >(GQL_DELETE_PROJECT, { projectExId });
+    >(GQL_DELETE_PROJECT, { projectExId: this.projectEntity.data.projectExId });
     if (!isDeleted.deleteProject) {
-      throw new Error(`Failed to delete project with exId ${projectExId}`);
-    }
-    console.info("Project deleted", { projectExId });
-  }
-
-  async deleteProjectInDatabase<T extends ProjectIdentifiers>(
-    identifier: T,
-    id: string,
-  ): Promise<void> {
-    const project = await this.repository.getByUniqueField(identifier, id);
-    await this.account.ensureLoggedIn();
-    if (project.data.createdBy !== this.account.exId) {
       throw new Error(
-        `Unauthorized: You can only delete projects created by yourself. id: ${id}`,
+        `Failed to delete project with exId ${this.projectEntity.data.projectExId}`,
       );
     }
+    console.info("Project deleted", {
+      projectExId: this.projectEntity.data.projectExId,
+    });
+  }
+
+  async deleteProjectInDatabase(): Promise<void> {
+    if (!this.schemaManager) {
+      console.warn("Schema ID is not set, skipping database cleanup");
+      return await this.deleteProject();
+    }
+    const project = await this.repository.getByUniqueField(
+      "schemaId",
+      this.schemaManager.getSchemaId(),
+    );
     await Promise.all([
       this.repository.deleteById(project.id!),
-      this.deleteProject(project.data.projectExId),
+      this.deleteProject(),
     ]);
   }
 }

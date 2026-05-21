@@ -1,4 +1,14 @@
 import { gql } from "graphql-request";
+import type { GQLClient } from "../../shared/application/graphql-client.ts";
+import type {
+  CreateCopilotSessionMutation,
+  CreateCopilotSessionMutationVariables,
+  GetCopilotSubscriptionCountQuery,
+  GetCopilotSubscriptionCountQueryVariables,
+  GetLatestSessionMutation,
+  GetLatestSessionMutationVariables,
+} from "../../../graphql/generated/types.ts";
+import { z } from "zod";
 
 export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
   query GetCopilotSubscriptionCount(
@@ -256,47 +266,51 @@ export const ON_COPILOT_SESSION_UPDATES = gql`
   ${COPILOT_INITIAL_STATE_MESSAGE_FRAGMENT}
 `;
 
-// export type VoidTypeConverter<
-// 	T extends Record<string, any>,
-// 	E extends null | undefined,
-// > = {
-// 	[K in keyof T]: T[K] extends null | undefined ?
-// 		T[K] extends Record<string, any> ?
-// 			VoidTypeConverter<T[K], E> | E
-// 		:	Exclude<T[K], null | undefined> | E
-// 	: T[K] extends Record<string, any> ? VoidTypeConverter<T[K], E>
-// 	: T[K];
-// };
-// export type VoidTypeGeneralizer<T extends Record<string, any>> = {
-// 	[K in keyof T]: T[K] extends null | undefined ?
-// 		T[K] extends Record<string, any> ?
-// 			VoidTypeGeneralizer<T[K]> | undefined | null
-// 		:	T[K] | undefined | null
-// 	: T[K] extends Record<string, any> ? VoidTypeGeneralizer<T[K]>
-// 	: T[K];
-// };
+export const getLatestSession = async (
+  projectExId: string,
+  gqlClient: GQLClient,
+): Promise<string | null> => {
+  const latestSessionResult = await gqlClient.gqlRequest<
+    GetLatestSessionMutation,
+    GetLatestSessionMutationVariables
+  >(GET_LATEST_SESSION, {
+    projectExId,
+    sessionType: "COPILOT",
+  });
+  return latestSessionResult.latestSession;
+};
 
-// export const voidTypeConverter = <
-// 	T extends Record<string, any>,
-// 	E extends null | undefined,
-// >(
-// 	data: T,
-// ): VoidTypeConverter<T, E> => {
-// 	const result: VoidTypeConverter<T, E> = data as VoidTypeConverter<T, E>;
-// 	return result;
-// };
+export const createNewSession = async (
+  projectExId: string,
+  gqlClient: GQLClient,
+): Promise<string> => {
+  const newCopilotSessionExId = await gqlClient.gqlRequest<
+    CreateCopilotSessionMutation,
+    CreateCopilotSessionMutationVariables
+  >(CREATE_COPILOT_SESSION, {
+    projectExId,
+    sessionType: "COPILOT",
+  });
+  return newCopilotSessionExId.createCopilotSession;
+};
 
-// export const newConverter = <T extends Record<string, any>, K extends {[KEY in keyof T]: any}> ( source: T ): K =>
-// {
-//   const result = {} as K;
-//   for ( const key in source )
-//   {
-//     if ( source[ key ] === null || source[ key ] === undefined )
-//     {
-//       type ValueType = K[ typeof key ];
-//       const tmp: ValueType = undefined;
-//     }
-//   }
-// }
-
-// export type Conflict<T extends Record<Q, any>, K extends Record<Q, any>, Q extends string> =
+export const getSubscriptionCount = async (
+  projectExId: string,
+  gqlClient: GQLClient,
+): Promise<number> => {
+  const copilotSubscriptionCount = await gqlClient.gqlRequest<
+    GetCopilotSubscriptionCountQuery,
+    GetCopilotSubscriptionCountQueryVariables
+  >(GET_COPILOT_SUBSCRIPTION_COUNT, {
+    projectExId,
+    sessionType: "COPILOT",
+  });
+  const count = z.coerce
+    .number()
+    .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
+  if (!count.success) {
+    throw new Error(count.error.message);
+  }
+  return count.data;
+  // TODO: get last session
+};

@@ -1,5 +1,7 @@
 import { gql } from "graphql-request";
 import type {
+  LoginMutation,
+  LoginMutationVariables,
   LoginWithPhoneNumberMutation,
   LoginWithPhoneNumberMutationVariables,
 } from "../../../graphql/generated/types.ts";
@@ -21,23 +23,51 @@ const LOGIN_MUTATION = gql`
   }
 `;
 
+const LOGIN_WITH_PASSWORD_MUTATION = gql`
+  mutation Login($username: String!, $password: String!) {
+    login(username: $username, password: $password) {
+      accessToken
+      account {
+        exId
+      }
+    }
+  }
+`;
+
 // ---------------------------------------------------------------------------
 // Login function
 // ---------------------------------------------------------------------------
 
 export const login = async (
-  phoneNumber: string,
+  phoneNumberOrUsername: string,
   password: string,
 ): Promise<AccountInfo> => {
   try {
-    const data = await publicNetworkClient
-      .buildGQLClient()
-      .gqlRequest<
-        LoginWithPhoneNumberMutation,
-        LoginWithPhoneNumberMutationVariables
-      >(LOGIN_MUTATION, { phoneNumber, password });
-
-    const accountInfo = data.loginWithPhoneNumber as AccountInfo;
+    let phoneNumber: string | undefined;
+    let username: string | undefined;
+    let accountInfo: AccountInfo | undefined;
+    if (
+      phoneNumberOrUsername.startsWith("+") ||
+      /^\d+$/.test(phoneNumberOrUsername)
+    ) {
+      phoneNumber = phoneNumberOrUsername;
+      const data = await publicNetworkClient
+        .buildGQLClient()
+        .gqlRequest<
+          LoginWithPhoneNumberMutation,
+          LoginWithPhoneNumberMutationVariables
+        >(LOGIN_MUTATION, { phoneNumber, password });
+      accountInfo = data.loginWithPhoneNumber as AccountInfo;
+    } else {
+      username = phoneNumberOrUsername;
+      const data = await publicNetworkClient
+        .buildGQLClient()
+        .gqlRequest<
+          LoginMutation,
+          LoginMutationVariables
+        >(LOGIN_WITH_PASSWORD_MUTATION, { username, password });
+      accountInfo = data.login as AccountInfo;
+    }
 
     if (!accountInfo.accessToken) {
       throw new Error("Login failed: No access token received");

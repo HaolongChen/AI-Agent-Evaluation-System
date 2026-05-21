@@ -43,6 +43,8 @@ declare global {
       RUBRICS_GENERATOR_PROMPTS_PATH: string;
       ZSCHEMA_SRC_PATH: string;
       ZSCHEMA_DEST_PATH: string;
+      DANGEROUS_USERNAME: string;
+      DANGEROUS_PASSWORD: string;
     }
   }
 }

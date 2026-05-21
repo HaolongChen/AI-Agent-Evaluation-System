@@ -79,7 +79,7 @@
     "@apollo/server": "^5.5.1",
     "@as-integrations/express5": "^1.1.2",
     "@functorz/crdt-helper": "2.7.6",
-    "@functorz/ztype": "2.10.100",
+    "@functorz/ztype": "2.10.128",
     "@js-joda/core": "^5.7.0",
     "@langchain/core": "^1.1.47",
     "@langchain/google": "^0.1.12",

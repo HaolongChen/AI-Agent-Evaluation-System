@@ -1,9 +1,17 @@
 import { gql } from "graphql-request";
 import type {
+  CheckProjectNameDuplicateQuery,
+  CheckProjectNameDuplicateQueryVariables,
+  CreateProjectInOrganizationAsyncMutation,
+  CreateProjectInOrganizationAsyncMutationVariables,
   OnProjectCreationStatusChangedSubscription,
   OnProjectCreationStatusChangedSubscriptionVariables,
+  Platform,
+  ProjectContentCategory,
+  ProjectSpaceType,
 } from "../../../graphql/generated/types.ts";
 import type { Account } from "../../account/application/account-handler.ts";
+import type { GQLClient } from "../../shared/application/graphql-client.ts";
 export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
   query CheckProjectNameDuplicate($projectName: String!) {
     checkProjectNameDuplicate(projectName: $projectName)
@@ -132,4 +140,49 @@ export const createProjectSubscription = async (
     console.log("Cleaning up subscription for project creation", { taskId });
     unsubscribeFunction?.();
   }
+};
+
+export const isProjectNameDuplicated = async (
+  projectName: string,
+  gqlClient: GQLClient,
+): Promise<boolean> => {
+  const isNameDuplicated = await gqlClient.gqlRequest<
+    CheckProjectNameDuplicateQuery,
+    CheckProjectNameDuplicateQueryVariables
+  >(GQL_CHECK_PROJECT_NAME_DUPLICATE, { projectName });
+  return isNameDuplicated.checkProjectNameDuplicate;
+};
+
+export const createProjectWithTaskIdReturned = async (
+  projectName: string,
+  gqlClient: GQLClient,
+  organizationExId: string,
+  useNewType: boolean = true,
+  useRefactoredComponent: boolean = true,
+  platform: Platform = "WEB",
+  projectSpaceType: ProjectSpaceType = "PERSONAL",
+  category: ProjectContentCategory = "OTHERS",
+): Promise<string> => {
+  if (await isProjectNameDuplicated(projectName, gqlClient)) {
+    throw new Error(
+      `${projectName} is already taken, please choose a different name`,
+    );
+  }
+  const mutationData = await gqlClient.gqlRequest<
+    CreateProjectInOrganizationAsyncMutation,
+    CreateProjectInOrganizationAsyncMutationVariables
+  >(GQL_CREATE_PROJECT_IN_ORGANIZATION, {
+    projectName: projectName,
+    platform: platform,
+    projectSpaceType,
+    organizationExId,
+    category,
+    useNewType,
+    useRefactoredComponent,
+  });
+  const taskId = mutationData.createProjectInOrganizationAsync;
+  if (!taskId) {
+    throw new Error("Failed to initiate project creation");
+  }
+  return taskId;
 };

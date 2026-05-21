@@ -549,6 +549,23 @@ export type CheckProjectNameDuplicateQueryVariables = Exact<{
   projectName: string;
 }>;
 
+export type FeaturesQuery_features = {
+  __typename: "FeatureStatus";
+  featureName: string;
+  featureExId: string;
+  description: string;
+  enabled: boolean;
+};
+
+export type FeaturesQuery = {
+  __typename: "Query";
+  features: Array<FeaturesQuery_features>;
+};
+
+export type FeaturesQueryVariables = Exact<{
+  projectExId: string;
+}>;
+
 export type CreateProjectInOrganizationAsyncMutation = {
   __typename: "Mutation";
   createProjectInOrganizationAsync: string | null;

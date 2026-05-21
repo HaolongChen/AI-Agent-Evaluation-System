@@ -364,6 +364,8 @@ export class TypeSystemStore {
     const arrayBuffer = await getSchemaModelById(
       schemaId || this.getSchemaId(),
     );
+    await this.getAFCustomCodeTemplates();
+    await this.getSupportedCustomModelDescriptor();
     const modelBinary = new Uint8Array(arrayBuffer);
 
     this.crdtSchemaModel = fromUint8Array(modelBinary);

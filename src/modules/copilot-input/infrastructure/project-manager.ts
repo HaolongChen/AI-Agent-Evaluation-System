@@ -4,6 +4,8 @@ import type {
   CheckProjectNameDuplicateQueryVariables,
   CreateProjectInOrganizationAsyncMutation,
   CreateProjectInOrganizationAsyncMutationVariables,
+  FeaturesQuery,
+  FeaturesQueryVariables,
   OnProjectCreationStatusChangedSubscription,
   OnProjectCreationStatusChangedSubscriptionVariables,
   Platform,
@@ -15,6 +17,17 @@ import type { GQLClient } from "../../shared/application/graphql-client.ts";
 export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
   query CheckProjectNameDuplicate($projectName: String!) {
     checkProjectNameDuplicate(projectName: $projectName)
+  }
+`;
+
+export const GQL_GET_FEATURES = gql`
+  query Features($projectExId: String!) {
+    features(projectExId: $projectExId) {
+      featureName
+      featureExId
+      description
+      enabled
+    }
   }
 `;
 
@@ -140,6 +153,27 @@ export const createProjectSubscription = async (
     console.log("Cleaning up subscription for project creation", { taskId });
     unsubscribeFunction?.();
   }
+};
+
+export const getProjectFeatures = async (
+  projectExId: string,
+  gqlClient: GQLClient,
+) => {
+  const featureData = await gqlClient.gqlRequest<
+    FeaturesQuery,
+    FeaturesQueryVariables
+  >(GQL_GET_FEATURES, { projectExId });
+  return featureData.features;
+};
+
+export const getEnabledFeatureNames = async (
+  projectExId: string,
+  gqlClient: GQLClient,
+): Promise<string[]> => {
+  const features = await getProjectFeatures(projectExId, gqlClient);
+  return features
+    .filter((feature) => feature.enabled)
+    .map((feature) => feature.featureName);
 };
 
 export const isProjectNameDuplicated = async (

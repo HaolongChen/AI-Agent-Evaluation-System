@@ -168,15 +168,15 @@ export const goldenSetResolver = {
       for (let index = 0; index < arguments_.number; index++) {
         projectNames.push("AI-EVAL-" + Date.now() + "-" + index);
       }
-      const projectService = new ProjectService(
-        myAccount,
-        repository.projectRepository,
-      );
       await Promise.all(
-        projectNames.map(async (projectName) => {
-          const project = await projectService.createProject(
+        projectNames.map( async ( projectName ) =>
+        {
+          const projectService = new ProjectService(
+            myAccount,
+            repository.projectRepository,
             projectName,
-            "TO BE IMPLEMENTED",
+          );
+          const project = await projectService.createProject(
           );
           results += JSON.stringify(project) + "\n";
         }),
@@ -192,7 +192,11 @@ export const goldenSetResolver = {
         myAccount,
         repository.projectRepository,
       );
-      await projectService.deleteProjectInDatabase("projectExId", projectExId);
+      const project = await projectService.getProject("projectExId", projectExId);
+      if (!project) {
+        throw new GraphQLError(`Project with exId ${projectExId} not found`);
+      }
+      await projectService.deleteProject();
       return true;
     },
     runCrdtTest: async (

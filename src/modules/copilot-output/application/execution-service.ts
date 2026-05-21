@@ -4,13 +4,11 @@ import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
-import { EvaluationJobRunner } from "./execution-job.ts";
 import type { IProjectRepository } from "../../copilot-input/domain/interface/project.interface.ts";
 import { assertNotNull } from "../../shared/domain/service/type-system.service.ts";
 import { CopilotInputEvent, ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { createNewSession } from "../infrastructure/copilot-network.ts";
-import type { ToolCall } from "../../shared/domain/interface/types.ts";
-import { runToolCalls } from "./message-handler.ts";
+import { runToolCalls } from "./tool-call-handler.ts";
 import { Event } from "ts-event-target";
 import { clearTimeout } from "node:timers";
 
@@ -67,26 +65,6 @@ export class ExecuteCopilotUseCase {
     userInputId: string,
   ): string {
     return `temp-project-${goldenSetId}-${userInputId}-${Date.now()}`;
-  }
-  async execute(goldenSetId: string, userInputId: string) {
-    const copilotJobEntity = await this.setupEnvironment(
-      goldenSetId,
-      userInputId,
-    );
-    await this.account.ensureLoggedIn();
-
-    const evaluationJobRunner = new EvaluationJobRunner(copilotJobEntity);
-    evaluationJobRunner.start();
-    const editableText = await evaluationJobRunner.waitForResult();
-    // await this.projectService.deleteProjectInDatabase(
-    // );
-    const copilotOutputEntity = new CopilotOutputEntity({
-      goldenSetId,
-      userInputId,
-      content: editableText,
-    });
-    await this.repository.copilotOutputRepository.save(copilotOutputEntity);
-    return copilotOutputEntity.toJSON();
   }
 
   copilotJobEntityToCopilotOutputEntity(
@@ -146,47 +124,37 @@ export class ExecuteCopilotUseCase {
             resolve(copilotOutputEntity);
           });
           listen("CopilotToolCallBatchMessage", (event) => {
-            const toolCalls: ToolCall[] = event.data.toolCalls.map(
-              (toolCall): ToolCall => {
-                return {
-                  toolCallId: toolCall.id,
-                  args: toolCall.args as Record<string, unknown>,
-                  name: toolCall.name,
-                };
-              },
-            );
-            const { result, successful, errorMessage } = runToolCalls(
+            const { toolCallBatchId, toolCalls } = event.data;
+            const result = runToolCalls(
               toolCalls,
               copilotJobEntity.data.schemaGraph,
             );
-            if (successful && result) {
-              const toolResponsesMap = new Map<string, string>();
-              for (const [key, value] of Object.entries(
-                JSON.parse(result.data),
-              )) {
-                toolResponsesMap.set(key, value as string);
-              }
-              console.log(
-                "Tool call batch executed successfully",
-                toolResponsesMap,
+            // where's schema path?
+            if (result.error) {
+              console.error(
+                `Error executing tool call batch ${toolCallBatchId}:`,
+                result.error,
               );
-              publish(
-                new CopilotInputEvent("TOOL_CALL_BATCH_RESPONSE", {
-                  toolCallBatchId: event.data.toolCallBatchId,
-                  responseByToolCallId: toolResponsesMap,
-                  schemaDiff: result.schemaDiff,
-                }),
+              throw new Error(
+                `Error executing tool call batch ${toolCallBatchId}: ${result.error}`,
               );
-            } else {
-              throw new Error(`Error executing tool calls: ${errorMessage}`);
             }
+            if (result.schemaDiff) {
+              // TODO: apply schema diff to local
+            }
+            publish(
+              new CopilotInputEvent("TOOL_CALL_BATCH_RESPONSE", {
+                toolCallBatchId: event.data.toolCallBatchId,
+                responseByToolCallId: JSON.parse(result.data ?? "{}"),
+                schemaDiff: result.schemaDiff,
+              }),
+            );
+            // TODO: error handling...
           });
 
-          listen("CopilotTaskMessage", (event) => {
-            copilotJobEntity.addTask({
-              ...event.data,
-              timestamp: event.timeStamp,
-            });
+          listen( "CopilotTaskMessage", ( event ) =>
+          {
+              copilotJobEntity.addTask( event.data );
           });
 
           listen("CopilotTerminateMessage", () => {

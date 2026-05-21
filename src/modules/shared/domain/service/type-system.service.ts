@@ -14,7 +14,7 @@ import {
   KtMap,
   ModelCustomParamDescriptor as ModelCustomParameterDescriptor,
   Variable,
-  ZTypeSystem,
+  ZTypeCoreApi,
 } from "../interface/type-system.ts";
 const SYSTEM_MODEL_PROVIDER = "Functorz";
 import type {
@@ -132,7 +132,7 @@ export function genExtraContext(
             null,
             isNil(defaultValue)
               ? null
-              : ZTypeSystem.parseDataBindingFromJsObject(defaultValue),
+              : ZTypeCoreApi.parseDataBindingFromJsObject(defaultValue),
           ),
         ];
       }),

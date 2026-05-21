@@ -1,3 +1,4 @@
+import type { PrismaClient } from "../prisma/build/generated/prisma/client.ts";
 import type { IGoldenSetRepository } from "../modules/copilot-input/domain/interface/golden-set.interface.ts";
 import type { IProjectRepository } from "../modules/copilot-input/domain/interface/project.interface.ts";
 import type { IUserInputRepository } from "../modules/copilot-input/domain/interface/user-input.interface.ts";
@@ -13,24 +14,23 @@ import { AgentFeedbackRepository } from "../modules/rubrics/infrastructure/repos
 import { RubricRepository } from "../modules/rubrics/infrastructure/repository/rubric.repository.ts";
 import type { IProjectLifecycle } from "../modules/copilot-input/domain/interface/project-lifecycle.interface.ts";
 import { ProjectLifecycleAdapter } from "../modules/copilot-input/infrastructure/project-lifecycle-adapter.ts";
+import type { Account } from "../modules/account/application/account-handler.ts";
 import { myAccount } from "./account.ts";
 
-const prismaRepository: RepositoryInjectionType = {
-  goldenSetRepository: new GoldenSetRepository(),
-  userInputRepository: new UserInputRepository(),
-  projectRepository: new ProjectRepository(),
-  rubricRepository: new RubricRepository(),
-  copilotOutputRepository: new CopilotOutputRepository(),
-  agentFeedbackRepository: new AgentFeedbackRepository(),
-  projectLifecycle: new ProjectLifecycleAdapter(
-    myAccount,
-    new ProjectRepository(),
-  ),
-};
-
-export const repositoryInjections = {
-  prisma: prismaRepository,
-};
+export function createRepositoryBundle(
+  account: Account,
+): RepositoryInjectionType {
+  const projectRepository = new ProjectRepository();
+  return {
+    goldenSetRepository: new GoldenSetRepository(),
+    userInputRepository: new UserInputRepository(),
+    projectRepository,
+    rubricRepository: new RubricRepository(),
+    copilotOutputRepository: new CopilotOutputRepository(),
+    agentFeedbackRepository: new AgentFeedbackRepository(),
+    projectLifecycle: new ProjectLifecycleAdapter(account, projectRepository),
+  };
+}
 
 export type RepositoryInjectionType = {
   goldenSetRepository: IGoldenSetRepository;
@@ -42,4 +42,4 @@ export type RepositoryInjectionType = {
   projectLifecycle: IProjectLifecycle;
 };
 
-export const repository = repositoryInjections.prisma;
+export const repository = createRepositoryBundle(myAccount);

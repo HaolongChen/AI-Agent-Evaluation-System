@@ -26,8 +26,8 @@ infrastructure/
 
 ## ENTITIES
 
-- **CopilotJobEntity**: Owns WebSocket lifecycle state (editableText, tasks, isTerminated). Created per execution run.
-- **CopilotOutputEntity**: Persisted record of copilot output content tied to a goldenSetId + userInputId pair.
+- **CopilotJobEntity**: Owns WebSocket lifecycle state (editableText, aiResponse, tasks, isFinished). Created per execution run. `aiResponse` signals job completion (replaces legacy `isTerminated`).
+- **CopilotOutputEntity**: Persisted record of copilot output (editableText, aiResponse, copilotSessionExId) tied to a goldenSetId + userInputId pair.
 
 ## DOMAIN SERVICES
 

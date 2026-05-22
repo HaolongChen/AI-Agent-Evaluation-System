@@ -4,7 +4,6 @@ import {
   CopilotInputEvent,
   CopilotJobEntity,
 } from "../domain/entity/copilot-job.entity.ts";
-import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { runToolCalls } from "./tool-call-handler.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
@@ -21,17 +20,15 @@ export class SessionOrchestrator {
   private static readonly SESSION_TIMEOUT_MS = 2 * 60 * 1000;
   constructor(
     private readonly runner: ExecutionJobRunnerV2,
-    private readonly job: CopilotJobEntity,
-    private readonly goldenSetId: string,
-    private readonly userInputId: string,
+    private job: CopilotJobEntity,
   ) {}
 
   /**
    * Start listening for session events. Returns a promise that resolves
-   * with the CopilotOutputEntity when editable text is received, or rejects
+   * with the CopilotJobEntity when editable text is received, or rejects
    * on error/timeout.
    */
-  async run(): Promise<CopilotOutputEntity> {
+  async run(): Promise<CopilotJobEntity> {
     const { publish, listen } = this.runner.execute();
     let rejectFunction: (error: unknown) => void;
 
@@ -39,14 +36,14 @@ export class SessionOrchestrator {
       rejectFunction(new Error("Session timeout"));
     }, SessionOrchestrator.SESSION_TIMEOUT_MS);
 
-    return new Promise<CopilotOutputEntity>((resolve, reject) => {
+    return new Promise<CopilotJobEntity>((resolve, reject) => {
       rejectFunction = reject;
 
       listen("CopilotEditableTextMessage", (event) => {
         this.job.editableText = event.data.content;
         publish(new CopilotInputEvent("TERMINATE", {}));
         clearTimeout(timer);
-        resolve(this.jobToOutput());
+        resolve(this.job);
       });
 
       listen("CopilotToolCallBatchMessage", (event) => {
@@ -139,19 +136,6 @@ export class SessionOrchestrator {
           }),
         );
       });
-    });
-  }
-
-  private jobToOutput(): CopilotOutputEntity {
-    if (!this.job.editableText) {
-      throw new Error(
-        "Copilot job has not produced editable text or has not terminated yet.",
-      );
-    }
-    return new CopilotOutputEntity({
-      goldenSetId: this.goldenSetId,
-      userInputId: this.userInputId,
-      content: this.job.editableText,
     });
   }
 }

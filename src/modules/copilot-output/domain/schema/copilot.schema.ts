@@ -14,6 +14,7 @@ import {
 
 export const copilotJobSchema = z.object({
   projectExId: z.string(),
+  copilotSessionExId: z.string(),
   wsUrl: z.url(),
   query: z.string(),
   schemaGraph: z.any(),

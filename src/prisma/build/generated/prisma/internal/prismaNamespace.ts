@@ -1389,6 +1389,7 @@ export const CopilotOutputScalarFieldEnum = {
   goldenSetId: 'goldenSetId',
   userInputId: 'userInputId',
   content: 'content',
+  copilotSessionExId: 'copilotSessionExId',
   createdAt: 'createdAt'
 } as const
 

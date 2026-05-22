@@ -44,9 +44,6 @@ export const goldenSetResolver = {
       const userInput = await repository.userInputRepository.findById(
         arguments_.id,
       );
-      if (!userInput) {
-        throw new GraphQLError(`UserInput with id ${arguments_.id} not found`);
-      }
       const json = userInput.toJSON();
       return {
         ...json,
@@ -74,9 +71,6 @@ export const goldenSetResolver = {
       const goldenSet = await repository.goldenSetRepository.findById(
         arguments_.id,
       );
-      if (!goldenSet) {
-        throw new GraphQLError(`GoldenSet with id ${arguments_.id} not found`);
-      }
       const json = goldenSet.toJSON();
       return {
         ...json,

@@ -110,6 +110,7 @@ type CopilotOutput {
   userInputId: String!
   "The copilot's generated output content"
   content: String!
+  copilotSessionExId: String!
   "Timestamp when output was captured"
   createdAt: String!
 }

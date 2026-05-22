@@ -185,7 +185,7 @@ const IMPORT_PROJECT_SCHEMA_MANUAL = gql`
   }
 `;
 
-export type AfCustomCodeTemplate = Exclude<
+export type AfCustomCodeTemplates = Exclude<
   ExtractArray<
     Exclude<AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"], null>
   >,
@@ -212,7 +212,7 @@ export class TypeSystemStore {
   private schema: object | null = null;
   private crdtSchemaModel: string | null = null;
   private appDetail: FetchAppDetailByExIdQuery["fetchAppDetailByExId"] = null;
-  public afCustomCodeTemplates: AfCustomCodeTemplate = [];
+  public afCustomCodeTemplates: AfCustomCodeTemplates = [];
   public supportedCustomModelDescriptor: SupportedCustomModelDescriptor = null;
 
   get schemaGraph(): OpaqueSchemaGraph | null {
@@ -314,28 +314,7 @@ export class TypeSystemStore {
     }
   }
 
-  async updateAccount() {
-    if (this.appDetail?.__typename === "Project") {
-      // if (this.appDetail.adminToken)
-      //   this.account.setAccessToken(this.appDetail.adminToken);
-      if (this.appDetail.zeroUrl)
-        await this.account.getGQLClient(this.appDetail.zeroUrl);
-      if (this.appDetail.zeroSubscriptionUrl)
-        await this.account.getWsClient(this.appDetail.zeroSubscriptionUrl);
-    }
-  }
-
-  async getAFCustomCodeTemplates(): Promise<
-    Exclude<
-      ExtractArray<
-        Exclude<
-          AfCustomCodeTemplatesQuery["visibleAfCustomCodeTemplates"],
-          null
-        >
-      >,
-      null
-    >[]
-  > {
+  async getAFCustomCodeTemplates(): Promise<AfCustomCodeTemplates> {
     try {
       if (this.afCustomCodeTemplates.length > 0)
         return this.afCustomCodeTemplates;

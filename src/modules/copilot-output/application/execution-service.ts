@@ -7,6 +7,7 @@ import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { createNewSession } from "../infrastructure/copilot-network.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
+import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 
 export class ExecuteCopilotUseCase {
   constructor(
@@ -33,9 +34,13 @@ export class ExecuteCopilotUseCase {
         projectName,
         goldenSetEntity.data.schemaId,
       );
+    const gqlClient = await this.account.getGQLClient();
+
+    const copilotSessionExId = await createNewSession(projectExId, gqlClient);
 
     return new CopilotJobEntity({
       projectExId,
+      copilotSessionExId,
       query: userInputEntity.data.content,
       wsUrl: process.env.SUBSCRIPTION_GRAPHQL_URL,
       schemaGraph,
@@ -54,23 +59,23 @@ export class ExecuteCopilotUseCase {
       goldenSetId,
       userInputId,
     );
-    const gqlClient = await this.account.getGQLClient();
     const wsClient = await this.account.getWsClient();
+    const gqlClient = await this.account.getGQLClient();
     try {
-      const sessionExId = await createNewSession(
-        copilotJobEntity.data.projectExId,
+      const runner = new ExecutionJobRunnerV2(
+        copilotJobEntity.data.copilotSessionExId,
+        wsClient,
         gqlClient,
       );
-      const runner = new ExecutionJobRunnerV2(sessionExId, wsClient, gqlClient);
-      const orchestrator = new SessionOrchestrator(
-        runner,
-        copilotJobEntity,
+      const orchestrator = new SessionOrchestrator(runner, copilotJobEntity);
+      const result = await orchestrator.run();
+      const copilotOutputEntity = this.jobEntityToOutputEntity(
+        result,
         goldenSetId,
         userInputId,
       );
-      const result = await orchestrator.run();
-      await this.repository.copilotOutputRepository.save(result);
-      return result.toJSON();
+      await this.repository.copilotOutputRepository.save(copilotOutputEntity);
+      return copilotOutputEntity.toJSON();
     } catch (error) {
       logger.error("Error setting up copilot execution environment:", error);
       this.account.clearWsClient();
@@ -78,5 +83,23 @@ export class ExecuteCopilotUseCase {
     } finally {
       await this.projectLifecycle.deleteTemporaryProject();
     }
+  }
+
+  private jobEntityToOutputEntity(
+    jobEntity: CopilotJobEntity,
+    goldenSetId: string,
+    userInputId: string,
+  ): CopilotOutputEntity {
+    if (!jobEntity.editableText) {
+      throw new Error(
+        "Editable text is empty, cannot create CopilotOutputEntity",
+      );
+    }
+    return new CopilotOutputEntity({
+      goldenSetId,
+      userInputId,
+      content: jobEntity.editableText,
+      copilotSessionExId: jobEntity.data.copilotSessionExId,
+    });
   }
 }

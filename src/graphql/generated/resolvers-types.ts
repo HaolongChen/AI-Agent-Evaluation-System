@@ -44,6 +44,7 @@ export type CopilotOutput = {
   __typename: "CopilotOutput";
   /** The copilot's generated output content */
   content: Scalars["String"]["output"];
+  copilotSessionExId: Scalars["String"]["output"];
   /** Timestamp when output was captured */
   createdAt: Scalars["String"]["output"];
   /** Parent golden set ID */
@@ -521,6 +522,11 @@ export type CopilotOutputResolvers<
     ResolversParentTypes["CopilotOutput"],
 > = ResolversObject<{
   content: Resolver<ResolversTypes["String"], ParentType, ContextType>;
+  copilotSessionExId: Resolver<
+    ResolversTypes["String"],
+    ParentType,
+    ContextType
+  >;
   createdAt: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   goldenSetId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;

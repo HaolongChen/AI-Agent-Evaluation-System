@@ -28,6 +28,7 @@ export type GoldenSetMinAggregateOutputType = {
   id: string | null
   schemaId: string | null
   projectExId: string | null
+  projectName: string | null
   copilotType: $Enums.CopilotType | null
   modelName: string | null
   updatedAt: Date | null
@@ -37,6 +38,7 @@ export type GoldenSetMaxAggregateOutputType = {
   id: string | null
   schemaId: string | null
   projectExId: string | null
+  projectName: string | null
   copilotType: $Enums.CopilotType | null
   modelName: string | null
   updatedAt: Date | null
@@ -46,6 +48,7 @@ export type GoldenSetCountAggregateOutputType = {
   id: number
   schemaId: number
   projectExId: number
+  projectName: number
   copilotType: number
   modelName: number
   updatedAt: number
@@ -57,6 +60,7 @@ export type GoldenSetMinAggregateInputType = {
   id?: true
   schemaId?: true
   projectExId?: true
+  projectName?: true
   copilotType?: true
   modelName?: true
   updatedAt?: true
@@ -66,6 +70,7 @@ export type GoldenSetMaxAggregateInputType = {
   id?: true
   schemaId?: true
   projectExId?: true
+  projectName?: true
   copilotType?: true
   modelName?: true
   updatedAt?: true
@@ -75,6 +80,7 @@ export type GoldenSetCountAggregateInputType = {
   id?: true
   schemaId?: true
   projectExId?: true
+  projectName?: true
   copilotType?: true
   modelName?: true
   updatedAt?: true
@@ -157,6 +163,7 @@ export type GoldenSetGroupByOutputType = {
   id: string
   schemaId: string
   projectExId: string | null
+  projectName: string | null
   copilotType: $Enums.CopilotType
   modelName: string
   updatedAt: Date
@@ -187,6 +194,7 @@ export type goldenSetWhereInput = {
   id?: Prisma.StringFilter<"goldenSet"> | string
   schemaId?: Prisma.StringFilter<"goldenSet"> | string
   projectExId?: Prisma.StringNullableFilter<"goldenSet"> | string | null
+  projectName?: Prisma.StringNullableFilter<"goldenSet"> | string | null
   copilotType?: Prisma.EnumCopilotTypeFilter<"goldenSet"> | $Enums.CopilotType
   modelName?: Prisma.StringFilter<"goldenSet"> | string
   updatedAt?: Prisma.DateTimeFilter<"goldenSet"> | Date | string
@@ -197,6 +205,7 @@ export type goldenSetOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   schemaId?: Prisma.SortOrder
   projectExId?: Prisma.SortOrderInput | Prisma.SortOrder
+  projectName?: Prisma.SortOrderInput | Prisma.SortOrder
   copilotType?: Prisma.SortOrder
   modelName?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -211,6 +220,7 @@ export type goldenSetWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.goldenSetWhereInput | Prisma.goldenSetWhereInput[]
   schemaId?: Prisma.StringFilter<"goldenSet"> | string
   projectExId?: Prisma.StringNullableFilter<"goldenSet"> | string | null
+  projectName?: Prisma.StringNullableFilter<"goldenSet"> | string | null
   copilotType?: Prisma.EnumCopilotTypeFilter<"goldenSet"> | $Enums.CopilotType
   modelName?: Prisma.StringFilter<"goldenSet"> | string
   updatedAt?: Prisma.DateTimeFilter<"goldenSet"> | Date | string
@@ -221,6 +231,7 @@ export type goldenSetOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   schemaId?: Prisma.SortOrder
   projectExId?: Prisma.SortOrderInput | Prisma.SortOrder
+  projectName?: Prisma.SortOrderInput | Prisma.SortOrder
   copilotType?: Prisma.SortOrder
   modelName?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -236,6 +247,7 @@ export type goldenSetScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"goldenSet"> | string
   schemaId?: Prisma.StringWithAggregatesFilter<"goldenSet"> | string
   projectExId?: Prisma.StringNullableWithAggregatesFilter<"goldenSet"> | string | null
+  projectName?: Prisma.StringNullableWithAggregatesFilter<"goldenSet"> | string | null
   copilotType?: Prisma.EnumCopilotTypeWithAggregatesFilter<"goldenSet"> | $Enums.CopilotType
   modelName?: Prisma.StringWithAggregatesFilter<"goldenSet"> | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"goldenSet"> | Date | string
@@ -245,6 +257,7 @@ export type goldenSetCreateInput = {
   id?: string
   schemaId: string
   projectExId?: string | null
+  projectName?: string | null
   copilotType?: $Enums.CopilotType
   modelName?: string
   updatedAt?: Date | string
@@ -255,6 +268,7 @@ export type goldenSetUncheckedCreateInput = {
   id?: string
   schemaId: string
   projectExId?: string | null
+  projectName?: string | null
   copilotType?: $Enums.CopilotType
   modelName?: string
   updatedAt?: Date | string
@@ -265,6 +279,7 @@ export type goldenSetUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schemaId?: Prisma.StringFieldUpdateOperationsInput | string
   projectExId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  projectName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copilotType?: Prisma.EnumCopilotTypeFieldUpdateOperationsInput | $Enums.CopilotType
   modelName?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -275,6 +290,7 @@ export type goldenSetUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schemaId?: Prisma.StringFieldUpdateOperationsInput | string
   projectExId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  projectName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copilotType?: Prisma.EnumCopilotTypeFieldUpdateOperationsInput | $Enums.CopilotType
   modelName?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -285,6 +301,7 @@ export type goldenSetCreateManyInput = {
   id?: string
   schemaId: string
   projectExId?: string | null
+  projectName?: string | null
   copilotType?: $Enums.CopilotType
   modelName?: string
   updatedAt?: Date | string
@@ -294,6 +311,7 @@ export type goldenSetUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schemaId?: Prisma.StringFieldUpdateOperationsInput | string
   projectExId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  projectName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copilotType?: Prisma.EnumCopilotTypeFieldUpdateOperationsInput | $Enums.CopilotType
   modelName?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -303,6 +321,7 @@ export type goldenSetUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schemaId?: Prisma.StringFieldUpdateOperationsInput | string
   projectExId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  projectName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copilotType?: Prisma.EnumCopilotTypeFieldUpdateOperationsInput | $Enums.CopilotType
   modelName?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -318,6 +337,7 @@ export type goldenSetCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schemaId?: Prisma.SortOrder
   projectExId?: Prisma.SortOrder
+  projectName?: Prisma.SortOrder
   copilotType?: Prisma.SortOrder
   modelName?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -327,6 +347,7 @@ export type goldenSetMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schemaId?: Prisma.SortOrder
   projectExId?: Prisma.SortOrder
+  projectName?: Prisma.SortOrder
   copilotType?: Prisma.SortOrder
   modelName?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -336,6 +357,7 @@ export type goldenSetMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   schemaId?: Prisma.SortOrder
   projectExId?: Prisma.SortOrder
+  projectName?: Prisma.SortOrder
   copilotType?: Prisma.SortOrder
   modelName?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -380,6 +402,7 @@ export type goldenSetCreateWithoutUserInputsInput = {
   id?: string
   schemaId: string
   projectExId?: string | null
+  projectName?: string | null
   copilotType?: $Enums.CopilotType
   modelName?: string
   updatedAt?: Date | string
@@ -389,6 +412,7 @@ export type goldenSetUncheckedCreateWithoutUserInputsInput = {
   id?: string
   schemaId: string
   projectExId?: string | null
+  projectName?: string | null
   copilotType?: $Enums.CopilotType
   modelName?: string
   updatedAt?: Date | string
@@ -414,6 +438,7 @@ export type goldenSetUpdateWithoutUserInputsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schemaId?: Prisma.StringFieldUpdateOperationsInput | string
   projectExId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  projectName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copilotType?: Prisma.EnumCopilotTypeFieldUpdateOperationsInput | $Enums.CopilotType
   modelName?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -423,6 +448,7 @@ export type goldenSetUncheckedUpdateWithoutUserInputsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schemaId?: Prisma.StringFieldUpdateOperationsInput | string
   projectExId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  projectName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   copilotType?: Prisma.EnumCopilotTypeFieldUpdateOperationsInput | $Enums.CopilotType
   modelName?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -463,6 +489,7 @@ export type goldenSetSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   id?: boolean
   schemaId?: boolean
   projectExId?: boolean
+  projectName?: boolean
   copilotType?: boolean
   modelName?: boolean
   updatedAt?: boolean
@@ -474,6 +501,7 @@ export type goldenSetSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   id?: boolean
   schemaId?: boolean
   projectExId?: boolean
+  projectName?: boolean
   copilotType?: boolean
   modelName?: boolean
   updatedAt?: boolean
@@ -483,6 +511,7 @@ export type goldenSetSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   id?: boolean
   schemaId?: boolean
   projectExId?: boolean
+  projectName?: boolean
   copilotType?: boolean
   modelName?: boolean
   updatedAt?: boolean
@@ -492,12 +521,13 @@ export type goldenSetSelectScalar = {
   id?: boolean
   schemaId?: boolean
   projectExId?: boolean
+  projectName?: boolean
   copilotType?: boolean
   modelName?: boolean
   updatedAt?: boolean
 }
 
-export type goldenSetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schemaId" | "projectExId" | "copilotType" | "modelName" | "updatedAt", ExtArgs["result"]["goldenSet"]>
+export type goldenSetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schemaId" | "projectExId" | "projectName" | "copilotType" | "modelName" | "updatedAt", ExtArgs["result"]["goldenSet"]>
 export type goldenSetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   userInputs?: boolean | Prisma.goldenSet$userInputsArgs<ExtArgs>
   _count?: boolean | Prisma.GoldenSetCountOutputTypeDefaultArgs<ExtArgs>
@@ -514,6 +544,7 @@ export type $goldenSetPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     id: string
     schemaId: string
     projectExId: string | null
+    projectName: string | null
     copilotType: $Enums.CopilotType
     modelName: string
     updatedAt: Date
@@ -944,6 +975,7 @@ export interface goldenSetFieldRefs {
   readonly id: Prisma.FieldRef<"goldenSet", 'String'>
   readonly schemaId: Prisma.FieldRef<"goldenSet", 'String'>
   readonly projectExId: Prisma.FieldRef<"goldenSet", 'String'>
+  readonly projectName: Prisma.FieldRef<"goldenSet", 'String'>
   readonly copilotType: Prisma.FieldRef<"goldenSet", 'CopilotType'>
   readonly modelName: Prisma.FieldRef<"goldenSet", 'String'>
   readonly updatedAt: Prisma.FieldRef<"goldenSet", 'DateTime'>

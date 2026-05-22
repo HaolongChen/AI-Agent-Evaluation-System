@@ -33,7 +33,7 @@ type Mutation {
 
   submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
 
-  createProject(number: Int!): String!
+  createProject(projectName: String): GoldenSet!
   runCrdtTest(number: Int!): String
 
   deleteProject(projectExId: String!): Boolean!

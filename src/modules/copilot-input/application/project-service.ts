@@ -76,7 +76,9 @@ export class ProjectService {
     return typeSystemStore;
   }
 
-  async importProjectBySchemaManager(schemaManager: TypeSystemStore) {
+  async importProjectBySchemaManager(
+    schemaManager: TypeSystemStore,
+  ): Promise<ProjectEntity> {
     const projectName = schemaManager.getProjectName();
     const projectExId = schemaManager.getProjectExId();
     const schemaId = schemaManager.getSchemaId();

@@ -85,6 +85,7 @@ export const GoldenSetScalarFieldEnum = {
   id: 'id',
   schemaId: 'schemaId',
   projectExId: 'projectExId',
+  projectName: 'projectName',
   copilotType: 'copilotType',
   modelName: 'modelName',
   updatedAt: 'updatedAt'

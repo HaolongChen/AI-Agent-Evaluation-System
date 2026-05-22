@@ -3,10 +3,10 @@ import { repository } from "../../DI/repository.ts";
 import { CreateGoldenSetUseCase } from "../../modules/copilot-input/application/create-golden-set.ts";
 import { CreateUserInputUseCase } from "../../modules/copilot-input/application/create-user-input.ts";
 import { FormCopilotInputUseCase } from "../../modules/copilot-input/application/form-copilot-input.ts";
-import { ProjectService } from "../../modules/copilot-input/application/project-service.ts";
 import {
   CopilotType,
   type GoldenSet,
+  type MutationCreateProjectArgs as MutationCreateProjectArguments,
   type MutationCreateUserInputArgs as MutationCreateUserInputArguments,
   type MutationDeleteProjectArgs as MutationDeleteProjectArguments,
   type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
@@ -149,25 +149,39 @@ export const goldenSetResolver = {
 
     createProject: async (
       _: unknown,
-      arguments_: { number: number },
-    ): Promise<string> => {
-      let results: string = "";
-      const projectNames: string[] = [];
-      for (let index = 0; index < arguments_.number; index++) {
-        projectNames.push("AI-EVAL-" + Date.now() + "-" + index);
-      }
-      await Promise.all(
-        projectNames.map(async (projectName) => {
-          const projectService = new ProjectService(
-            await getMyAccount(),
-            repository.projectRepository,
-            projectName,
-          );
-          const project = await projectService.createProject();
-          results += JSON.stringify(project) + "\n";
-        }),
+      arguments_: MutationCreateProjectArguments,
+    ): Promise<GoldenSet> => {
+      const projectLifecycle = new ProjectLifecycleAdapter(
+        await getMyAccount(),
+        repository.projectRepository,
       );
-      return results;
+      await projectLifecycle.createTemporaryProject(
+        arguments_.projectName ?? `temp-project-${Date.now()}`,
+      );
+      const projectService = projectLifecycle.projectService;
+      const schemaManager = projectService?.getSchemaManager();
+      const schemaId = schemaManager?.getSchemaId();
+      if (!schemaId) {
+        throw new Error("Failed to create project: schema ID is undefined");
+      }
+      const projectName = schemaManager?.getProjectName();
+      const projectExId = schemaManager?.getProjectExId();
+
+      const createGoldenSetUseCase = new CreateGoldenSetUseCase(
+        repository.goldenSetRepository,
+      );
+      const goldenSet = await createGoldenSetUseCase.execute(
+        schemaId,
+        CopilotType.DataModelBuilder,
+        "unknown",
+        projectExId,
+        projectName,
+      );
+      return {
+        ...goldenSet,
+        copilotType: copilotTypeMapper[goldenSet.copilotType],
+        __typename: "GoldenSet",
+      };
     },
     deleteProject: async (
       _: unknown,

@@ -3810,7 +3810,7 @@ type Mutation {
     name: String!
     superAdminAccountExId: String!
   ): Organization!
-  createProject(number: Int!): String!
+  createProject(projectName: String): GoldenSet!
   createProjectComment(
     appExId: String
     content: String!

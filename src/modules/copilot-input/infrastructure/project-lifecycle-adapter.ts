@@ -5,7 +5,7 @@ import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-syste
 import { ProjectService } from "../application/project-service.ts";
 
 export class ProjectLifecycleAdapter implements IProjectLifecycle {
-  private projectService: ProjectService | undefined;
+  public projectService: ProjectService | undefined;
 
   constructor(
     private readonly account: Account,

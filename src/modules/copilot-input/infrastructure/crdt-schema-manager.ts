@@ -219,6 +219,22 @@ export class TypeSystemStore {
     return this.currSchemaGraph;
   }
 
+  getProjectExId(): string {
+    if (this.appDetail) {
+      return this.appDetail.projectExId;
+    }
+    throw new Error("App detail is not loaded, cannot get projectExId");
+  }
+
+  getProjectName(): string {
+    if (this.appDetail) {
+      return this.appDetail.__typename === "Project"
+        ? this.appDetail.projectName
+        : this.appDetail.name;
+    }
+    throw new Error("App detail is not loaded, cannot get project name");
+  }
+
   constructor(
     private account: Account,
     private projectExId: string,

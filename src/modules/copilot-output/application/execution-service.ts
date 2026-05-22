@@ -23,7 +23,6 @@ export class ExecuteCopilotUseCase {
   async setupEnvironment(
     goldenSetId: string,
     userInputId: string,
-    legacy: boolean = false,
   ): Promise<CopilotJobEntity> {
     const { goldenSetEntity, userInputEntity } =
       await this.repository.goldenSetRepository.getCopilotInputByGoldenSetIdAndUserInputId(
@@ -41,14 +40,7 @@ export class ExecuteCopilotUseCase {
     return new CopilotJobEntity({
       projectExId,
       query: userInputEntity.data.content,
-      wsUrl: legacy
-        ? buildCopilotExecutionUrl(
-            process.env.BACKEND_GRAPHQL_URL,
-            projectExId,
-            this.account.accessToken,
-            "copilot-output",
-          )
-        : process.env.SUBSCRIPTION_GRAPHQL_URL,
+      wsUrl: process.env.SUBSCRIPTION_GRAPHQL_URL,
       schemaGraph,
     });
   }
@@ -88,17 +80,8 @@ export class ExecuteCopilotUseCase {
       throw error;
     } finally {
       if (this.projectExId) {
-        await this.projectLifecycle.deleteTemporaryProject(this.projectExId);
+        await this.projectLifecycle.deleteTemporaryProject();
       }
     }
   }
 }
-
-export const buildCopilotExecutionUrl = (
-  hostname: string,
-  projectExId: string,
-  userToken: string,
-  clientType: string,
-): string => {
-  return `${hostname}projectExId=${projectExId}&userToken=${userToken}&clientType=${clientType}`;
-};

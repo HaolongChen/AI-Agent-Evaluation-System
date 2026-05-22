@@ -12,9 +12,17 @@ export class ProjectLifecycleAdapter implements IProjectLifecycle {
     private readonly repository: IProjectRepository,
   ) {}
 
+  async importExistingProject(projectExId: string) {
+    const projectService = new ProjectService(this.account, this.repository);
+    projectService.importProjectBySchemaManager(
+      await projectService.getProjectInZion(projectExId),
+    );
+    this.projectService = projectService;
+  }
+
   async createTemporaryProject(
     projectName: string,
-    initialSchemaId: string,
+    initialSchemaId?: string,
   ): Promise<{ projectExId: string; schemaGraph: OpaqueSchemaGraph }> {
     this.projectService = new ProjectService(
       this.account,
@@ -33,7 +41,7 @@ export class ProjectLifecycleAdapter implements IProjectLifecycle {
     };
   }
 
-  async deleteTemporaryProject(projectExId: string): Promise<void> {
+  async deleteTemporaryProject(): Promise<void> {
     if (!this.projectService) {
       return;
     }

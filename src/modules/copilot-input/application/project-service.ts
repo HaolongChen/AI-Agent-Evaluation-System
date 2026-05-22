@@ -9,10 +9,7 @@ import type {
   DeleteProjectMutation,
   DeleteProjectMutationVariables,
 } from "../../../graphql/generated/types.ts";
-import type {
-  IProjectRepository,
-  ProjectIdentifiers,
-} from "../domain/interface/project.interface.ts";
+import type { IProjectRepository } from "../domain/interface/project.interface.ts";
 import { ProjectEntity } from "../domain/entity/project.entity.ts";
 import { TypeSystemStore } from "../infrastructure/crdt-schema-manager.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
@@ -56,29 +53,54 @@ export class ProjectService {
       projectExId,
       projectName: this.projectName,
     });
-    this.schemaManager = new TypeSystemStore(this.account, projectExId);
-    await this.schemaManager.fetchAppDetailByExId();
+    const schemaManager = await this.getProjectInZion(projectExId);
     if (this.initialSchemaId) {
-      await this.schemaManager.importSchemaManual(this.initialSchemaId);
+      await schemaManager.importSchemaManual(this.initialSchemaId);
     }
-    const schemaId = this.schemaManager.getSchemaId();
     try {
-      this.projectEntity = new ProjectEntity({
-        projectExId,
-        name: this.projectName,
-        schemaId,
-        createdBy: this.account.exId!,
-      });
-      await this.repository.save(this.projectEntity);
-      return this.projectEntity;
+      return this.importProjectBySchemaManager(schemaManager);
     } catch (error) {
       logger.error("Error during project creation, attempting cleanup", {
         error,
         projectExId,
       });
+      // TODO: move the error handling to importProjectBySchemaManager after we support import project by schema manager
       await this.deleteProjectInDatabase();
       throw error;
     }
+  }
+
+  async getProjectInZion(projectExId: string): Promise<TypeSystemStore> {
+    const typeSystemStore = new TypeSystemStore(this.account, projectExId);
+    await typeSystemStore.fetchAppDetailByExId();
+    return typeSystemStore;
+  }
+
+  async importProjectBySchemaManager(schemaManager: TypeSystemStore) {
+    const projectName = schemaManager.getProjectName();
+    const projectExId = schemaManager.getProjectExId();
+    const schemaId = schemaManager.getSchemaId();
+    const projectEntity = new ProjectEntity({
+      projectExId,
+      name: projectName,
+      schemaId,
+      createdBy: this.account.exId!,
+    });
+    try {
+      // TODO: check duplication before save
+      await this.repository.save(projectEntity);
+    } catch (error) {
+      logger.warn(
+        "Failed to save project entity to database, attempting cleanup",
+        {
+          error,
+          projectExId,
+        },
+      );
+    }
+    this.projectEntity = projectEntity;
+    this.schemaManager = schemaManager;
+    return projectEntity;
   }
 
   async deleteProject(): Promise<void> {
@@ -105,30 +127,28 @@ export class ProjectService {
     });
   }
 
-  async getProject<T extends ProjectIdentifiers>(
-    identifier: T,
-    id: string,
-  ): Promise<ProjectEntity> {
-    this.projectEntity = await this.repository.getByUniqueField(identifier, id);
-    return this.projectEntity;
-  }
-
   async deleteProjectInDatabase(): Promise<void> {
     let project: ProjectEntity | undefined;
     if (this.schemaManager) {
-      project = await this.getProject(
+      project = await this.repository.getByUniqueField(
         "schemaId",
         this.schemaManager.getSchemaId(),
       );
     } else if (this.projectEntity?.id) {
-      project = await this.getProject("id", this.projectEntity.id);
+      project = await this.repository.getByUniqueField(
+        "id",
+        this.projectEntity.id,
+      );
     } else if (this.projectEntity?.data.projectExId) {
-      project = await this.getProject(
+      project = await this.repository.getByUniqueField(
         "projectExId",
         this.projectEntity.data.projectExId,
       );
     } else if (this.projectName) {
-      project = await this.getProject("name", this.projectName);
+      project = await this.repository.getByUniqueField(
+        "name",
+        this.projectName,
+      );
     } else {
       throw new Error(
         "Cannot determine project to delete, no identifiers available",

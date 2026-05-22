@@ -1,4 +1,3 @@
-import type { PrismaClient } from "../prisma/build/generated/prisma/client.ts";
 import type { IGoldenSetRepository } from "../modules/copilot-input/domain/interface/golden-set.interface.ts";
 import type { IProjectRepository } from "../modules/copilot-input/domain/interface/project.interface.ts";
 import type { IUserInputRepository } from "../modules/copilot-input/domain/interface/user-input.interface.ts";

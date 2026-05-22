@@ -3,8 +3,10 @@ import type { OpaqueSchemaGraph } from "../../../shared/domain/interface/type-sy
 export interface IProjectLifecycle {
   createTemporaryProject(
     projectName: string,
-    initialSchemaId: string,
+    initialSchemaId?: string,
   ): Promise<{ projectExId: string; schemaGraph: OpaqueSchemaGraph }>;
 
-  deleteTemporaryProject(projectExId: string): Promise<void>;
+  importExistingProject(projectExId: string): Promise<void>;
+
+  deleteTemporaryProject(): Promise<void>;
 }

@@ -25,6 +25,7 @@ import type {
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
 import { logger } from "../../modules/shared/infrastructure/logger.ts";
+import { ProjectLifecycleAdapter } from "../../modules/copilot-input/infrastructure/project-lifecycle-adapter.ts";
 
 const copilotTypeMapper = {
   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -178,19 +179,12 @@ export const goldenSetResolver = {
       _: unknown,
       arguments_: MutationDeleteProjectArguments,
     ): Promise<boolean> => {
-      const projectExId = arguments_.projectExId;
-      const projectService = new ProjectService(
+      const projectLifecycle = new ProjectLifecycleAdapter(
         myAccount,
         repository.projectRepository,
       );
-      const project = await projectService.getProject(
-        "projectExId",
-        projectExId,
-      );
-      if (!project) {
-        throw new GraphQLError(`Project with exId ${projectExId} not found`);
-      }
-      await projectService.deleteProject();
+      await projectLifecycle.importExistingProject(arguments_.projectExId);
+      await projectLifecycle.deleteTemporaryProject();
       return true;
     },
     runCrdtTest: async (

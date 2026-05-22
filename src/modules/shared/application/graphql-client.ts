@@ -43,13 +43,10 @@ export class NetworkClient {
           reconnect: true,
           reconnectionAttempts: 1,
           connectionParams: {
-            // authentication: this._headers[ "Authorization" ],
-            // ...this._headers,
             authToken: this._headers["Authorization"].split(" ")?.[1] || "",
             "X-ZED-VERSION": this._headers["X-Zed-Version"] || "",
             "X-SESSION-ID": this._headers["X-Session-Id"] || "",
           },
-
           lazy: true,
         },
         wsImpl,
@@ -126,9 +123,6 @@ export class GQLClient {
     document: string,
     variables: TVariables,
   ): Promise<TData>;
-  // Implementation signature — uses `unknown` to bypass the VariablesAndRequestHeadersArgs
-  // conditional-type constraint that TypeScript cannot resolve for generic TVariables.
-  // The two public overloads above enforce correct typing for all callers.
   async gqlRequest<TData>(
     document: string,
     variables?: unknown,
@@ -174,9 +168,9 @@ export interface SubscriptionHandlers<TData> {
 //     MY_SUBSCRIPTION,
 //     { id: '123' },
 //     {
-//       next:     (data)  => console.info('event', data),
-//       error:    (err)   => console.error('sub error', err),
-//       complete: ()      => console.info('done'),
+//       next:     (data)  => logger.info('event', data),
+//       error:    (err)   => logger.error('sub error', err),
+//       complete: ()      => logger.info('done'),
 //     },
 //   );
 //

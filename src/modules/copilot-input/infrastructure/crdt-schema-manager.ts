@@ -22,6 +22,7 @@ import type {
 } from "../../../graphql/generated/types.ts";
 import type { Account } from "../../account/application/account-handler.ts";
 import { dangerousAccount } from "../../../DI/account.ts";
+import { logger } from "../../shared/infrastructure/logger.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -226,11 +227,11 @@ export class TypeSystemStore {
   simpleSchemaIdValidation(schemaId: string): boolean {
     // Simple validation to check if the schemaId is a non-empty string
     if (schemaId.trim().length === 0) {
-      console.error("Invalid schemaId: Schema ID cannot be an empty string.");
+      logger.error("Invalid schemaId: Schema ID cannot be an empty string.");
       return false;
     }
     if (!/^[0-9]+$/.test(schemaId)) {
-      console.error("Invalid schemaId: Schema ID must be a numeric string.");
+      logger.error("Invalid schemaId: Schema ID must be a numeric string.");
       return false;
     }
     return true;
@@ -256,7 +257,7 @@ export class TypeSystemStore {
       throw new Error("Failed to import project schema using CRDT model");
     }
 
-    console.log(
+    logger.info(
       "Successfully imported project schema using CRDT model with response:",
       mutationData.importProjectSchemaManual,
     );
@@ -292,7 +293,7 @@ export class TypeSystemStore {
 
       this.appDetail = data.fetchAppDetailByExId;
     } catch (error) {
-      console.error("Error fetching app detail:", error);
+      logger.error("Error fetching app detail:", error);
       throw error;
     }
   }
@@ -334,7 +335,7 @@ export class TypeSystemStore {
       );
       return this.afCustomCodeTemplates;
     } catch (error) {
-      console.error("Error fetching AF custom code templates:", error);
+      logger.error("Error fetching AF custom code templates:", error);
       throw error;
     }
   }
@@ -355,7 +356,7 @@ export class TypeSystemStore {
         SupportedCustomModelDescriptor.supportedCustomModelDescriptor;
       return this.supportedCustomModelDescriptor;
     } catch (error) {
-      console.error("Error fetching supported custom model descriptor:", error);
+      logger.error("Error fetching supported custom model descriptor:", error);
       throw error;
     }
   }

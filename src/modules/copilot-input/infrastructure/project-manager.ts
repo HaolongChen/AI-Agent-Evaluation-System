@@ -14,6 +14,7 @@ import type {
 } from "../../../graphql/generated/types.ts";
 import type { Account } from "../../account/application/account-handler.ts";
 import type { GQLClient } from "../../shared/application/graphql-client.ts";
+import { logger } from "../../shared/infrastructure/logger.ts";
 export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
   query CheckProjectNameDuplicate($projectName: String!) {
     checkProjectNameDuplicate(projectName: $projectName)
@@ -89,21 +90,19 @@ export const createProjectSubscription = async (
   account: Account,
 ): Promise<string> => {
   const wsClient = await account.getWsClient();
-  console.log("get ws client for subscription", { taskId });
+  logger.debug("get ws client for subscription", { taskId });
   const subscribe = wsClient.gqlSubscribe<
     OnProjectCreationStatusChangedSubscription,
     OnProjectCreationStatusChangedSubscriptionVariables
   >(GQL_ON_PROJECT_CREATION_STATUS_CHANGED, { uniqueId: taskId });
-  console.log("Setting up subscription for project creation", { taskId });
+  logger.debug("Setting up subscription for project creation", { taskId });
   let unsubscribeFunction: (() => void) | undefined;
   const { promise, resolve, reject } = Promise.withResolvers<string>();
   try {
     unsubscribeFunction = subscribe({
       next: (data) => {
         if (!data.onProjectCreationStatusChanged) {
-          console.error(
-            "Received invalid subscription payload for project creation",
-          );
+          logger.error("Received invalid subscription payload for project creation");
           reject(new Error(`Invalid subscription payload for task ${taskId}`));
           return;
         }
@@ -112,13 +111,13 @@ export const createProjectSubscription = async (
           if (status === "COMPLETED" && projectExId) {
             resolve(projectExId);
           } else if (status === "PROCESSING") {
-            console.info("Project creation in progress", {
+            logger.info("Project creation in progress", {
               taskId,
               projectExId,
             });
           }
         } else {
-          console.error("Received subscription payload with missing fields", {
+          logger.error("Received subscription payload with missing fields", {
             payload: data.onProjectCreationStatusChanged,
           });
           reject(new Error(`Invalid subscription payload for task ${taskId}`));
@@ -126,7 +125,7 @@ export const createProjectSubscription = async (
         // PROCESSING → keep waiting
       },
       error: (error) => {
-        console.error("Project creation subscription error (modern)", {
+        logger.error("Project creation subscription error (modern)", {
           taskId,
           err: error,
         });
@@ -135,7 +134,7 @@ export const createProjectSubscription = async (
         );
       },
       complete: () => {
-        console.warn("Project creation subscription completed unexpectedly", {
+        logger.warn("Project creation subscription completed unexpectedly", {
           taskId,
         });
         reject(
@@ -147,10 +146,10 @@ export const createProjectSubscription = async (
     });
     return await promise;
   } catch (error) {
-    console.error("Error during project creation subscription");
+    logger.error("Error during project creation subscription");
     throw error instanceof Error ? error : new Error("Unknown error");
   } finally {
-    console.log("Cleaning up subscription for project creation", { taskId });
+    logger.debug("Cleaning up subscription for project creation", { taskId });
     unsubscribeFunction?.();
   }
 };

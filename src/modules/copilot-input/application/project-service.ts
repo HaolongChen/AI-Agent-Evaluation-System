@@ -15,6 +15,7 @@ import type {
 } from "../domain/interface/project.interface.ts";
 import { ProjectEntity } from "../domain/entity/project.entity.ts";
 import { TypeSystemStore } from "../infrastructure/crdt-schema-manager.ts";
+import { logger } from "../../shared/infrastructure/logger.ts";
 
 export class ProjectService {
 	private projectEntity: ProjectEntity | undefined;
@@ -48,12 +49,12 @@ export class ProjectService {
 			organizationExId,
 		);
 
-		console.info("Project creation task started", {
+		logger.info("Project creation task started", {
 			taskId,
 			projectName: this.projectName,
 		});
 		const projectExId = await createProjectSubscription(taskId, this.account);
-		console.log("Project creation completed", {
+		logger.info("Project creation completed", {
 			projectExId,
 			projectName: this.projectName,
 		});
@@ -73,7 +74,7 @@ export class ProjectService {
 			await this.repository.save(this.projectEntity);
 			return this.projectEntity;
 		} catch (error) {
-			console.error("Error during project creation, attempting cleanup", {
+			logger.error("Error during project creation, attempting cleanup", {
 				error,
 				projectExId,
 			});
@@ -89,7 +90,7 @@ export class ProjectService {
 			);
 		}
 		const gqlClient = await this.account.getGQLClient();
-		console.info("Deleting project", {
+		logger.info("Deleting project", {
 			projectExId: this.projectEntity.data.projectExId,
 		});
 		const isDeleted = await gqlClient.gqlRequest<
@@ -101,7 +102,7 @@ export class ProjectService {
 				`Failed to delete project with exId ${this.projectEntity.data.projectExId}`,
 			);
 		}
-		console.info("Project deleted", {
+		logger.info("Project deleted", {
 			projectExId: this.projectEntity.data.projectExId,
 		});
 	}

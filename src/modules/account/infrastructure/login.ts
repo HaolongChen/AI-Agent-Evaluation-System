@@ -6,6 +6,7 @@ import type {
   LoginWithPhoneNumberMutationVariables,
 } from "../../../graphql/generated/types.ts";
 import { publicNetworkClient } from "../../shared/application/graphql-client.ts";
+import { logger } from "../../shared/infrastructure/logger.ts";
 import type { AccountInfo } from "../domain/schema/account.schema.ts";
 
 // ---------------------------------------------------------------------------
@@ -75,7 +76,7 @@ export const login = async (
 
     return accountInfo;
   } catch (error) {
-    console.error("Error during login:", error);
+    logger.error("Error during login:", error);
     throw new Error("Failed to login", { cause: error });
   }
 };

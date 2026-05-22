@@ -5,6 +5,7 @@ import {
   type GQLClient,
   type WebSocketClient,
 } from "../../shared/application/graphql-client.ts";
+import { logger } from "../../shared/infrastructure/logger.ts";
 
 export class Account extends AccountService {
   private networkClient: NetworkClient;
@@ -17,7 +18,7 @@ export class Account extends AccountService {
     _url?: string,
     headers?: Record<string, string>,
   ) {
-    console.log("Initializing Account with phoneNumber:", phoneNumber);
+    logger.info("Initializing Account with phoneNumber:", phoneNumber);
     super(phoneNumber, password);
     this._sessionId = crypto.randomUUID();
     this.networkClient = new NetworkClient(_url, {

@@ -5,6 +5,7 @@ import {
   type Observable,
 } from "subscriptions-transport-ws";
 import type { ExecutionResult } from "graphql";
+import { logger } from "../infrastructure/logger.ts";
 export class NetworkClient {
   private _headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -42,13 +43,10 @@ export class NetworkClient {
           reconnect: true,
           reconnectionAttempts: 1,
           connectionParams: {
-            // authentication: this._headers[ "Authorization" ],
-            // ...this._headers,
             authToken: this._headers["Authorization"].split(" ")?.[1] || "",
             "X-ZED-VERSION": this._headers["X-Zed-Version"] || "",
             "X-SESSION-ID": this._headers["X-Session-Id"] || "",
           },
-
           lazy: true,
         },
         wsImpl,
@@ -60,7 +58,7 @@ export class NetworkClient {
 export const publicNetworkClient = new NetworkClient();
 export class WebSocketClient {
   constructor(private client: SubscriptionClient) {
-    // console.log("WebSocketClient initialized with SubscriptionClient:", client);
+    logger.debug("WebSocketClient initialized with SubscriptionClient:", client);
   }
 
   close() {
@@ -78,14 +76,14 @@ export class WebSocketClient {
       operationName:
         document.match(/subscription \w.*?\(/)?.[0]?.slice(13, -1) || "ERROR",
     }) as Observable<ExecutionResult<TData>>;
-    // console.log(
-    //   "Initiating GraphQL subscription with document:",
-    //   document,
-    //   "and variables:",
-    //   variables,
-    //   "Extracted operation name:",
-    //   document.match(/subscription \w.*?\(/)?.[0]?.slice(13, -1) || "ERROR",
-    // );
+    logger.debug(
+      "Initiating GraphQL subscription with document:",
+      document,
+      "and variables:",
+      variables,
+      "Extracted operation name:",
+      document.match(/subscription \w.*?\(/)?.[0]?.slice(13, -1) || "ERROR",
+    );
     return this.subscribe(observer);
   }
 
@@ -93,35 +91,25 @@ export class WebSocketClient {
     return (handlers: SubscriptionHandlers<TData>): (() => void) => {
       const { unsubscribe } = observer.subscribe({
         next: (data) => {
-          console.debug("Received data from subscription:", data);
+          logger.debug("Received data from subscription:", data);
           if (handlers.next && data.data) {
-            // console.log(
-            //   "🚀 ---------------------------------------------------------------------🚀",
-            // );
-            // console.log(
-            //   "🚀 ~ graphql-client.ts:97 ~ WebSocketClient ~ subscribe ~ data:",
-            //   data,
-            // );
-            // console.log(
-            //   "🚀 ---------------------------------------------------------------------🚀",
-            // );
             handlers.next(data.data);
           }
         },
         error: (error) => {
-          console.error("Subscription error:", error);
+          logger.error("Subscription error:", error);
           if (handlers.error) {
             handlers.error(error);
           }
         },
         complete: () => {
-          console.info("Subscription completed");
+          logger.info("Subscription completed");
           if (handlers.complete) {
             handlers.complete();
           }
         },
       });
-      console.log("Subscription started with handlers:", handlers);
+      logger.info("Subscription started with handlers:", handlers);
       return unsubscribe;
     };
   }
@@ -135,9 +123,6 @@ export class GQLClient {
     document: string,
     variables: TVariables,
   ): Promise<TData>;
-  // Implementation signature — uses `unknown` to bypass the VariablesAndRequestHeadersArgs
-  // conditional-type constraint that TypeScript cannot resolve for generic TVariables.
-  // The two public overloads above enforce correct typing for all callers.
   async gqlRequest<TData>(
     document: string,
     variables?: unknown,
@@ -152,9 +137,9 @@ export class GQLClient {
       return await this.client.request<TData>(document);
     } catch (error) {
       if (error instanceof ClientError) {
-        console.error("GraphQL error:", { errors: error.response.errors });
+        logger.error("GraphQL error:", { errors: error.response.errors });
       } else {
-        console.error("GraphQL request failed:", error);
+        logger.error("GraphQL request failed:", error);
       }
       throw error;
     }
@@ -183,9 +168,9 @@ export interface SubscriptionHandlers<TData> {
 //     MY_SUBSCRIPTION,
 //     { id: '123' },
 //     {
-//       next:     (data)  => console.info('event', data),
-//       error:    (err)   => console.error('sub error', err),
-//       complete: ()      => console.info('done'),
+//       next:     (data)  => logger.info('event', data),
+//       error:    (err)   => logger.error('sub error', err),
+//       complete: ()      => logger.info('done'),
 //     },
 //   );
 //

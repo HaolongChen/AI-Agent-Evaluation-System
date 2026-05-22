@@ -12,6 +12,7 @@ import type {
   // evaluationSessionCreateArgs as evaluationSessionCreateArguments,
   evaluationSessionFindManyArgs as evaluationSessionFindManyArguments,
 } from "../prisma/build/generated/prisma/models.ts";
+import { logger } from "../modules/shared/infrastructure/logger.ts";
 
 type EvaluationSessionWithRecords = evaluationSession & {
   evaluationRecords: evaluationRecord[];
@@ -33,7 +34,7 @@ export class AnalyticsService {
       });
       return sessions;
     } catch (error) {
-      console.error("Error fetching evaluation sessions:", error);
+      logger.error("Error fetching evaluation sessions:", error);
       throw new Error("Failed to fetch evaluation sessions");
     }
   }
@@ -52,7 +53,7 @@ export class AnalyticsService {
       }
       return session;
     } catch (error) {
-      console.error("Error fetching evaluation session by ID:", error);
+      logger.error("Error fetching evaluation session by ID:", error);
       throw new Error("Failed to fetch evaluation session by ID");
     }
   }
@@ -67,7 +68,7 @@ export class AnalyticsService {
       }
       return result;
     } catch (error) {
-      console.error("Error fetching evaluation result:", error);
+      logger.error("Error fetching evaluation result:", error);
       throw new Error("Failed to fetch evaluation result");
     }
   }
@@ -81,7 +82,7 @@ export class AnalyticsService {
       });
       return results;
     } catch (error) {
-      console.error("Error fetching evaluation results:", error);
+      logger.error("Error fetching evaluation results:", error);
       throw new Error("Failed to fetch evaluation results");
     }
   }
@@ -92,7 +93,7 @@ export class AnalyticsService {
         data: recordInput,
       });
     } catch (error) {
-      console.error("Error creating evaluation record:", error);
+      logger.error("Error creating evaluation record:", error);
       throw new Error("Failed to create evaluation record");
     }
   }
@@ -121,7 +122,7 @@ export class AnalyticsService {
 
       return session;
     } catch (error) {
-      console.error("Error creating evaluation session:", error);
+      logger.error("Error creating evaluation session:", error);
       throw new Error("Failed to create evaluation session");
     }
   }

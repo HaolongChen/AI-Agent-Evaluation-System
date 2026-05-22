@@ -24,6 +24,7 @@ import {
   SEND_MESSAGE_TO_SESSION,
 } from "../infrastructure/copilot-network.ts";
 import { Event, EventTarget } from "ts-event-target";
+import { logger } from "../../shared/infrastructure/logger.ts";
 
 export type CopilotMessageContent =
   OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content;
@@ -155,21 +156,21 @@ export class ExecutionJobRunnerV2 {
   ): SubscriptionHandlers<OnCopilotSessionUpdatesSubscription> {
     return {
       next: (data) => {
-        console.log("Received subscription data:", data);
+        logger.debug("Received subscription data:", data);
         const content = data?.onCopilotSessionUpdate?.content;
 
         if (!content) {
-          console.warn("Received session update without content", { data });
+          logger.warn("Received session update without content", { data });
           return;
         }
-        console.log(
+        logger.debug(
           "🚀 ---------------------------------------------------------------------------------🚀",
         );
-        console.log(
+        logger.debug(
           "🚀 ~ execution-job-v2.ts:140 ~ ExecutionJobRunnerV2 ~ handler ~ content:",
           content,
         );
-        console.log(
+        logger.debug(
           "🚀 ---------------------------------------------------------------------------------🚀",
         );
 
@@ -180,10 +181,10 @@ export class ExecutionJobRunnerV2 {
         publish(event);
       },
       error: (error) => {
-        console.error("Subscription error:", error);
+        logger.error("Subscription error:", error);
       },
       complete: () => {
-        console.info("Subscription completed");
+        logger.info("Subscription completed");
       },
     };
   }

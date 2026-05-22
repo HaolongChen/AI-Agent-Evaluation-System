@@ -24,6 +24,7 @@ import type {
   FixAliPayDataBindingMutation,
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
+import { logger } from "../../modules/shared/infrastructure/logger.ts";
 
 const copilotTypeMapper = {
   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -161,15 +162,13 @@ export const goldenSetResolver = {
         projectNames.push("AI-EVAL-" + Date.now() + "-" + index);
       }
       await Promise.all(
-        projectNames.map( async ( projectName ) =>
-        {
+        projectNames.map(async (projectName) => {
           const projectService = new ProjectService(
             myAccount,
             repository.projectRepository,
             projectName,
           );
-          const project = await projectService.createProject(
-          );
+          const project = await projectService.createProject();
           results += JSON.stringify(project) + "\n";
         }),
       );
@@ -226,7 +225,7 @@ export const goldenSetResolver = {
         await zionDatabase.end();
         return results.join("\n");
       } catch (error) {
-        console.error("Error in runCrdtTest:", error);
+        logger.error("Error in runCrdtTest:", error);
         throw new GraphQLError(`Error in runCrdtTest: ${error}`);
       }
     },

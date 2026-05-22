@@ -1,4 +1,5 @@
 import OSS from "ali-oss";
+import { logger } from "./logger.ts";
 
 export async function getSchemaModelById(schemaId: string) {
   try {
@@ -14,6 +15,6 @@ export async function getSchemaModelById(schemaId: string) {
     const result = await client.get(`schema/${schemaId}/model.bin`);
     return result.content;
   } catch (error) {
-    console.log(error);
+    logger.error(error);
   }
 }

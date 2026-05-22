@@ -1,3 +1,4 @@
+import { logger } from "../../../shared/infrastructure/logger.ts";
 import { AgentFeedbackEntity } from "../entity/agent-feedback.entity.ts";
 import type { AgentName } from "../schema/agent-feedback.schema.ts";
 
@@ -24,7 +25,7 @@ export class Feedback<
     }
 
     this.data.feedback.push(feedback);
-    console.debug(`Added feedback: ${normalizedFeedback}`);
+    logger.debug(`Added feedback: ${normalizedFeedback}`);
   };
 
   getFeedbacks = (): string[] => {
@@ -48,7 +49,7 @@ export const feedbackDistributor = (feedbacks: Feedbacks) => {
   return (agentName: AgentName, feedback: string) => {
     const agentFeedback = feedbacks[agentName];
     if (!agentFeedback) {
-      console.warn(`No feedback instance found for agent: ${agentName}`);
+      logger.warn(`No feedback instance found for agent: ${agentName}`);
       return;
     }
     agentFeedback.addFeedback(feedback);

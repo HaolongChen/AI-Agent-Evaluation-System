@@ -90,12 +90,10 @@ export const createProjectSubscription = async (
   account: Account,
 ): Promise<string> => {
   const wsClient = await account.getWsClient();
-  logger.debug("get ws client for subscription", { taskId });
   const subscribe = wsClient.gqlSubscribe<
     OnProjectCreationStatusChangedSubscription,
     OnProjectCreationStatusChangedSubscriptionVariables
   >(GQL_ON_PROJECT_CREATION_STATUS_CHANGED, { uniqueId: taskId });
-  logger.debug("Setting up subscription for project creation", { taskId });
   let unsubscribeFunction: (() => void) | undefined;
   const { promise, resolve, reject } = Promise.withResolvers<string>();
   try {
@@ -109,14 +107,21 @@ export const createProjectSubscription = async (
           return;
         }
         if (data.onProjectCreationStatusChanged.status) {
+          logger.info("received message:", data.onProjectCreationStatusChanged);
           const { projectExId, status } = data.onProjectCreationStatusChanged;
-          if (status === "COMPLETED" && projectExId) {
+          if (status === "COMPLETED") {
+            if (!projectExId) {
+              reject(
+                new Error(
+                  `Project creation completed but projectExId is missing for task ${taskId}`,
+                ),
+              );
+              return;
+            }
             resolve(projectExId);
-          } else if (status === "PROCESSING") {
-            logger.info("Project creation in progress", {
-              taskId,
-              projectExId,
-            });
+          }
+          if (status === "FAILED") {
+            reject(new Error(`Project creation failed for task ${taskId}`));
           }
         } else {
           logger.error("Received subscription payload with missing fields", {

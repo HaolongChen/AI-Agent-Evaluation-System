@@ -1,5 +1,4 @@
 import { GraphQLClient, ClientError } from "graphql-request";
-import WebSocket from "ws";
 import {
   SubscriptionClient,
   type Observable,
@@ -34,35 +33,25 @@ export class NetworkClient {
 
   buildWsClient(
     wsUrl: string = process.env.SUBSCRIPTION_GRAPHQL_URL,
-    wsImpl: typeof WebSocket = WebSocket,
   ): WebSocketClient {
     return new WebSocketClient(
-      new SubscriptionClient(
-        wsUrl,
-        {
-          reconnect: true,
-          reconnectionAttempts: 1,
-          connectionParams: {
-            authToken: this._headers["Authorization"].split(" ")?.[1] || "",
-            "X-ZED-VERSION": this._headers["X-Zed-Version"] || "",
-            "X-SESSION-ID": this._headers["X-Session-Id"] || "",
-          },
-          lazy: true,
+      new SubscriptionClient(wsUrl, {
+        reconnect: true,
+        reconnectionAttempts: 10,
+        connectionParams: {
+          authToken: this._headers["Authorization"].split(" ")?.[1] || "",
+          "X-ZED-VERSION": this._headers["X-Zed-Version"] || "",
+          "X-SESSION-ID": this._headers["X-Session-Id"] || "",
         },
-        wsImpl,
-      ),
+        lazy: true,
+      }),
     );
   }
 }
 
 export const publicNetworkClient = new NetworkClient();
 export class WebSocketClient {
-  constructor(private client: SubscriptionClient) {
-    logger.debug(
-      "WebSocketClient initialized with SubscriptionClient:",
-      client,
-    );
-  }
+  constructor(private client: SubscriptionClient) {}
 
   close() {
     this.client.unsubscribeAll();
@@ -79,14 +68,6 @@ export class WebSocketClient {
       operationName:
         document.match(/subscription \w.*?\(/)?.[0]?.slice(13, -1) || "ERROR",
     }) as Observable<ExecutionResult<TData>>;
-    logger.debug(
-      "Initiating GraphQL subscription with document:",
-      document,
-      "and variables:",
-      variables,
-      "Extracted operation name:",
-      document.match(/subscription \w.*?\(/)?.[0]?.slice(13, -1) || "ERROR",
-    );
     return this.subscribe(observer);
   }
 
@@ -94,25 +75,21 @@ export class WebSocketClient {
     return (handlers: SubscriptionHandlers<TData>): (() => void) => {
       const { unsubscribe } = observer.subscribe({
         next: (data) => {
-          logger.debug("Received data from subscription:", data);
           if (handlers.next && data.data) {
             handlers.next(data.data);
           }
         },
         error: (error) => {
-          logger.error("Subscription error:", error);
           if (handlers.error) {
             handlers.error(error);
           }
         },
         complete: () => {
-          logger.info("Subscription completed");
           if (handlers.complete) {
             handlers.complete();
           }
         },
       });
-      logger.info("Subscription started with handlers:", handlers);
       return unsubscribe;
     };
   }

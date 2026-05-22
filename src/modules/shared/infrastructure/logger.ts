@@ -5,7 +5,7 @@ export const logger = new Logger({
   name: "ai-agent-evaluation-system",
   hideLogPositionForProduction: false,
   prettyLogTemplate:
-    "{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}}\t{{logLevelName}}\t[{{filePathWithLine}}{{arguments}}]\t",
+    "{{yyyy}}.{{mm}}.{{dd}} {{hh}}:{{MM}}:{{ss}}:{{ms}}\n{{logLevelName}}\t[{{filePathWithLine}}]\t",
   prettyErrorTemplate:
     "\n{{errorName}} {{errorMessage}}\nerror stack:\n{{errorStack}}",
   prettyErrorStackTemplate:

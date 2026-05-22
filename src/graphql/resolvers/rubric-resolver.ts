@@ -1,4 +1,3 @@
-import { myAccount } from "../../DI/account.ts";
 import { repository } from "../../DI/repository.ts";
 import { ExecuteCopilotUseCase } from "../../modules/copilot-output/application/execution-service.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-output/domain/entity/copilot-output.entity.ts";
@@ -14,6 +13,7 @@ import type {
   QueryGetRubricByIdArgs as QueryGetRubricByIdArguments,
   Rubric,
 } from "../generated/resolvers-types.ts";
+import { getMyAccount } from "../../DI/account.ts";
 
 const toGraphqlRubric = (
   rubric: ReturnType<RubricAggregate["toJSON"]>,
@@ -73,7 +73,7 @@ export const rubricResolver = {
       _: unknown,
       arguments_: MutationExecuteCopilotArguments,
     ): Promise<CopilotOutput> => {
-      await myAccount.ensureLoggedIn();
+      const myAccount = await getMyAccount();
       const projectLifecycle = new ProjectLifecycleAdapter(
         myAccount,
         repository.projectRepository,
@@ -87,8 +87,7 @@ export const rubricResolver = {
         myAccount,
       );
       const copilotOutput = await executeCopilotUseCase.executeV2(
-        arguments_.context.goldenSetId,
-        arguments_.context.userInputId,
+        arguments_.context,
       );
       return toGraphqlCopilotOutput(copilotOutput);
     },

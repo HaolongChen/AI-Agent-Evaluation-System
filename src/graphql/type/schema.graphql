@@ -225,6 +225,7 @@ input EvaluationInput {
 input CopilotInput {
   goldenSetId: String!
   userInputId: String!
+  projectExId: String
 }
 
 input HumanEvaluationInput {

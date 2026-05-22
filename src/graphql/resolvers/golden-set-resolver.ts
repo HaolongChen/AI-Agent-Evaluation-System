@@ -19,13 +19,13 @@ import {
 import { GraphQLError } from "graphql";
 import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/copilot-input/infrastructure/project-manager.ts";
 import { NetworkClient } from "../../modules/shared/application/graphql-client.ts";
-import { myAccount } from "../../DI/account.ts";
 import type {
   FixAliPayDataBindingMutation,
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
 import { logger } from "../../modules/shared/infrastructure/logger.ts";
 import { ProjectLifecycleAdapter } from "../../modules/copilot-input/infrastructure/project-lifecycle-adapter.ts";
+import { getMyAccount } from "../../DI/account.ts";
 
 const copilotTypeMapper = {
   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -159,7 +159,7 @@ export const goldenSetResolver = {
       await Promise.all(
         projectNames.map(async (projectName) => {
           const projectService = new ProjectService(
-            myAccount,
+            await getMyAccount(),
             repository.projectRepository,
             projectName,
           );
@@ -174,7 +174,7 @@ export const goldenSetResolver = {
       arguments_: MutationDeleteProjectArguments,
     ): Promise<boolean> => {
       const projectLifecycle = new ProjectLifecycleAdapter(
-        myAccount,
+        await getMyAccount(),
         repository.projectRepository,
       );
       await projectLifecycle.importExistingProject(arguments_.projectExId);

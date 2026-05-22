@@ -21,8 +21,8 @@ import type {
   SupportedCustomModelDescriptorQuery,
 } from "../../../graphql/generated/types.ts";
 import type { Account } from "../../account/application/account-handler.ts";
-import { dangerousAccount } from "../../../DI/account.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
+import { getDangerousAccount } from "../../../DI/account.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -113,6 +113,7 @@ const FETCH_APP_DETAIL_QUERY = gql`
       appExId: $appExId
       appVersionExId: $appVersionExId
     ) {
+      __typename
       ...WechatMiniProgramAppDetail
       ...WebAppDetail
       ...ProjectAppDetail
@@ -257,8 +258,8 @@ export class TypeSystemStore {
     if (!this.appDetail) {
       throw new Error("App detail is required for importing schema");
     }
-    // const gqlClient = await this.account.getGQLClient();
     await this.rehydrate(schemaId);
+    const dangerousAccount = await getDangerousAccount();
     const gqlClient = await dangerousAccount.getGQLClient();
     const mutationData = await gqlClient.gqlRequest<
       ImportProjectSchemaManualMutation,
@@ -308,6 +309,7 @@ export class TypeSystemStore {
       }
 
       this.appDetail = data.fetchAppDetailByExId;
+      logger.info("fetched app detail:", this.appDetail);
     } catch (error) {
       logger.error("Error fetching app detail:", error);
       throw error;

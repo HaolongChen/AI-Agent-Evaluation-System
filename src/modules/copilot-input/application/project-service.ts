@@ -58,7 +58,7 @@ export class ProjectService {
       await schemaManager.importSchemaManual(this.initialSchemaId);
     }
     try {
-      return this.importProjectBySchemaManager(schemaManager);
+      return await this.importProjectBySchemaManager(schemaManager);
     } catch (error) {
       logger.error("Error during project creation, attempting cleanup", {
         error,
@@ -80,6 +80,11 @@ export class ProjectService {
     const projectName = schemaManager.getProjectName();
     const projectExId = schemaManager.getProjectExId();
     const schemaId = schemaManager.getSchemaId();
+    logger.info("Importing project to database", {
+      projectName,
+      projectExId,
+      schemaId,
+    });
     const projectEntity = new ProjectEntity({
       projectExId,
       name: projectName,

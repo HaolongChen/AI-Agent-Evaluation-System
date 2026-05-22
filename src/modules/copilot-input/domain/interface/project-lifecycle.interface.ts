@@ -6,7 +6,9 @@ export interface IProjectLifecycle {
     initialSchemaId?: string,
   ): Promise<{ projectExId: string; schemaGraph: OpaqueSchemaGraph }>;
 
-  importExistingProject(projectExId: string): Promise<void>;
+  importExistingProject(
+    projectExId: string,
+  ): Promise<{ projectExId: string; schemaGraph: OpaqueSchemaGraph }>;
 
   deleteTemporaryProject(): Promise<void>;
 }

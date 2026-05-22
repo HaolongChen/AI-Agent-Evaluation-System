@@ -19,24 +19,28 @@ export class ExecuteCopilotUseCase {
     private readonly account: Account,
   ) {}
 
-  async setupEnvironment(
-    goldenSetId: string,
-    userInputId: string,
-  ): Promise<CopilotJobEntity> {
+  async setupEnvironment(data: {
+    goldenSetId: string;
+    userInputId: string;
+    projectExId?: string;
+  }): Promise<CopilotJobEntity> {
     const { goldenSetEntity, userInputEntity } =
       await this.repository.goldenSetRepository.getCopilotInputByGoldenSetIdAndUserInputId(
-        goldenSetId,
-        userInputId,
+        data.goldenSetId,
+        data.userInputId,
       );
-    const projectName = this.generateProjectName(goldenSetId, userInputId);
-    const { projectExId, schemaGraph } =
-      await this.projectLifecycle.createTemporaryProject(
-        projectName,
-        goldenSetEntity.data.schemaId,
-      );
-    const gqlClient = await this.account.getGQLClient();
 
-    const copilotSessionExId = await createNewSession(projectExId, gqlClient);
+    const { projectExId, schemaGraph } = data.projectExId
+      ? await this.projectLifecycle.importExistingProject(data.projectExId)
+      : await this.projectLifecycle.createTemporaryProject(
+          this.generateProjectName(data.goldenSetId, data.userInputId),
+          goldenSetEntity.data.schemaId,
+        );
+
+    const copilotSessionExId = await createNewSession(
+      projectExId,
+      await this.account.getGQLClient(),
+    );
 
     return new CopilotJobEntity({
       projectExId,
@@ -51,14 +55,15 @@ export class ExecuteCopilotUseCase {
     goldenSetId: string,
     userInputId: string,
   ): string {
-    return `temp-project-${goldenSetId}-${userInputId}-${Date.now()}`;
+    return `temp-project-${goldenSetId[0]}-${userInputId[0]}-${Date.now()}`;
   }
 
-  async executeV2(goldenSetId: string, userInputId: string) {
-    const copilotJobEntity = await this.setupEnvironment(
-      goldenSetId,
-      userInputId,
-    );
+  async executeV2(data: {
+    goldenSetId: string;
+    userInputId: string;
+    projectExId?: string;
+  }) {
+    const copilotJobEntity = await this.setupEnvironment(data);
     const wsClient = await this.account.getWsClient();
     const gqlClient = await this.account.getGQLClient();
     try {
@@ -71,8 +76,8 @@ export class ExecuteCopilotUseCase {
       const result = await orchestrator.run();
       const copilotOutputEntity = this.jobEntityToOutputEntity(
         result,
-        goldenSetId,
-        userInputId,
+        data.goldenSetId,
+        data.userInputId,
       );
       await this.repository.copilotOutputRepository.save(copilotOutputEntity);
       return copilotOutputEntity.toJSON();

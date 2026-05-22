@@ -14,10 +14,17 @@ export class ProjectLifecycleAdapter implements IProjectLifecycle {
 
   async importExistingProject(projectExId: string) {
     const projectService = new ProjectService(this.account, this.repository);
-    projectService.importProjectBySchemaManager(
-      await projectService.getProjectInZion(projectExId),
-    );
+    const schemaManager = await projectService.getProjectInZion(projectExId);
+    const projectEntity =
+      await projectService.importProjectBySchemaManager(schemaManager);
+    if (!schemaManager?.schemaGraph) {
+      throw new Error("Schema graph not available after project creation");
+    }
     this.projectService = projectService;
+    return {
+      projectExId: projectEntity.data.projectExId,
+      schemaGraph: schemaManager.schemaGraph,
+    };
   }
 
   async createTemporaryProject(

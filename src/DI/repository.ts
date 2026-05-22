@@ -11,14 +11,8 @@ import type { AgentFeedbackEntity } from "../modules/rubrics/domain/entity/agent
 import type { IRubricRepository } from "../modules/rubrics/domain/interface/rubric.interface.ts";
 import { AgentFeedbackRepository } from "../modules/rubrics/infrastructure/repository/agent-feedback.repository.ts";
 import { RubricRepository } from "../modules/rubrics/infrastructure/repository/rubric.repository.ts";
-import type { IProjectLifecycle } from "../modules/copilot-input/domain/interface/project-lifecycle.interface.ts";
-import { ProjectLifecycleAdapter } from "../modules/copilot-input/infrastructure/project-lifecycle-adapter.ts";
-import type { Account } from "../modules/account/application/account-handler.ts";
-import { myAccount } from "./account.ts";
 
-export function createRepositoryBundle(
-  account: Account,
-): RepositoryInjectionType {
+export function createRepositoryBundle(): RepositoryInjectionType {
   const projectRepository = new ProjectRepository();
   return {
     goldenSetRepository: new GoldenSetRepository(),
@@ -27,7 +21,6 @@ export function createRepositoryBundle(
     rubricRepository: new RubricRepository(),
     copilotOutputRepository: new CopilotOutputRepository(),
     agentFeedbackRepository: new AgentFeedbackRepository(),
-    projectLifecycle: new ProjectLifecycleAdapter(account, projectRepository),
   };
 }
 
@@ -38,7 +31,6 @@ export type RepositoryInjectionType = {
   rubricRepository: IRubricRepository;
   copilotOutputRepository: ICopilotOutputRepository;
   agentFeedbackRepository: IRepository<AgentFeedbackEntity>;
-  projectLifecycle: IProjectLifecycle;
 };
 
-export const repository = createRepositoryBundle(myAccount);
+export const repository = createRepositoryBundle();

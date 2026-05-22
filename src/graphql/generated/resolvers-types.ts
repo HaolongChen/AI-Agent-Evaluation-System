@@ -33,6 +33,7 @@ export type Scalars = {
 
 export type CopilotInput = {
   goldenSetId: Scalars["String"]["input"];
+  projectExId: InputMaybe<Scalars["String"]["input"]>;
   userInputId: Scalars["String"]["input"];
 };
 

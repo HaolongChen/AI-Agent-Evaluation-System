@@ -4,6 +4,7 @@ import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 import { CopilotInputEvent, ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { runToolCalls } from "./tool-call-handler.ts";
+import { logger } from "../../shared/infrastructure/logger.ts";
 
 const SESSION_TIMEOUT_MS = 2 * 60 * 1000;
 
@@ -53,7 +54,7 @@ export class SessionOrchestrator {
           this.job.data.schemaGraph,
         );
         if (result.error) {
-          console.error(
+          logger.error(
             `Error executing tool call batch ${toolCallBatchId}:`,
             result.error,
           );
@@ -91,7 +92,7 @@ export class SessionOrchestrator {
           !event.data.currentJobIsRunning &&
           !this.job.isTerminated
         ) {
-          console.error(
+          logger.error(
             "Current job is not running, but session is not marked as terminated. This likely indicates an issue with the backend job execution.",
           );
         }
@@ -108,7 +109,7 @@ export class SessionOrchestrator {
 
       listen("CopilotInitialStateMessage", (event) => {
         if (event.data.currentJobIsRunning || event.data.terminated) {
-          console.error(
+          logger.error(
             "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
           );
           clearTimeout(timer);
@@ -120,7 +121,7 @@ export class SessionOrchestrator {
           return;
         }
         if (event.data.copilotMessages.length > 0) {
-          console.warn(
+          logger.warn(
             "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
           );
           clearTimeout(timer);

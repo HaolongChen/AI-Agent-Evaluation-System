@@ -106,6 +106,9 @@ export class ExecutionJobRunnerV2 {
     this.copilotInputEvent.addEventListener("HUMAN_INPUT", (event) => {
       this.sendMessageToSession(event.type, event.data);
     });
+    this.copilotInputEvent.addEventListener("HUMAN_OPERATION", (event) => {
+      this.sendMessageToSession(event.type, event.data);
+    });
     const observer = this.wsClient.gqlSubscribe<
       OnCopilotSessionUpdatesSubscription,
       OnCopilotSessionUpdatesSubscriptionVariables

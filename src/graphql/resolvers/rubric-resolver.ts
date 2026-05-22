@@ -41,6 +41,7 @@ const toGraphqlCopilotOutput = (
 ): CopilotOutput => {
   return {
     ...output,
+    editableText: output.editableText ?? undefined,
     createdAt: output.createdAt!.toISOString(),
     __typename: "CopilotOutput",
   };

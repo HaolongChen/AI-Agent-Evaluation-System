@@ -1497,16 +1497,18 @@ A copilot output represents the expected or actual response from the copilot,
 including performance metrics (latency, tokens, context usage).
 """
 type CopilotOutput {
-  """
-  The copilot's generated output content
-  """
-  content: String!
+  aiResponse: String!
   copilotSessionExId: String!
 
   """
   Timestamp when output was captured
   """
   createdAt: String!
+
+  """
+  The copilot's generated output content
+  """
+  editableText: String
 
   """
   Parent golden set ID

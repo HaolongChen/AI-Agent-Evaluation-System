@@ -109,7 +109,8 @@ type CopilotOutput {
   "Associated user input ID"
   userInputId: String!
   "The copilot's generated output content"
-  content: String!
+  editableText: String
+  aiResponse: String!
   copilotSessionExId: String!
   "Timestamp when output was captured"
   createdAt: String!

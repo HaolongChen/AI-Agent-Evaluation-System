@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-null */
 import type { Account } from "../../account/application/account-handler.ts";
 import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/golden-set.interface.ts";
 import type { IProjectLifecycle } from "../../copilot-input/domain/interface/project-lifecycle.interface.ts";
@@ -95,15 +96,16 @@ export class ExecuteCopilotUseCase {
     goldenSetId: string,
     userInputId: string,
   ): CopilotOutputEntity {
-    if (!jobEntity.editableText) {
+    if (!jobEntity.aiResponse) {
       throw new Error(
-        "Editable text is empty, cannot create CopilotOutputEntity",
+        "AI response is empty, cannot create CopilotOutputEntity",
       );
     }
     return new CopilotOutputEntity({
       goldenSetId,
       userInputId,
-      content: jobEntity.editableText,
+      editableText: jobEntity.editableText ?? null,
+      aiResponse: jobEntity.aiResponse,
       copilotSessionExId: jobEntity.data.copilotSessionExId,
     });
   }

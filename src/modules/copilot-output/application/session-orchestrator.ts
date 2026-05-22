@@ -41,9 +41,15 @@ export class SessionOrchestrator {
 
       listen("CopilotEditableTextMessage", (event) => {
         this.job.editableText = event.data.content;
-        publish(new CopilotInputEvent("TERMINATE", {}));
-        clearTimeout(timer);
-        resolve(this.job);
+      });
+
+      listen("CopilotAiResponseMessage", (event) => {
+        this.job.aiResponse = event.data.content;
+        if (!this.job.editableText) {
+          logger.warn(
+            "Received AI response before editable text. This may indicate an issue with the backend job execution.",
+          );
+        }
       });
 
       listen("CopilotToolCallBatchMessage", (event) => {
@@ -84,14 +90,24 @@ export class SessionOrchestrator {
       });
 
       listen("CopilotTerminateMessage", () => {
-        this.job.setTerminate();
+        // this.job.setTerminate();
         publish(new Event("unsubscribe"));
       });
 
       listen("CopilotStateChangeMessage", (event) => {
-        if (!event.data.currentJobIsRunning && !this.job.isTerminated) {
-          logger.error(
-            "Current job is not running, but session is not marked as terminated. This likely indicates an issue with the backend job execution.",
+        if (event.data.currentJobIsRunning === false) {
+          if (this.job.isFinished()) {
+            clearTimeout(timer);
+            resolve(this.job);
+          } else if (this.job.editableText) {
+            publish(
+              new CopilotInputEvent("HUMAN_OPERATION", {
+                humanOperationType: "CONTINUE",
+              }),
+            );
+          }
+          logger.warn(
+            "Received job state change indicating job is no longer running, but job is not finished. This may indicate an issue with the backend job execution.",
           );
         }
       });
@@ -106,7 +122,7 @@ export class SessionOrchestrator {
       });
 
       listen("CopilotInitialStateMessage", (event) => {
-        if (event.data.currentJobIsRunning || event.data.terminated) {
+        if (event.data.terminated) {
           logger.error(
             "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
           );
@@ -119,22 +135,18 @@ export class SessionOrchestrator {
           return;
         }
         if (event.data.copilotMessages.length > 0) {
-          logger.warn(
-            "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
+          logger.info(
+            "Existing messages in initial state:",
+            event.data.copilotMessages,
           );
-          clearTimeout(timer);
-          reject(
-            new Error(
-              "Received initial state message with existing copilot messages. This may indicate that the session was not properly cleaned up after the last execution.",
-            ),
-          );
-          return;
         }
-        publish(
-          new CopilotInputEvent("HUMAN_INPUT", {
-            content: this.job.data.query,
-          }),
-        );
+        if (!event.data.currentJobIsRunning) {
+          publish(
+            new CopilotInputEvent("HUMAN_INPUT", {
+              content: this.job.data.query,
+            }),
+          );
+        }
       });
     });
   }

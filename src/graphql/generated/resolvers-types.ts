@@ -43,11 +43,12 @@ export type CopilotInput = {
  */
 export type CopilotOutput = {
   __typename: "CopilotOutput";
-  /** The copilot's generated output content */
-  content: Scalars["String"]["output"];
+  aiResponse: Scalars["String"]["output"];
   copilotSessionExId: Scalars["String"]["output"];
   /** Timestamp when output was captured */
   createdAt: Scalars["String"]["output"];
+  /** The copilot's generated output content */
+  editableText: Maybe<Scalars["String"]["output"]>;
   /** Parent golden set ID */
   goldenSetId: Scalars["String"]["output"];
   /** Unique identifier */
@@ -522,13 +523,18 @@ export type CopilotOutputResolvers<
   ParentType extends ResolversParentTypes["CopilotOutput"] =
     ResolversParentTypes["CopilotOutput"],
 > = ResolversObject<{
-  content: Resolver<ResolversTypes["String"], ParentType, ContextType>;
+  aiResponse: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   copilotSessionExId: Resolver<
     ResolversTypes["String"],
     ParentType,
     ContextType
   >;
   createdAt: Resolver<ResolversTypes["String"], ParentType, ContextType>;
+  editableText: Resolver<
+    Maybe<ResolversTypes["String"]>,
+    ParentType,
+    ContextType
+  >;
   goldenSetId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   userInputId: Resolver<ResolversTypes["String"], ParentType, ContextType>;

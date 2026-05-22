@@ -11,18 +11,21 @@ import { Event } from "ts-event-target";
 
 export class CopilotJobEntity extends Entity<typeof copilotJobSchema> {
   private _editableText: string | undefined;
+  private _aiResponse: string | undefined;
   private _tasks: Array<
     Omit<CopilotTaskMessageFragment, "__typename" | "messageType">
   > = [];
 
-  private _isTerminated: boolean = false;
-
-  public get isTerminated(): boolean {
-    return this._isTerminated;
+  isFinished(): boolean {
+    return !!this._aiResponse;
   }
 
-  public setTerminate() {
-    this._isTerminated = true;
+  set aiResponse(response: string) {
+    this._aiResponse = response;
+  }
+
+  get aiResponse(): string | undefined {
+    return this._aiResponse;
   }
 
   public addTask(task: (typeof this._tasks)[number]): void {

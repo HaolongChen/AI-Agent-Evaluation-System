@@ -28,7 +28,8 @@ export type CopilotOutputMinAggregateOutputType = {
   id: string | null
   goldenSetId: string | null
   userInputId: string | null
-  content: string | null
+  editableText: string | null
+  aiResponse: string | null
   copilotSessionExId: string | null
   createdAt: Date | null
 }
@@ -37,7 +38,8 @@ export type CopilotOutputMaxAggregateOutputType = {
   id: string | null
   goldenSetId: string | null
   userInputId: string | null
-  content: string | null
+  editableText: string | null
+  aiResponse: string | null
   copilotSessionExId: string | null
   createdAt: Date | null
 }
@@ -46,7 +48,8 @@ export type CopilotOutputCountAggregateOutputType = {
   id: number
   goldenSetId: number
   userInputId: number
-  content: number
+  editableText: number
+  aiResponse: number
   copilotSessionExId: number
   createdAt: number
   _all: number
@@ -57,7 +60,8 @@ export type CopilotOutputMinAggregateInputType = {
   id?: true
   goldenSetId?: true
   userInputId?: true
-  content?: true
+  editableText?: true
+  aiResponse?: true
   copilotSessionExId?: true
   createdAt?: true
 }
@@ -66,7 +70,8 @@ export type CopilotOutputMaxAggregateInputType = {
   id?: true
   goldenSetId?: true
   userInputId?: true
-  content?: true
+  editableText?: true
+  aiResponse?: true
   copilotSessionExId?: true
   createdAt?: true
 }
@@ -75,7 +80,8 @@ export type CopilotOutputCountAggregateInputType = {
   id?: true
   goldenSetId?: true
   userInputId?: true
-  content?: true
+  editableText?: true
+  aiResponse?: true
   copilotSessionExId?: true
   createdAt?: true
   _all?: true
@@ -157,7 +163,8 @@ export type CopilotOutputGroupByOutputType = {
   id: string
   goldenSetId: string
   userInputId: string
-  content: string
+  editableText: string | null
+  aiResponse: string
   copilotSessionExId: string
   createdAt: Date
   _count: CopilotOutputCountAggregateOutputType | null
@@ -187,7 +194,8 @@ export type copilotOutputWhereInput = {
   id?: Prisma.StringFilter<"copilotOutput"> | string
   goldenSetId?: Prisma.StringFilter<"copilotOutput"> | string
   userInputId?: Prisma.StringFilter<"copilotOutput"> | string
-  content?: Prisma.StringFilter<"copilotOutput"> | string
+  editableText?: Prisma.StringNullableFilter<"copilotOutput"> | string | null
+  aiResponse?: Prisma.StringFilter<"copilotOutput"> | string
   copilotSessionExId?: Prisma.StringFilter<"copilotOutput"> | string
   createdAt?: Prisma.DateTimeFilter<"copilotOutput"> | Date | string
   copilotInput?: Prisma.XOR<Prisma.GoldenSet_userInputScalarRelationFilter, Prisma.goldenSet_userInputWhereInput>
@@ -198,7 +206,8 @@ export type copilotOutputOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   goldenSetId?: Prisma.SortOrder
   userInputId?: Prisma.SortOrder
-  content?: Prisma.SortOrder
+  editableText?: Prisma.SortOrderInput | Prisma.SortOrder
+  aiResponse?: Prisma.SortOrder
   copilotSessionExId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   copilotInput?: Prisma.goldenSet_userInputOrderByWithRelationInput
@@ -212,7 +221,8 @@ export type copilotOutputWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.copilotOutputWhereInput | Prisma.copilotOutputWhereInput[]
   goldenSetId?: Prisma.StringFilter<"copilotOutput"> | string
   userInputId?: Prisma.StringFilter<"copilotOutput"> | string
-  content?: Prisma.StringFilter<"copilotOutput"> | string
+  editableText?: Prisma.StringNullableFilter<"copilotOutput"> | string | null
+  aiResponse?: Prisma.StringFilter<"copilotOutput"> | string
   copilotSessionExId?: Prisma.StringFilter<"copilotOutput"> | string
   createdAt?: Prisma.DateTimeFilter<"copilotOutput"> | Date | string
   copilotInput?: Prisma.XOR<Prisma.GoldenSet_userInputScalarRelationFilter, Prisma.goldenSet_userInputWhereInput>
@@ -223,7 +233,8 @@ export type copilotOutputOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   goldenSetId?: Prisma.SortOrder
   userInputId?: Prisma.SortOrder
-  content?: Prisma.SortOrder
+  editableText?: Prisma.SortOrderInput | Prisma.SortOrder
+  aiResponse?: Prisma.SortOrder
   copilotSessionExId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.copilotOutputCountOrderByAggregateInput
@@ -238,14 +249,16 @@ export type copilotOutputScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string
   goldenSetId?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string
   userInputId?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string
-  content?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string
+  editableText?: Prisma.StringNullableWithAggregatesFilter<"copilotOutput"> | string | null
+  aiResponse?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string
   copilotSessionExId?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"copilotOutput"> | Date | string
 }
 
 export type copilotOutputCreateInput = {
   id?: string
-  content: string
+  editableText?: string | null
+  aiResponse: string
   copilotSessionExId: string
   createdAt?: Date | string
   copilotInput: Prisma.goldenSet_userInputCreateNestedOneWithoutCopilotOutputInput
@@ -256,7 +269,8 @@ export type copilotOutputUncheckedCreateInput = {
   id?: string
   goldenSetId: string
   userInputId: string
-  content: string
+  editableText?: string | null
+  aiResponse: string
   copilotSessionExId: string
   createdAt?: Date | string
   rubrics?: Prisma.copilotOutput_rubricUncheckedCreateNestedManyWithoutCopilotOutputInput
@@ -264,7 +278,8 @@ export type copilotOutputUncheckedCreateInput = {
 
 export type copilotOutputUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   copilotInput?: Prisma.goldenSet_userInputUpdateOneRequiredWithoutCopilotOutputNestedInput
@@ -275,7 +290,8 @@ export type copilotOutputUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   goldenSetId?: Prisma.StringFieldUpdateOperationsInput | string
   userInputId?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rubrics?: Prisma.copilotOutput_rubricUncheckedUpdateManyWithoutCopilotOutputNestedInput
@@ -285,14 +301,16 @@ export type copilotOutputCreateManyInput = {
   id?: string
   goldenSetId: string
   userInputId: string
-  content: string
+  editableText?: string | null
+  aiResponse: string
   copilotSessionExId: string
   createdAt?: Date | string
 }
 
 export type copilotOutputUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -301,7 +319,8 @@ export type copilotOutputUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   goldenSetId?: Prisma.StringFieldUpdateOperationsInput | string
   userInputId?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -320,7 +339,8 @@ export type copilotOutputCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   goldenSetId?: Prisma.SortOrder
   userInputId?: Prisma.SortOrder
-  content?: Prisma.SortOrder
+  editableText?: Prisma.SortOrder
+  aiResponse?: Prisma.SortOrder
   copilotSessionExId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -329,7 +349,8 @@ export type copilotOutputMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   goldenSetId?: Prisma.SortOrder
   userInputId?: Prisma.SortOrder
-  content?: Prisma.SortOrder
+  editableText?: Prisma.SortOrder
+  aiResponse?: Prisma.SortOrder
   copilotSessionExId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -338,7 +359,8 @@ export type copilotOutputMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   goldenSetId?: Prisma.SortOrder
   userInputId?: Prisma.SortOrder
-  content?: Prisma.SortOrder
+  editableText?: Prisma.SortOrder
+  aiResponse?: Prisma.SortOrder
   copilotSessionExId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
@@ -406,7 +428,8 @@ export type copilotOutputUpdateOneRequiredWithoutRubricsNestedInput = {
 
 export type copilotOutputCreateWithoutCopilotInputInput = {
   id?: string
-  content: string
+  editableText?: string | null
+  aiResponse: string
   copilotSessionExId: string
   createdAt?: Date | string
   rubrics?: Prisma.copilotOutput_rubricCreateNestedManyWithoutCopilotOutputInput
@@ -414,7 +437,8 @@ export type copilotOutputCreateWithoutCopilotInputInput = {
 
 export type copilotOutputUncheckedCreateWithoutCopilotInputInput = {
   id?: string
-  content: string
+  editableText?: string | null
+  aiResponse: string
   copilotSessionExId: string
   createdAt?: Date | string
   rubrics?: Prisma.copilotOutput_rubricUncheckedCreateNestedManyWithoutCopilotOutputInput
@@ -453,14 +477,16 @@ export type copilotOutputScalarWhereInput = {
   id?: Prisma.StringFilter<"copilotOutput"> | string
   goldenSetId?: Prisma.StringFilter<"copilotOutput"> | string
   userInputId?: Prisma.StringFilter<"copilotOutput"> | string
-  content?: Prisma.StringFilter<"copilotOutput"> | string
+  editableText?: Prisma.StringNullableFilter<"copilotOutput"> | string | null
+  aiResponse?: Prisma.StringFilter<"copilotOutput"> | string
   copilotSessionExId?: Prisma.StringFilter<"copilotOutput"> | string
   createdAt?: Prisma.DateTimeFilter<"copilotOutput"> | Date | string
 }
 
 export type copilotOutputCreateWithoutRubricsInput = {
   id?: string
-  content: string
+  editableText?: string | null
+  aiResponse: string
   copilotSessionExId: string
   createdAt?: Date | string
   copilotInput: Prisma.goldenSet_userInputCreateNestedOneWithoutCopilotOutputInput
@@ -470,7 +496,8 @@ export type copilotOutputUncheckedCreateWithoutRubricsInput = {
   id?: string
   goldenSetId: string
   userInputId: string
-  content: string
+  editableText?: string | null
+  aiResponse: string
   copilotSessionExId: string
   createdAt?: Date | string
 }
@@ -493,7 +520,8 @@ export type copilotOutputUpdateToOneWithWhereWithoutRubricsInput = {
 
 export type copilotOutputUpdateWithoutRubricsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   copilotInput?: Prisma.goldenSet_userInputUpdateOneRequiredWithoutCopilotOutputNestedInput
@@ -503,21 +531,24 @@ export type copilotOutputUncheckedUpdateWithoutRubricsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   goldenSetId?: Prisma.StringFieldUpdateOperationsInput | string
   userInputId?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type copilotOutputCreateManyCopilotInputInput = {
   id?: string
-  content: string
+  editableText?: string | null
+  aiResponse: string
   copilotSessionExId: string
   createdAt?: Date | string
 }
 
 export type copilotOutputUpdateWithoutCopilotInputInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rubrics?: Prisma.copilotOutput_rubricUpdateManyWithoutCopilotOutputNestedInput
@@ -525,7 +556,8 @@ export type copilotOutputUpdateWithoutCopilotInputInput = {
 
 export type copilotOutputUncheckedUpdateWithoutCopilotInputInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rubrics?: Prisma.copilotOutput_rubricUncheckedUpdateManyWithoutCopilotOutputNestedInput
@@ -533,7 +565,8 @@ export type copilotOutputUncheckedUpdateWithoutCopilotInputInput = {
 
 export type copilotOutputUncheckedUpdateManyWithoutCopilotInputInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  content?: Prisma.StringFieldUpdateOperationsInput | string
+  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -573,7 +606,8 @@ export type copilotOutputSelect<ExtArgs extends runtime.Types.Extensions.Interna
   id?: boolean
   goldenSetId?: boolean
   userInputId?: boolean
-  content?: boolean
+  editableText?: boolean
+  aiResponse?: boolean
   copilotSessionExId?: boolean
   createdAt?: boolean
   copilotInput?: boolean | Prisma.goldenSet_userInputDefaultArgs<ExtArgs>
@@ -585,7 +619,8 @@ export type copilotOutputSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   goldenSetId?: boolean
   userInputId?: boolean
-  content?: boolean
+  editableText?: boolean
+  aiResponse?: boolean
   copilotSessionExId?: boolean
   createdAt?: boolean
   copilotInput?: boolean | Prisma.goldenSet_userInputDefaultArgs<ExtArgs>
@@ -595,7 +630,8 @@ export type copilotOutputSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   id?: boolean
   goldenSetId?: boolean
   userInputId?: boolean
-  content?: boolean
+  editableText?: boolean
+  aiResponse?: boolean
   copilotSessionExId?: boolean
   createdAt?: boolean
   copilotInput?: boolean | Prisma.goldenSet_userInputDefaultArgs<ExtArgs>
@@ -605,12 +641,13 @@ export type copilotOutputSelectScalar = {
   id?: boolean
   goldenSetId?: boolean
   userInputId?: boolean
-  content?: boolean
+  editableText?: boolean
+  aiResponse?: boolean
   copilotSessionExId?: boolean
   createdAt?: boolean
 }
 
-export type copilotOutputOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "goldenSetId" | "userInputId" | "content" | "copilotSessionExId" | "createdAt", ExtArgs["result"]["copilotOutput"]>
+export type copilotOutputOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "goldenSetId" | "userInputId" | "editableText" | "aiResponse" | "copilotSessionExId" | "createdAt", ExtArgs["result"]["copilotOutput"]>
 export type copilotOutputInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   copilotInput?: boolean | Prisma.goldenSet_userInputDefaultArgs<ExtArgs>
   rubrics?: boolean | Prisma.copilotOutput$rubricsArgs<ExtArgs>
@@ -633,7 +670,8 @@ export type $copilotOutputPayload<ExtArgs extends runtime.Types.Extensions.Inter
     id: string
     goldenSetId: string
     userInputId: string
-    content: string
+    editableText: string | null
+    aiResponse: string
     copilotSessionExId: string
     createdAt: Date
   }, ExtArgs["result"]["copilotOutput"]>
@@ -1064,7 +1102,8 @@ export interface copilotOutputFieldRefs {
   readonly id: Prisma.FieldRef<"copilotOutput", 'String'>
   readonly goldenSetId: Prisma.FieldRef<"copilotOutput", 'String'>
   readonly userInputId: Prisma.FieldRef<"copilotOutput", 'String'>
-  readonly content: Prisma.FieldRef<"copilotOutput", 'String'>
+  readonly editableText: Prisma.FieldRef<"copilotOutput", 'String'>
+  readonly aiResponse: Prisma.FieldRef<"copilotOutput", 'String'>
   readonly copilotSessionExId: Prisma.FieldRef<"copilotOutput", 'String'>
   readonly createdAt: Prisma.FieldRef<"copilotOutput", 'DateTime'>
 }

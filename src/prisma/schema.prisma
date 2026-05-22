@@ -83,7 +83,8 @@ model copilotOutput {
   goldenSetId        String              @map("golden_set_id")
   userInputId        String              @map("user_input_id")
   copilotInput       goldenSet_userInput @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
-  content            String              @map("output_content") // copilot output
+  editableText       String?             @map("output_content") // copilot output
+  aiResponse         String              @map("ai_response") // AI response
   copilotSessionExId String              @map("copilot_session_id") // corresponds to the sessionId in LangGraph for traceability
   createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
 

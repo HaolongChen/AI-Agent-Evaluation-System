@@ -2,6 +2,7 @@ import { tool } from "langchain";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { markdownReaderToolField } from "../../../domain/schema/markdown-reader.schema.ts";
+import { logger } from "../../../../shared/infrastructure/logger.ts";
 
 const DEFAULT_MAX_CHARS = 1800;
 const DOCS_ROOT = `${process.cwd()}/local_shell/momen_docs`;
@@ -301,7 +302,7 @@ export const read_markdown_documentations = tool(
         },
       };
     } catch (error) {
-      console.error("Error reading markdown documentations:", error);
+      logger.error("Error reading markdown documentations:", error);
       return {
         message: "Failed to read markdown documentations.",
         error: error instanceof Error ? error.message : String(error),

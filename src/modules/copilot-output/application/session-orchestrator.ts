@@ -1,12 +1,13 @@
 import { clearTimeout } from "node:timers";
 import { Event } from "ts-event-target";
-import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
+import {
+  CopilotInputEvent,
+  CopilotJobEntity,
+} from "../domain/entity/copilot-job.entity.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
-import { CopilotInputEvent, ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
+import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { runToolCalls } from "./tool-call-handler.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
-
-const SESSION_TIMEOUT_MS = 2 * 60 * 1000;
 
 /**
  * SessionOrchestrator — encapsulates WebSocket event handling for a single
@@ -17,6 +18,7 @@ const SESSION_TIMEOUT_MS = 2 * 60 * 1000;
  * to verify event handling without real network calls.
  */
 export class SessionOrchestrator {
+  private static readonly SESSION_TIMEOUT_MS = 2 * 60 * 1000;
   constructor(
     private readonly runner: ExecutionJobRunnerV2,
     private readonly job: CopilotJobEntity,
@@ -35,7 +37,7 @@ export class SessionOrchestrator {
 
     const timer = setTimeout(() => {
       rejectFunction(new Error("Session timeout"));
-    }, SESSION_TIMEOUT_MS);
+    }, SessionOrchestrator.SESSION_TIMEOUT_MS);
 
     return new Promise<CopilotOutputEntity>((resolve, reject) => {
       rejectFunction = reject;
@@ -64,6 +66,11 @@ export class SessionOrchestrator {
           return;
         }
         if (result.schemaDiff) {
+          logger.info(
+            `Schema diff produced by tool call batch ${toolCallBatchId}:`,
+            result.schemaDiff,
+          );
+
           // TODO: apply schema diff to local
         }
         publish(

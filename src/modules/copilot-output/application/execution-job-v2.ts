@@ -4,20 +4,10 @@ import type {
   WebSocketClient,
 } from "../../shared/application/graphql-client.ts";
 import {
-  type OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content,
   type OnCopilotSessionUpdatesSubscriptionVariables,
   type SendMessageToSessionMutation,
   type SendMessageToSessionMutationVariables,
   type OnCopilotSessionUpdatesSubscription,
-  CopilotMessageType,
-  type CopilotFeedbackMessageInput,
-  type CopilotHumanInputMessageInput,
-  type CopilotHumanOperationMessageInput,
-  type CopilotStopMessageInput,
-  type CopilotToolCallBatchResponseMessageInput,
-  type CopilotToolCallBatchExecErrorMessageInput,
-  type CopilotTerminateMessageInput,
-  type CopilotTaskRevertSuccessMessageInput,
 } from "../../../graphql/generated/types.ts";
 import {
   ON_COPILOT_SESSION_UPDATES,
@@ -25,110 +15,26 @@ import {
 } from "../infrastructure/copilot-network.ts";
 import { Event, EventTarget } from "ts-event-target";
 import { logger } from "../../shared/infrastructure/logger.ts";
-
-export type CopilotMessageContent =
-  OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content;
-
-type CopilotMessageContentMap = {
-  [T in CopilotMessageContent as T["__typename"]]: {
-    [K in Exclude<keyof T, "__typename" | "messageType">]: T[K];
-  };
-};
-
-export const typeNameList = [
-  "CopilotAiResponseMessage",
-  "CopilotEditableTextMessage",
-  "CopilotErrorMessage",
-  "CopilotFeedbackMessage",
-  "CopilotHumanInputMessage",
-  "CopilotHumanOperationMessage",
-  "CopilotInitialStateMessage",
-  "CopilotStateChangeMessage",
-  "CopilotStopMessage",
-  "CopilotSystemStatusMessage",
-  "CopilotTaskMessage",
-  "CopilotTaskRevertSuccessMessage",
-  "CopilotTerminateMessage",
-  "CopilotToolCallBatchExecErrorMessage",
-  "CopilotToolCallBatchMessage",
-  "CopilotToolCallBatchResponseMessage",
-] as const;
-
-export type CopilotInputMessage = {
-  [CopilotMessageType.Feedback]: CopilotFeedbackMessageInput;
-  [CopilotMessageType.HumanInput]: CopilotHumanInputMessageInput;
-  [CopilotMessageType.HumanOperation]: CopilotHumanOperationMessageInput;
-  [CopilotMessageType.Stop]: CopilotStopMessageInput;
-  [CopilotMessageType.ToolCallBatchResponse]: CopilotToolCallBatchResponseMessageInput;
-  [CopilotMessageType.ToolCallBatchExecError]: CopilotToolCallBatchExecErrorMessageInput;
-  [CopilotMessageType.Terminate]: CopilotTerminateMessageInput;
-  [CopilotMessageType.TaskRevertSuccess]: CopilotTaskRevertSuccessMessageInput;
-};
-
-const inputMessageTypeList: Record<keyof CopilotInputMessage, string> = {
-  [CopilotMessageType.Feedback]: "feedbackMessage",
-  [CopilotMessageType.HumanInput]: "humanInputMessage",
-  [CopilotMessageType.HumanOperation]: "humanOperationMessage",
-  [CopilotMessageType.Stop]: "stopMessage",
-  [CopilotMessageType.ToolCallBatchResponse]: "toolCallBatchResponseMessage",
-  [CopilotMessageType.ToolCallBatchExecError]: "toolCallBatchExecErrorMessage",
-  [CopilotMessageType.Terminate]: "terminateMessage",
-  [CopilotMessageType.TaskRevertSuccess]: "taskRevertSuccessMessage",
-} as const;
-
-export class CopilotEvent<T extends keyof TypeNameList> extends Event<T> {
-  constructor(
-    type: T,
-    readonly data: CopilotMessageContentMap[T],
-  ) {
-    super(type);
-  }
-}
-
-export class CopilotInputEvent<
-  T extends keyof CopilotInputMessage,
-> extends Event<T> {
-  constructor(
-    type: T,
-    readonly data: CopilotInputMessage[T],
-  ) {
-    super(type);
-  }
-}
-
-export type TypeNameList = {
-  [K in (typeof typeNameList)[number]]: K extends CopilotMessageContent["__typename"]
-    ? K
-    : never;
-};
-
-export type CopilotEventsList = { [K in keyof TypeNameList]: CopilotEvent<K> };
-export type CopilotInputEventsList = {
-  [K in keyof CopilotInputMessage]: CopilotInputEvent<K>;
-};
-
+import {
+  type CopilotInputMessage,
+  inputMessageTypeList,
+  typeNameList,
+} from "../domain/schema/copilot.schema.ts";
+import {
+  CopilotEvent,
+  type CopilotEventsList,
+  type CopilotEventType,
+  type CopilotInputEventType,
+} from "../domain/entity/copilot-job.entity.ts";
 export class ExecutionJobRunnerV2 {
-  private copilotInputEvent: EventTarget<
-    [CopilotInputEventsList[keyof CopilotInputEventsList], Event<"unsubscribe">]
-  >;
-  private copilotEvent: EventTarget<
-    [CopilotEventsList[keyof CopilotEventsList]]
-  >;
+  private copilotInputEvent: EventTarget<CopilotInputEventType> =
+    new EventTarget();
+  private copilotEvent: EventTarget<CopilotEventType> = new EventTarget();
   constructor(
     private sessionExId: string,
     private wsClient: WebSocketClient,
     private gqlClient: GQLClient,
-  ) {
-    this.copilotInputEvent = new EventTarget<
-      [
-        CopilotInputEventsList[keyof CopilotInputEventsList],
-        Event<"unsubscribe">,
-      ]
-    >();
-    this.copilotEvent = new EventTarget<
-      [CopilotEventsList[keyof CopilotEventsList]]
-    >();
-  }
+  ) {}
 
   sendMessageToSession = async <T extends keyof CopilotInputMessage>(
     type: T,
@@ -156,23 +62,13 @@ export class ExecutionJobRunnerV2 {
   ): SubscriptionHandlers<OnCopilotSessionUpdatesSubscription> {
     return {
       next: (data) => {
-        logger.debug("Received subscription data:", data);
         const content = data?.onCopilotSessionUpdate?.content;
 
         if (!content) {
-          logger.warn("Received session update without content", { data });
-          return;
+          throw new Error("Received subscription update without content");
         }
-        logger.debug(
-          "🚀 ---------------------------------------------------------------------------------🚀",
-        );
-        logger.debug(
-          "🚀 ~ execution-job-v2.ts:140 ~ ExecutionJobRunnerV2 ~ handler ~ content:",
-          content,
-        );
-        logger.debug(
-          "🚀 ---------------------------------------------------------------------------------🚀",
-        );
+
+        logger.info("Received subscription update:", content);
 
         const event = new CopilotEvent(
           content.__typename,
@@ -190,13 +86,6 @@ export class ExecutionJobRunnerV2 {
   }
 
   execute() {
-    const observer = this.wsClient.gqlSubscribe<
-      OnCopilotSessionUpdatesSubscription,
-      OnCopilotSessionUpdatesSubscriptionVariables
-    >(ON_COPILOT_SESSION_UPDATES, { sessionExId: this.sessionExId });
-    const unsubscribe = observer(
-      this.handler(this.copilotEvent.dispatchEvent.bind(this.copilotEvent)),
-    );
     this.copilotInputEvent.addEventListener("unsubscribe", () => {
       unsubscribe();
       for (const copilotEventName of typeNameList) {
@@ -217,6 +106,13 @@ export class ExecutionJobRunnerV2 {
     this.copilotInputEvent.addEventListener("HUMAN_INPUT", (event) => {
       this.sendMessageToSession(event.type, event.data);
     });
+    const observer = this.wsClient.gqlSubscribe<
+      OnCopilotSessionUpdatesSubscription,
+      OnCopilotSessionUpdatesSubscriptionVariables
+    >(ON_COPILOT_SESSION_UPDATES, { sessionExId: this.sessionExId });
+    const unsubscribe = observer(
+      this.handler(this.copilotEvent.dispatchEvent.bind(this.copilotEvent)),
+    );
     return {
       publish: this.copilotInputEvent.dispatchEvent.bind(
         this.copilotInputEvent,

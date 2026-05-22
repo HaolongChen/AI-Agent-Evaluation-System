@@ -9,8 +9,6 @@ import { createNewSession } from "../infrastructure/copilot-network.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 
 export class ExecuteCopilotUseCase {
-  private projectExId: string | undefined;
-
   constructor(
     private readonly repository: {
       copilotOutputRepository: ICopilotOutputRepository;
@@ -35,7 +33,6 @@ export class ExecuteCopilotUseCase {
         projectName,
         goldenSetEntity.data.schemaId,
       );
-    this.projectExId = projectExId;
 
     return new CopilotJobEntity({
       projectExId,
@@ -79,9 +76,7 @@ export class ExecuteCopilotUseCase {
       this.account.clearWsClient();
       throw error;
     } finally {
-      if (this.projectExId) {
-        await this.projectLifecycle.deleteTemporaryProject();
-      }
+      await this.projectLifecycle.deleteTemporaryProject();
     }
   }
 }

@@ -1,7 +1,13 @@
 import type z from "zod";
 import { Entity } from "../../../shared/domain/entity/entity.ts";
-import { copilotJobSchema } from "../schema/copilot.schema.ts";
+import {
+  copilotJobSchema,
+  type CopilotInputMessage,
+  type CopilotMessageContentMap,
+  type TypeNameList,
+} from "../schema/copilot.schema.ts";
 import type { CopilotTaskMessageFragment } from "../../../../graphql/generated/types.ts";
+import { Event } from "ts-event-target";
 
 export class CopilotJobEntity extends Entity<typeof copilotJobSchema> {
   private _editableText: string | undefined;
@@ -38,3 +44,35 @@ export class CopilotJobEntity extends Entity<typeof copilotJobSchema> {
     super(data, copilotJobSchema, id);
   }
 }
+
+export class CopilotEvent<T extends keyof TypeNameList> extends Event<T> {
+  constructor(
+    type: T,
+    readonly data: CopilotMessageContentMap[T],
+  ) {
+    super(type);
+  }
+}
+
+export class CopilotInputEvent<
+  T extends keyof CopilotInputMessage,
+> extends Event<T> {
+  constructor(
+    type: T,
+    readonly data: CopilotInputMessage[T],
+  ) {
+    super(type);
+  }
+}
+
+export type CopilotEventsList = { [K in keyof TypeNameList]: CopilotEvent<K> };
+export type CopilotInputEventsList = {
+  [K in keyof CopilotInputMessage]: CopilotInputEvent<K>;
+};
+
+export type CopilotInputEventType = [
+  CopilotInputEventsList[keyof CopilotInputEventsList],
+  Event<"unsubscribe">,
+];
+
+export type CopilotEventType = [CopilotEventsList[keyof CopilotEventsList]];

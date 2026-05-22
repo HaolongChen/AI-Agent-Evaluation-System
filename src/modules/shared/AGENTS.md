@@ -43,8 +43,12 @@ class UserAggregate extends AggregateRoot<typeof UserSchema> {
 import { IRepository } from "./interface/repository.interface.ts";
 
 class UserRepository implements IRepository<User> {
-  async save(entity: User): Promise<void> { /* ... */ }
-  async findById(id: string): Promise<User> { /* ... */ }
+  async save(entity: User): Promise<void> {
+    /* ... */
+  }
+  async findById(id: string): Promise<User> {
+    /* ... */
+  }
 }
 ```
 

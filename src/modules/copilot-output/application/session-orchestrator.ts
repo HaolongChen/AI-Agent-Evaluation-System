@@ -31,14 +31,14 @@ export class SessionOrchestrator {
    */
   async run(): Promise<CopilotOutputEntity> {
     const { publish, listen } = this.runner.execute();
-    let rejectFn: (error: unknown) => void;
+    let rejectFunction: (error: unknown) => void;
 
     const timer = setTimeout(() => {
-      rejectFn(new Error("Session timeout"));
+      rejectFunction(new Error("Session timeout"));
     }, SESSION_TIMEOUT_MS);
 
     return new Promise<CopilotOutputEntity>((resolve, reject) => {
-      rejectFn = reject;
+      rejectFunction = reject;
 
       listen("CopilotEditableTextMessage", (event) => {
         this.job.editableText = event.data.content;
@@ -49,10 +49,7 @@ export class SessionOrchestrator {
 
       listen("CopilotToolCallBatchMessage", (event) => {
         const { toolCallBatchId, toolCalls } = event.data;
-        const result = runToolCalls(
-          toolCalls,
-          this.job.data.schemaGraph,
-        );
+        const result = runToolCalls(toolCalls, this.job.data.schemaGraph);
         if (result.error) {
           logger.error(
             `Error executing tool call batch ${toolCallBatchId}:`,
@@ -88,10 +85,7 @@ export class SessionOrchestrator {
       });
 
       listen("CopilotStateChangeMessage", (event) => {
-        if (
-          !event.data.currentJobIsRunning &&
-          !this.job.isTerminated
-        ) {
+        if (!event.data.currentJobIsRunning && !this.job.isTerminated) {
           logger.error(
             "Current job is not running, but session is not marked as terminated. This likely indicates an issue with the backend job execution.",
           );

@@ -8,6 +8,7 @@ import express from "express";
 import cors from "cors";
 import { typeDefs, resolvers } from "./graphql/schema.ts";
 import { dangerousAccount, myAccount } from "./DI/account.ts";
+import { logger } from "./modules/shared/infrastructure/logger.ts";
 
 await myAccount.getWsClient();
 await dangerousAccount.ensureLoggedIn();
@@ -32,7 +33,7 @@ app.get("/health", (_request: express.Request, result: express.Response) => {
 });
 
 app.listen({ port: process.env.PORT }, () => {
-  console.info(
+  logger.info(
     `🚀 Server ready at http://localhost:${process.env.PORT}/graphql`,
   );
 });

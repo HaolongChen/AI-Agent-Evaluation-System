@@ -28,6 +28,7 @@ infrastructure/
 ## APPLICATION
 
 **Account** (extends AccountService) — Primary auth facade:
+
 - `login()` — Calls infrastructure login, sets token via `handleLogin()`
 - `ensureLoggedIn()` — Auto-login if not authenticated
 - `getGQLClient()` — Returns graphql-request client with Bearer auth
@@ -39,6 +40,7 @@ infrastructure/
 ## DI
 
 `src/DI/account.ts` exports two pre-configured instances:
+
 - `myAccount` — Primary account (FUNCTORZ_PHONE_NUMBER/FUNCTORZ_PASSWORD)
 - `dangerousAccount` — Secondary account (DANGEROUS_USERNAME/DANGEROUS_PASSWORD)
 

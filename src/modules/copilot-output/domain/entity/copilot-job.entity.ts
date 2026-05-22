@@ -5,7 +5,9 @@ import type { CopilotTaskMessageFragment } from "../../../../graphql/generated/t
 
 export class CopilotJobEntity extends Entity<typeof copilotJobSchema> {
   private _editableText: string | undefined;
-  private _tasks: Array<Omit<CopilotTaskMessageFragment, "__typename" | "messageType">> = [];
+  private _tasks: Array<
+    Omit<CopilotTaskMessageFragment, "__typename" | "messageType">
+  > = [];
 
   private _isTerminated: boolean = false;
 
@@ -17,9 +19,8 @@ export class CopilotJobEntity extends Entity<typeof copilotJobSchema> {
     this._isTerminated = true;
   }
 
-  public addTask ( task: typeof this._tasks[number] ): void
-  {
-    this._tasks.push( task );
+  public addTask(task: (typeof this._tasks)[number]): void {
+    this._tasks.push(task);
   }
 
   public get tasks(): typeof this._tasks {

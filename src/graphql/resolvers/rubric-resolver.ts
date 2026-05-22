@@ -52,9 +52,7 @@ export const rubricResolver = {
       _: unknown,
       arguments_: QueryGetRubricByIdArguments,
     ): Promise<Rubric> => {
-      const rubric = await repository.rubricRepository.findById(
-        arguments_.id,
-      );
+      const rubric = await repository.rubricRepository.findById(arguments_.id);
       if (!rubric) {
         throw new Error(`Rubric with ID ${arguments_.id} not found`);
       }

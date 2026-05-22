@@ -183,7 +183,10 @@ export const goldenSetResolver = {
         myAccount,
         repository.projectRepository,
       );
-      const project = await projectService.getProject("projectExId", projectExId);
+      const project = await projectService.getProject(
+        "projectExId",
+        projectExId,
+      );
       if (!project) {
         throw new GraphQLError(`Project with exId ${projectExId} not found`);
       }

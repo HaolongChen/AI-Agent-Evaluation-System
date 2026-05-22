@@ -6,6 +6,7 @@ import type { ICopilotOutputRepository } from "../domain/interface/copilot-outpu
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { createNewSession } from "../infrastructure/copilot-network.ts";
+import { logger } from "../../shared/infrastructure/logger.ts";
 
 export class ExecuteCopilotUseCase {
   private projectExId: string | undefined;
@@ -82,7 +83,7 @@ export class ExecuteCopilotUseCase {
       await this.repository.copilotOutputRepository.save(result);
       return result.toJSON();
     } catch (error) {
-      console.error("Error setting up copilot execution environment:", error);
+      logger.error("Error setting up copilot execution environment:", error);
       this.account.clearWsClient();
       throw error;
     } finally {

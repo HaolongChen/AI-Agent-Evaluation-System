@@ -102,7 +102,9 @@ export const createProjectSubscription = async (
     unsubscribeFunction = subscribe({
       next: (data) => {
         if (!data.onProjectCreationStatusChanged) {
-          logger.error("Received invalid subscription payload for project creation");
+          logger.error(
+            "Received invalid subscription payload for project creation",
+          );
           reject(new Error(`Invalid subscription payload for task ${taskId}`));
           return;
         }

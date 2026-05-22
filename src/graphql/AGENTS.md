@@ -10,12 +10,12 @@ Exposes the evaluation engine via Apollo Server on Express. Orchestrates Golden 
 
 ## Structure
 
-| Component        | Location                       | Responsibility                                         |
-| ---------------- | ------------------------------ | ------------------------------------------------------ |
-| **Schema**       | `src/graphql/type/schema.graphql` | Single source of truth for GQL types and documentation |
-| **Resolvers**    | `src/graphql/resolvers/`       | Thin entry points; delegate to DDD modules             |
-| **Orchestrator** | `src/graphql/schema.ts`        | Combines typeDefs (loaded from file) and merged resolver map |
-| **Generated**    | `src/graphql/generated/`       | Auto-generated TypeScript types from schema            |
+| Component        | Location                          | Responsibility                                               |
+| ---------------- | --------------------------------- | ------------------------------------------------------------ |
+| **Schema**       | `src/graphql/type/schema.graphql` | Single source of truth for GQL types and documentation       |
+| **Resolvers**    | `src/graphql/resolvers/`          | Thin entry points; delegate to DDD modules                   |
+| **Orchestrator** | `src/graphql/schema.ts`           | Combines typeDefs (loaded from file) and merged resolver map |
+| **Generated**    | `src/graphql/generated/`          | Auto-generated TypeScript types from schema                  |
 
 ## Resolver → Module Map
 

@@ -58,7 +58,10 @@ export class NetworkClient {
 export const publicNetworkClient = new NetworkClient();
 export class WebSocketClient {
   constructor(private client: SubscriptionClient) {
-    logger.debug("WebSocketClient initialized with SubscriptionClient:", client);
+    logger.debug(
+      "WebSocketClient initialized with SubscriptionClient:",
+      client,
+    );
   }
 
   close() {

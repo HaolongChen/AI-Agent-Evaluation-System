@@ -18,20 +18,20 @@ src/prisma/
 
 The schema defines 12 models corresponding to the evaluation lifecycle:
 
-| Model                  | Purpose                                                   |
-| ---------------------- | --------------------------------------------------------- |
+| Model                  | Purpose                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------ |
 | `goldenSet`            | Evaluation dataset — uniquely identified by (schemaId, copilotType, modelName) |
-| `project`              | External project tracking — unique by projectExId, schemaId, and name |
-| `userInput`            | Individual user-provided prompts per golden set           |
-| `goldenSet_userInput`  | Join table linking golden sets to user inputs (M:N)       |
-| `copilotOutput`        | Copilot job output captured per golden-set + user-input   |
-| `copilotOutput_rubric` | Join table linking copilot outputs to rubrics (M:N)       |
-| `rubric`               | AI-generated evaluation criterion sets per copilot input  |
-| `criteria`             | Individual rubric criteria (weight, expected answer, reasoning) |
-| `agentFeedbacks`       | Multi-agent feedback traces per rubric                    |
-| `evaluationSession`    | Execution session for an evaluator on a copilot output    |
-| `evaluationRecord`     | Individual rubric judgment answers (one per criteria)     |
-| `evaluationResult`     | Final evaluation report (overall score, analysis, audit)  |
+| `project`              | External project tracking — unique by projectExId, schemaId, and name          |
+| `userInput`            | Individual user-provided prompts per golden set                                |
+| `goldenSet_userInput`  | Join table linking golden sets to user inputs (M:N)                            |
+| `copilotOutput`        | Copilot job output captured per golden-set + user-input                        |
+| `copilotOutput_rubric` | Join table linking copilot outputs to rubrics (M:N)                            |
+| `rubric`               | AI-generated evaluation criterion sets per copilot input                       |
+| `criteria`             | Individual rubric criteria (weight, expected answer, reasoning)                |
+| `agentFeedbacks`       | Multi-agent feedback traces per rubric                                         |
+| `evaluationSession`    | Execution session for an evaluator on a copilot output                         |
+| `evaluationRecord`     | Individual rubric judgment answers (one per criteria)                          |
+| `evaluationResult`     | Final evaluation report (overall score, analysis, audit)                       |
 
 ## CONVENTIONS
 

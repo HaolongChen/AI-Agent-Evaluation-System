@@ -89,7 +89,7 @@ export class ProjectService {
       projectExId,
       name: projectName,
       schemaId,
-      createdBy: this.account.exId!,
+      createdBy: this.account.username!,
     });
     try {
       // TODO: check duplication before save

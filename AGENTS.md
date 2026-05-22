@@ -44,15 +44,15 @@ AI-Agent-Evaluation-System/
 
 ## WHERE TO LOOK
 
-| Task                   | Location                                 | Notes                                      |
-| ---------------------- | ---------------------------------------- | ------------------------------------------ |
-| Add DDD module/layer   | `src/modules/<module>/`                  | Follow domain/application/infrastructure   |
-| Add auth/account logic | `src/modules/account/`                   | Account entity, login, GQL/WS clients      |
-| Add GraphQL resolver   | `src/graphql/resolvers/`                 | Thin layer → delegates to module use cases |
-| Add business logic     | `src/modules/<module>/application/`      | Use cases in modules                       |
-| Change DB schema       | `src/prisma/schema.prisma`                   | Run `pnpm db:generate` after               |
-| Add utility            | `src/modules/shared/` or `src/DI/` | Shared utilities, repository bundles      |
-| Env/constants          | `src/config/`                            | Never import `process.env` directly        |
+| Task                   | Location                            | Notes                                      |
+| ---------------------- | ----------------------------------- | ------------------------------------------ |
+| Add DDD module/layer   | `src/modules/<module>/`             | Follow domain/application/infrastructure   |
+| Add auth/account logic | `src/modules/account/`              | Account entity, login, GQL/WS clients      |
+| Add GraphQL resolver   | `src/graphql/resolvers/`            | Thin layer → delegates to module use cases |
+| Add business logic     | `src/modules/<module>/application/` | Use cases in modules                       |
+| Change DB schema       | `src/prisma/schema.prisma`          | Run `pnpm db:generate` after               |
+| Add utility            | `src/modules/shared/` or `src/DI/`  | Shared utilities, repository bundles       |
+| Env/constants          | `src/config/`                       | Never import `process.env` directly        |
 
 ## CONVENTIONS
 

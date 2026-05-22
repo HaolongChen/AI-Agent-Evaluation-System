@@ -36,16 +36,16 @@ All extend BaseSessionEntity → shared Entity base class.
 
 ## MIGRATION STATUS
 
-| Component               | Status      |
-| ----------------------- | ----------- |
-| Domain entities         | Done        |
-| Domain aggregates       | Done        |
-| Domain schemas          | Done        |
-| Domain interfaces/IRepositories | EMPTY |
-| Domain services         | EMPTY       |
-| Application/use cases   | EMPTY       |
-| Infrastructure/repos    | EMPTY       |
-| GraphQL resolvers       | ALL 5 throw "Method not implemented" |
+| Component                       | Status                               |
+| ------------------------------- | ------------------------------------ |
+| Domain entities                 | Done                                 |
+| Domain aggregates               | Done                                 |
+| Domain schemas                  | Done                                 |
+| Domain interfaces/IRepositories | EMPTY                                |
+| Domain services                 | EMPTY                                |
+| Application/use cases           | EMPTY                                |
+| Infrastructure/repos            | EMPTY                                |
+| GraphQL resolvers               | ALL 5 throw "Method not implemented" |
 
 **GraphQL resolvers in `session-resolver.ts`**: All 5 mutations/queries (`runEvaluation`, `submitRubricReview`, `submitHumanEvaluation`, `getEvaluationSession`, `listEvaluationSessions`) throw `new Error("Method not implemented.")`. The module cannot be used via the API.
 

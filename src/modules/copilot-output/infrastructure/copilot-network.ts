@@ -312,5 +312,4 @@ export const getSubscriptionCount = async (
     throw new Error(count.error.message);
   }
   return count.data;
-  // TODO: get last session
 };

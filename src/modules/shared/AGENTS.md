@@ -26,7 +26,9 @@ class User extends Entity<typeof UserSchema> {
 
 ```typescript
 class UserAggregate extends AggregateRoot<typeof UserSchema> {
-  constructor(entity: User) { super(entity); }
+  constructor(entity: User) {
+    super(entity);
+  }
 }
 ```
 
@@ -42,7 +44,9 @@ class UserAggregate extends AggregateRoot<typeof UserSchema> {
 import { ValueObject } from "./value-object/base.vo.ts";
 
 class Email extends ValueObject<typeof EmailVO> {
-  constructor(email: string) { super({ value: email }, EmailVO); }
+  constructor(email: string) {
+    super({ value: email }, EmailVO);
+  }
 }
 ```
 

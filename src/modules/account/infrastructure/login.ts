@@ -13,26 +13,32 @@ import type { AccountInfo } from "../domain/schema/account.schema.ts";
 // Document
 // ---------------------------------------------------------------------------
 
+const ACCOUNT_FRAGMENT = gql`
+  fragment accountInfoFragment on AccountInfo {
+    accessToken
+    account {
+      exId
+      username
+    }
+  }
+`;
+
 const LOGIN_MUTATION = gql`
   mutation LoginWithPhoneNumber($phoneNumber: String!, $password: String!) {
     loginWithPhoneNumber(phoneNumber: $phoneNumber, password: $password) {
-      accessToken
-      account {
-        exId
-      }
+      ...accountInfoFragment
     }
   }
+  ${ACCOUNT_FRAGMENT}
 `;
 
 const LOGIN_WITH_PASSWORD_MUTATION = gql`
   mutation Login($username: String!, $password: String!) {
     login(username: $username, password: $password) {
-      accessToken
-      account {
-        exId
-      }
+      ...accountInfoFragment
     }
   }
+  ${ACCOUNT_FRAGMENT}
 `;
 
 // ---------------------------------------------------------------------------

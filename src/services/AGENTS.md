@@ -9,10 +9,10 @@
 
 ## CURRENT STATE
 
-| File                              | Status     | Notes                                                               |
-| --------------------------------- | ---------- | ------------------------------------------------------------------- |
-| `analytics-service.ts`            | ✅ Present | No DDD module yet. Uses direct Prisma queries.                      |
-| All others                        | ❌ Deleted | Migrated to `src/modules/` DDD modules                              |
+| File                   | Status     | Notes                                          |
+| ---------------------- | ---------- | ---------------------------------------------- |
+| `analytics-service.ts` | ✅ Present | No DDD module yet. Uses direct Prisma queries. |
+| All others             | ❌ Deleted | Migrated to `src/modules/` DDD modules         |
 
 ## MIGRATION STATUS
 

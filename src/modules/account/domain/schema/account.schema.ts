@@ -9,5 +9,6 @@ export interface AccountInfo {
   accessToken: string;
   account: {
     exId: string;
+    username: string;
   };
 }

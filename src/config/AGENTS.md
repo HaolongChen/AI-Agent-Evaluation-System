@@ -8,11 +8,11 @@ Environment, constants, and database client. All other modules import from here 
 
 ## Files
 
-| File           | Exports                                                                     | Purpose                              | Status           |
-|----------------|-----------------------------------------------------------------------------|--------------------------------------|------------------|
-| `env.ts`       | Named constants + `resolveLLMConfiguration()`                               | Env vars, LLM provider resolution    | ❌ Not created   |
-| `constants.ts` | Domain constant objects (`COPILOT_TYPES`, statuses, etc.)                   | Domain constants (as-const objects)  | ❌ Not created   |
-| `prisma.ts`    | `prisma`                                                                    | Singleton `PrismaClient` instance    | ✅ Exists        |
+| File           | Exports                                                   | Purpose                             | Status         |
+| -------------- | --------------------------------------------------------- | ----------------------------------- | -------------- |
+| `env.ts`       | Named constants + `resolveLLMConfiguration()`             | Env vars, LLM provider resolution   | ❌ Not created |
+| `constants.ts` | Domain constant objects (`COPILOT_TYPES`, statuses, etc.) | Domain constants (as-const objects) | ❌ Not created |
+| `prisma.ts`    | `prisma`                                                  | Singleton `PrismaClient` instance   | ✅ Exists      |
 
 ## env.ts — Key Exports (Reference)
 
@@ -23,8 +23,9 @@ Environment, constants, and database client. All other modules import from here 
 **Kubernetes:** `RUN_KUBERNETES_JOBS`, `KUBERNETES_NAMESPACE` (default: `ai-evaluation`), `KUBERNETES_JOB_IMAGE`, CPU/MEM requests+limits, backoff/deadline config
 
 **LLM Resolution:**
+
 ```typescript
-import { resolveLLMConfiguration } from "../config/env.ts";  // when env.ts is created
+import { resolveLLMConfiguration } from "../config/env.ts"; // when env.ts is created
 import type { LLMConfiguration } from "../config/env.ts";
 const config: LLMConfiguration | null = resolveLLMConfiguration("openai");
 // Returns first provider with valid API key; null if none configured
@@ -40,4 +41,5 @@ All `as const` objects (not enums): `SESSION_STATUS` (PENDING\|IN_PROGRESS\|COMP
 import { prisma } from "../config/prisma.ts";
 const result = await prisma.goldenSet.findMany({ where: { isActive: true } });
 ```
+
 Never instantiate `PrismaClient` directly elsewhere.

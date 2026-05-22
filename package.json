@@ -15,7 +15,7 @@
     "debug": "tsx --inspect src/index.ts",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "format": "prettier --write . && eslint --fix && pnpm depgen && prisma format",
+    "format": "prettier --write . && pnpm run depgen && prisma format && eslint --fix ",
     "db:setup": "tsx scripts/setup-db.ts",
     "db:seed": "tsx scripts/seed-golden-set.ts",
     "db:push": "pnpm dlx prisma db push",

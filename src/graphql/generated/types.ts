@@ -254,15 +254,24 @@ export type SetDataBindingToolArgsInput = {
     | undefined;
 };
 
-export type LoginWithPhoneNumberMutation_loginWithPhoneNumber_account = {
+export type AccountInfoFragment_account = {
   __typename: "Account";
   exId: string;
+  username: string;
 };
+
+export type AccountInfoFragment = {
+  __typename: "AccountInfo";
+  accessToken: string | null;
+  account: AccountInfoFragment_account | null;
+};
+
+export type AccountInfoFragmentVariables = Exact<{ [key: string]: never }>;
 
 export type LoginWithPhoneNumberMutation_loginWithPhoneNumber = {
   __typename: "AccountInfo";
   accessToken: string | null;
-  account: LoginWithPhoneNumberMutation_loginWithPhoneNumber_account | null;
+  account: AccountInfoFragment_account | null;
 };
 
 export type LoginWithPhoneNumberMutation = {
@@ -275,15 +284,10 @@ export type LoginWithPhoneNumberMutationVariables = Exact<{
   password: string;
 }>;
 
-export type LoginMutation_login_account = {
-  __typename: "Account";
-  exId: string;
-};
-
 export type LoginMutation_login = {
   __typename: "AccountInfo";
   accessToken: string | null;
-  account: LoginMutation_login_account | null;
+  account: AccountInfoFragment_account | null;
 };
 
 export type LoginMutation = {

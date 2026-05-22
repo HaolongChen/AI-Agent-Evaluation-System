@@ -36,17 +36,6 @@ export class Account extends AccountService {
     this.networkClient.setHeader("X-Session-Id", value);
   }
 
-  setAccessToken(token: string) {
-    const exId = this.exId;
-    if (!exId) {
-      throw new Error("Account exId is required to set access token");
-    }
-    this.account.setAccountInfo({
-      accessToken: token,
-      account: { exId: this.exId },
-    });
-  }
-
   async getGQLClient(newUrl?: string) {
     await this.ensureLoggedIn();
 
@@ -97,7 +86,7 @@ export class Account extends AccountService {
     return token;
   }
 
-  get exId(): string | undefined {
-    return this.account.getAccountInfo()?.account?.exId;
+  get username(): string | undefined {
+    return this.account.getAccountInfo()?.account?.username;
   }
 }

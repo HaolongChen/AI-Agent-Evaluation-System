@@ -6,7 +6,8 @@ import {
   CriteriaEntity,
   RubricEntity,
 } from "../domain/entity/rubric.entity.ts";
-import type { IAgentFeedbackRepository } from "../domain/interface/agent-feedback.interface.ts";
+import type { IRepository } from "../../shared/domain/interface/repository.interface.ts";
+import type { AgentFeedbackEntity } from "../domain/entity/agent-feedback.entity.ts";
 import { SaveFeedbacksUseCase } from "./save-feedbacks.ts";
 import {
   Feedback,
@@ -20,7 +21,7 @@ export class GenerateRubricUseCase {
     private repository: {
       rubricRepository: IRubricRepository;
       goldenSetRepository: IGoldenSetRepository;
-      agentFeedbackRepository: IAgentFeedbackRepository;
+      agentFeedbackRepository: IRepository<AgentFeedbackEntity>;
     },
   ) {}
 

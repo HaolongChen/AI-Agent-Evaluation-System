@@ -2,7 +2,7 @@ import { prisma } from "../../../../config/prisma.ts";
 import { AgentNameType } from "../../../../prisma/build/generated/prisma/enums.js";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { AgentFeedbackEntity } from "../../domain/entity/agent-feedback.entity.js";
-import type { IAgentFeedbackRepository } from "../../domain/interface/agent-feedback.interface.ts";
+import type { IRepository } from "../../../shared/domain/interface/repository.interface.ts";
 import type { AgentName } from "../../domain/schema/agent-feedback.schema.ts";
 
 function agentNameMapperToRepository(agentName: AgentName): AgentNameType {
@@ -13,7 +13,7 @@ function agentNameMapperFromRepository(agentName: AgentNameType): AgentName {
   return agentName.replaceAll("_", "-") as AgentName;
 }
 
-export class AgentFeedbackRepository implements IAgentFeedbackRepository {
+export class AgentFeedbackRepository implements IRepository<AgentFeedbackEntity> {
   async save(entity: AgentFeedbackEntity): Promise<void> {
     const result = await prisma.rubric.update({
       where: { id: entity.data.rubricId },

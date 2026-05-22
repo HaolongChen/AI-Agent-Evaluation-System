@@ -3,10 +3,6 @@ import { repository } from "../../DI/repository.ts";
 import { CreateGoldenSetUseCase } from "../../modules/copilot-input/application/create-golden-set.ts";
 import { CreateUserInputUseCase } from "../../modules/copilot-input/application/create-user-input.ts";
 import { FormCopilotInputUseCase } from "../../modules/copilot-input/application/form-copilot-input.ts";
-import {
-  GetGoldenSetByIdUseCase,
-  GetGoldenSetsByFilterUseCase,
-} from "../../modules/copilot-input/application/get-golden-set.ts";
 import { ProjectService } from "../../modules/copilot-input/application/project-service.ts";
 import {
   CopilotType,
@@ -28,10 +24,6 @@ import type {
   FixAliPayDataBindingMutation,
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
-import {
-  GetUserInputByIdUseCase,
-  GetUserInputsUseCase,
-} from "../../modules/copilot-input/application/get-user-input.ts";
 
 const copilotTypeMapper = {
   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -47,46 +39,46 @@ export const goldenSetResolver = {
       _: unknown,
       arguments_: QueryGetUserInputByIdArguments,
     ): Promise<UserInput> => {
-      const getUserInputByIdUseCase = new GetUserInputByIdUseCase(
-        repository.userInputRepository,
+      const userInput = await repository.userInputRepository.findById(
+        arguments_.id,
       );
-      const userInput = await getUserInputByIdUseCase.execute(arguments_.id);
       if (!userInput) {
         throw new GraphQLError(`UserInput with id ${arguments_.id} not found`);
       }
+      const json = userInput.toJSON();
       return {
-        ...userInput,
-        createdAt: userInput.createdAt!.toISOString(),
+        ...json,
+        createdAt: json.createdAt!.toISOString(),
         __typename: "UserInput",
       };
     },
 
     getUserInputs: async (): Promise<UserInput[]> => {
-      const getUserInputsUseCase = new GetUserInputsUseCase(
-        repository.userInputRepository,
-      );
-      const userInputs = await getUserInputsUseCase.execute();
-      return userInputs.map((userInput) => ({
-        ...userInput,
-        createdAt: userInput.createdAt!.toISOString(),
-        __typename: "UserInput",
-      }));
+      const userInputs = await repository.userInputRepository.getAll();
+      return userInputs.map((userInput) => {
+        const json = userInput.toJSON();
+        return {
+          ...json,
+          createdAt: json.createdAt!.toISOString(),
+          __typename: "UserInput",
+        };
+      });
     },
 
     getGoldenSetById: async (
       _: unknown,
       arguments_: QueryGetGoldenSetByIdArguments,
     ): Promise<GoldenSet> => {
-      const getGoldenSetByIdUseCase = new GetGoldenSetByIdUseCase(
-        repository.goldenSetRepository,
+      const goldenSet = await repository.goldenSetRepository.findById(
+        arguments_.id,
       );
-      const goldenSet = await getGoldenSetByIdUseCase.execute(arguments_.id);
       if (!goldenSet) {
         throw new GraphQLError(`GoldenSet with id ${arguments_.id} not found`);
       }
+      const json = goldenSet.toJSON();
       return {
-        ...goldenSet,
-        copilotType: copilotTypeMapper[goldenSet.copilotType],
+        ...json,
+        copilotType: copilotTypeMapper[json.copilotType],
         __typename: "GoldenSet",
       };
     },
@@ -94,17 +86,17 @@ export const goldenSetResolver = {
       _: unknown,
       arguments_: QueryGetGoldenSetsArguments,
     ): Promise<GoldenSet[]> => {
-      const getGoldenSetsByFilterUseCase = new GetGoldenSetsByFilterUseCase(
-        repository.goldenSetRepository,
-      );
-      const goldenSets = await getGoldenSetsByFilterUseCase.execute(
+      const goldenSets = await repository.goldenSetRepository.getByFilters(
         arguments_.filters ?? {},
       );
-      return goldenSets.map((goldenSet) => ({
-        ...goldenSet,
-        copilotType: copilotTypeMapper[goldenSet.copilotType],
-        __typename: "GoldenSet",
-      }));
+      return goldenSets.map((goldenSet) => {
+        const json = goldenSet.toJSON();
+        return {
+          ...json,
+          copilotType: copilotTypeMapper[json.copilotType],
+          __typename: "GoldenSet",
+        };
+      });
     },
   },
 

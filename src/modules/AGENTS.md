@@ -31,7 +31,7 @@ Dependencies flow: application → domain ← infrastructure. Never reverse.
 
 - `Entity<T>` base class: UUID generation, createdAt/updatedAt tracking, Zod schema validation
 - `AggregateRoot<T>`: wraps Entity for consistency boundaries
-- `IRepository<T>`: generic repository contract (save, findById)
+- `IRepository<T>`: generic repository contract (`save`, `findById`)
 - `ValueObject<T>`: immutable domain concepts
 - `repositoryDateMapper()`: hydrates timestamps from DB records
 
@@ -40,20 +40,14 @@ All module entities extend `Entity<T>`. All module repositories implement `IRepo
 ## CROSS-MODULE DEPENDENCIES
 
 - `account` → `shared` (uses NetworkClient, GQLClient from shared/application)
-- `copilot-output` → `copilot-input` (uses GoldenSetEntity to create projects and run jobs)
+- `copilot-output` → `copilot-input` (via `IProjectLifecycle` interface + `ProjectLifecycleAdapter`, and `IGoldenSetRepository` — see `execution-service.ts`)
 - `copilot-output` → `account` (uses Account for WebSocket auth)
 - `evaluation`, `rubrics` are independent, consumed by GraphQL resolvers
 - Do NOT create circular dependencies between modules
 
-## ADDING A NEW MODULE
+## MODULE STATUS
 
-1. Create `src/modules/<name>/domain/`, `application/`, `infrastructure/repository/`
-2. Define Zod schema in `domain/schema/`
-3. Extend `Entity<T>` in `domain/entity/`
-4. Define `IRepository<T>` interface in `domain/interface/`
-5. Implement repository in `infrastructure/repository/`
-6. Add application use cases in `application/`
-7. Import shared modules only (no cross-module imports without justification)
+- **`evaluation`**: domain layer complete (entities, aggregates, schemas). `application/` and `infrastructure/` layers are pending implementation.
 
 ## CONVENTIONS
 

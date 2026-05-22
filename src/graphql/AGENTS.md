@@ -1,6 +1,6 @@
 # AGENTS.md - GraphQL API Layer
 
-> **Generated:** 2026-05-21 | **Commit:** 4b48ccb | **Branch:** main
+> **Generated:** 2026-05-22 | **Commit:** 5ba93c9 | **Branch:** main
 
 Guidelines for schema, resolvers, and typed documents in the GraphQL API.
 
@@ -58,11 +58,9 @@ Exposes the evaluation engine via Apollo Server on Express. Orchestrates Golden 
 
 ## Typed Documents
 
-- Use `GoldenSetDocuments` from `src/external/graphql-client.ts` for internal/backend requests.
+- Use `GoldenSetDocuments` from `src/modules/shared/application/graphql-client.ts` for internal/backend requests.
 - Prefer `gqlRequest()` with typed variables and response shapes.
-
-> **Note:** `src/utils/` does not exist - all utilities are in `src/external/`.
 
 ## Migration Note
 
-Resolvers are transitioning from legacy `src/services/` to DDD modules in `src/modules/`. New implementation must use modules.
+Resolvers are transitioning from legacy `src/services/` to DDD modules in `src/modules/`. New implementations must use DDD modules. Do not import from `src/services/` (only `analytics-service.ts` remains).

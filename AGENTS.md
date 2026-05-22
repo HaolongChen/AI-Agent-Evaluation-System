@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE (AI Agent Evaluation System)
 
-**Generated:** 2026-05-21 | **Commit:** 4b48ccb | **Branch:** main
+**Generated:** 2026-05-22 | **Commit:** 5ba93c9 | **Branch:** main
 
 ## OVERVIEW
 
@@ -13,7 +13,7 @@ End-to-end evaluation framework for Copilot-style agents. DDD vertical slices, P
 ```
 AI-Agent-Evaluation-System/
 ├── src/
-│   ├── index.ts              # Express + ApolloServer entry, initializes Account instances
+│   ├── index.ts              # Express + ApolloServer entry
 │   ├── modules/              # DDD vertical slices (see modules/AGENTS.md)
 │   │   ├── account/          # Functorz backend auth (login, GQL/WS client lifecycle)
 │   │   ├── copilot-input/    # Golden Sets, User Inputs, Project management, CRDT
@@ -21,13 +21,11 @@ AI-Agent-Evaluation-System/
 │   │   ├── evaluation/       # Sessions, Records, Results (domain-only, app/infra pending)
 │   │   ├── rubrics/          # Rubric generation via multi-agent orchestration
 │   │   └── shared/           # DDD foundations (Entity, AggregateRoot, IRepository)
+│   ├── prisma/               # Schema, migrations, generated client (committed)
 │   ├── services/             # ⚠️ DEPRECATED — only analytics-service.ts remains
 │   ├── graphql/              # GraphQL API (resolvers → module use cases)
-│   ├── external/             # Functorz backend integration (GQL client, Zed)
-│   ├── deep-agents/          # ⚠️ EMPTY — directory exists but unused
 │   ├── config/               # Env vars, constants, Prisma singleton
-│   └── DI/                   # Composition root (account.ts, repository.ts)
-├── prisma/                   # Schema + migrations
+│   └── DI/                   # Composition root (factory functions)
 └── local_shell/              # Runtime temp files (CRDT schema JSON, docs)
 ```
 
@@ -52,8 +50,8 @@ AI-Agent-Evaluation-System/
 | Add auth/account logic | `src/modules/account/`                   | Account entity, login, GQL/WS clients      |
 | Add GraphQL resolver   | `src/graphql/resolvers/`                 | Thin layer → delegates to module use cases |
 | Add business logic     | `src/modules/<module>/application/`      | Use cases in modules                       |
-| Change DB schema       | `prisma/schema.prisma`                   | Run `pnpm db:generate` after               |
-| Add utility            | `src/external/` or `src/modules/shared/` | Utilities in external                      |
+| Change DB schema       | `src/prisma/schema.prisma`                   | Run `pnpm db:generate` after               |
+| Add utility            | `src/modules/shared/` or `src/DI/` | Shared utilities, repository bundles      |
 | Env/constants          | `src/config/`                            | Never import `process.env` directly        |
 
 ## CONVENTIONS
@@ -63,7 +61,7 @@ AI-Agent-Evaluation-System/
 - **Compiler**: Uses `tsgo` (`@typescript/native-preview`), NOT `tsc`.
 - **Naming**: PascalCase (classes/types), camelCase (functions/files), UPPER_SNAKE_CASE (constants).
 - **DDD Layers**: `domain/` → `application/` → `infrastructure/` (one-way dependencies).
-- **Logger**: Use structured logging. Prefer `console` over raw `console.log`.
+- **Logger**: Use structured logging. Prefer the shared logger from `modules/shared/infrastructure/logger.ts` for modules; use `console` sparingly in resolvers.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
@@ -71,7 +69,7 @@ AI-Agent-Evaluation-System/
 - **Promise chaining**: Forbidden. Use `async/await`. (1 violation in `environment-setup.ts`)
 - **Default exports**: Forbidden. Use named exports only.
 - **Direct LLM calls**: Forbidden. Use `invokeWithRetry()`.
-- **Generated files**: Never hand-edit `src/prisma/build/generated/prisma/` or `src/external/zed/index.ts`.
+- **Generated files**: Never hand-edit `src/prisma/build/generated/prisma/` or `src/graphql/generated/`.
 - **Cross-layer imports**: Domain layer must NOT import Application or Infrastructure layers. (1 violation in `prompts.service.ts`)
 - **Logic in resolvers**: GraphQL resolvers must be thin — delegate to modules. (1 violation: direct Prisma query in `golden-set-resolver.ts`)
 - **`src/DI/` directory**: Uses PascalCase — legacy naming, do not replicate.
@@ -94,11 +92,10 @@ pnpm format          # Prettier + ESLint fix + depgen + Prisma format
 
 ## NOTES
 
-- **Prisma 7**: Uses new `prisma.config.ts` at root. Generated client committed in `src/prisma/build/generated/prisma/`.
-- **Zed Types**: `src/external/zed/index.ts` is a large (~10k line) generated file.
-- **Account abstraction**: `src/DI/account.ts` provides `myAccount` and `dangerousAccount` — initialized at startup with env credentials.
+- **Prisma 7**: Uses new `prisma.config.ts` at root. Schema at `src/prisma/schema.prisma`. Generated client committed in `src/prisma/build/generated/prisma/`.
+- **Account abstraction**: `src/DI/account.ts` provides `createAccount()` factory — creates Account instances at startup with env credentials.
 - **No tests**: Zero test infrastructure. README references `test:lg`, `test:graphql` — not implemented.
 - **No CI pipeline**: `.github/workflows/opencode.yml` is an AI agent trigger, not build/test CI.
 - **Private registries**: `.npmrc` configures GitHub Packages (`@HaolongChen:`) and Functorz (`@functorz:`) registries.
-- **LangGraph dependency**: `@langchain/langgraph` is in `package.json` but `src/langGraph/` does not exist. Legacy dependency.
+- **Phantom dirs**: `src/external/`, `src/langGraph/`, `src/jobs/`, `scripts/`, `src/deep-agents/` are documented but do not exist on disk.
 - **local_shell/**: Runtime temp directory for CRDT schema JSON and documentation lookups. Not source code.

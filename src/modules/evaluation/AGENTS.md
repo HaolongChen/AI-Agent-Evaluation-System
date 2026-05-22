@@ -4,57 +4,56 @@
 
 Domain module for evaluation lifecycle: sessions, judge records, and final results.
 
+**Status: INCOMPLETE** — domain entities/aggregates/schemas are defined, but everything else is unimplemented.
+
 ## STRUCTURE
 
 ```
 evaluation/
 ├── domain/
-│   ├── aggregate/     # SessionAggregate (aggregate root), BaseAggregate
-│   ├── entity/        # SessionEntity, RecordEntity, ResultEntity
-│   ├── interface/     # EMPTY - repository interfaces pending
-│   ├── schema/        # Zod schemas: session.schema.ts, record.schema.ts, result.schema.ts
-│   └── service/       # EMPTY - domain services pending
-├── application/       # EMPTY - use cases pending
-└── infrastructure/    # EMPTY - repository implementations pending
+│   ├── aggregate/     # SessionAggregate (root), BaseAggregate — DONE
+│   ├── entity/        # SessionEntity, RecordEntity, ResultEntity — DONE
+│   ├── interface/     # EMPTY — no repository interfaces exist
+│   ├── schema/        # Zod schemas (session, record, result) — DONE
+│   └── service/       # EMPTY — no domain services
+├── application/       # EMPTY — no use cases, commands, or queries
+└── infrastructure/    # EMPTY — no Prisma repository implementations
 ```
 
-Domain layer is complete. Application and infrastructure layers are pending.
+Only the domain model is defined. Application and infrastructure layers are **completely empty** with no progress.
 
 ## ENTITIES
 
-- **EvaluationSessionEntity**: Represents a single evaluation run. Contains metadata like goldenSetId, status, timestamps, and performance metrics (latency, tokens, contextUsage).
+- **EvaluationSessionEntity**: Single evaluation run. Contains goldenSetId, status, timestamps, performance metrics.
+- **EvaluationRecordEntity**: Judge scoring records against a rubric (question answers, scores, explanations).
+- **EvaluationResultEntity**: Final report (overallScore, summary, detailedAnalysis, audit trail).
 
-- **EvaluationRecordEntity**: Stores judge scoring records against a rubric. Each record belongs to a session and contains question answers, scores, and explanations.
-
-- **EvaluationResultEntity**: Final report for a session. Contains overallScore, summary, detailedAnalysis, and audit trail.
-
-All entities extend BaseSessionEntity which provides identifier accessors and inherits from shared Entity base class.
+All extend BaseSessionEntity → shared Entity base class.
 
 ## AGGREGATE
 
-**EvaluationSessionAggregate** serves as the aggregate root. It enforces invariants:
-
-- Only allows adding RecordEntity instances that share the same session identifier
-- Only allows setting ResultEntity with matching identifier
-- Provides controlled access to child entities via getter methods
-
-**BaseAggregate** provides common aggregate functionality shared across aggregates.
-
-This pattern ensures all related records and results stay consistent under a single transaction boundary.
+**EvaluationSessionAggregate** (root). Enforces: same-session-id invariant for records and result. **BaseAggregate** provides shared aggregate plumbing.
 
 ## MIGRATION STATUS
 
-This module is in early stages. Domain layer is defined but:
+| Component               | Status      |
+| ----------------------- | ----------- |
+| Domain entities         | Done        |
+| Domain aggregates       | Done        |
+| Domain schemas          | Done        |
+| Domain interfaces/IRepositories | EMPTY |
+| Domain services         | EMPTY       |
+| Application/use cases   | EMPTY       |
+| Infrastructure/repos    | EMPTY       |
+| GraphQL resolvers       | ALL 5 throw "Method not implemented" |
 
-- No application services yet (use cases, commands, queries)
-- No infrastructure layer (repository implementations, Prisma mappers)
-- Interface and service directories exist but are empty
+**GraphQL resolvers in `session-resolver.ts`**: All 5 mutations/queries (`runEvaluation`, `submitRubricReview`, `submitHumanEvaluation`, `getEvaluationSession`, `listEvaluationSessions`) throw `new Error("Method not implemented.")`. The module cannot be used via the API.
 
-Currently, evaluation logic lives in legacy services under `src/services/`. Future work involves migrating that logic into this module's application layer.
+**Legacy code not yet migrated**: Evaluation logic remains in `src/services/analytics-service.ts` (51 references to evaluation/session/rubric). This is the future source for application layer migration.
 
 ## CONVENTIONS
 
-- Entities extend shared Entity base class from `modules/shared/domain/`
+- Entities extend shared `Entity` base class (`modules/shared/domain/`)
 - Schemas use Zod for runtime validation
 - Aggregate root controls entity composition and invariant enforcement
 - Import paths use `.ts` extension (ESM requirement)

@@ -2,17 +2,16 @@
 
 ## OVERVIEW
 
-Foundational DDD building blocks (Entity, AggregateRoot, ValueObject, Repository interface) + cross-cutting infrastructure (GraphQL client, LLM providers, Ali OSS).
+Foundational DDD building blocks (Entity, AggregateRoot, ValueObject, IRepository) + cross-cutting infrastructure (GraphQL client, LLM providers, logger, Ali OSS).
+
+**Note**: No `src/external/` directory exists on disk — previously documented as utility location but never created.
 
 ## ENTITY BASE
 
-`Entity<T>` provides UUID, createdAt/updatedAt tracking, and Zod validation.
+`Entity<T>` (in `domain/entity/entity.ts`) provides UUID, createdAt/updatedAt tracking, and Zod schema validation.
 
 ```typescript
 import { Entity } from "./entity/entity.ts";
-import * as z from "zod";
-
-const UserSchema = z.object({ email: z.string().email(), name: z.string() });
 
 class User extends Entity<typeof UserSchema> {
   constructor(data: z.infer<typeof UserSchema>, id?: string) {
@@ -23,69 +22,50 @@ class User extends Entity<typeof UserSchema> {
 
 ## AGGREGATE ROOT
 
-`AggregateRoot<T>` wraps an Entity for consistency boundaries.
+`AggregateRoot<T>` (in `domain/aggregate/aggregate-root.ts`) wraps an Entity for consistency boundaries.
 
 ```typescript
-import { AggregateRoot } from "./aggregate/aggregate-root.ts";
-
 class UserAggregate extends AggregateRoot<typeof UserSchema> {
-  constructor(entity: User) {
-    super(entity);
-  }
+  constructor(entity: User) { super(entity); }
 }
 ```
 
 ## REPOSITORY INTERFACE
 
-`IRepository<T>` defines save/findById contract.
-
-```typescript
-import { IRepository } from "./interface/repository.interface.ts";
-
-class UserRepository implements IRepository<User> {
-  async save(entity: User): Promise<void> {
-    /* ... */
-  }
-  async findById(id: string): Promise<User> {
-    /* ... */
-  }
-}
-```
+`IRepository<T>` (in `domain/interface/repository.interface.ts`) defines the `save`/`findById` contract. All module repositories implement this interface.
 
 ## VALUE OBJECTS
 
-`ValueObject<T>` wraps immutable concepts with validation.
+`ValueObject<T>` (in `domain/value-object/base.vo.ts`) wraps immutable concepts with Zod validation.
 
 ```typescript
 import { ValueObject } from "./value-object/base.vo.ts";
 
-const EmailVO = z.object({ value: z.string().email() });
 class Email extends ValueObject<typeof EmailVO> {
-  constructor(email: string) {
-    super({ value: email }, EmailVO);
-  }
+  constructor(email: string) { super({ value: email }, EmailVO); }
 }
 ```
 
 ## DOMAIN SERVICES
 
-- **type-system.service.ts**: Manages Functorz Zed type system. Contains 2 `any` type violations (lines 215, 238) — technical debt.
+- **type-system.service.ts** (`domain/service/`): Manages Functorz Zed type system. Contains 2 `any` type violations (lines 215, 238) — known technical debt.
 
 ## DOMAIN INTERFACES
 
-- **graph-states.ts**: LangGraph state types (misplaced in domain layer — should be in application or external)
-- **type-system.ts**: Re-exports types from `@functorz/ztype` (134-line barrel file)
+- **graph-states.ts** (`domain/interface/`): LangGraph state types (`JobState`, `RuntimeContext`, `Task`, etc.) importing from `@langchain/core/messages`. **Misplaced in domain layer** — LangGraph is an application/external concern, not domain logic. Should be migrated out of the domain layer.
+- **type-system.ts** (`domain/interface/`): Re-exports types from `@functorz/ztype` (134-line barrel file).
 
 ## APPLICATION LAYER
 
-- **graphql-client.ts**: NetworkClient, GQLClient, WebSocketClient classes + publicNetworkClient singleton. Used by account module for backend communication.
+- **graphql-client.ts** (`application/`): `NetworkClient`, `GQLClient`, `WebSocketClient` classes + `publicNetworkClient` singleton. Used by the account module (`login.ts`, `account-handler.ts`) for Functorz backend GraphQL/WS communication.
 
 ## INFRASTRUCTURE
 
-- **repository.ts**: `repositoryDateMapper()` hydrates timestamps from DB records.
-- **ali-oss.ts**: Aliyun OSS client for cloud storage operations.
-- **llm-providers.ts**: LLM provider abstraction (OpenAI, Gemini, Azure OpenAI).
+- **repository.ts** (`infrastructure/`): `repositoryDateMapper()` hydrates timestamps from DB records.
+- **logger.ts** (`infrastructure/`): Structured logger (tslog). Most cross-cutting utility — used across all modules.
+- **ali-oss.ts** (`infrastructure/`): Aliyun OSS client for cloud storage operations.
+- **llm-providers.ts** (`infrastructure/`): LLM provider abstraction (OpenAI, Gemini, Azure OpenAI).
 
 ## USAGE
 
-All domain entities extend Entity. Each module defines its own schemas and implements IRepository.
+All domain entities extend Entity from `shared/`. Each module defines its own Zod schemas and implements IRepository.

@@ -8,9 +8,9 @@ Evaluation criteria generation via multi-agent orchestration: deep agents analyz
 
 ```
 domain/
-  entity/          RubricEntity, EntryEntity, AgentFeedbackEntity
+  entity/          RubricEntity, CriteriaEntity, EntryEntity, AgentFeedbackEntity
   aggregate/       RubricAggregate (aggregate root), DirectoryAggregate
-  interface/       IRubricRepository, IAgentFeedbackRepository
+  interface/       IRubricRepository (custom)
   schema/          rubric.schema.ts, agent-feedback.schema.ts, entry.schema.ts,
                    deep-agents.schema.ts, markdown-reader.schema.ts,
                    read-json-schema.schema.ts
@@ -39,20 +39,21 @@ application/
       feedback.ts                    Feedback accumulation middleware
 infrastructure/repository/
   rubric.repository.ts         Prisma-backed IRubricRepository
-  agent-feedback.repository.ts Prisma-backed IAgentFeedbackRepository
+  agent-feedback.repository.ts Prisma-backed IRepository<AgentFeedbackEntity>
 ```
 
 ## ENTITIES
 
 - **RubricEntity**: Root record tied to goldenSetId + userInputId
-- **EntryEntity**: Individual rubric entry with content, weight, expectedAnswer
+- **CriteriaEntity**: Individual rubric criterion with content, weight (0-1), expectedAnswer (boolean), and optional reasoning. Defined in `rubric.entity.ts`.
+- **EntryEntity**: Separate entity for directory/file structure management (name, extension, folder). Used by DirectoryAggregate.
 - **AgentFeedbackEntity**: Tracks agent reasoning/output for audit and iteration
 
 ## AGGREGATE
 
-**RubricAggregate** extends AggregateRoot. Manages a collection of EntryEntity (not CriteriaEntity — renamed). Tracks totalWeight across all entries. Enforces weight invariants.
+**RubricAggregate** extends AggregateRoot. Manages a collection of **CriteriaEntity** (not EntryEntity). Tracks `_criterion` array and `_totalWeight` across all criteria. Enforces weight invariants. Methods: `addCriteria(criteriaEntity)`.
 
-**DirectoryAggregate** — Aggregate for directory-based rubric organization.
+**DirectoryAggregate** — Aggregate for directory-based rubric organization using EntryEntity.
 
 ## DOMAIN SERVICES
 
@@ -62,10 +63,10 @@ infrastructure/repository/
 
 ## APPLICATION USE CASES
 
-- **GenerateRubricUseCase**: Fetches copilot input by goldenSetId + userInputId, calls generateRubrics, builds RubricAggregate with entries, persists via repository.
+- **GenerateRubricUseCase**: Fetches copilot input by goldenSetId + userInputId, calls generateRubrics, builds RubricAggregate with criteria entities, persists via repository.
 - **GetRubricByIdUseCase**: Retrieves RubricAggregate by ID or throws.
 - **GetRubricByCopilotInputUseCase**: Retrieves rubric by golden set + user input pair.
-- **SaveFeedbacksUseCase**: Persists agent feedback records.
+- **SaveFeedbacksUseCase**: Persists agent feedback records via `IRepository<AgentFeedbackEntity>`.
 
 ## DEEP AGENTS INTEGRATION
 
@@ -77,12 +78,13 @@ infrastructure/repository/
    - schemaLookupAgent: jq-based schema lookups via read_json_schema tool
    - documentationsLookupAgent: markdown evidence extraction via read_markdown_documentations tool
 4. Agents use Feedback middleware to accumulate agent reasoning
-5. Final structured response parsed via responseSchema (entry array with content, expectedAnswer, weight, failureScenario, verificationTarget, verificationRule)
+5. Final structured response parsed via responseSchema (criteria array with content, expectedAnswer, weight, failureScenario, verificationTarget, verificationRule)
 
 ## CONVENTIONS
 
 - Prompt templates loaded via `fs.readFile` at module initialization (not bundled)
 - All entities extend base Entity with Zod schema validation
+- RubricRepository implements `IRubricRepository` (custom interface extending `IRepository<RubricEntity>`); AgentFeedbackRepository implements plain `IRepository<AgentFeedbackEntity>` (no separate interface file)
 - RubricRepository uses repositoryDateMapper for datetime normalization
 - No default exports; named exports only
 - `environment-setup.ts` has Promise chaining anti-pattern (line 17) — needs migration to async/await

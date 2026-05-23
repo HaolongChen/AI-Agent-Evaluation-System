@@ -21,6 +21,6 @@ export class CreateGoldenSetUseCase {
       projectName,
     });
     await this.repository.save(goldenSetEntity);
-    return goldenSetEntity.toJSON();
+    return goldenSetEntity.getData();
   }
 }

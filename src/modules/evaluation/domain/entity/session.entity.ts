@@ -15,7 +15,7 @@ export class BaseSessionEntity<
     | typeof sessionIdentifierSchema,
 > extends Entity<T> {
   public get identifier(): z.infer<typeof sessionIdentifierSchema> {
-    return this.data as z.infer<typeof sessionIdentifierSchema>;
+    return this.getData() as z.infer<typeof sessionIdentifierSchema>;
   }
 }
 

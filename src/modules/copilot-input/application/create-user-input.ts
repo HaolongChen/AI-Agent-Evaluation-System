@@ -10,6 +10,6 @@ export class CreateUserInputUseCase {
       createdBy: createdBy ?? "unknown",
     });
     await this.repository.save(userInputEntity);
-    return userInputEntity.toJSON();
+    return userInputEntity.getData();
   }
 }

@@ -40,7 +40,7 @@ export class UserInputRepository implements IUserInputRepository {
   }
   async save(entity: UserInputEntity): Promise<void> {
     const userInput = await prisma.userInput.create({
-      data: { ...entity.data, id: entity.id },
+      data: entity.getData(),
     });
     repositoryDateMapper(userInput, entity);
   }

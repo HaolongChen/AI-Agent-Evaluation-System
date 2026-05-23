@@ -118,19 +118,19 @@ export class ProjectService {
     }
     const gqlClient = await this.account.getGQLClient();
     logger.info("Deleting project", {
-      projectExId: this.projectEntity.data.projectExId,
+      projectExId: this.projectEntity.getData("projectExId"),
     });
     const isDeleted = await gqlClient.gqlRequest<
       DeleteProjectMutation,
       DeleteProjectMutationVariables
-    >(GQL_DELETE_PROJECT, { projectExId: this.projectEntity.data.projectExId });
+    >(GQL_DELETE_PROJECT, { projectExId: this.projectEntity.getData("projectExId") });
     if (!isDeleted.deleteProject) {
       throw new Error(
-        `Failed to delete project with exId ${this.projectEntity.data.projectExId}`,
+        `Failed to delete project with exId ${this.projectEntity.getData("projectExId")}`,
       );
     }
     logger.info("Project deleted", {
-      projectExId: this.projectEntity.data.projectExId,
+      projectExId: this.projectEntity.getData("projectExId"),
     });
   }
 
@@ -141,15 +141,15 @@ export class ProjectService {
         "schemaId",
         this.schemaManager.getSchemaId(),
       );
-    } else if (this.projectEntity?.id) {
+    } else if (this.projectEntity?.getData("id")) {
       project = await this.repository.getByUniqueField(
         "id",
-        this.projectEntity.id,
+        this.projectEntity.getData("id"),
       );
-    } else if (this.projectEntity?.data.projectExId) {
+    } else if (this.projectEntity?.getData("projectExId")) {
       project = await this.repository.getByUniqueField(
         "projectExId",
-        this.projectEntity.data.projectExId,
+        this.projectEntity.getData("projectExId"),
       );
     } else if (this.projectName) {
       project = await this.repository.getByUniqueField(
@@ -162,7 +162,7 @@ export class ProjectService {
       );
     }
     await Promise.all([
-      this.repository.deleteById(project.id!),
+      this.repository.deleteById(project.getData("id")),
       this.deleteProject(),
     ]);
   }

@@ -16,7 +16,7 @@ import type {
 import { getMyAccount } from "../../DI/account.ts";
 
 const toGraphqlRubric = (
-  rubric: ReturnType<RubricAggregate["toJSON"]>,
+  rubric: ReturnType<RubricAggregate["getData"]>,
 ): Rubric => {
   return {
     __typename: "Rubric",
@@ -37,7 +37,7 @@ const toGraphqlRubric = (
 };
 
 const toGraphqlCopilotOutput = (
-  output: ReturnType<CopilotOutputEntity["toJSON"]>,
+  output: ReturnType<CopilotOutputEntity["getData"]>,
 ): CopilotOutput => {
   return {
     ...output,
@@ -54,7 +54,7 @@ export const rubricResolver = {
       arguments_: QueryGetRubricByIdArguments,
     ): Promise<Rubric> => {
       const rubric = await repository.rubricRepository.findById(arguments_.id);
-      return toGraphqlRubric(rubric.toJSON());
+      return toGraphqlRubric(rubric.getData());
     },
     getRubricByContext: async (
       _: unknown,
@@ -65,7 +65,7 @@ export const rubricResolver = {
           arguments_.context.goldenSetId,
           arguments_.context.userInputId,
         );
-      return rubrics.map((rubric) => toGraphqlRubric(rubric.toJSON()));
+      return rubrics.map((rubric) => toGraphqlRubric(rubric.getData()));
     },
   },
 

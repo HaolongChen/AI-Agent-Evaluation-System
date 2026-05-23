@@ -42,7 +42,7 @@ export type Feedbacks = {
 };
 
 export type FeedbacksJSON = {
-  [key in AgentName]: ReturnType<Feedback<key>["toJSON"]>;
+  [key in AgentName]: ReturnType<Feedback<key>["getData"]>;
 };
 
 export const feedbackDistributor = (feedbacks: Feedbacks) => {
@@ -56,11 +56,11 @@ export const feedbackDistributor = (feedbacks: Feedbacks) => {
   };
 };
 
-export const feedbacksToJSON = (feedbacks: Feedbacks): FeedbacksJSON => {
+export const feedbacksgetData = (feedbacks: Feedbacks): FeedbacksJSON => {
   const feedbacksJSON = {} as FeedbacksJSON;
   for (const agentName in feedbacks) {
     feedbacksJSON[agentName as AgentName] =
-      feedbacks[agentName as AgentName].toJSON();
+      feedbacks[agentName as AgentName].getData();
   }
   return feedbacksJSON;
 };

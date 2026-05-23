@@ -54,7 +54,7 @@ export class SessionOrchestrator {
 
       listen("CopilotToolCallBatchMessage", (event) => {
         const { toolCallBatchId, toolCalls } = event.data;
-        const result = runToolCalls(toolCalls, this.job.data.schemaGraph);
+        const result = runToolCalls(toolCalls, this.job.getData("schemaGraph"));
         if (result.error) {
           logger.error(
             `Error executing tool call batch ${toolCallBatchId}:`,
@@ -143,7 +143,7 @@ export class SessionOrchestrator {
         if (!event.data.currentJobIsRunning) {
           publish(
             new CopilotInputEvent("HUMAN_INPUT", {
-              content: this.job.data.query,
+              content: this.job.getData("query"),
             }),
           );
         }

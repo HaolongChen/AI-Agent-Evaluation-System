@@ -78,7 +78,7 @@ export class GoldenSetRepository implements IGoldenSetRepository {
   }
   async save(entity: GoldenSetEntity): Promise<void> {
     const goldenSet = await prisma.goldenSet.create({
-      data: { ...entity.data, id: entity.id },
+      data: entity.getData(),
     });
     repositoryDateMapper(goldenSet, entity);
   }

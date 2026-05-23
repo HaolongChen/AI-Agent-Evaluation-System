@@ -14,7 +14,7 @@ export class FormCopilotInputUseCase {
       await this.repository.goldenSetRepository.getByUserInputId(userInputId);
     if (
       !existingGoldenSetEntities.some(
-        (goldenSetEntity) => goldenSetEntity.id === goldenSetId,
+        (goldenSetEntity) => goldenSetEntity.getData("id") === goldenSetId,
       )
     ) {
       await this.repository.userInputRepository.addGoldenSetAssociation(

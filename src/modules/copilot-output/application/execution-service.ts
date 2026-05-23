@@ -35,7 +35,7 @@ export class ExecuteCopilotUseCase {
       ? await this.projectLifecycle.importExistingProject(data.projectExId)
       : await this.projectLifecycle.createTemporaryProject(
           this.generateProjectName(data.goldenSetId, data.userInputId),
-          goldenSetEntity.data.schemaId,
+          goldenSetEntity.getData("schemaId"),
         );
 
     const copilotSessionExId = await createNewSession(
@@ -46,7 +46,7 @@ export class ExecuteCopilotUseCase {
     return new CopilotJobEntity({
       projectExId,
       copilotSessionExId,
-      query: userInputEntity.data.content,
+      query: userInputEntity.getData("content"),
       wsUrl: process.env.SUBSCRIPTION_GRAPHQL_URL,
       schemaGraph,
     });
@@ -69,7 +69,7 @@ export class ExecuteCopilotUseCase {
     const gqlClient = await this.account.getGQLClient();
     try {
       const runner = new ExecutionJobRunnerV2(
-        copilotJobEntity.data.copilotSessionExId,
+        copilotJobEntity.getData("copilotSessionExId"),
         wsClient,
         gqlClient,
       );
@@ -81,7 +81,7 @@ export class ExecuteCopilotUseCase {
         data.userInputId,
       );
       await this.repository.copilotOutputRepository.save(copilotOutputEntity);
-      return copilotOutputEntity.toJSON();
+      return copilotOutputEntity.getData();
     } catch (error) {
       logger.error("Error setting up copilot execution environment:", error);
       this.account.clearWsClient();
@@ -106,7 +106,7 @@ export class ExecuteCopilotUseCase {
       userInputId,
       editableText: jobEntity.editableText ?? null,
       aiResponse: jobEntity.aiResponse,
-      copilotSessionExId: jobEntity.data.copilotSessionExId,
+      copilotSessionExId: jobEntity.getData("copilotSessionExId"),
     });
   }
 }

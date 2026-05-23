@@ -44,7 +44,7 @@ export const goldenSetResolver = {
       const userInput = await repository.userInputRepository.findById(
         arguments_.id,
       );
-      const json = userInput.toJSON();
+      const json = userInput.getData();
       return {
         ...json,
         createdAt: json.createdAt!.toISOString(),
@@ -55,7 +55,7 @@ export const goldenSetResolver = {
     getUserInputs: async (): Promise<UserInput[]> => {
       const userInputs = await repository.userInputRepository.getAll();
       return userInputs.map((userInput) => {
-        const json = userInput.toJSON();
+        const json = userInput.getData();
         return {
           ...json,
           createdAt: json.createdAt!.toISOString(),
@@ -71,7 +71,7 @@ export const goldenSetResolver = {
       const goldenSet = await repository.goldenSetRepository.findById(
         arguments_.id,
       );
-      const json = goldenSet.toJSON();
+      const json = goldenSet.getData();
       return {
         ...json,
         copilotType: copilotTypeMapper[json.copilotType],
@@ -86,7 +86,7 @@ export const goldenSetResolver = {
         arguments_.filters ?? {},
       );
       return goldenSets.map((goldenSet) => {
-        const json = goldenSet.toJSON();
+        const json = goldenSet.getData();
         return {
           ...json,
           copilotType: copilotTypeMapper[json.copilotType],

@@ -40,10 +40,10 @@ export class DirectoryAggregate extends AggregateRoot<
   }
 
   addEntry(entry: FolderEntryEntity | FileEntryEntity) {
-    if (this._entriesMap.has(entry.data.name)) {
+    if (this._entriesMap.has(entry.getData("name"))) {
       throw new Error("Entry with same name already exists");
     }
-    this._entriesMap.set(entry.data.name, entry);
+    this._entriesMap.set(entry.getData("name"), entry);
     this._entries.push(entry);
     this._pathStore.push(entry.getEntryPathName());
   }

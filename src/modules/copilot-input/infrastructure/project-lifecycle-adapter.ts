@@ -22,7 +22,7 @@ export class ProjectLifecycleAdapter implements IProjectLifecycle {
     }
     this.projectService = projectService;
     return {
-      projectExId: projectEntity.data.projectExId,
+      projectExId: projectEntity.getData("projectExId"),
       schemaGraph: schemaManager.schemaGraph,
     };
   }
@@ -43,7 +43,7 @@ export class ProjectLifecycleAdapter implements IProjectLifecycle {
       throw new Error("Schema graph not available after project creation");
     }
     return {
-      projectExId: projectEntity.data.projectExId,
+      projectExId: projectEntity.getData("projectExId"),
       schemaGraph: schemaManager.schemaGraph,
     };
   }

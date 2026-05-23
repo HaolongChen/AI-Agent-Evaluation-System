@@ -16,7 +16,7 @@ export class EntryEntity<T extends typeof commonEntrySchema> extends Entity<T> {
   }
 
   getEntryPathName(): string {
-    return this.data.name;
+    return this.getData("name");
   }
 }
 
@@ -25,10 +25,10 @@ export class FileEntryEntity extends EntryEntity<typeof fileEntrySchema> {
     super(data, fileEntrySchema, id);
   }
   getEntryPathName(): string {
-    if (this.data.extension.length > 0) {
-      return `${this.data.name}.${this.data.extension}`;
+    if (this.getData("extension").length > 0) {
+      return `${this.getData("name")}.${this.getData("extension")}`;
     }
-    return this.data.name;
+    return this.getData("name");
   }
 }
 
@@ -37,6 +37,6 @@ export class FolderEntryEntity extends EntryEntity<typeof folderEntrySchema> {
     super(data, folderEntrySchema, id);
   }
   getEntryPathName(): string {
-    return this.data.name;
+    return this.getData("name");
   }
 }

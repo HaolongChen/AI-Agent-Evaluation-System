@@ -66,8 +66,8 @@ export class Account extends AccountService {
 
   async login() {
     const accountInfo = await login(
-      this.account.data.phoneNumber,
-      this.account.data.password,
+      this.account.getData("phoneNumber"),
+      this.account.getData("password"),
     );
     this.handleLogin(accountInfo);
   }

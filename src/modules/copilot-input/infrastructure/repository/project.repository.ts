@@ -13,7 +13,7 @@ export class ProjectRepository implements IProjectRepository {
   }
   async save(data: ProjectEntity) {
     const project = await prisma.project.create({
-      data: { ...data.data, id: data.id },
+      data: data.getData(),
     });
     repositoryDateMapper(project, data);
   }

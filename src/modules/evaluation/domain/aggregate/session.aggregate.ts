@@ -16,7 +16,11 @@ export class EvaluationSessionAggregate extends BaseSessionAggregateRoot<
   private validateExternalEntity(
     entity: EvaluationRecordEntity | EvaluationResultEntity,
   ): boolean {
-    return this.entity.identifier == entity.identifier;
+    // Object.keys returns string[] which may not match the expected typed keys for getData.
+    // Use a cast and structural comparison to avoid type incompatibilities while
+    // preserving the intent of verifying the external entity belongs to this session.
+    const sessionId = this.getData(Object.keys(this.schema.shape) as any);
+    return JSON.stringify(sessionId) === JSON.stringify(entity.identifier);
   }
 
   public addRecordEntity(recordEntity: EvaluationRecordEntity): void {

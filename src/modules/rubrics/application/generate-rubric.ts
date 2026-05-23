@@ -55,14 +55,20 @@ export class GenerateRubricUseCase {
     );
     for (const criteria of criterion.criterion) {
       rubricAggregate.addCriteria(
-        new CriteriaEntity({ ...criteria, rubricId: rubricAggregate.getData("id") }),
+        new CriteriaEntity({
+          ...criteria,
+          rubricId: rubricAggregate.getData("id"),
+        }),
       );
     }
     await this.repository.rubricRepository.saveWithCriterion(rubricAggregate);
     const saveFeedbacksUseCase = new SaveFeedbacksUseCase(
       this.repository.agentFeedbackRepository,
     );
-    await saveFeedbacksUseCase.execute(feedbacks, rubricAggregate.getData("id"));
+    await saveFeedbacksUseCase.execute(
+      feedbacks,
+      rubricAggregate.getData("id"),
+    );
     return {
       ...rubricAggregate.getData(),
       feedbacks: feedbacksgetData(feedbacks),

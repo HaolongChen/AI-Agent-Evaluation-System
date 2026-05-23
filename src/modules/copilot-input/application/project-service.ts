@@ -123,7 +123,9 @@ export class ProjectService {
     const isDeleted = await gqlClient.gqlRequest<
       DeleteProjectMutation,
       DeleteProjectMutationVariables
-    >(GQL_DELETE_PROJECT, { projectExId: this.projectEntity.getData("projectExId") });
+    >(GQL_DELETE_PROJECT, {
+      projectExId: this.projectEntity.getData("projectExId"),
+    });
     if (!isDeleted.deleteProject) {
       throw new Error(
         `Failed to delete project with exId ${this.projectEntity.getData("projectExId")}`,

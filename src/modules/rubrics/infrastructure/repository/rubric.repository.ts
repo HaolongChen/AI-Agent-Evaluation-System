@@ -73,12 +73,11 @@ export class RubricRepository implements IRubricRepository {
   async saveWithCriterion(rubricAggregate: RubricAggregate): Promise<void> {
     const rubric = await prisma.rubric.create({
       data: {
-        ...rubricAggregate.data,
-        id: rubricAggregate.id,
+        ...rubricAggregate.getData(),
         criterion: {
           createMany: {
             data: rubricAggregate.criterion.map((criteria) => {
-              return { ...criteria.data, id: criteria.id };
+              return criteria.getData();
             }),
           },
         },
@@ -109,7 +108,7 @@ export class RubricRepository implements IRubricRepository {
         criterion: {
           createMany: {
             data: criterion.map((criteria) => {
-              return { ...criteria.data, id: criteria.id };
+              return criteria.getData();
             }),
           },
         },
@@ -126,7 +125,7 @@ export class RubricRepository implements IRubricRepository {
   }
   async save(entity: RubricEntity): Promise<void> {
     const rubric = await prisma.rubric.create({
-      data: { ...entity.data, id: entity.id },
+      data: entity.getData(),
     });
     repositoryDateMapper(rubric, entity);
   }

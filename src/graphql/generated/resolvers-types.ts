@@ -331,8 +331,6 @@ export type UserInput = {
   content: Scalars["String"]["output"];
   /** Timestamp when input was added */
   createdAt: Scalars["String"]["output"];
-  /** Account ID of creator */
-  createdBy: Maybe<Scalars["String"]["output"]>;
   /** Unique identifier */
   id: Scalars["String"]["output"];
 };
@@ -789,7 +787,6 @@ export type UserInputResolvers<
 > = ResolversObject<{
   content: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   createdAt: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  createdBy: Resolver<Maybe<ResolversTypes["String"]>, ParentType, ContextType>;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
 }>;
 

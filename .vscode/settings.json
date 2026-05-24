@@ -17,5 +17,5 @@
     "**/*.cjs": true,
     "**/AGENT.md": true
   },
-  "markdown.validate.enabled": true,
+  "markdown.validate.enabled": true
 }

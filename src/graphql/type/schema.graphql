@@ -93,8 +93,6 @@ type UserInput {
   content: String!
   "Timestamp when input was added"
   createdAt: String!
-  "Account ID of creator"
-  createdBy: String
 }
 
 """

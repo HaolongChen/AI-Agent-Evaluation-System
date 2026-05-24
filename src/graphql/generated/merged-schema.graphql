@@ -7865,11 +7865,6 @@ type UserInput {
   createdAt: String!
 
   """
-  Account ID of creator
-  """
-  createdBy: String
-
-  """
   Unique identifier
   """
   id: String!

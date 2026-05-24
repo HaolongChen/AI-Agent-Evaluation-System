@@ -1,6 +1,6 @@
 # AGENTS.md - GraphQL API Layer
 
-> **Generated:** 2026-05-22 | **Commit:** 5ba93c9 | **Branch:** main
+> **Generated:** 2026-05-24 | **Commit:** 9b672f3 | **Branch:** main
 
 Guidelines for schema, resolvers, and typed documents in the GraphQL API.
 
@@ -39,7 +39,7 @@ Exposes the evaluation engine via Apollo Server on Express. Orchestrates Golden 
 ### Module Delegation
 
 - **Zero Logic**: No business logic or Prisma calls in resolvers. Delegate to modules.
-  - ⚠️ Known violation: `golden-set-resolver.ts` line 221 has direct Prisma query.
+  - ⚠️ Known violation: `golden-set-resolver.ts` `runCrdtTest` (lines 203-217) uses direct `pg.Client` + raw SQL, bypassing module layer entirely.
 - **Transform**: Map module output to GQL types (dates to strings, enums).
 - **Error Handling**: Try-catch; `console.error` for internals, throw clean errors for clients.
 - **Context**: Use `context` for auth and common utilities.

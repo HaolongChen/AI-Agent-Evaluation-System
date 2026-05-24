@@ -1,6 +1,6 @@
 # AGENTS.md - GraphQL Resolvers
 
-> **Scope:** src/graphql/resolvers/ | **Generated:** 2026-05-22 | **Status:** UPDATED
+> **Scope:** src/graphql/resolvers/ | **Generated:** 2026-05-24 | **Status:** UPDATED
 
 Guidelines for managing the GraphQL API layer in this repository.
 
@@ -38,10 +38,15 @@ Thin resolver layer that delegates to **DDD module use cases** (NOT legacy servi
 
 - **Problem**: Avoid resubmitting large objects (entire rubrics or evaluations).
 - **Solution**: Use patch arrays for Human-in-the-Loop mutations.
-- **`questionPatches`**: Used in `submitRubricReview` to modify specific criteria.
-- **`answerPatches`**: Used in `submitHumanEvaluation` to override specific agent scores.
+- **`questionPatches`**: Modify specific rubric criteria without replacing the entire set.
+- **`answerPatches`**: Override specific agent scores via `submitHumanEvaluation`.
 - **Validation**: Module use cases merge patches with existing state before persistence.
 
 ## KNOWN VIOLATIONS
 
-- `golden-set-resolver.ts` line 221: Direct Prisma query (`zionDatabase.query`) bypasses module layer. Should delegate to use case.
+- `golden-set-resolver.ts` `runCrdtTest` (lines 203-217): Direct `pg.Client` + raw SQL query bypasses module layer. Connects to production DB via `DATABASE_URL_PRODUCTION` env var directly. Should delegate to use case.
+
+## SIGNIFICANT CHANGES
+
+- `createProject` mutation signature changed (post 2026-05-22): from `(number: Int!): String!` to `(projectName: String): GoldenSet!`. Now creates a `GoldenSetEntity` via `CreateGoldenSetUseCase` after project initialization.
+- `UserInput` type: `createdBy` field removed from schema.

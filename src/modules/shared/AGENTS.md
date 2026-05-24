@@ -8,7 +8,15 @@ Foundational DDD building blocks (Entity, AggregateRoot, ValueObject, IRepositor
 
 ## ENTITY BASE
 
-`Entity<T>` (in `domain/entity/entity.ts`) provides UUID, createdAt/updatedAt tracking, and Zod schema validation.
+`Entity<T, M>` (in `domain/entity/entity.ts`) provides UUID, createdAt/updatedAt tracking, Zod schema validation, and metadata management. Refactored post 2026-05-22 with:
+
+- **Generic metadata type**: `EntityMetadata` (`id`, `createdAt`, `updatedAt`) as second generic param
+- **Constructor overloading**: Can clone from existing entity (`new Entity<T, M>(existingEntity)`) or construct from raw data
+- **`getData()` accessor**: Replaced direct `.data` property — returns typed projection of all fields including metadata
+- **`schema` made public**: Schema now accessible as public field for external validation
+- **Cross-layer violation**: Imports `logger` from `shared/infrastructure/logger.ts` (domain→infrastructure — known)
+
+### Base Class Usage
 
 ```typescript
 import { Entity } from "./entity/entity.ts";
@@ -22,7 +30,7 @@ class User extends Entity<typeof UserSchema> {
 
 ## AGGREGATE ROOT
 
-`AggregateRoot<T>` (in `domain/aggregate/aggregate-root.ts`) wraps an Entity for consistency boundaries.
+`AggregateRoot<T, M>` (in `domain/aggregate/aggregate-root.ts`) wraps an Entity for consistency boundaries. Refactored to support generic metadata type and dynamic child entity management with `getData()` method.
 
 ```typescript
 class UserAggregate extends AggregateRoot<typeof UserSchema> {
@@ -52,7 +60,7 @@ class Email extends ValueObject<typeof EmailVO> {
 
 ## DOMAIN SERVICES
 
-- **type-system.service.ts** (`domain/service/`): Manages Functorz Zed type system. Contains 2 `any` type violations (lines 215, 238) — known technical debt.
+- **type-system.service.ts** (`domain/service/`): Manages Functorz Zed type system. Contains 2 `any` type violations (lines 215, 238) and 3 additional type-level `any` usages (lines 49, 65, 81) — known technical debt.
 
 ## DOMAIN INTERFACES
 

@@ -88,4 +88,5 @@ infrastructure/repository/
 - RubricRepository uses repositoryDateMapper for datetime normalization
 - No default exports; named exports only
 - `environment-setup.ts` has Promise chaining anti-pattern (line 17) — needs migration to async/await
-- `prompts.service.ts` has cross-layer import violation (imports from application/tools)
+- `prompts.service.ts` has cross-layer import violation (imports from `application/rubricsGenerator/tools`)
+- `feedback.service.ts` has cross-layer import violation (imports `logger` from `shared/infrastructure`)

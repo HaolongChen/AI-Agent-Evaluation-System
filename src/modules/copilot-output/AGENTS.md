@@ -55,4 +55,3 @@ Depends on **account**: uses Account for WebSocket authentication.
 - ExecutionJobV2 owns socket subscription lifecycle; ToolCallHandler owns message dispatch; SessionOrchestrator owns event handling logic.
 - `.ts` extensions required in imports (ESM).
 - All repository methods throw on missing records (no null returns for singular lookups).
-- Heavy `console.log/error/warn` usage — candidate for structured logger migration.

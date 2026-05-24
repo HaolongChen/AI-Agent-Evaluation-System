@@ -1,7 +1,7 @@
 # Services - Business Logic Layer
 
 > **Scope:** `src/services/` | **Status:** ⚠️ DEPRECATED  
-> **Last verified:** 2026-05-22
+> **Last verified:** 2026-05-24
 
 ## OVERVIEW
 

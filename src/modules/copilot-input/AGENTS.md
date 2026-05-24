@@ -50,6 +50,7 @@ infrastructure/
 - **ProjectService** — Creates/deletes projects via Zed GraphQL backend with async subscription handling (modern graphql-ws or legacy Apollo WS protocol). Depends on `ORGANIZATION_EX_ID` env var. Import/delete operations are delegated to `ProjectLifecycleAdapter`.
 
 > **Note**: Retrieval use cases (GetGoldenSetById, GetGoldenSetsByFilter, GetUserInput, GetSchemaId) were removed during CRUD consolidation. Resolvers call repositories directly via the DI bundle.
+> `get-schema-id.ts` deleted in recent refactoring — schema ID management absorbed into `ProjectService`.
 
 ## INFRASTRUCTURE
 

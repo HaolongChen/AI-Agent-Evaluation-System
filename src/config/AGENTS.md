@@ -1,6 +1,6 @@
 # Config Layer
 
-> **Scope:** src/config/ | **Updated:** 2026-05-22
+> **Scope:** src/config/ | **Updated:** 2026-05-24
 
 ⚠️ **NOTE:** `env.ts` and `constants.ts` are documented below but do **NOT** exist on disk. Only `prisma.ts` exists. This doc serves as a reference for expected env vars and domain constants.
 

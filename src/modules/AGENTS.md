@@ -29,13 +29,13 @@ Dependencies flow: application → domain ← infrastructure. Never reverse.
 
 `shared/domain/` provides:
 
-- `Entity<T>` base class: UUID generation, createdAt/updatedAt tracking, Zod schema validation
-- `AggregateRoot<T>`: wraps Entity for consistency boundaries
+- `Entity<T, M>` base class: UUID generation, createdAt/updatedAt tracking, Zod schema validation, metadata management
+- `AggregateRoot<T, M>`: wraps Entity for consistency boundaries, dynamic child entity management
 - `IRepository<T>`: generic repository contract (`save`, `findById`)
 - `ValueObject<T>`: immutable domain concepts
 - `repositoryDateMapper()`: hydrates timestamps from DB records
 
-All module entities extend `Entity<T>`. All module repositories implement `IRepository<T>`.
+All module entities extend `Entity<T, M>` (defaulting to `EntityMetadata`). Use `getData()` to retrieve typed projections. All module repositories implement `IRepository<T>`.
 
 ## CROSS-MODULE DEPENDENCIES
 
@@ -47,12 +47,15 @@ All module entities extend `Entity<T>`. All module repositories implement `IRepo
 
 ## MODULE STATUS
 
-- **`evaluation`**: domain layer complete (entities, aggregates, schemas). `application/` and `infrastructure/` layers are pending implementation.
+- **`evaluation`**: domain layer complete (entities, aggregates, schemas). `application/` and `infrastructure/` layers are pending implementation. Post 2026-05-22 refactoring: `BaseSessionAggregateRoot` and `BaseSessionEntity` updated with `getData()` method pattern and Entity clone support.
+- **`evaluation` GraphQL resolvers**: All 5 resolver methods (`getEvaluationSessionById`, `getEvaluationSessions`, `getEvaluationResultById`, `getEvaluationResults`, `submitHumanEvaluation`) throw `new Error("Method not implemented.")`. Module unusable via API.
 
 ## CONVENTIONS
 
-- All entities extend `Entity<T>` from `shared/`
+- All entities extend `Entity<T, M>` from `shared/` (second generic param for `EntityMetadata`)
+- All aggregates extend `AggregateRoot<T, M>` from `shared/`
 - Use `.ts` extensions in imports (ESM + nodenext resolution)
 - Schema files are the single source of truth for entity shape
 - Domain services stay in `domain/service/` (no business logic in resolvers)
 - Resolvers in `src/graphql/resolvers/` delegate to module application services
+- Entities use `getData()` method (not direct `.data` property access) to retrieve typed data projections

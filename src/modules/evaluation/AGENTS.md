@@ -47,9 +47,18 @@ All extend BaseSessionEntity → shared Entity base class.
 | Infrastructure/repos            | EMPTY                                |
 | GraphQL resolvers               | ALL 5 throw "Method not implemented" |
 
-**GraphQL resolvers in `session-resolver.ts`**: All 5 mutations/queries (`runEvaluation`, `submitRubricReview`, `submitHumanEvaluation`, `getEvaluationSession`, `listEvaluationSessions`) throw `new Error("Method not implemented.")`. The module cannot be used via the API.
+**GraphQL resolvers in `session-resolver.ts`**: All 5 resolver methods throw `new Error("Method not implemented.")`:
 
-**Legacy code not yet migrated**: Evaluation logic remains in `src/services/analytics-service.ts` (51 references to evaluation/session/rubric). This is the future source for application layer migration.
+- Queries: `getEvaluationSessionById`, `getEvaluationSessions`, `getEvaluationResultById`, `getEvaluationResults`
+- Mutation: `submitHumanEvaluation`
+- The module cannot be used via the API.
+
+**Legacy code not yet migrated**: Evaluation logic remains in `src/services/analytics-service.ts` (references to evaluation/session/rubric). This is the future source for application layer migration.
+
+## RECENT CHANGES (post 2026-05-22)
+
+- `BaseSessionAggregateRoot` and `BaseSessionEntity` refactored: replaced `readonly` modifiers with a `getData()` method pattern, added Entity clone constructor support.
+- `EvaluationSessionAggregate.getData()` now returns a typed projection instead of raw entity data.
 
 ## CONVENTIONS
 

@@ -1,6 +1,6 @@
 # PRISMA DATABASE LAYER
 
-**Scope:** `src/prisma/` | **Updated:** 2026-05-22
+**Scope:** `src/prisma/` | **Updated:** 2026-05-24
 
 Database schema, migrations, and generated client. Prisma 7, PostgreSQL via `@prisma/adapter-pg`.
 
@@ -8,7 +8,7 @@ Database schema, migrations, and generated client. Prisma 7, PostgreSQL via `@pr
 
 ```
 src/prisma/
-├── schema.prisma              # 224 lines, 12 models, ERD generator
+├── schema.prisma              # 226 lines, 12 models, ERD generator
 ├── migrations/                # Squashed migration (1 file)
 ├── build/generated/prisma/    # Committed generated client
 └── ERD.svg

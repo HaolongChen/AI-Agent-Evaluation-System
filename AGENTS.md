@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE (AI Agent Evaluation System)
 
-**Generated:** 2026-05-22 | **Commit:** 9a9f2cf | **Branch:** main
+**Generated:** 2026-05-24 | **Commit:** 9b672f3 | **Branch:** main
 
 ## OVERVIEW
 
@@ -65,13 +65,14 @@ AI-Agent-Evaluation-System/
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
-- **`any` type**: Forbidden. Use `unknown` or proper types. (2 violations exist in `type-system.service.ts`)
+- **`any` type**: Forbidden. Use `unknown` or proper types. (7+ occurrences across 4 files: `type-system.service.ts`, `crdt-schema-manager.ts`, `copilot.schema.ts`)
 - **Promise chaining**: Forbidden. Use `async/await`. (1 violation in `environment-setup.ts`)
 - **Default exports**: Forbidden. Use named exports only.
-- **Direct LLM calls**: Forbidden. Use `invokeWithRetry()`.
+- **Direct LLM calls**: Forbidden. Use `invokeWithRetry()`. (⚠️ `invokeWithRetry` has NOT been implemented yet — LLM calls in `rubrics-generator.ts` are unprotected.)
 - **Generated files**: Never hand-edit `src/prisma/build/generated/prisma/` or `src/graphql/generated/`.
-- **Cross-layer imports**: Domain layer must NOT import Application or Infrastructure layers. (1 violation in `prompts.service.ts`)
-- **Logic in resolvers**: GraphQL resolvers must be thin — delegate to modules. (1 violation: direct Prisma query in `golden-set-resolver.ts`)
+- **Cross-layer imports**: Domain layer must NOT import Application or Infrastructure layers. (4 violations: `prompts.service.ts` domain→app, `feedback.service.ts` domain→infra, `entity.ts` domain→infra, `project-lifecycle-adapter.ts` infra→app)
+- **Logic in resolvers**: GraphQL resolvers must be thin — delegate to modules. (1 violation: `runCrdtTest` in `golden-set-resolver.ts` — lines 203-217 uses direct `pg.Client` + raw SQL)
+- **Direct `process.env`**: Must go through `src/config/`. (18 instances across 9 files access `process.env` directly — widespread.)
 - **`src/DI/` directory**: Uses PascalCase — legacy naming, do not replicate.
 
 ## COMMANDS

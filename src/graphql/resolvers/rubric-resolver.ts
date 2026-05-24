@@ -16,13 +16,11 @@ import type {
 import { getMyAccount } from "../../DI/account.ts";
 
 const toGraphqlRubric = (
-  rubric: ReturnType<RubricAggregate["getData"]>,
+  rubric: ReturnType<RubricAggregate["getAllData"]>,
 ): Rubric => {
   return {
     __typename: "Rubric",
-    id: rubric.id,
-    goldenSetId: rubric.goldenSetId,
-    userInputId: rubric.userInputId,
+    ...rubric,
     criterion: rubric.criterion.map((item) => ({
       id: item.id,
       rubricId: item.rubricId,
@@ -54,7 +52,7 @@ export const rubricResolver = {
       arguments_: QueryGetRubricByIdArguments,
     ): Promise<Rubric> => {
       const rubric = await repository.rubricRepository.findById(arguments_.id);
-      return toGraphqlRubric(rubric.getData());
+      return toGraphqlRubric(rubric.getAllData());
     },
     getRubricByContext: async (
       _: unknown,
@@ -65,7 +63,7 @@ export const rubricResolver = {
           arguments_.context.goldenSetId,
           arguments_.context.userInputId,
         );
-      return rubrics.map((rubric) => toGraphqlRubric(rubric.getData()));
+      return rubrics.map((rubric) => toGraphqlRubric(rubric.getAllData()));
     },
   },
 

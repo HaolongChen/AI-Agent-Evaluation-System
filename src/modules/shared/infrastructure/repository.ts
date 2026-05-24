@@ -10,6 +10,6 @@ export function repositoryDateMapper<T extends z.ZodObject>(
   data: ExternalRepositoryDate,
   entity: Entity<T>,
 ) {
-  entity.setData(["createdAt", data.createdAt], ["updatedAt", data.updatedAt]);
+  entity.setData({ createdAt: data.createdAt, updatedAt: data.updatedAt });
   return entity;
 }

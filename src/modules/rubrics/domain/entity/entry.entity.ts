@@ -6,7 +6,9 @@ import {
   folderEntrySchema,
 } from "../schema/entry.schema.js";
 
-export class EntryEntity<T extends typeof commonEntrySchema> extends Entity<T> {
+export class EntryEntity<
+  T extends typeof commonEntrySchema = typeof commonEntrySchema,
+> extends Entity<T> {
   private illegalCharRegExp = /[/\\?%*:|"<> ]/;
   constructor(data: z.infer<T>, schema: T, id?: string) {
     super(data, schema, id);

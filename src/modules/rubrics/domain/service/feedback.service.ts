@@ -19,21 +19,23 @@ export class Feedback<
   addFeedback = (feedback: string) => {
     const normalizedFeedback = sanitizeFeedback(feedback);
 
-    const previousFeedback = this.data.feedback.at(-1);
+    const previousFeedback = this.getData("feedback").at(-1);
     if (previousFeedback === normalizedFeedback) {
       return;
     }
 
-    this.data.feedback.push(feedback);
+    this.setData({
+      feedback: [...this.getData("feedback"), normalizedFeedback],
+    });
     logger.debug(`Added feedback: ${normalizedFeedback}`);
   };
 
   getFeedbacks = (): string[] => {
-    return this.data.feedback;
+    return this.getData("feedback");
   };
 
   clearFeedbacks = (): void => {
-    this.data.feedback = [];
+    this.setData({ feedback: [] });
   };
 }
 

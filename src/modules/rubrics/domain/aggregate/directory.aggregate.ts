@@ -1,25 +1,22 @@
 import path from "node:path";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import type {
+  EntryEntity,
   FileEntryEntity,
   FolderEntryEntity,
 } from "../entity/entry.entity.ts";
-import type { folderEntrySchema } from "../schema/entry.schema.ts";
+import { folderEntrySchema } from "../schema/entry.schema.ts";
 import { createInterface } from "node:readline/promises";
 import { createReadStream } from "node:fs";
+import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
 
 export class DirectoryAggregate extends AggregateRoot<
   typeof folderEntrySchema,
-  FolderEntryEntity
+  EntityMetadata,
+  { folderEntry: FolderEntryEntity; fileEntry: FileEntryEntity }
 > {
-  private _entries: (FolderEntryEntity | FileEntryEntity)[] = [];
-  private _pathStore: Array<string> = ["."];
   private _entriesMap: Map<string, FolderEntryEntity | FileEntryEntity> =
     new Map();
-
-  get entries(): (FolderEntryEntity | FileEntryEntity)[] {
-    return this._entries;
-  }
   constructor(
     entity: FolderEntryEntity,
     private basePath: string,
@@ -40,12 +37,16 @@ export class DirectoryAggregate extends AggregateRoot<
   }
 
   addEntry(entry: FolderEntryEntity | FileEntryEntity) {
-    if (this._entriesMap.has(entry.getData("name"))) {
-      throw new Error("Entry with same name already exists");
+    if (this._entriesMap.has(entry.getEntryPathName())) {
+      throw new Error(
+        `Entry with name ${entry.getEntryPathName()} already exists in directory ${this.getData("name")}`,
+      );
     }
-    this._entriesMap.set(entry.getData("name"), entry);
-    this._entries.push(entry);
-    this._pathStore.push(entry.getEntryPathName());
+    this.pushEntity(
+      entry.schema === folderEntrySchema ? "folderEntry" : "fileEntry",
+      entry,
+    );
+    this._entriesMap.set(entry.getEntryPathName(), entry);
   }
 
   async readFile(
@@ -54,7 +55,7 @@ export class DirectoryAggregate extends AggregateRoot<
     offset?: number,
   ): Promise<string> {
     const entry = this.getEntryByName(name);
-    if (entry && entry.data.type === "file") {
+    if (entry && (entry as EntryEntity).getData("type") === "file") {
       const fullPath = path.join(this.basePath, entry.getEntryPathName());
       const fileStream = createReadStream(fullPath);
       const rl = createInterface({ input: fileStream, crlfDelay: Infinity });

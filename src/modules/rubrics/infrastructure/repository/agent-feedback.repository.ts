@@ -16,14 +16,16 @@ function agentNameMapperFromRepository(agentName: AgentNameType): AgentName {
 export class AgentFeedbackRepository implements IRepository<AgentFeedbackEntity> {
   async save(entity: AgentFeedbackEntity): Promise<void> {
     const result = await prisma.rubric.update({
-      where: { id: entity.data.rubricId },
+      where: { id: entity.getData("rubricId") },
       data: {
         agentFeedbacks: {
           updateMany: {
             where: {
-              agentName: agentNameMapperToRepository(entity.data.agentName),
+              agentName: agentNameMapperToRepository(
+                entity.getData("agentName"),
+              ),
             },
-            data: { feedback: { push: entity.data.feedback } },
+            data: { feedback: { push: entity.getData("feedback") } },
           },
         },
       },

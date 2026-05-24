@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as z from "zod";
 export type EntityMetadata = {
   createdAt: z.infer<z.ZodDate> | undefined;
@@ -11,11 +10,12 @@ type EntityKey<
   M extends EntityMetadata = EntityMetadata,
 > = keyof (z.infer<T> & M);
 
+export type OneOrMany<T> = T | T[];
+
 type OneOrMoreEntityKey<
   T extends z.ZodObject = z.ZodObject,
   M extends EntityMetadata = EntityMetadata,
-  E extends EntityKey<T, M> = EntityKey<T, M>,
-> = [E, ...E[]] | E;
+> = OneOrMany<EntityKey<T, M>>;
 type RawEntityValue<
   T extends z.ZodObject,
   M extends EntityMetadata,
@@ -82,17 +82,10 @@ export class Entity<
     return { ...this._data, ...this._metadata } as z.infer<T> & M;
   }
 
-  setData<Pairs extends [EntityKey<T, M>, any][]>(
-    ...pairs: {
-      [I in keyof Pairs]: Pairs[I] extends [
-        infer K extends EntityKey<T, M>,
-        any,
-      ]
-        ? [K, RawEntityValue<T, M, K>]
-        : never;
-    }
+  setData<K extends EntityKey<T, M>>(
+    ...pairs: { [Key in K]: RawEntityValue<T, M, Key> }[]
   ): void {
-    for (const [key, value] of pairs) {
+    for (const [key, value] of Object.entries(pairs)) {
       if (key in this._data) {
         this._data[key as keyof z.infer<T>] =
           this.schema.shape[key as keyof typeof this.schema.shape].parse(value);

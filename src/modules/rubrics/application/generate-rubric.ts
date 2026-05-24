@@ -54,7 +54,8 @@ export class GenerateRubricUseCase {
       new RubricEntity({ goldenSetId, userInputId }, rubricId),
     );
     for (const criteria of criterion.criterion) {
-      rubricAggregate.addCriteria(
+      rubricAggregate.pushEntity(
+        "criterion",
         new CriteriaEntity({
           ...criteria,
           rubricId: rubricAggregate.getData("id"),
@@ -70,7 +71,7 @@ export class GenerateRubricUseCase {
       rubricAggregate.getData("id"),
     );
     return {
-      ...rubricAggregate.getData(),
+      ...rubricAggregate.getAllData(),
       feedbacks: feedbacksgetData(feedbacks),
     };
   }

@@ -44,7 +44,10 @@ export class RubricRepository implements IRubricRepository {
       repositoryDateMapper(rubric, new RubricEntity(rubric, rubric.id)),
     );
     for (const criteria of rubric.criterion) {
-      rubricAggregate.addCriteria(this.buildCriteriaEntity(criteria));
+      rubricAggregate.pushEntity(
+        "criterion",
+        this.buildCriteriaEntity(criteria),
+      );
     }
     return rubricAggregate;
   }
@@ -76,9 +79,9 @@ export class RubricRepository implements IRubricRepository {
         ...rubricAggregate.getData(),
         criterion: {
           createMany: {
-            data: rubricAggregate.criterion.map((criteria) => {
-              return criteria.getData();
-            }),
+            data: rubricAggregate
+              .getEntity("criterion")
+              .map((criteria) => criteria.getData()),
           },
         },
       },

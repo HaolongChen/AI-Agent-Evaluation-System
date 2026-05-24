@@ -19,8 +19,7 @@ export class EvaluationSessionAggregate extends BaseSessionAggregateRoot<
     // Object.keys returns string[] which may not match the expected typed keys for getData.
     // Use a cast and structural comparison to avoid type incompatibilities while
     // preserving the intent of verifying the external entity belongs to this session.
-    const sessionId = this.getData(Object.keys(this.schema.shape) as any);
-    return JSON.stringify(sessionId) === JSON.stringify(entity.identifier);
+    return this.identifier == entity.identifier; // Assuming both entities have an 'identifier' property that can be compared for equality.
   }
 
   public addRecordEntity(recordEntity: EvaluationRecordEntity): void {

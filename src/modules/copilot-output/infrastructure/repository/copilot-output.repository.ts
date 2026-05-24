@@ -31,7 +31,7 @@ export class CopilotOutputRepository implements ICopilotOutputRepository {
     const output = await prisma.copilotOutput.create({
       data: entity.getData(),
     });
-    entity.setData("createdAt", output.createdAt);
+    repositoryDateMapper(output, entity);
   }
   async findById(id: string): Promise<CopilotOutputEntity> {
     const copilotOutput = await prisma.copilotOutput.findUnique({

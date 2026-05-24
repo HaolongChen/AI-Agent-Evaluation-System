@@ -12,9 +12,12 @@ export class ProjectLifecycleAdapter implements IProjectLifecycle {
     private readonly repository: IProjectRepository,
   ) {}
 
-  async importExistingProject(projectExId: string) {
+  async importExistingProject(projectExId: string, initialSchemaId?: string) {
     const projectService = new ProjectService(this.account, this.repository);
     const schemaManager = await projectService.getProjectInZion(projectExId);
+    if (initialSchemaId && schemaManager.getSchemaId() !== initialSchemaId) {
+      await schemaManager.importSchemaManual(initialSchemaId);
+    }
     const projectEntity =
       await projectService.importProjectBySchemaManager(schemaManager);
     if (!schemaManager?.schemaGraph) {

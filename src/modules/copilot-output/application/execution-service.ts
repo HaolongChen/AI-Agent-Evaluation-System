@@ -33,10 +33,14 @@ export class ExecuteCopilotUseCase {
 
     const { projectExId, schemaGraph } = data.projectExId
       ? await this.projectLifecycle.importExistingProject(data.projectExId)
-      : await this.projectLifecycle.createTemporaryProject(
-          this.generateProjectName(data.goldenSetId, data.userInputId),
-          goldenSetEntity.getData("schemaId"),
-        );
+      : goldenSetEntity.getData("projectExId")
+        ? await this.projectLifecycle.importExistingProject(
+            goldenSetEntity.getData("projectExId")!,
+          )
+        : await this.projectLifecycle.createTemporaryProject(
+            this.generateProjectName(data.goldenSetId, data.userInputId),
+            goldenSetEntity.getData("schemaId"),
+          );
 
     const copilotSessionExId = await createNewSession(
       projectExId,

@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { logger } from "../../infrastructure/logger.ts";
 export type EntityMetadata = {
   createdAt: z.infer<z.ZodDate> | undefined;
   updatedAt: z.infer<z.ZodDate> | undefined;
@@ -20,7 +21,11 @@ type RawEntityValue<
   T extends z.ZodObject,
   M extends EntityMetadata,
   K extends EntityKey<T, M>,
-> = K extends keyof M ? M[K] : z.infer<T>[K & keyof z.infer<T>];
+> = K extends keyof M
+  ? M[K]
+  : K extends keyof z.infer<T>
+    ? z.infer<T>[K & keyof z.infer<T>]
+    : never;
 
 type EntityValue<
   T extends z.ZodObject,
@@ -82,15 +87,22 @@ export class Entity<
     return { ...this._data, ...this._metadata } as z.infer<T> & M;
   }
 
-  setData<K extends EntityKey<T, M>>(
-    ...pairs: { [Key in K]: RawEntityValue<T, M, Key> }[]
-  ): void {
-    for (const [key, value] of Object.entries(pairs)) {
+  setData<E extends EntityKey<T, M>>(pairs: {
+    [Key in E]: RawEntityValue<T, M, Key>;
+  }): void {
+    for (const [key, value] of Object.entries(pairs) as [
+      E,
+      RawEntityValue<T, M, E>,
+    ][]) {
       if (key in this._data) {
         this._data[key as keyof z.infer<T>] =
           this.schema.shape[key as keyof typeof this.schema.shape].parse(value);
-      } else {
+      } else if (key in this._metadata) {
         this._metadata[key as keyof M] = value as M[keyof M];
+      } else {
+        logger.error(
+          `Attempted to set invalid key "${key.toString()}" on entity. Valid keys are: ${[...Object.keys(this._data), ...Object.keys(this._metadata)].join(", ")}`,
+        );
       }
     }
   }

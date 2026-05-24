@@ -54,9 +54,9 @@ export class ProjectService {
       projectName: this.projectName,
     });
     const schemaManager = await this.getProjectInZion(projectExId);
-    if (this.initialSchemaId) {
-      await schemaManager.importSchemaManual(this.initialSchemaId);
-    }
+    await (this.initialSchemaId
+      ? schemaManager.importSchemaManual(this.initialSchemaId)
+      : schemaManager.rehydrate());
     try {
       return await this.importProjectBySchemaManager(schemaManager);
     } catch (error) {
@@ -79,6 +79,9 @@ export class ProjectService {
   async importProjectBySchemaManager(
     schemaManager: TypeSystemStore,
   ): Promise<ProjectEntity> {
+    if (!schemaManager.schemaGraph) {
+      await schemaManager.rehydrate();
+    }
     const projectName = schemaManager.getProjectName();
     const projectExId = schemaManager.getProjectExId();
     const schemaId = schemaManager.getSchemaId();

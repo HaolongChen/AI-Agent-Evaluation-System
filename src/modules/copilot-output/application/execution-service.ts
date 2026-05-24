@@ -11,6 +11,7 @@ import { logger } from "../../shared/infrastructure/logger.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 
 export class ExecuteCopilotUseCase {
+  private isProjectTemporary = true;
   constructor(
     private repository: {
       copilotOutputRepository: ICopilotOutputRepository;
@@ -41,7 +42,9 @@ export class ExecuteCopilotUseCase {
             this.generateProjectName(data.goldenSetId, data.userInputId),
             goldenSetEntity.getData("schemaId"),
           );
-
+    if (goldenSetEntity.getData("projectExId")) {
+      this.isProjectTemporary = false;
+    }
     const copilotSessionExId = await createNewSession(
       projectExId,
       await this.account.getGQLClient(),
@@ -91,7 +94,9 @@ export class ExecuteCopilotUseCase {
       this.account.clearWsClient();
       throw error;
     } finally {
-      await this.projectLifecycle.deleteTemporaryProject();
+      if (this.isProjectTemporary) {
+        await this.projectLifecycle.deleteTemporaryProject();
+      }
     }
   }
 

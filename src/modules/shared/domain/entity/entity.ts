@@ -108,7 +108,7 @@ export class Entity<
         this._metadata[key as keyof M] = value as M[keyof M];
       } else {
         this._metadata[key as keyof M] = value as M[keyof M];
-        logger.error(
+        logger.silly(
           `Attempted to set invalid key "${key.toString()}" on entity. Valid keys are: ${[...Object.keys(this._data), ...Object.keys(this._metadata)].join(", ")}`,
         );
       }

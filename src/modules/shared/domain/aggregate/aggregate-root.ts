@@ -28,4 +28,8 @@ export class AggregateRoot<
       this._entities[name] = Array.isArray(entity) ? entity : [entity];
     }
   }
+
+  setEntity<K extends keyof E>(name: K, entity: OneOrMany<E[K]>): void {
+    this._entities[name] = Array.isArray(entity) ? entity : [entity];
+  }
 }

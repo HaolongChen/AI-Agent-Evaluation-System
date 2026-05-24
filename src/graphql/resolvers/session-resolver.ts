@@ -1,4 +1,4 @@
-import { analyticsService } from "../../services/analytics-service.ts";
+import type { EvaluationSessionAggregate } from "../../modules/evaluation/domain/aggregate/session.aggregate.ts";
 import {
   EvaluatorType,
   type EvaluationResult,
@@ -10,24 +10,13 @@ import {
   type QueryGetEvaluationSessionsArgs as QueryGetEvaluationSessionsArguments,
 } from "../generated/resolvers-types.ts";
 
-const toGraphqlSession = (session: {
-  id: string;
-  copilotOutputId: string;
-  rubricId: string;
-  evaluatorId: string;
-  evaluatorType: string;
-  startedAt: Date;
-  completedAt: Date | null;
-  modelName: string | null;
-}): EvaluationSession => {
+const toGraphqlSession = (
+  session: ReturnType<EvaluationSessionAggregate["getData"]>,
+): EvaluationSession => {
   return {
     ...session,
-    evaluatorType: REVERSE_EVALUATOR[
-      session.evaluatorType as keyof typeof REVERSE_EVALUATOR
-    ] as EvaluatorType,
-    startedAt: session.startedAt.toISOString(),
-    completedAt: session.completedAt?.toISOString() ?? undefined,
-    modelName: session.modelName ?? undefined,
+    __typename: "EvaluationSession",
+    evaluatorType: session.evaluatorType as EvaluatorType,
   };
 };
 

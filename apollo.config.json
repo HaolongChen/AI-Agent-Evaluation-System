@@ -1,7 +1,7 @@
 {
   "client": {
     "service": {
-      "localSchemaFile": "src/graphql/generated/merged-schema.graphql",
+      "localSchemaFile": ["src/graphql/generated/merged-schema.graphql", "src/graphql/type/schema.graphql"],
       "name": "ai agent evaluation system"
     },
     "includes": ["src/**/*.{ts,tsx}"],

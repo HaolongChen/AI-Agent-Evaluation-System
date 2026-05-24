@@ -4,7 +4,7 @@ import type { copilotTypeEnum } from "../domain/schema/golden-set.schema.ts";
 import { GoldenSetEntity } from "../domain/entity/golden-set.entity.ts";
 
 export class CreateGoldenSetUseCase {
-  constructor(private readonly repository: IGoldenSetRepository) {}
+  constructor(private repository: IGoldenSetRepository) {}
 
   async execute(
     schemaId: string,

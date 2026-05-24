@@ -12,12 +12,12 @@ import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 
 export class ExecuteCopilotUseCase {
   constructor(
-    private readonly repository: {
+    private repository: {
       copilotOutputRepository: ICopilotOutputRepository;
       goldenSetRepository: IGoldenSetRepository;
     },
-    private readonly projectLifecycle: IProjectLifecycle,
-    private readonly account: Account,
+    private projectLifecycle: IProjectLifecycle,
+    private account: Account,
   ) {}
 
   async setupEnvironment(data: {

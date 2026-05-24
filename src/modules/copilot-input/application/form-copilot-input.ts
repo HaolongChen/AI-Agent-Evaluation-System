@@ -3,7 +3,7 @@ import type { IUserInputRepository } from "../domain/interface/user-input.interf
 
 export class FormCopilotInputUseCase {
   constructor(
-    private readonly repository: {
+    private repository: {
       goldenSetRepository: IGoldenSetRepository;
       userInputRepository: IUserInputRepository;
     },

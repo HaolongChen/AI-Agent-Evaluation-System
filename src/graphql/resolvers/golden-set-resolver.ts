@@ -121,10 +121,10 @@ export const goldenSetResolver = {
     ): Promise<UserInput> => {
       const createUserInputUseCase = new CreateUserInputUseCase(
         repository.userInputRepository,
+        await getMyAccount(),
       );
       const userInput = await createUserInputUseCase.execute(
         arguments_.input.content,
-        arguments_.input.createdBy,
       );
       return {
         ...userInput,

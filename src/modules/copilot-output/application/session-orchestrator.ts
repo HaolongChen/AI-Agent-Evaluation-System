@@ -19,7 +19,7 @@ import { logger } from "../../shared/infrastructure/logger.ts";
 export class SessionOrchestrator {
   private static readonly SESSION_TIMEOUT_MS = 2 * 60 * 1000;
   constructor(
-    private readonly runner: ExecutionJobRunnerV2,
+    private runner: ExecutionJobRunnerV2,
     private job: CopilotJobEntity,
   ) {}
 

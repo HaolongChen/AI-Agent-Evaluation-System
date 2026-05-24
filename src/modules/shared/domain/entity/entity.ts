@@ -44,11 +44,17 @@ export class Entity<
   private _metadata: M;
   public schema: T;
   constructor(entity: Entity<T, M>);
-  constructor(data: z.infer<T>, schema: T, id?: string);
+  constructor(
+    data: z.infer<T>,
+    schema: T,
+    id?: string,
+    metadata?: Omit<EntityMetadata, "id">,
+  );
   constructor(
     argument1: Entity<T, M> | z.infer<T>,
     argument2?: T,
     argument3?: string,
+    argument4?: Exclude<M, { id: string }>,
   ) {
     if (argument1 instanceof Entity) {
       this._data = argument1._data;
@@ -62,6 +68,7 @@ export class Entity<
       this._data = this.schema.parse(argument1);
       this._metadata = {
         id: argument3 ? z.uuidv4().parse(argument3) : crypto.randomUUID(),
+        ...argument4,
       } as M;
     }
   }
@@ -78,7 +85,7 @@ export class Entity<
         }
         return keys.map((key) => this.getData(key)) as EntityValue<T, M, K>;
       } else {
-        if (Object.keys(this._data).includes(keys as string)) {
+        if (Object.keys(z.keyof(this.schema).enum).includes(keys as string)) {
           return this._data[keys as keyof z.infer<T>] as EntityValue<T, M, K>;
         }
         return this._metadata[keys as keyof M] as EntityValue<T, M, K>;
@@ -94,12 +101,13 @@ export class Entity<
       E,
       RawEntityValue<T, M, E>,
     ][]) {
-      if (key in this._data) {
+      if (Object.keys(this.schema.shape).includes(key as string)) {
         this._data[key as keyof z.infer<T>] =
           this.schema.shape[key as keyof typeof this.schema.shape].parse(value);
       } else if (key in this._metadata) {
         this._metadata[key as keyof M] = value as M[keyof M];
       } else {
+        this._metadata[key as keyof M] = value as M[keyof M];
         logger.error(
           `Attempted to set invalid key "${key.toString()}" on entity. Valid keys are: ${[...Object.keys(this._data), ...Object.keys(this._metadata)].join(", ")}`,
         );

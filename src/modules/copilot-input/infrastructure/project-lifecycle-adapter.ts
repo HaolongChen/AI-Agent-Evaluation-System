@@ -8,8 +8,8 @@ export class ProjectLifecycleAdapter implements IProjectLifecycle {
   public projectService: ProjectService | undefined;
 
   constructor(
-    private readonly account: Account,
-    private readonly repository: IProjectRepository,
+    private account: Account,
+    private repository: IProjectRepository,
   ) {}
 
   async importExistingProject(projectExId: string, initialSchemaId?: string) {

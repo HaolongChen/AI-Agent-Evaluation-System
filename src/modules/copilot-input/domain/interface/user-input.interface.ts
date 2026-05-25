@@ -1,34 +1,44 @@
 import type {
-	ExcludeOptions,
-	IRepository,
+  ExcludeOptions,
+  IRepository,
 } from "../../../shared/domain/interface/repository.interface.ts";
+import type { GoldenSetEntity } from "../entity/golden-set.entity.ts";
 import type { UserInputEntity } from "../entity/user-input.entity.ts";
 import type {
-	CopilotInputOptions,
-	CopilotInputReturnType,
+  CopilotInputOptions,
+  CopilotInputReturnType,
 } from "./copilot-input.interface.ts";
 
 export type UserInputOptions = {
-	name: "userInput";
-	options: {
-		copilotInput: ExcludeOptions<CopilotInputOptions, "userInput"> | boolean;
-	};
+  name: "userInput";
+  options: {
+    copilotInput: ExcludeOptions<CopilotInputOptions, "userInput"> | boolean;
+  };
 };
 
-export type UserInputReturnType<T> =
-	T extends Partial<UserInputOptions> ?
-		{
-			entity: UserInputEntity;
-			copilotInput: ExcludeOptions<
-				CopilotInputReturnType<T["copilotInput"]>,
-				"userInputEntity"
-			>[];
-		}
-	: T extends true ? { entity: UserInputEntity }
-	: never;
+export type UserInputReturnType<T> = T extends {
+  options: { copilotInput: infer CI };
+}
+  ? {
+      entity: UserInputEntity;
+      copilotInput: CopilotInputReturnType<CI>[];
+    }
+  : T extends true
+    ? { entity: UserInputEntity }
+    : never;
 
 export interface IUserInputRepository extends IRepository<UserInputEntity> {
-	getAll<T extends UserInputOptions>(
-		options: T,
-	): Promise<Array<UserInputReturnType<T>>>;
+  findById(id: string): Promise<UserInputEntity>;
+
+  getAll(): Promise<Array<UserInputEntity>>;
+
+  getByGoldenSetId(goldenSetId: string): Promise<Array<UserInputEntity>>;
+
+  addGoldenSetAssociation(
+    userInputId: string,
+    goldenSetId: string,
+  ): Promise<{
+    goldenSetEntity: GoldenSetEntity;
+    userInputEntity: UserInputEntity;
+  }>;
 }

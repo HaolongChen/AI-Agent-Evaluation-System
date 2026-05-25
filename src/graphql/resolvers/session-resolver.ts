@@ -15,8 +15,13 @@ const toGraphqlSession = (
 ): EvaluationSession => {
   return {
     ...session,
+    id: session.id ?? "",
     __typename: "EvaluationSession",
     evaluatorType: session.evaluatorType as EvaluatorType,
+    modelName: session.modelName ?? undefined,
+    completedAt: undefined,
+    startedAt: undefined,
+    evaluationRecords: [],
   };
 };
 

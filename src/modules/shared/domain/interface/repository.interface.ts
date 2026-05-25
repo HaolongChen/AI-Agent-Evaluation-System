@@ -14,9 +14,9 @@ export type BaseOptions<
 	E extends string = string,
 	U extends string = string,
 > = {
-	options: Exclude<U, E> extends never ? Record<string, never>
+	options: Exclude<U, E | T> extends never ? Record<string, never>
 	:	{
-			[Name in Exclude<U, E>]: BaseOptions<Name, T | E>["options"] extends (
+			[Name in Exclude<U, E | T>]: BaseOptions<Name, T | E>["options"] extends (
 				Record<string, never>
 			) ?
 				true

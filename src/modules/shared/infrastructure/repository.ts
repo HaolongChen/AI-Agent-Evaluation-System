@@ -1,6 +1,6 @@
 import type z from "zod";
 import type { Entity } from "../domain/entity/entity.ts";
-import type { BaseOptions } from "../domain/interface/repository.interface.ts";
+import type { BaseOptions, BaseOptionsReturnType } from "../domain/interface/repository.interface.ts";
 
 export interface ExternalRepositoryDate {
 	createdAt?: z.infer<z.ZodDate>;
@@ -21,7 +21,7 @@ export const optionsToInclude = <
 	U extends string = string,
 >(
 	options: BaseOptions<T, E, U>,
-) => {
+): BaseOptionsReturnType<T, E, U> => {
 	if (!options.options) {
 		return { [options.name]: true };
 	}
@@ -30,7 +30,7 @@ export const optionsToInclude = <
 		unknown
 	>;
 	for (const [key, value] of Object.entries(options.options) as [
-		U extends string ? Exclude<U, E> : never,
+		U extends string ? Exclude<U, E | T> : never,
 		BaseOptions | boolean,
 	][]) {
 		if (typeof value === "boolean") {

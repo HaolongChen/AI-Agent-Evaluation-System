@@ -1,7 +1,9 @@
 import { prisma } from "../../../../config/prisma.ts";
+import { evaluationSetOptionsToInclude } from "../../../evaluation/infrastructure/repository/session.reopsitory.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
-import type { ICopilotOutputRepository } from "../../domain/interface/copilot-output.interface.ts";
+import type { , ICopilotOutputRepository } from "../../domain/interface/copilot-output.interface.ts";
+
 
 export class CopilotOutputRepository implements ICopilotOutputRepository {
   async getByGoldenSetIdAndUserInputId(

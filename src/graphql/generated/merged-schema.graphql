@@ -1454,6 +1454,11 @@ input CopilotInput {
   userInputId: String!
 }
 
+type CopilotInputOutput {
+  goldenSet: GoldenSet!
+  userInput: UserInput!
+}
+
 type CopilotLlmCall {
   content: Json!
   createdAt: OffsetDateTime!
@@ -4227,7 +4232,7 @@ type Mutation {
   joinProjectByShareTokenV2(code: String!): CollaborativeSharedResource_Project!
   latestSession(projectExId: String!, sessionType: CopilotSessionType!): String
   leaveCollaboration(appExId: String, projectExId: String!): Boolean!
-  linkGoldenSetToUserInput(context: CopilotInput!): Boolean!
+  linkGoldenSetToUserInput(context: CopilotInput!): CopilotInputOutput!
   log(logs: [ClientLogEntryInput]!): Boolean!
   login(
     gaClientId: String
@@ -6728,6 +6733,8 @@ type Query {
     paginator: ConnectionPaginatorInput
     projectExId: String!
   ): Connection_StoredImage
+  getLinkedGoldenSetsByUserInputId(userInputId: String!): [GoldenSet]!
+  getLinkedUserInputsByGoldenSetId(goldenSetId: String!): [UserInput]!
   getQueryById(queryId: Long!): String
   getRubricByContext(context: CopilotInput!): [Rubric]!
   getRubricById(id: String!): Rubric!

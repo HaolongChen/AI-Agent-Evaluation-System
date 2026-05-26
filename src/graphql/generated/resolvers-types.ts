@@ -37,12 +37,6 @@ export type CopilotInput = {
   userInputId: Scalars["String"]["input"];
 };
 
-export type CopilotInputOutput = {
-  __typename: "CopilotInputOutput";
-  goldenSet: GoldenSet;
-  userInput: UserInput;
-};
-
 /**
  * A copilot output represents the expected or actual response from the copilot,
  * including performance metrics (latency, tokens, context usage).
@@ -215,7 +209,7 @@ export type Mutation = {
   executeCopilot: CopilotOutput;
   generateRubric: Rubric;
   initializeGoldenSet: GoldenSet;
-  linkGoldenSetToUserInput: CopilotInputOutput;
+  linkGoldenSetToUserInput: Scalars["Boolean"]["output"];
   runCrdtTest: Maybe<Scalars["String"]["output"]>;
   submitHumanEvaluation: EvaluationSession;
 };
@@ -264,8 +258,6 @@ export type Query = {
   getEvaluationSessions: Array<Maybe<EvaluationSession>>;
   getGoldenSetById: GoldenSet;
   getGoldenSets: Array<Maybe<GoldenSet>>;
-  getLinkedGoldenSetsByUserInputId: Array<Maybe<GoldenSet>>;
-  getLinkedUserInputsByGoldenSetId: Array<Maybe<UserInput>>;
   getRubricByContext: Array<Maybe<Rubric>>;
   getRubricById: Rubric;
   getUserInputById: UserInput;
@@ -294,14 +286,6 @@ export type QueryGetGoldenSetByIdArgs = {
 
 export type QueryGetGoldenSetsArgs = {
   filters: InputMaybe<GoldenSetFilters>;
-};
-
-export type QueryGetLinkedGoldenSetsByUserInputIdArgs = {
-  userInputId: Scalars["String"]["input"];
-};
-
-export type QueryGetLinkedUserInputsByGoldenSetIdArgs = {
-  goldenSetId: Scalars["String"]["input"];
 };
 
 export type QueryGetRubricByContextArgs = {
@@ -480,7 +464,6 @@ export type DirectiveResolverFn<
 export type ResolversTypes = ResolversObject<{
   Boolean: ResolverTypeWrapper<Scalars["Boolean"]["output"]>;
   CopilotInput: CopilotInput;
-  CopilotInputOutput: ResolverTypeWrapper<CopilotInputOutput>;
   CopilotOutput: ResolverTypeWrapper<CopilotOutput>;
   CopilotType: CopilotType;
   Criteria: ResolverTypeWrapper<Criteria>;
@@ -510,7 +493,6 @@ export type ResolversTypes = ResolversObject<{
 export type ResolversParentTypes = ResolversObject<{
   Boolean: Scalars["Boolean"]["output"];
   CopilotInput: CopilotInput;
-  CopilotInputOutput: CopilotInputOutput;
   CopilotOutput: CopilotOutput;
   Criteria: Criteria;
   EvaluationInput: EvaluationInput;
@@ -532,15 +514,6 @@ export type ResolversParentTypes = ResolversObject<{
   String: Scalars["String"]["output"];
   UserInput: UserInput;
   UserInputInput: UserInputInput;
-}>;
-
-export type CopilotInputOutputResolvers<
-  ContextType = undefined,
-  ParentType extends ResolversParentTypes["CopilotInputOutput"] =
-    ResolversParentTypes["CopilotInputOutput"],
-> = ResolversObject<{
-  goldenSet: Resolver<ResolversTypes["GoldenSet"], ParentType, ContextType>;
-  userInput: Resolver<ResolversTypes["UserInput"], ParentType, ContextType>;
 }>;
 
 export type CopilotOutputResolvers<
@@ -707,7 +680,7 @@ export type MutationResolvers<
     RequireFields<MutationInitializeGoldenSetArgs, "input">
   >;
   linkGoldenSetToUserInput: Resolver<
-    ResolversTypes["CopilotInputOutput"],
+    ResolversTypes["Boolean"],
     ParentType,
     ContextType,
     RequireFields<MutationLinkGoldenSetToUserInputArgs, "context">
@@ -767,18 +740,6 @@ export type QueryResolvers<
     ContextType,
     QueryGetGoldenSetsArgs
   >;
-  getLinkedGoldenSetsByUserInputId: Resolver<
-    Array<Maybe<ResolversTypes["GoldenSet"]>>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryGetLinkedGoldenSetsByUserInputIdArgs, "userInputId">
-  >;
-  getLinkedUserInputsByGoldenSetId: Resolver<
-    Array<Maybe<ResolversTypes["UserInput"]>>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryGetLinkedUserInputsByGoldenSetIdArgs, "goldenSetId">
-  >;
   getRubricByContext: Resolver<
     Array<Maybe<ResolversTypes["Rubric"]>>,
     ParentType,
@@ -830,7 +791,6 @@ export type UserInputResolvers<
 }>;
 
 export type Resolvers<ContextType = undefined> = ResolversObject<{
-  CopilotInputOutput: CopilotInputOutputResolvers<ContextType>;
   CopilotOutput: CopilotOutputResolvers<ContextType>;
   Criteria: CriteriaResolvers<ContextType>;
   EvaluationRecord: EvaluationRecordResolvers<ContextType>;

@@ -1,6 +1,5 @@
 import { prisma } from "../../../../config/prisma.ts";
 import {
-  optionsToInclude,
   repositoryDateMapper,
 } from "../../../shared/infrastructure/repository.ts";
 import { UserInputEntity } from "../../domain/entity/user-input.entity.js";
@@ -23,6 +22,15 @@ export class UserInputRepository implements IUserInputRepository {
   //   );
   // }
 
+  async getAll(): Promise<Array<UserInputEntity>> {
+    const userInputs = await prisma.userInput.findMany();
+    return userInputs.map((userInput) =>
+      repositoryDateMapper(
+        userInput,
+        new UserInputEntity(userInput, userInput.id),
+      ),
+    );
+  }
   async getAll(): Promise<Array<UserInputEntity>> {
     const userInputs = await prisma.userInput.findMany();
     return userInputs.map((userInput) =>

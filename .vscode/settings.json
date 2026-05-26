@@ -1,22 +1,21 @@
 {
-	"postman.settings.dotenv-detection-notification-visibility": false,
-	"files.watcherExclude": {
-		".git/objects/**": true,
-		".git/subtree-cache/**": true,
-		".hg/store/**": true,
-		"*/.git/objects/**": true,
-		"*/.git/subtree-cache/**": true,
-		"*/.hg/store/**": true,
-		"local_shell/**": true,
-		"dist/**": true,
-		"node_modules/**": true,
-		"*/build/**": true,
-		".codegraphy/**": true,
-		"*/generated/**": true,
-		"**/*.svg": true,
-		"**/*.cjs": true,
-		"**/AGENT.md": true
-	},
-	"markdown.validate.enabled": true,
-	"typescript.native-preview.tsdk": "/Users/haolong/AI-Agent-Evaluation-System/node_modules/@typescript/native-preview"
+  "postman.settings.dotenv-detection-notification-visibility": false,
+  "files.watcherExclude": {
+    ".git/objects/**": true,
+    ".git/subtree-cache/**": true,
+    ".hg/store/**": true,
+    "*/.git/objects/**": true,
+    "*/.git/subtree-cache/**": true,
+    "*/.hg/store/**": true,
+    "local_shell/**": true,
+    "dist/**": true,
+    "node_modules/**": true,
+    "*/build/**": true,
+    ".codegraphy/**": true,
+    "*/generated/**": true,
+    "**/*.svg": true,
+    "**/*.cjs": true,
+    "**/AGENT.md": true
+  },
+  "markdown.validate.enabled": true
 }

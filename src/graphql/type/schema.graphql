@@ -7,10 +7,6 @@ type Query {
 
   getUserInputs: [UserInput]!
 
-  getLinkedGoldenSetsByUserInputId(userInputId: String!): [GoldenSet]!
-
-  getLinkedUserInputsByGoldenSetId(goldenSetId: String!): [UserInput]!
-
   getEvaluationSessionById(id: String!): EvaluationSession!
 
   getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!
@@ -29,7 +25,7 @@ type Mutation {
 
   createUserInput(input: UserInputInput!): UserInput!
 
-  linkGoldenSetToUserInput(context: CopilotInput!): CopilotInputOutput!
+  linkGoldenSetToUserInput(context: CopilotInput!): Boolean!
 
   generateRubric(context: CopilotInput!): Rubric!
 
@@ -97,11 +93,6 @@ type UserInput {
   content: String!
   "Timestamp when input was added"
   createdAt: String!
-}
-
-type CopilotInputOutput {
-  goldenSet: GoldenSet!
-  userInput: UserInput!
 }
 
 """

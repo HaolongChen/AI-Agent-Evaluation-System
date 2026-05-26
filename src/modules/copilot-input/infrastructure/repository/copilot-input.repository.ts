@@ -12,7 +12,10 @@ export class CopilotInputRepository implements ICopilotInputRepository {
   async create(
     goldenSetEntity: GoldenSetEntity,
     userInputEntity: UserInputEntity,
-  ): Promise<void> {
+  ): Promise<{
+    goldenSetEntity: GoldenSetEntity;
+    userInputEntity: UserInputEntity;
+  }> {
     const result = await prisma.goldenSet_userInput.create({
       data: {
         goldenSetId: goldenSetEntity.getData("id"),
@@ -28,8 +31,10 @@ export class CopilotInputRepository implements ICopilotInputRepository {
         `Failed to create association between GoldenSet ID ${goldenSetEntity.getData("id")} and UserInput ID ${userInputEntity.getData("id")}`,
       );
     }
-    repositoryDateMapper(result.goldenSet, goldenSetEntity);
-    repositoryDateMapper(result.userInput, userInputEntity);
+    return {
+      goldenSetEntity: repositoryDateMapper(result.goldenSet, goldenSetEntity),
+      userInputEntity: repositoryDateMapper(result.userInput, userInputEntity),
+    };
   }
 
   async getByFilters(filters: CopilotInputFilters): Promise<

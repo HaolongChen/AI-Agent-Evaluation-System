@@ -10,7 +10,10 @@ export interface ICopilotInputRepository {
   create(
     goldenSetEntity: GoldenSetEntity,
     userInputEntity: UserInputEntity,
-  ): Promise<void>;
+  ): Promise<{
+    goldenSetEntity: GoldenSetEntity;
+    userInputEntity: UserInputEntity;
+  }>;
 
   getByFilters(filters: CopilotInputFilters): Promise<
     Array<{

@@ -2,7 +2,7 @@ import type { Account } from "../../account/application/account-handler.ts";
 import type { IProjectRepository } from "../domain/interface/project.interface.ts";
 import type { IProjectLifecycle } from "../domain/interface/project-lifecycle.interface.ts";
 import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-system.ts";
-import { ProjectService } from "../application/project-service.ts";
+import { ProjectService } from "./project-service.ts";
 
 export class ProjectLifecycleAdapter implements IProjectLifecycle {
   public projectService: ProjectService | undefined;

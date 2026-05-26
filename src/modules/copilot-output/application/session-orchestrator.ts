@@ -105,10 +105,11 @@ export class SessionOrchestrator {
                 humanOperationType: "CONTINUE",
               }),
             );
+          } else {
+            logger.warn(
+              "Received job state change indicating job is no longer running, but job is not finished. This may indicate an issue with the backend job execution.",
+            );
           }
-          logger.warn(
-            "Received job state change indicating job is no longer running, but job is not finished. This may indicate an issue with the backend job execution.",
-          );
         }
       });
 

@@ -29,7 +29,7 @@ import type {
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
 import { logger } from "../../modules/shared/infrastructure/logger.ts";
-import { ProjectLifecycleAdapter } from "../../modules/copilot-input/infrastructure/project-lifecycle-adapter.ts";
+import { ProjectLifecycleAdapter } from "../../modules/copilot-input/application/project-lifecycle.ts";
 import { getMyAccount } from "../../DI/account.ts";
 import type { GoldenSetEntity } from "../../modules/copilot-input/domain/entity/golden-set.entity.ts";
 import type { UserInputEntity } from "../../modules/copilot-input/domain/entity/user-input.entity.ts";
@@ -167,6 +167,7 @@ export const goldenSetResolver = {
       const formCopilotInputUseCase = new FormCopilotInputUseCase({
         copilotInputRepository: repository.copilotInputRepository,
         goldenSetRepository: repository.goldenSetRepository,
+        userInputRepository: repository.userInputRepository,
       });
       await formCopilotInputUseCase.execute(
         arguments_.context.goldenSetId,

@@ -2,10 +2,8 @@ import type { GoldenSetEntity } from "../entity/golden-set.entity.js";
 import type { UserInputEntity } from "../entity/user-input.entity.js";
 
 
-export interface ICopilotInputRepository {
-  create(
-    goldenSetEntity: GoldenSetEntity,
-    userInputEntity: UserInputEntity,
+export interface ICopilotInputRepository<T extends CopilotInputEntity> extends IRepository<T> {
+  
   ): Promise<{
     goldenSetEntity: GoldenSetEntity;
     userInputEntity: UserInputEntity;

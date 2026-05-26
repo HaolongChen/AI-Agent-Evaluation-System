@@ -12,8 +12,10 @@ export interface ICopilotInputRepository {
     userInputEntity: UserInputEntity,
   ): Promise<void>;
 
-  getByFilters(filters: CopilotInputFilters): Promise<{
-    goldenSetEntity: GoldenSetEntity[];
-    userInputEntity: UserInputEntity[];
-  }>;
+  getByFilters(filters: CopilotInputFilters): Promise<
+    Array<{
+      goldenSetEntity: GoldenSetEntity;
+      userInputEntity: UserInputEntity;
+    }>
+  >;
 }

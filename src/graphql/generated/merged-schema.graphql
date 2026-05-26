@@ -2744,6 +2744,11 @@ type GoldenSetWithInputs {
   userInputs: [UserInput]!
 }
 
+type GoldenSetsAndUserInputs {
+  goldenSet: GoldenSet!
+  userInputs: UserInput!
+}
+
 type HasuraConfig {
   adminSecret: String
   apiPath: String
@@ -6695,6 +6700,10 @@ type Query {
   ): CollaborativeSharedResource_ShareToken
   getBannerItems(paginator: ConnectionPaginatorInput): Connection_BannerItem
   getCodeComponentDocFileUrl(packageExId: String!): String
+  getCopilotInputByFilters(
+    goldenSetId: String
+    userInputId: String
+  ): [GoldenSetsAndUserInputs]!
   getEvaluationResultById(id: String!): EvaluationResult!
   getEvaluationResults(filters: ResultFilters): [EvaluationResult]!
   getEvaluationSessionById(id: String!): EvaluationSession!
@@ -7873,6 +7882,24 @@ type UserInput {
 input UserInputInput {
   content: String!
   createdBy: String
+}
+
+type UserInputWIthGoldenSets {
+  """
+  The actual prompt or query content
+  """
+  content: String!
+
+  """
+  Timestamp when input was added
+  """
+  createdAt: String!
+  goldenSets: [GoldenSet]!
+
+  """
+  Unique identifier
+  """
+  id: String!
 }
 
 type UserQuestion {

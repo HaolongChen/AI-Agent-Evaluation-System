@@ -26,23 +26,25 @@ export class ExecuteCopilotUseCase {
     userInputId: string;
     projectExId?: string;
   }): Promise<CopilotJobEntity> {
-    const { goldenSetEntity, userInputEntity } =
+    const copilotInput =
       await this.repository.copilotInputRepository.getByFilters({
         goldenSetId: data.goldenSetId,
         userInputId: data.userInputId,
       });
+    const goldenSetEntity = copilotInput[0].goldenSetEntity;
+    const userInputEntity = copilotInput[0].userInputEntity;
 
     const { projectExId, schemaGraph } = data.projectExId
       ? await this.projectLifecycle.importExistingProject(data.projectExId)
-      : goldenSetEntity[0].getData("projectExId")
+      : goldenSetEntity.getData("projectExId")
         ? await this.projectLifecycle.importExistingProject(
-            goldenSetEntity[0].getData("projectExId")!,
+            goldenSetEntity.getData("projectExId")!,
           )
         : await this.projectLifecycle.createTemporaryProject(
             this.generateProjectName(data.goldenSetId, data.userInputId),
-            goldenSetEntity[0].getData("schemaId"),
+            goldenSetEntity.getData("schemaId"),
           );
-    if (goldenSetEntity[0].getData("projectExId")) {
+    if (goldenSetEntity.getData("projectExId")) {
       this.isProjectTemporary = false;
     }
     const copilotSessionExId = await createNewSession(
@@ -53,7 +55,7 @@ export class ExecuteCopilotUseCase {
     return new CopilotJobEntity({
       projectExId,
       copilotSessionExId,
-      query: userInputEntity[0].getData("content"),
+      query: userInputEntity.getData("content"),
       wsUrl: process.env.SUBSCRIPTION_GRAPHQL_URL,
       schemaGraph,
     });

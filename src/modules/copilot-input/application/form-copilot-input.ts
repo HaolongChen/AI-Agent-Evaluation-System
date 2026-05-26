@@ -10,24 +10,38 @@ export class FormCopilotInputUseCase {
   ) {}
 
   async execute(goldenSetId: string, userInputId: string) {
-    const { goldenSetEntity: existingGoldenSetEntities, userInputEntity } =
+    const copilotInputs =
       await this.repository.copilotInputRepository.getByFilters({
         userInputId,
       });
-    const linkedGoldenSet = existingGoldenSetEntities.find(
-      (goldenSetEntity) => goldenSetEntity.getData("id") === goldenSetId,
+    const linkedGoldenSet = copilotInputs.find(
+      ({ goldenSetEntity }) => goldenSetEntity.getData("id") === goldenSetId,
     );
     if (!linkedGoldenSet) {
       const goldenSetEntity =
         await this.repository.goldenSetRepository.findById(goldenSetId);
       const copilotInput = await this.repository.copilotInputRepository.create(
         goldenSetEntity,
-        userInputEntity[0],
+        copilotInputs[0].userInputEntity,
       );
       return copilotInput;
     }
     throw new Error(
       `UserInput ID ${userInputId} is already associated with GoldenSet ID ${goldenSetId}`,
     );
+  }
+}
+
+export class GetCopilotInputByFiltersUseCase {
+  constructor(
+    private repository: {
+      copilotInputRepository: ICopilotInputRepository;
+    },
+  ) {}
+
+  async execute(data: { goldenSetId?: string; userInputId?: string }) {
+    const copilotInputs =
+      await this.repository.copilotInputRepository.getByFilters(data);
+    return copilotInputs;
   }
 }

@@ -7,6 +7,11 @@ type Query {
 
   getUserInputs: [UserInput]!
 
+  getCopilotInputByFilters(
+    goldenSetId: String
+    userInputId: String
+  ): [GoldenSetsAndUserInputs]!
+
   getEvaluationSessionById(id: String!): EvaluationSession!
 
   getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!
@@ -70,6 +75,11 @@ type GoldenSet {
   modelName: String
 }
 
+type GoldenSetsAndUserInputs {
+  goldenSet: GoldenSet!
+  userInputs: UserInput!
+}
+
 type GoldenSetWithInputs {
   "Unique database identifier"
   id: String!
@@ -80,6 +90,16 @@ type GoldenSetWithInputs {
   "Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
   modelName: String
   userInputs: [UserInput]!
+}
+
+type UserInputWIthGoldenSets {
+  "Unique identifier"
+  id: String!
+  "The actual prompt or query content"
+  content: String!
+  "Timestamp when input was added"
+  createdAt: String!
+  goldenSets: [GoldenSet]!
 }
 
 """

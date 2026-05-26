@@ -2,7 +2,10 @@ import { Client } from "pg";
 import { repository } from "../../DI/repository.ts";
 import { CreateGoldenSetUseCase } from "../../modules/copilot-input/application/create-golden-set.ts";
 import { CreateUserInputUseCase } from "../../modules/copilot-input/application/create-user-input.ts";
-import { FormCopilotInputUseCase } from "../../modules/copilot-input/application/form-copilot-input.ts";
+import {
+  FormCopilotInputUseCase,
+  GetCopilotInputByFiltersUseCase,
+} from "../../modules/copilot-input/application/form-copilot-input.ts";
 import {
   CopilotType,
   type GoldenSet,
@@ -14,7 +17,9 @@ import {
   type QueryGetGoldenSetByIdArgs as QueryGetGoldenSetByIdArguments,
   type QueryGetGoldenSetsArgs as QueryGetGoldenSetsArguments,
   type QueryGetUserInputByIdArgs as QueryGetUserInputByIdArguments,
+  type QueryGetCopilotInputByFiltersArgs as QueryGetCopilotInputByFiltersArguments,
   type UserInput,
+  type GoldenSetsAndUserInputs,
 } from "../generated/resolvers-types.ts";
 import { GraphQLError } from "graphql";
 import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/copilot-input/infrastructure/project-manager.ts";
@@ -26,6 +31,8 @@ import type {
 import { logger } from "../../modules/shared/infrastructure/logger.ts";
 import { ProjectLifecycleAdapter } from "../../modules/copilot-input/infrastructure/project-lifecycle-adapter.ts";
 import { getMyAccount } from "../../DI/account.ts";
+import type { GoldenSetEntity } from "../../modules/copilot-input/domain/entity/golden-set.entity.ts";
+import type { UserInputEntity } from "../../modules/copilot-input/domain/entity/user-input.entity.ts";
 
 const copilotTypeMapper = {
   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -35,8 +42,57 @@ const copilotTypeMapper = {
   agentBuilder: CopilotType.AgentBuilder,
 };
 
+export const goldenSetDataMapper = (
+  data: ReturnType<GoldenSetEntity["getData"]>,
+): GoldenSet => {
+  return {
+    ...data,
+    copilotType: copilotTypeMapper[data.copilotType],
+    __typename: "GoldenSet",
+  };
+};
+
+export const userInputDataMapper = (
+  data: ReturnType<UserInputEntity["getData"]>,
+): UserInput => {
+  return {
+    ...data,
+    createdAt: data.createdAt!.toISOString(),
+    __typename: "UserInput",
+  };
+};
+
+export const copilotInputDataMapper = (data: {
+  goldenSet: ReturnType<GoldenSetEntity["getData"]>;
+  userInput: ReturnType<UserInputEntity["getData"]>;
+}): GoldenSetsAndUserInputs => {
+  return {
+    goldenSet: goldenSetDataMapper(data.goldenSet),
+    userInputs: userInputDataMapper(data.userInput),
+    __typename: "GoldenSetsAndUserInputs",
+  };
+};
+
 export const goldenSetResolver = {
   Query: {
+    getCopilotInputByFilters: async (
+      _: unknown,
+      arguments_: QueryGetCopilotInputByFiltersArguments,
+    ): Promise<GoldenSetsAndUserInputs[]> => {
+      const getCopilotInputByFiltersUseCase =
+        new GetCopilotInputByFiltersUseCase({
+          copilotInputRepository: repository.copilotInputRepository,
+        });
+      const copilotInputs =
+        await getCopilotInputByFiltersUseCase.execute(arguments_);
+      return copilotInputs.map((copilotInput) => {
+        return copilotInputDataMapper({
+          goldenSet: copilotInput.goldenSetEntity.getData(),
+          userInput: copilotInput.userInputEntity.getData(),
+        });
+      });
+    },
+
     getUserInputById: async (
       _: unknown,
       arguments_: QueryGetUserInputByIdArguments,
@@ -44,23 +100,13 @@ export const goldenSetResolver = {
       const userInput = await repository.userInputRepository.findById(
         arguments_.id,
       );
-      const json = userInput.getData();
-      return {
-        ...json,
-        createdAt: json.createdAt!.toISOString(),
-        __typename: "UserInput",
-      };
+      return userInputDataMapper(userInput.getData());
     },
 
     getUserInputs: async (): Promise<UserInput[]> => {
       const userInputs = await repository.userInputRepository.getAll();
       return userInputs.map((userInput) => {
-        const json = userInput.getData();
-        return {
-          ...json,
-          createdAt: json.createdAt!.toISOString(),
-          __typename: "UserInput",
-        };
+        return userInputDataMapper(userInput.getData());
       });
     },
 
@@ -71,12 +117,7 @@ export const goldenSetResolver = {
       const goldenSet = await repository.goldenSetRepository.findById(
         arguments_.id,
       );
-      const json = goldenSet.getData();
-      return {
-        ...json,
-        copilotType: copilotTypeMapper[json.copilotType],
-        __typename: "GoldenSet",
-      };
+      return goldenSetDataMapper(goldenSet.getData());
     },
     getGoldenSets: async (
       _: unknown,
@@ -86,12 +127,7 @@ export const goldenSetResolver = {
         arguments_.filters ?? {},
       );
       return goldenSets.map((goldenSet) => {
-        const json = goldenSet.getData();
-        return {
-          ...json,
-          copilotType: copilotTypeMapper[json.copilotType],
-          __typename: "GoldenSet",
-        };
+        return goldenSetDataMapper(goldenSet.getData());
       });
     },
   },
@@ -109,11 +145,7 @@ export const goldenSetResolver = {
         arguments_.input.copilotType,
         arguments_.input.modelName,
       );
-      return {
-        ...goldenSet,
-        copilotType: copilotTypeMapper[goldenSet.copilotType],
-        __typename: "GoldenSet",
-      };
+      return goldenSetDataMapper(goldenSet);
     },
     createUserInput: async (
       _: unknown,
@@ -126,11 +158,7 @@ export const goldenSetResolver = {
       const userInput = await createUserInputUseCase.execute(
         arguments_.input.content,
       );
-      return {
-        ...userInput,
-        createdAt: userInput.createdAt!.toISOString(),
-        __typename: "UserInput",
-      };
+      return userInputDataMapper(userInput);
     },
     linkGoldenSetToUserInput: async (
       _: unknown,
@@ -177,11 +205,7 @@ export const goldenSetResolver = {
         projectExId,
         projectName,
       );
-      return {
-        ...goldenSet,
-        copilotType: copilotTypeMapper[goldenSet.copilotType],
-        __typename: "GoldenSet",
-      };
+      return goldenSetDataMapper(goldenSet);
     },
     deleteProject: async (
       _: unknown,

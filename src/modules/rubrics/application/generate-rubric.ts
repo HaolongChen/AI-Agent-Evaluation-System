@@ -31,8 +31,8 @@ export class GenerateRubricUseCase {
         goldenSetId,
         userInputId,
       });
-    const schemaId = copilotInput.goldenSetEntity[0].getData("schemaId");
-    const query = copilotInput.userInputEntity[0].getData("content");
+    const schemaId = copilotInput[0].goldenSetEntity.getData("schemaId");
+    const query = copilotInput[0].userInputEntity.getData("content");
     const rubricId = randomUUID();
     const feedbacks: Feedbacks = {
       "rubrics-generator-agent": new Feedback<"rubrics-generator-agent">(

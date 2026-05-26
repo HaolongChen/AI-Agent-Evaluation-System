@@ -32,10 +32,12 @@ export class CopilotInputRepository implements ICopilotInputRepository {
     repositoryDateMapper(result.userInput, userInputEntity);
   }
 
-  async getByFilters(filters: CopilotInputFilters): Promise<{
-    goldenSetEntity: GoldenSetEntity[];
-    userInputEntity: UserInputEntity[];
-  }> {
+  async getByFilters(filters: CopilotInputFilters): Promise<
+    Array<{
+      goldenSetEntity: GoldenSetEntity;
+      userInputEntity: UserInputEntity;
+    }>
+  > {
     const results = await prisma.goldenSet_userInput.findMany({
       where: filters,
       include: {
@@ -43,20 +45,18 @@ export class CopilotInputRepository implements ICopilotInputRepository {
         userInput: true,
       },
     });
-    return {
-      goldenSetEntity: results.map(({ goldenSet }) => {
-        return repositoryDateMapper(
-          goldenSet,
-          new GoldenSetEntity(goldenSet, goldenSet.id),
-        );
-      }),
-      userInputEntity: results.map(({ userInput }) => {
-        return repositoryDateMapper(
-          userInput,
-          new UserInputEntity(userInput, userInput.id),
-        );
-      }),
-    };
+    return results.map((result) => {
+      return {
+        goldenSetEntity: repositoryDateMapper(
+          result.goldenSet,
+          new GoldenSetEntity(result.goldenSet, result.goldenSet.id),
+        ),
+        userInputEntity: repositoryDateMapper(
+          result.userInput,
+          new UserInputEntity(result.userInput, result.userInput.id),
+        ),
+      };
+    });
   }
 
   async getCopilotInputByGoldenSetIdAndUserInputId(

@@ -31,16 +31,6 @@ export type GoldenSetReturnType<T> = T extends {
 export interface IGoldenSetRepository extends IRepository<GoldenSetEntity> {
   findById(id: string): Promise<GoldenSetEntity>;
 
-  // getByUserInputId(userInputId: string): Promise<Array<GoldenSetEntity>>;
-
-  // getCopilotInputByGoldenSetIdAndUserInputId(
-  //   goldenSetId: string,
-  //   userInputId: string,
-  // ): Promise<{
-  //   goldenSetEntity: GoldenSetEntity;
-  //   userInputEntity: UserInputEntity;
-  // }>;
-
   getByFilters(
     filters: z.infer<typeof goldenSetFiltersSchema>,
   ): Promise<Array<GoldenSetEntity>>;

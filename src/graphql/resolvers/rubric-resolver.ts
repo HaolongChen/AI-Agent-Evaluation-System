@@ -80,7 +80,7 @@ export const rubricResolver = {
       const executeCopilotUseCase = new ExecuteCopilotUseCase(
         {
           copilotOutputRepository: repository.copilotOutputRepository,
-          goldenSetRepository: repository.goldenSetRepository,
+          copilotInputRepository: repository.copilotInputRepository,
         },
         projectLifecycle,
         myAccount,

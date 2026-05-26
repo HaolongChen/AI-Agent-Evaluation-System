@@ -1,30 +1,30 @@
-import type { IGoldenSetRepository } from "../domain/interface/golden-set.interface.ts";
-import type { IUserInputRepository } from "../domain/interface/user-input.interface.ts";
+import type { ICopilotInputRepository } from "../domain/interface/copilot-input.interface.ts";
 
 export class FormCopilotInputUseCase {
-	constructor(
-		private repository: {
-			goldenSetRepository: IGoldenSetRepository;
-			userInputRepository: IUserInputRepository;
-		},
-	) {}
+  constructor(
+    private repository: {
+      copilotInputRepository: ICopilotInputRepository;
+    },
+  ) {}
 
-	async execute(goldenSetId: string, userInputId: string) {
-		const existingGoldenSetEntities =
-			await this.repository.goldenSetRepository.getByUserInputId(userInputId);
-		const linkedGoldenSet = existingGoldenSetEntities.find(
-			(goldenSetEntity) => goldenSetEntity.getData("id") === goldenSetId,
-		);
-		if (!linkedGoldenSet) {
-			const copilotInput =
-				await this.repository.userInputRepository.addGoldenSetAssociation(
-					userInputId,
-					goldenSetId,
-				);
-			return copilotInput;
-		}
-		throw new Error(
-			`UserInput ID ${userInputId} is already associated with GoldenSet ID ${goldenSetId}`,
-		);
-	}
+  async execute(goldenSetId: string, userInputId: string) {
+    const existingGoldenSetEntities =
+      await this.repository.copilotInputRepository.getByUserInputId(
+        userInputId,
+      );
+    const linkedGoldenSet = existingGoldenSetEntities.find(
+      (goldenSetEntity) => goldenSetEntity.getData("id") === goldenSetId,
+    );
+    if (!linkedGoldenSet) {
+      const copilotInput =
+        await this.repository.copilotInputRepository.addGoldenSetAssociation(
+          userInputId,
+          goldenSetId,
+        );
+      return copilotInput;
+    }
+    throw new Error(
+      `UserInput ID ${userInputId} is already associated with GoldenSet ID ${goldenSetId}`,
+    );
+  }
 }

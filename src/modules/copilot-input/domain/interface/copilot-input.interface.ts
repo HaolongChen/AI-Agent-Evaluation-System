@@ -7,10 +7,16 @@ import type {
   RubricReturnType,
 } from "../../../rubrics/domain/interface/rubric.interface.ts";
 import type { ExcludeOptions } from "../../../shared/domain/interface/repository.interface.ts";
-import type { GoldenSetEntity } from "../entity/golden-set.entity.ts";
-import type { UserInputEntity } from "../entity/user-input.entity.ts";
-import type { GoldenSetOptions } from "./golden-set.interface.ts";
-import type { UserInputOptions } from "./user-input.interface.ts";
+import type { GoldenSetEntity } from "../entity/golden-set.entity.js";
+import type { UserInputEntity } from "../entity/user-input.entity.js";
+import type {
+  GoldenSetOptions,
+  GoldenSetReturnType,
+} from "./golden-set.interface.ts";
+import type {
+  UserInputOptions,
+  UserInputReturnType,
+} from "./user-input.interface.ts";
 
 export type CopilotInputOptions = {
   name: "copilotInput";
@@ -25,8 +31,12 @@ export type CopilotInputOptions = {
 };
 
 export type CopilotInputReturnType<T> = {
-  goldenSetEntity: GoldenSetEntity;
-  userInputEntity: UserInputEntity;
+  goldenSetEntity: T extends { options: { goldenSet: infer GS } }
+    ? GoldenSetReturnType<GS>
+    : never;
+  userInputEntity: T extends { options: { userInput: infer UI } }
+    ? UserInputReturnType<UI>
+    : never;
   copilotOutput: T extends { options: { copilotOutput: infer CO } }
     ? CopilotOutputReturnType<CO>[]
     : never;
@@ -51,4 +61,24 @@ export interface ICopilotInputRepository {
     filters: CopilotInputFilters,
     options: T,
   ): Promise<Array<CopilotInputReturnType<T>>>;
+
+  getByUserInputId(userInputId: string): Promise<Array<GoldenSetEntity>>;
+
+  getByGoldenSetId(goldenSetId: string): Promise<Array<UserInputEntity>>;
+
+  getCopilotInputByGoldenSetIdAndUserInputId(
+    goldenSetId: string,
+    userInputId: string,
+  ): Promise<{
+    goldenSetEntity: GoldenSetEntity;
+    userInputEntity: UserInputEntity;
+  }>;
+
+  addGoldenSetAssociation(
+    userInputId: string,
+    goldenSetId: string,
+  ): Promise<{
+    goldenSetEntity: GoldenSetEntity;
+    userInputEntity: UserInputEntity;
+  }>;
 }

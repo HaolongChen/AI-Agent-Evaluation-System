@@ -1,5 +1,5 @@
 import { generateRubrics } from "./rubricsGenerator/rubrics-generator.ts";
-import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/golden-set.interface.ts";
+import type { ICopilotInputRepository } from "../../copilot-input/domain/interface/copilot-input.interface.ts";
 import type { IRubricRepository } from "../domain/interface/rubric.interface.ts";
 import { RubricAggregate } from "../domain/aggregate/rubric.aggregate.ts";
 import {
@@ -20,14 +20,14 @@ export class GenerateRubricUseCase {
   constructor(
     private repository: {
       rubricRepository: IRubricRepository;
-      goldenSetRepository: IGoldenSetRepository;
+      copilotInputRepository: ICopilotInputRepository;
       agentFeedbackRepository: IRepository<AgentFeedbackEntity>;
     },
   ) {}
 
   async execute(goldenSetId: string, userInputId: string) {
     const copilotInput =
-      await this.repository.goldenSetRepository.getCopilotInputByGoldenSetIdAndUserInputId(
+      await this.repository.copilotInputRepository.getCopilotInputByGoldenSetIdAndUserInputId(
         goldenSetId,
         userInputId,
       );

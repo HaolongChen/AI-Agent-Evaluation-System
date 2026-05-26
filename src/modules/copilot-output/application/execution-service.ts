@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/no-null */
 import type { Account } from "../../account/application/account-handler.ts";
-import type { IGoldenSetRepository } from "../../copilot-input/domain/interface/golden-set.interface.ts";
+import type { ICopilotInputRepository } from "../../copilot-input/domain/interface/copilot-input.interface.ts";
 import type { IProjectLifecycle } from "../../copilot-input/domain/interface/project-lifecycle.interface.ts";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
@@ -15,7 +15,7 @@ export class ExecuteCopilotUseCase {
   constructor(
     private repository: {
       copilotOutputRepository: ICopilotOutputRepository;
-      goldenSetRepository: IGoldenSetRepository;
+      copilotInputRepository: ICopilotInputRepository;
     },
     private projectLifecycle: IProjectLifecycle,
     private account: Account,
@@ -27,7 +27,7 @@ export class ExecuteCopilotUseCase {
     projectExId?: string;
   }): Promise<CopilotJobEntity> {
     const { goldenSetEntity, userInputEntity } =
-      await this.repository.goldenSetRepository.getCopilotInputByGoldenSetIdAndUserInputId(
+      await this.repository.copilotInputRepository.getCopilotInputByGoldenSetIdAndUserInputId(
         data.goldenSetId,
         data.userInputId,
       );

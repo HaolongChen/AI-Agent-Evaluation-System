@@ -19,7 +19,8 @@ export type BaseOptions<
     : {
         [Name in Exclude<U, E | T>]: BaseOptions<
           Name,
-          T | E
+          T | E,
+          U
         >["options"] extends Record<string, never>
           ? true
           : BaseOptions<Name, T | E> | boolean;
@@ -29,10 +30,12 @@ export type BaseOptions<
 export type ExcludeOptions<
   T extends BaseOptionsName & { options: { [P in string]: unknown } },
   E extends string,
-> = E extends keyof T['options'] ? {
-  options: Omit<T["options"], E>;
-  name: T["name"];
-} : never;
+> = E extends keyof T["options"]
+  ? {
+      options: Omit<T["options"], E>;
+      name: T["name"];
+    }
+  : never;
 
 export type BaseOptionsReturnType<
   A extends string = string,

@@ -25,8 +25,8 @@ export type UserInputReturnType<T> = T extends {
   : T extends true
     ? { entity: UserInputEntity }
     : never;
-
 export interface IUserInputRepository extends IRepository<UserInputEntity> {
+  findById(id: string, options?: UserInputOptions): Promise<UserInputEntity>;
 
   getAll(): Promise<Array<UserInputEntity>>;
 

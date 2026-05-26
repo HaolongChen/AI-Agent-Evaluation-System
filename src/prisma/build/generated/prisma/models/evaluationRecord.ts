@@ -26,7 +26,6 @@ export type AggregateEvaluationRecord = {
 
 export type EvaluationRecordMinAggregateOutputType = {
   id: string | null
-  copilotOutputId: string | null
   evaluatorType: $Enums.EvaluatorType | null
   rubricId: string | null
   criteriaId: string | null
@@ -38,7 +37,6 @@ export type EvaluationRecordMinAggregateOutputType = {
 
 export type EvaluationRecordMaxAggregateOutputType = {
   id: string | null
-  copilotOutputId: string | null
   evaluatorType: $Enums.EvaluatorType | null
   rubricId: string | null
   criteriaId: string | null
@@ -50,7 +48,6 @@ export type EvaluationRecordMaxAggregateOutputType = {
 
 export type EvaluationRecordCountAggregateOutputType = {
   id: number
-  copilotOutputId: number
   evaluatorType: number
   rubricId: number
   criteriaId: number
@@ -64,7 +61,6 @@ export type EvaluationRecordCountAggregateOutputType = {
 
 export type EvaluationRecordMinAggregateInputType = {
   id?: true
-  copilotOutputId?: true
   evaluatorType?: true
   rubricId?: true
   criteriaId?: true
@@ -76,7 +72,6 @@ export type EvaluationRecordMinAggregateInputType = {
 
 export type EvaluationRecordMaxAggregateInputType = {
   id?: true
-  copilotOutputId?: true
   evaluatorType?: true
   rubricId?: true
   criteriaId?: true
@@ -88,7 +83,6 @@ export type EvaluationRecordMaxAggregateInputType = {
 
 export type EvaluationRecordCountAggregateInputType = {
   id?: true
-  copilotOutputId?: true
   evaluatorType?: true
   rubricId?: true
   criteriaId?: true
@@ -173,7 +167,6 @@ export type evaluationRecordGroupByArgs<ExtArgs extends runtime.Types.Extensions
 
 export type EvaluationRecordGroupByOutputType = {
   id: string
-  copilotOutputId: string
   evaluatorType: $Enums.EvaluatorType
   rubricId: string
   criteriaId: string
@@ -206,7 +199,6 @@ export type evaluationRecordWhereInput = {
   OR?: Prisma.evaluationRecordWhereInput[]
   NOT?: Prisma.evaluationRecordWhereInput | Prisma.evaluationRecordWhereInput[]
   id?: Prisma.StringFilter<"evaluationRecord"> | string
-  copilotOutputId?: Prisma.StringFilter<"evaluationRecord"> | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationRecord"> | $Enums.EvaluatorType
   rubricId?: Prisma.StringFilter<"evaluationRecord"> | string
   criteriaId?: Prisma.StringFilter<"evaluationRecord"> | string
@@ -219,7 +211,6 @@ export type evaluationRecordWhereInput = {
 
 export type evaluationRecordOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
   criteriaId?: Prisma.SortOrder
@@ -232,11 +223,10 @@ export type evaluationRecordOrderByWithRelationInput = {
 
 export type evaluationRecordWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  evaluatorId_copilotOutputId_rubricId_criteriaId?: Prisma.evaluationRecordEvaluatorIdCopilotOutputIdRubricIdCriteriaIdCompoundUniqueInput
+  evaluatorId_rubricId_criteriaId?: Prisma.evaluationRecordEvaluatorIdRubricIdCriteriaIdCompoundUniqueInput
   AND?: Prisma.evaluationRecordWhereInput | Prisma.evaluationRecordWhereInput[]
   OR?: Prisma.evaluationRecordWhereInput[]
   NOT?: Prisma.evaluationRecordWhereInput | Prisma.evaluationRecordWhereInput[]
-  copilotOutputId?: Prisma.StringFilter<"evaluationRecord"> | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationRecord"> | $Enums.EvaluatorType
   rubricId?: Prisma.StringFilter<"evaluationRecord"> | string
   criteriaId?: Prisma.StringFilter<"evaluationRecord"> | string
@@ -245,11 +235,10 @@ export type evaluationRecordWhereUniqueInput = Prisma.AtLeast<{
   feedback?: Prisma.StringNullableFilter<"evaluationRecord"> | string | null
   createdAt?: Prisma.DateTimeFilter<"evaluationRecord"> | Date | string
   evaluationSession?: Prisma.XOR<Prisma.EvaluationSessionScalarRelationFilter, Prisma.evaluationSessionWhereInput>
-}, "id" | "evaluatorId_copilotOutputId_rubricId_criteriaId">
+}, "id" | "evaluatorId_rubricId_criteriaId">
 
 export type evaluationRecordOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
   criteriaId?: Prisma.SortOrder
@@ -267,7 +256,6 @@ export type evaluationRecordScalarWhereWithAggregatesInput = {
   OR?: Prisma.evaluationRecordScalarWhereWithAggregatesInput[]
   NOT?: Prisma.evaluationRecordScalarWhereWithAggregatesInput | Prisma.evaluationRecordScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"evaluationRecord"> | string
-  copilotOutputId?: Prisma.StringWithAggregatesFilter<"evaluationRecord"> | string
   evaluatorType?: Prisma.EnumEvaluatorTypeWithAggregatesFilter<"evaluationRecord"> | $Enums.EvaluatorType
   rubricId?: Prisma.StringWithAggregatesFilter<"evaluationRecord"> | string
   criteriaId?: Prisma.StringWithAggregatesFilter<"evaluationRecord"> | string
@@ -288,7 +276,6 @@ export type evaluationRecordCreateInput = {
 
 export type evaluationRecordUncheckedCreateInput = {
   id?: string
-  copilotOutputId: string
   evaluatorType: $Enums.EvaluatorType
   rubricId: string
   criteriaId: string
@@ -309,7 +296,6 @@ export type evaluationRecordUpdateInput = {
 
 export type evaluationRecordUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  copilotOutputId?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string
   criteriaId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -321,7 +307,6 @@ export type evaluationRecordUncheckedUpdateInput = {
 
 export type evaluationRecordCreateManyInput = {
   id?: string
-  copilotOutputId: string
   evaluatorType: $Enums.EvaluatorType
   rubricId: string
   criteriaId: string
@@ -341,7 +326,6 @@ export type evaluationRecordUpdateManyMutationInput = {
 
 export type evaluationRecordUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  copilotOutputId?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string
   criteriaId?: Prisma.StringFieldUpdateOperationsInput | string
@@ -361,16 +345,14 @@ export type evaluationRecordOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type evaluationRecordEvaluatorIdCopilotOutputIdRubricIdCriteriaIdCompoundUniqueInput = {
+export type evaluationRecordEvaluatorIdRubricIdCriteriaIdCompoundUniqueInput = {
   evaluatorId: string
-  copilotOutputId: string
   rubricId: string
   criteriaId: string
 }
 
 export type evaluationRecordCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
   criteriaId?: Prisma.SortOrder
@@ -382,7 +364,6 @@ export type evaluationRecordCountOrderByAggregateInput = {
 
 export type evaluationRecordMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
   criteriaId?: Prisma.SortOrder
@@ -394,7 +375,6 @@ export type evaluationRecordMaxOrderByAggregateInput = {
 
 export type evaluationRecordMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   evaluatorType?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
   criteriaId?: Prisma.SortOrder
@@ -493,7 +473,6 @@ export type evaluationRecordScalarWhereInput = {
   OR?: Prisma.evaluationRecordScalarWhereInput[]
   NOT?: Prisma.evaluationRecordScalarWhereInput | Prisma.evaluationRecordScalarWhereInput[]
   id?: Prisma.StringFilter<"evaluationRecord"> | string
-  copilotOutputId?: Prisma.StringFilter<"evaluationRecord"> | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationRecord"> | $Enums.EvaluatorType
   rubricId?: Prisma.StringFilter<"evaluationRecord"> | string
   criteriaId?: Prisma.StringFilter<"evaluationRecord"> | string
@@ -539,7 +518,6 @@ export type evaluationRecordUncheckedUpdateManyWithoutEvaluationSessionInput = {
 
 export type evaluationRecordSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  copilotOutputId?: boolean
   evaluatorType?: boolean
   rubricId?: boolean
   criteriaId?: boolean
@@ -552,7 +530,6 @@ export type evaluationRecordSelect<ExtArgs extends runtime.Types.Extensions.Inte
 
 export type evaluationRecordSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  copilotOutputId?: boolean
   evaluatorType?: boolean
   rubricId?: boolean
   criteriaId?: boolean
@@ -565,7 +542,6 @@ export type evaluationRecordSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
 
 export type evaluationRecordSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  copilotOutputId?: boolean
   evaluatorType?: boolean
   rubricId?: boolean
   criteriaId?: boolean
@@ -578,7 +554,6 @@ export type evaluationRecordSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
 
 export type evaluationRecordSelectScalar = {
   id?: boolean
-  copilotOutputId?: boolean
   evaluatorType?: boolean
   rubricId?: boolean
   criteriaId?: boolean
@@ -588,7 +563,7 @@ export type evaluationRecordSelectScalar = {
   createdAt?: boolean
 }
 
-export type evaluationRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "copilotOutputId" | "evaluatorType" | "rubricId" | "criteriaId" | "evaluatorId" | "evaluation" | "feedback" | "createdAt", ExtArgs["result"]["evaluationRecord"]>
+export type evaluationRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "evaluatorType" | "rubricId" | "criteriaId" | "evaluatorId" | "evaluation" | "feedback" | "createdAt", ExtArgs["result"]["evaluationRecord"]>
 export type evaluationRecordInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   evaluationSession?: boolean | Prisma.evaluationSessionDefaultArgs<ExtArgs>
 }
@@ -606,7 +581,6 @@ export type $evaluationRecordPayload<ExtArgs extends runtime.Types.Extensions.In
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    copilotOutputId: string
     evaluatorType: $Enums.EvaluatorType
     rubricId: string
     criteriaId: string
@@ -1039,7 +1013,6 @@ export interface Prisma__evaluationRecordClient<T, Null = never, ExtArgs extends
  */
 export interface evaluationRecordFieldRefs {
   readonly id: Prisma.FieldRef<"evaluationRecord", 'String'>
-  readonly copilotOutputId: Prisma.FieldRef<"evaluationRecord", 'String'>
   readonly evaluatorType: Prisma.FieldRef<"evaluationRecord", 'EvaluatorType'>
   readonly rubricId: Prisma.FieldRef<"evaluationRecord", 'String'>
   readonly criteriaId: Prisma.FieldRef<"evaluationRecord", 'String'>

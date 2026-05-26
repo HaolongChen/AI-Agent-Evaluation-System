@@ -54,15 +54,15 @@ export const ModelName = {
   goldenSet: 'goldenSet',
   project: 'project',
   userInput: 'userInput',
-  goldenSet_userInput: 'goldenSet_userInput',
+  schema_userInput: 'schema_userInput',
+  copilotServer: 'copilotServer',
+  copilotSession: 'copilotSession',
   copilotOutput: 'copilotOutput',
-  copilotOutput_rubric: 'copilotOutput_rubric',
   rubric: 'rubric',
   criteria: 'criteria',
   agentFeedbacks: 'agentFeedbacks',
   evaluationSession: 'evaluationSession',
-  evaluationRecord: 'evaluationRecord',
-  evaluationResult: 'evaluationResult'
+  evaluationRecord: 'evaluationRecord'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -84,10 +84,6 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 export const GoldenSetScalarFieldEnum = {
   id: 'id',
   schemaId: 'schemaId',
-  projectExId: 'projectExId',
-  projectName: 'projectName',
-  copilotType: 'copilotType',
-  modelName: 'modelName',
   updatedAt: 'updatedAt'
 } as const
 
@@ -109,25 +105,44 @@ export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeo
 export const UserInputScalarFieldEnum = {
   id: 'id',
   content: 'content',
-  createdAt: 'createdAt',
-  createdBy: 'createdBy'
+  createdAt: 'createdAt'
 } as const
 
 export type UserInputScalarFieldEnum = (typeof UserInputScalarFieldEnum)[keyof typeof UserInputScalarFieldEnum]
 
 
-export const GoldenSet_userInputScalarFieldEnum = {
+export const Schema_userInputScalarFieldEnum = {
+  id: 'id',
   goldenSetId: 'goldenSetId',
   userInputId: 'userInputId'
 } as const
 
-export type GoldenSet_userInputScalarFieldEnum = (typeof GoldenSet_userInputScalarFieldEnum)[keyof typeof GoldenSet_userInputScalarFieldEnum]
+export type Schema_userInputScalarFieldEnum = (typeof Schema_userInputScalarFieldEnum)[keyof typeof Schema_userInputScalarFieldEnum]
+
+
+export const CopilotServerScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  endpoint: 'endpoint',
+  createdAt: 'createdAt'
+} as const
+
+export type CopilotServerScalarFieldEnum = (typeof CopilotServerScalarFieldEnum)[keyof typeof CopilotServerScalarFieldEnum]
+
+
+export const CopilotSessionScalarFieldEnum = {
+  id: 'id',
+  schemaUserInputId: 'schemaUserInputId',
+  copilotServerId: 'copilotServerId',
+  createdAt: 'createdAt'
+} as const
+
+export type CopilotSessionScalarFieldEnum = (typeof CopilotSessionScalarFieldEnum)[keyof typeof CopilotSessionScalarFieldEnum]
 
 
 export const CopilotOutputScalarFieldEnum = {
   id: 'id',
-  goldenSetId: 'goldenSetId',
-  userInputId: 'userInputId',
   editableText: 'editableText',
   aiResponse: 'aiResponse',
   copilotSessionExId: 'copilotSessionExId',
@@ -137,19 +152,9 @@ export const CopilotOutputScalarFieldEnum = {
 export type CopilotOutputScalarFieldEnum = (typeof CopilotOutputScalarFieldEnum)[keyof typeof CopilotOutputScalarFieldEnum]
 
 
-export const CopilotOutput_rubricScalarFieldEnum = {
-  copilotOutputId: 'copilotOutputId',
-  rubricId: 'rubricId',
-  createdAt: 'createdAt'
-} as const
-
-export type CopilotOutput_rubricScalarFieldEnum = (typeof CopilotOutput_rubricScalarFieldEnum)[keyof typeof CopilotOutput_rubricScalarFieldEnum]
-
-
 export const RubricScalarFieldEnum = {
   id: 'id',
-  goldenSetId: 'goldenSetId',
-  userInputId: 'userInputId',
+  copilotOutputId: 'copilotOutputId',
   createdAt: 'createdAt'
 } as const
 
@@ -182,14 +187,12 @@ export type AgentFeedbacksScalarFieldEnum = (typeof AgentFeedbacksScalarFieldEnu
 
 export const EvaluationSessionScalarFieldEnum = {
   id: 'id',
-  evaluatorType: 'evaluatorType',
-  copilotOutputId: 'copilotOutputId',
   rubricId: 'rubricId',
+  evaluatorType: 'evaluatorType',
   evaluatorId: 'evaluatorId',
-  modelName: 'modelName',
-  startedAt: 'startedAt',
-  completedAt: 'completedAt',
-  metadata: 'metadata'
+  createdAt: 'createdAt',
+  metadata: 'metadata',
+  analysis: 'analysis'
 } as const
 
 export type EvaluationSessionScalarFieldEnum = (typeof EvaluationSessionScalarFieldEnum)[keyof typeof EvaluationSessionScalarFieldEnum]
@@ -197,7 +200,6 @@ export type EvaluationSessionScalarFieldEnum = (typeof EvaluationSessionScalarFi
 
 export const EvaluationRecordScalarFieldEnum = {
   id: 'id',
-  copilotOutputId: 'copilotOutputId',
   evaluatorType: 'evaluatorType',
   rubricId: 'rubricId',
   criteriaId: 'criteriaId',
@@ -208,21 +210,6 @@ export const EvaluationRecordScalarFieldEnum = {
 } as const
 
 export type EvaluationRecordScalarFieldEnum = (typeof EvaluationRecordScalarFieldEnum)[keyof typeof EvaluationRecordScalarFieldEnum]
-
-
-export const EvaluationResultScalarFieldEnum = {
-  id: 'id',
-  evaluatorId: 'evaluatorId',
-  copilotOutputId: 'copilotOutputId',
-  rubricId: 'rubricId',
-  evaluatorType: 'evaluatorType',
-  overallScore: 'overallScore',
-  analysis: 'analysis',
-  auditTrace: 'auditTrace',
-  generatedAt: 'generatedAt'
-} as const
-
-export type EvaluationResultScalarFieldEnum = (typeof EvaluationResultScalarFieldEnum)[keyof typeof EvaluationResultScalarFieldEnum]
 
 
 export const SortOrder = {

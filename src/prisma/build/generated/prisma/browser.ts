@@ -33,20 +33,25 @@ export type project = Prisma.projectModel
  */
 export type userInput = Prisma.userInputModel
 /**
- * Model goldenSet_userInput
+ * Model schema_userInput
  * 
  */
-export type goldenSet_userInput = Prisma.goldenSet_userInputModel
+export type schema_userInput = Prisma.schema_userInputModel
+/**
+ * Model copilotServer
+ * 
+ */
+export type copilotServer = Prisma.copilotServerModel
+/**
+ * Model copilotSession
+ * 
+ */
+export type copilotSession = Prisma.copilotSessionModel
 /**
  * Model copilotOutput
  * 
  */
 export type copilotOutput = Prisma.copilotOutputModel
-/**
- * Model copilotOutput_rubric
- * 
- */
-export type copilotOutput_rubric = Prisma.copilotOutput_rubricModel
 /**
  * Model rubric
  * 
@@ -72,8 +77,3 @@ export type evaluationSession = Prisma.evaluationSessionModel
  * 
  */
 export type evaluationRecord = Prisma.evaluationRecordModel
-/**
- * Model evaluationResult
- * 
- */
-export type evaluationResult = Prisma.evaluationResultModel

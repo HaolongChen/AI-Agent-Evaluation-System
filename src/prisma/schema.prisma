@@ -32,17 +32,17 @@ enum EvaluatorType {
 
 // context
 model goldenSet {
-  id          String                @id @default(uuid())
-  schemaId    String                @map("schema_id")
-  projectExId String?               @map("project_ex_id") // corresponds to the projectExId in LangGraph
-  projectName String?               @map("project_name") // denormalized for easier querying, corresponds to the name field in project table
-  copilotType CopilotType           @default(dataModelBuilder) @map("copilot_type") // e.g., 'dataModelBuilder', 'uiBuilder', 'actionFlowBuilder', 'logAnalyzer', 'agentBuilder'
-  modelName   String                @default("undefined") @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-  userInputs  goldenSet_userInput[]
-  updatedAt   DateTime              @default(now()) @map("updated_at") @db.Timestamptz(6)
+  id         String             @id @default(uuid())
+  schemaId   String             @unique @map("schema_id")
+  // projectExId String?               @map("project_ex_id") // corresponds to the projectExId in LangGraph
+  // projectName String?               @map("project_name") // denormalized for easier querying, corresponds to the name field in project table
+  // copilotType CopilotType           @default(dataModelBuilder) @map("copilot_type") // e.g., 'dataModelBuilder', 'uiBuilder', 'actionFlowBuilder', 'logAnalyzer', 'agentBuilder'
+  // modelName   String                @default("undefined") @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
+  userInputs schema_userInput[]
+  updatedAt  DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
   // evaluationSessions evaluationSession[]
 
-  @@unique([schemaId, copilotType, modelName], map: "unique_golden_set")
+  // @@unique([schemaId], map: "unique_golden_set") // add copilot type
 }
 
 model project {
@@ -59,35 +59,55 @@ model project {
 }
 
 model userInput {
-  id         String                @id @default(uuid())
+  id         String             @id @default(uuid())
   // description String?
-  content    String                @map("input_content") // user input
-  createdAt  DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy  String                @default("unknown") @map("created_by") // userId or "auto-generated" for system-generated inputs
-  goldenSets goldenSet_userInput[]
+  content    String             @map("input_content") // user input
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  // createdBy  String                @default("unknown") @map("created_by") // userId or "auto-generated" for system-generated inputs
+  goldenSets schema_userInput[]
 }
 
-model goldenSet_userInput {
+model schema_userInput {
+  id          String @id @default(uuid())
   goldenSetId String @map("golden_set_id")
   userInputId String @map("user_input_id")
 
-  goldenSet     goldenSet       @relation(fields: [goldenSetId], references: [id])
-  userInput     userInput       @relation(fields: [userInputId], references: [id])
-  copilotOutput copilotOutput[]
-  rubrics       rubric[]
+  goldenSet goldenSet @relation(fields: [goldenSetId], references: [id])
+  userInput userInput @relation(fields: [userInputId], references: [id])
 
-  @@id([goldenSetId, userInputId], map: "idx_golden_set_user_input")
+  copilotSessions copilotSession[] @relation(map: "schema_user_input_copilot_session")
+
+  @@unique([goldenSetId, userInputId], map: "idx_schema_user_input")
+}
+
+model copilotServer {
+  id              String           @id @default(uuid())
+  name            String           @map("name") // e.g., 'aws-us-east-1', 'azure-westus2'
+  description     String?          @map("description")
+  endpoint        String           @map("endpoint") // e.g., 'https://zionbackend.functorz.work/api/subscription'
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  copilotSessions copilotSession[]
+}
+
+model copilotSession {
+  id                String           @id @default(uuid())
+  schemaUserInputId String           @map("schema_user_input_id")
+  copilotInput      schema_userInput @relation(fields: [schemaUserInputId], references: [id])
+  copilotServerId   String           @map("copilot_server_id")
+  copilotServer     copilotServer    @relation(fields: [copilotServerId], references: [id])
+
+  copilotOutput copilotOutput?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 }
 
 model copilotOutput {
-  id                 String              @id @default(uuid())
-  goldenSetId        String              @map("golden_set_id")
-  userInputId        String              @map("user_input_id")
-  copilotInput       goldenSet_userInput @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
-  editableText       String?             @map("output_content") // copilot output
-  aiResponse         String              @map("ai_response") // AI response
-  copilotSessionExId String              @map("copilot_session_id") // corresponds to the sessionId in LangGraph for traceability
-  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                 String         @id @default(uuid())
+  copilotSession     copilotSession @relation(fields: [copilotSessionExId], references: [id])
+  editableText       String?        @map("output_content") // copilot output
+  aiResponse         String         @map("ai_response") // AI response
+  copilotSessionExId String         @unique @map("copilot_session_id") // corresponds to the sessionId in LangGraph for traceability
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Performance Metrics
   // totalLatencyMs    Int?     @map("total_latency_ms")
@@ -97,39 +117,38 @@ model copilotOutput {
   // totalTokens       Int?     @map("total_tokens") // input_tokens + output_tokens + reasoning tokens
   // contextPercentage Decimal? @map("context_percentage") @db.Decimal(5, 2) // % of max context window used
 
-  rubrics copilotOutput_rubric[]
-
-  @@index([goldenSetId, userInputId], map: "idx_copilot_output_golden_user_input")
+  rubrics rubric[] @relation("copilotOutput_rubric")
 }
 
-model copilotOutput_rubric {
-  copilotOutputId String @map("copilot_output_id")
-  rubricId        String @map("rubric_id")
+// model copilotOutput_rubric {
+//   copilotOutputId String @map("copilot_output_id")
+//   rubricId        String @map("rubric_id")
 
-  copilotOutput      copilotOutput       @relation(fields: [copilotOutputId], references: [id])
-  rubric             rubric              @relation(fields: [rubricId], references: [id])
-  evaluationSessions evaluationSession[]
+//   copilotOutput      copilotOutput       @relation(fields: [copilotOutputId], references: [id])
+//   rubric             rubric              @relation(fields: [rubricId], references: [id])
+//   evaluationSessions evaluationSession[]
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+//   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  @@id([copilotOutputId, rubricId], map: "idx_copilot_output_rubric")
-}
+//   @@id([copilotOutputId, rubricId], map: "idx_copilot_output_rubric")
+// }
 
 // Adaptive Rubrics (AI-generated evaluation criterion - one criteria per row)
 model rubric {
-  id          String @id @default(uuid())
-  goldenSetId String @map("golden_set_id")
-  userInputId String @map("user_input_id")
+  id String @id @default(uuid())
 
-  copilotInput   goldenSet_userInput    @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
-  copilotOutputs copilotOutput_rubric[]
+  copilotOutputId String @map("copilot_output_id")
+  // goldenSetId String @map("golden_set_id")
+  // userInputId String @map("user_input_id")
+
+  // copilotInput   goldenSet_userInput    @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
+  copilotOutputs copilotOutput    @relation("copilotOutput_rubric", fields: [copilotOutputId], references: [id])
   criterion      criteria[]
   agentFeedbacks agentFeedbacks[]
 
   // Timestamps
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  @@index([goldenSetId, userInputId], map: "idx_rubric_golden_user_input")
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  evaluationSessions evaluationSession[]
 }
 
 model criteria {
@@ -164,63 +183,59 @@ model agentFeedbacks {
 
 // Execution Sessions (references copilot schema tables)
 model evaluationSession {
-  id              String        @id @default(uuid())
-  evaluatorType   EvaluatorType @default(human)
-  copilotOutputId String        @map("copilot_output_id")
-  rubricId        String        @map("rubric_id")
-  evaluatorId     String        @map("evaluator_id") // could be agentId or "auto-evaluation" for agent evaluations
-  modelName       String?       @map("model_name") // e.g., 'gpt-4', 'claude-3-opus' * only for evaluation agents *
-  startedAt       DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
-  completedAt     DateTime?     @map("completed_at") @db.Timestamptz(6)
+  id            String        @id @default(uuid())
+  rubricId      String        @map("rubric_id")
+  evaluatorType EvaluatorType @default(human)
+  evaluatorId   String        @map("evaluator_id") // could be agentId or "auto-evaluation" for agent evaluations
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   // status          SessionStatus @default(running)
 
   // Metadata for HITL graph execution (stores threadId, skipHumanReview, etc.)
   metadata Json?
+  analysis Json? // structured analysis from evaluation sessions, useful for training data and insights
 
   // Relations
-  rubric            copilotOutput_rubric @relation(fields: [copilotOutputId, rubricId], references: [copilotOutputId, rubricId])
-  evaluationRecords evaluationRecord[]   @relation(map: "agent_evaluation_records")
-  result            evaluationResult?    @relation(map: "agent_evaluation_result_relation")
+  rubric            rubric             @relation(fields: [rubricId], references: [id], map: "agent_evaluation_session_rubric_relation")
+  evaluationRecords evaluationRecord[] @relation(map: "agent_evaluation_records")
+  // result            evaluationResult?    @relation(map: "agent_evaluation_result_relation")
 
-  @@unique([evaluatorId, copilotOutputId, rubricId, evaluatorType], map: "unique_agent_evaluation_session")
-  @@index([copilotOutputId, rubricId], map: "idx_evaluation_session_scheme")
+  @@unique([evaluatorId, rubricId, evaluatorType], map: "unique_agent_evaluation_session")
 }
 
 // Rubric Judgments (human and agent evaluations - one answer per rubric criteria)
 model evaluationRecord {
-  id              String        @id @default(uuid())
-  copilotOutputId String        @map("copilot_output_id")
-  evaluatorType   EvaluatorType @map("evaluator_type") // human or agent
-  rubricId        String        @map("rubric_id")
-  criteriaId      String        @map("criteria_id")
-  evaluatorId     String        @map("evaluator_id") // humanId for human evaluations. otherwise, could be agentId or "auto-evaluation" for agent evaluations
-  evaluation      Boolean       @map("evaluator_evaluation") // perhaps could be multiple choice criteria in the future
-  feedback        String?       @map("feedback") // optional free-form feedback from the evaluator
-  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  id            String        @id @default(uuid())
+  evaluatorType EvaluatorType @map("evaluator_type") // human or agent
+  rubricId      String        @map("rubric_id")
+  criteriaId    String        @map("criteria_id")
+  evaluatorId   String        @map("evaluator_id") // humanId for human evaluations. otherwise, could be agentId or "auto-evaluation" for agent evaluations
+  evaluation    Boolean       @map("evaluator_evaluation") // perhaps could be multiple choice criteria in the future
+  feedback      String?       @map("feedback") // optional free-form feedback from the evaluator
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  evaluationSession evaluationSession @relation(fields: [evaluatorId, copilotOutputId, rubricId, evaluatorType], references: [evaluatorId, copilotOutputId, rubricId, evaluatorType], map: "agent_evaluation_session_relation")
+  evaluationSession evaluationSession @relation(fields: [evaluatorId, rubricId, evaluatorType], references: [evaluatorId, rubricId, evaluatorType], map: "agent_evaluation_session_relation")
 
-  @@unique([evaluatorId, copilotOutputId, rubricId, criteriaId], map: "unique_agent_evaluation_record")
-  @@index([copilotOutputId, rubricId], map: "idx_agent_evaluation_record_scheme")
+  @@unique([evaluatorId, rubricId, criteriaId], map: "unique_agent_evaluation_record")
 }
 
 // Evaluation Results Summary (matching LangGraph FinalReport interface)
-model evaluationResult {
-  id              String        @id @default(uuid())
-  evaluatorId     String        @map("evaluator_id") // humanId for human evaluations. otherwise, could be agentId or "auto-evaluation" for agent evaluations
-  copilotOutputId String        @map("copilot_output_id")
-  rubricId        String        @map("rubric_id")
-  evaluatorType   EvaluatorType @map("evaluator_type") // human or agent
+// model evaluationResult {
+//   id              String        @id @default(uuid())
+//   evaluatorId     String        @map("evaluator_id") // humanId for human evaluations. otherwise, could be agentId or "auto-evaluation" for agent evaluations
+//   copilotOutputId String        @map("copilot_output_id")
+//   rubricId        String        @map("rubric_id")
+//   evaluatorType   EvaluatorType @map("evaluator_type") // human or agent
 
-  // FinalReport fields (matching LangGraph FinalReport interface)
-  overallScore Decimal  @map("overall_score") @db.Decimal(5, 2)
-  analysis     String   @map("analysis") @db.Text
-  auditTrace   String[] @default([]) @map("audit_trace") // Array of audit log entries
-  generatedAt  DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
+//   // FinalReport fields (matching LangGraph FinalReport interface)
+//   overallScore Decimal  @map("overall_score") @db.Decimal(5, 2)
+//   analysis     String   @map("analysis") @db.Text
+//   auditTrace   String[] @default([]) @map("audit_trace") // Array of audit log entries
+//   generatedAt  DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
 
-  // Relations
-  evaluationSession evaluationSession @relation(fields: [evaluatorId, copilotOutputId, rubricId, evaluatorType], references: [evaluatorId, copilotOutputId, rubricId, evaluatorType], map: "human_evaluation_result_relation")
+//   // Relations
+//   evaluationSession evaluationSession @relation(fields: [evaluatorId, copilotOutputId, rubricId, evaluatorType], references: [evaluatorId, copilotOutputId, rubricId, evaluatorType], map: "human_evaluation_result_relation")
 
-  @@unique([evaluatorId, copilotOutputId, rubricId, evaluatorType], map: "idx_evaluation_result_lookup")
-  @@index([copilotOutputId, rubricId], map: "idx_evaluation_result_scheme")
-}
+//   @@unique([evaluatorId, copilotOutputId, rubricId, evaluatorType], map: "idx_evaluation_result_lookup")
+//   @@index([copilotOutputId, rubricId], map: "idx_evaluation_result_scheme")
+// }

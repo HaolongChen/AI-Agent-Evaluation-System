@@ -63,5 +63,4 @@ export class CopilotInputRepository implements ICopilotInputRepository {
       };
     });
   }
-
 }

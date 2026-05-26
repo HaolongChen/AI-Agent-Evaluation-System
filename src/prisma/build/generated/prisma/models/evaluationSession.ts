@@ -26,72 +26,56 @@ export type AggregateEvaluationSession = {
 
 export type EvaluationSessionMinAggregateOutputType = {
   id: string | null
-  evaluatorType: $Enums.EvaluatorType | null
-  copilotOutputId: string | null
   rubricId: string | null
+  evaluatorType: $Enums.EvaluatorType | null
   evaluatorId: string | null
-  modelName: string | null
-  startedAt: Date | null
-  completedAt: Date | null
+  createdAt: Date | null
 }
 
 export type EvaluationSessionMaxAggregateOutputType = {
   id: string | null
-  evaluatorType: $Enums.EvaluatorType | null
-  copilotOutputId: string | null
   rubricId: string | null
+  evaluatorType: $Enums.EvaluatorType | null
   evaluatorId: string | null
-  modelName: string | null
-  startedAt: Date | null
-  completedAt: Date | null
+  createdAt: Date | null
 }
 
 export type EvaluationSessionCountAggregateOutputType = {
   id: number
-  evaluatorType: number
-  copilotOutputId: number
   rubricId: number
+  evaluatorType: number
   evaluatorId: number
-  modelName: number
-  startedAt: number
-  completedAt: number
+  createdAt: number
   metadata: number
+  analysis: number
   _all: number
 }
 
 
 export type EvaluationSessionMinAggregateInputType = {
   id?: true
-  evaluatorType?: true
-  copilotOutputId?: true
   rubricId?: true
+  evaluatorType?: true
   evaluatorId?: true
-  modelName?: true
-  startedAt?: true
-  completedAt?: true
+  createdAt?: true
 }
 
 export type EvaluationSessionMaxAggregateInputType = {
   id?: true
-  evaluatorType?: true
-  copilotOutputId?: true
   rubricId?: true
+  evaluatorType?: true
   evaluatorId?: true
-  modelName?: true
-  startedAt?: true
-  completedAt?: true
+  createdAt?: true
 }
 
 export type EvaluationSessionCountAggregateInputType = {
   id?: true
-  evaluatorType?: true
-  copilotOutputId?: true
   rubricId?: true
+  evaluatorType?: true
   evaluatorId?: true
-  modelName?: true
-  startedAt?: true
-  completedAt?: true
+  createdAt?: true
   metadata?: true
+  analysis?: true
   _all?: true
 }
 
@@ -169,14 +153,12 @@ export type evaluationSessionGroupByArgs<ExtArgs extends runtime.Types.Extension
 
 export type EvaluationSessionGroupByOutputType = {
   id: string
-  evaluatorType: $Enums.EvaluatorType
-  copilotOutputId: string
   rubricId: string
+  evaluatorType: $Enums.EvaluatorType
   evaluatorId: string
-  modelName: string | null
-  startedAt: Date
-  completedAt: Date | null
+  createdAt: Date
   metadata: runtime.JsonValue | null
+  analysis: runtime.JsonValue | null
   _count: EvaluationSessionCountAggregateOutputType | null
   _min: EvaluationSessionMinAggregateOutputType | null
   _max: EvaluationSessionMaxAggregateOutputType | null
@@ -202,63 +184,52 @@ export type evaluationSessionWhereInput = {
   OR?: Prisma.evaluationSessionWhereInput[]
   NOT?: Prisma.evaluationSessionWhereInput | Prisma.evaluationSessionWhereInput[]
   id?: Prisma.StringFilter<"evaluationSession"> | string
-  evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationSession"> | $Enums.EvaluatorType
-  copilotOutputId?: Prisma.StringFilter<"evaluationSession"> | string
   rubricId?: Prisma.StringFilter<"evaluationSession"> | string
+  evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationSession"> | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFilter<"evaluationSession"> | string
-  modelName?: Prisma.StringNullableFilter<"evaluationSession"> | string | null
-  startedAt?: Prisma.DateTimeFilter<"evaluationSession"> | Date | string
-  completedAt?: Prisma.DateTimeNullableFilter<"evaluationSession"> | Date | string | null
+  createdAt?: Prisma.DateTimeFilter<"evaluationSession"> | Date | string
   metadata?: Prisma.JsonNullableFilter<"evaluationSession">
-  rubric?: Prisma.XOR<Prisma.CopilotOutput_rubricScalarRelationFilter, Prisma.copilotOutput_rubricWhereInput>
+  analysis?: Prisma.JsonNullableFilter<"evaluationSession">
+  rubric?: Prisma.XOR<Prisma.RubricScalarRelationFilter, Prisma.rubricWhereInput>
   evaluationRecords?: Prisma.EvaluationRecordListRelationFilter
-  result?: Prisma.XOR<Prisma.EvaluationResultNullableScalarRelationFilter, Prisma.evaluationResultWhereInput> | null
 }
 
 export type evaluationSessionOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  evaluatorType?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
+  evaluatorType?: Prisma.SortOrder
   evaluatorId?: Prisma.SortOrder
-  modelName?: Prisma.SortOrderInput | Prisma.SortOrder
-  startedAt?: Prisma.SortOrder
-  completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
-  rubric?: Prisma.copilotOutput_rubricOrderByWithRelationInput
+  analysis?: Prisma.SortOrderInput | Prisma.SortOrder
+  rubric?: Prisma.rubricOrderByWithRelationInput
   evaluationRecords?: Prisma.evaluationRecordOrderByRelationAggregateInput
-  result?: Prisma.evaluationResultOrderByWithRelationInput
 }
 
 export type evaluationSessionWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  evaluatorId_copilotOutputId_rubricId_evaluatorType?: Prisma.evaluationSessionEvaluatorIdCopilotOutputIdRubricIdEvaluatorTypeCompoundUniqueInput
+  evaluatorId_rubricId_evaluatorType?: Prisma.evaluationSessionEvaluatorIdRubricIdEvaluatorTypeCompoundUniqueInput
   AND?: Prisma.evaluationSessionWhereInput | Prisma.evaluationSessionWhereInput[]
   OR?: Prisma.evaluationSessionWhereInput[]
   NOT?: Prisma.evaluationSessionWhereInput | Prisma.evaluationSessionWhereInput[]
-  evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationSession"> | $Enums.EvaluatorType
-  copilotOutputId?: Prisma.StringFilter<"evaluationSession"> | string
   rubricId?: Prisma.StringFilter<"evaluationSession"> | string
+  evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationSession"> | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFilter<"evaluationSession"> | string
-  modelName?: Prisma.StringNullableFilter<"evaluationSession"> | string | null
-  startedAt?: Prisma.DateTimeFilter<"evaluationSession"> | Date | string
-  completedAt?: Prisma.DateTimeNullableFilter<"evaluationSession"> | Date | string | null
+  createdAt?: Prisma.DateTimeFilter<"evaluationSession"> | Date | string
   metadata?: Prisma.JsonNullableFilter<"evaluationSession">
-  rubric?: Prisma.XOR<Prisma.CopilotOutput_rubricScalarRelationFilter, Prisma.copilotOutput_rubricWhereInput>
+  analysis?: Prisma.JsonNullableFilter<"evaluationSession">
+  rubric?: Prisma.XOR<Prisma.RubricScalarRelationFilter, Prisma.rubricWhereInput>
   evaluationRecords?: Prisma.EvaluationRecordListRelationFilter
-  result?: Prisma.XOR<Prisma.EvaluationResultNullableScalarRelationFilter, Prisma.evaluationResultWhereInput> | null
-}, "id" | "evaluatorId_copilotOutputId_rubricId_evaluatorType">
+}, "id" | "evaluatorId_rubricId_evaluatorType">
 
 export type evaluationSessionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  evaluatorType?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
+  evaluatorType?: Prisma.SortOrder
   evaluatorId?: Prisma.SortOrder
-  modelName?: Prisma.SortOrderInput | Prisma.SortOrder
-  startedAt?: Prisma.SortOrder
-  completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   metadata?: Prisma.SortOrderInput | Prisma.SortOrder
+  analysis?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.evaluationSessionCountOrderByAggregateInput
   _max?: Prisma.evaluationSessionMaxOrderByAggregateInput
   _min?: Prisma.evaluationSessionMinOrderByAggregateInput
@@ -269,102 +240,85 @@ export type evaluationSessionScalarWhereWithAggregatesInput = {
   OR?: Prisma.evaluationSessionScalarWhereWithAggregatesInput[]
   NOT?: Prisma.evaluationSessionScalarWhereWithAggregatesInput | Prisma.evaluationSessionScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"evaluationSession"> | string
-  evaluatorType?: Prisma.EnumEvaluatorTypeWithAggregatesFilter<"evaluationSession"> | $Enums.EvaluatorType
-  copilotOutputId?: Prisma.StringWithAggregatesFilter<"evaluationSession"> | string
   rubricId?: Prisma.StringWithAggregatesFilter<"evaluationSession"> | string
+  evaluatorType?: Prisma.EnumEvaluatorTypeWithAggregatesFilter<"evaluationSession"> | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringWithAggregatesFilter<"evaluationSession"> | string
-  modelName?: Prisma.StringNullableWithAggregatesFilter<"evaluationSession"> | string | null
-  startedAt?: Prisma.DateTimeWithAggregatesFilter<"evaluationSession"> | Date | string
-  completedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"evaluationSession"> | Date | string | null
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"evaluationSession"> | Date | string
   metadata?: Prisma.JsonNullableWithAggregatesFilter<"evaluationSession">
+  analysis?: Prisma.JsonNullableWithAggregatesFilter<"evaluationSession">
 }
 
 export type evaluationSessionCreateInput = {
   id?: string
   evaluatorType?: $Enums.EvaluatorType
   evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
+  createdAt?: Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  rubric: Prisma.copilotOutput_rubricCreateNestedOneWithoutEvaluationSessionsInput
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rubric: Prisma.rubricCreateNestedOneWithoutEvaluationSessionsInput
   evaluationRecords?: Prisma.evaluationRecordCreateNestedManyWithoutEvaluationSessionInput
-  result?: Prisma.evaluationResultCreateNestedOneWithoutEvaluationSessionInput
 }
 
 export type evaluationSessionUncheckedCreateInput = {
   id?: string
-  evaluatorType?: $Enums.EvaluatorType
-  copilotOutputId: string
   rubricId: string
+  evaluatorType?: $Enums.EvaluatorType
   evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
+  createdAt?: Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   evaluationRecords?: Prisma.evaluationRecordUncheckedCreateNestedManyWithoutEvaluationSessionInput
-  result?: Prisma.evaluationResultUncheckedCreateNestedOneWithoutEvaluationSessionInput
 }
 
 export type evaluationSessionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  rubric?: Prisma.copilotOutput_rubricUpdateOneRequiredWithoutEvaluationSessionsNestedInput
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rubric?: Prisma.rubricUpdateOneRequiredWithoutEvaluationSessionsNestedInput
   evaluationRecords?: Prisma.evaluationRecordUpdateManyWithoutEvaluationSessionNestedInput
-  result?: Prisma.evaluationResultUpdateOneWithoutEvaluationSessionNestedInput
 }
 
 export type evaluationSessionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
-  copilotOutputId?: Prisma.StringFieldUpdateOperationsInput | string
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string
+  evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   evaluationRecords?: Prisma.evaluationRecordUncheckedUpdateManyWithoutEvaluationSessionNestedInput
-  result?: Prisma.evaluationResultUncheckedUpdateOneWithoutEvaluationSessionNestedInput
 }
 
 export type evaluationSessionCreateManyInput = {
   id?: string
-  evaluatorType?: $Enums.EvaluatorType
-  copilotOutputId: string
   rubricId: string
+  evaluatorType?: $Enums.EvaluatorType
   evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
+  createdAt?: Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type evaluationSessionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type evaluationSessionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
-  copilotOutputId?: Prisma.StringFieldUpdateOperationsInput | string
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string
+  evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type EvaluationSessionListRelationFilter = {
@@ -377,45 +331,36 @@ export type evaluationSessionOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type evaluationSessionEvaluatorIdCopilotOutputIdRubricIdEvaluatorTypeCompoundUniqueInput = {
+export type evaluationSessionEvaluatorIdRubricIdEvaluatorTypeCompoundUniqueInput = {
   evaluatorId: string
-  copilotOutputId: string
   rubricId: string
   evaluatorType: $Enums.EvaluatorType
 }
 
 export type evaluationSessionCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  evaluatorType?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
+  evaluatorType?: Prisma.SortOrder
   evaluatorId?: Prisma.SortOrder
-  modelName?: Prisma.SortOrder
-  startedAt?: Prisma.SortOrder
-  completedAt?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
+  analysis?: Prisma.SortOrder
 }
 
 export type evaluationSessionMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  evaluatorType?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
+  evaluatorType?: Prisma.SortOrder
   evaluatorId?: Prisma.SortOrder
-  modelName?: Prisma.SortOrder
-  startedAt?: Prisma.SortOrder
-  completedAt?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type evaluationSessionMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  evaluatorType?: Prisma.SortOrder
-  copilotOutputId?: Prisma.SortOrder
   rubricId?: Prisma.SortOrder
+  evaluatorType?: Prisma.SortOrder
   evaluatorId?: Prisma.SortOrder
-  modelName?: Prisma.SortOrder
-  startedAt?: Prisma.SortOrder
-  completedAt?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type EvaluationSessionScalarRelationFilter = {
@@ -469,10 +414,6 @@ export type EnumEvaluatorTypeFieldUpdateOperationsInput = {
   set?: $Enums.EvaluatorType
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type evaluationSessionCreateNestedOneWithoutEvaluationRecordsInput = {
   create?: Prisma.XOR<Prisma.evaluationSessionCreateWithoutEvaluationRecordsInput, Prisma.evaluationSessionUncheckedCreateWithoutEvaluationRecordsInput>
   connectOrCreate?: Prisma.evaluationSessionCreateOrConnectWithoutEvaluationRecordsInput
@@ -487,42 +428,24 @@ export type evaluationSessionUpdateOneRequiredWithoutEvaluationRecordsNestedInpu
   update?: Prisma.XOR<Prisma.XOR<Prisma.evaluationSessionUpdateToOneWithWhereWithoutEvaluationRecordsInput, Prisma.evaluationSessionUpdateWithoutEvaluationRecordsInput>, Prisma.evaluationSessionUncheckedUpdateWithoutEvaluationRecordsInput>
 }
 
-export type evaluationSessionCreateNestedOneWithoutResultInput = {
-  create?: Prisma.XOR<Prisma.evaluationSessionCreateWithoutResultInput, Prisma.evaluationSessionUncheckedCreateWithoutResultInput>
-  connectOrCreate?: Prisma.evaluationSessionCreateOrConnectWithoutResultInput
-  connect?: Prisma.evaluationSessionWhereUniqueInput
-}
-
-export type evaluationSessionUpdateOneRequiredWithoutResultNestedInput = {
-  create?: Prisma.XOR<Prisma.evaluationSessionCreateWithoutResultInput, Prisma.evaluationSessionUncheckedCreateWithoutResultInput>
-  connectOrCreate?: Prisma.evaluationSessionCreateOrConnectWithoutResultInput
-  upsert?: Prisma.evaluationSessionUpsertWithoutResultInput
-  connect?: Prisma.evaluationSessionWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.evaluationSessionUpdateToOneWithWhereWithoutResultInput, Prisma.evaluationSessionUpdateWithoutResultInput>, Prisma.evaluationSessionUncheckedUpdateWithoutResultInput>
-}
-
 export type evaluationSessionCreateWithoutRubricInput = {
   id?: string
   evaluatorType?: $Enums.EvaluatorType
   evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
+  createdAt?: Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   evaluationRecords?: Prisma.evaluationRecordCreateNestedManyWithoutEvaluationSessionInput
-  result?: Prisma.evaluationResultCreateNestedOneWithoutEvaluationSessionInput
 }
 
 export type evaluationSessionUncheckedCreateWithoutRubricInput = {
   id?: string
   evaluatorType?: $Enums.EvaluatorType
   evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
+  createdAt?: Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   evaluationRecords?: Prisma.evaluationRecordUncheckedCreateNestedManyWithoutEvaluationSessionInput
-  result?: Prisma.evaluationResultUncheckedCreateNestedOneWithoutEvaluationSessionInput
 }
 
 export type evaluationSessionCreateOrConnectWithoutRubricInput = {
@@ -556,39 +479,32 @@ export type evaluationSessionScalarWhereInput = {
   OR?: Prisma.evaluationSessionScalarWhereInput[]
   NOT?: Prisma.evaluationSessionScalarWhereInput | Prisma.evaluationSessionScalarWhereInput[]
   id?: Prisma.StringFilter<"evaluationSession"> | string
-  evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationSession"> | $Enums.EvaluatorType
-  copilotOutputId?: Prisma.StringFilter<"evaluationSession"> | string
   rubricId?: Prisma.StringFilter<"evaluationSession"> | string
+  evaluatorType?: Prisma.EnumEvaluatorTypeFilter<"evaluationSession"> | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFilter<"evaluationSession"> | string
-  modelName?: Prisma.StringNullableFilter<"evaluationSession"> | string | null
-  startedAt?: Prisma.DateTimeFilter<"evaluationSession"> | Date | string
-  completedAt?: Prisma.DateTimeNullableFilter<"evaluationSession"> | Date | string | null
+  createdAt?: Prisma.DateTimeFilter<"evaluationSession"> | Date | string
   metadata?: Prisma.JsonNullableFilter<"evaluationSession">
+  analysis?: Prisma.JsonNullableFilter<"evaluationSession">
 }
 
 export type evaluationSessionCreateWithoutEvaluationRecordsInput = {
   id?: string
   evaluatorType?: $Enums.EvaluatorType
   evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
+  createdAt?: Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  rubric: Prisma.copilotOutput_rubricCreateNestedOneWithoutEvaluationSessionsInput
-  result?: Prisma.evaluationResultCreateNestedOneWithoutEvaluationSessionInput
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rubric: Prisma.rubricCreateNestedOneWithoutEvaluationSessionsInput
 }
 
 export type evaluationSessionUncheckedCreateWithoutEvaluationRecordsInput = {
   id?: string
-  evaluatorType?: $Enums.EvaluatorType
-  copilotOutputId: string
   rubricId: string
+  evaluatorType?: $Enums.EvaluatorType
   evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
+  createdAt?: Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  result?: Prisma.evaluationResultUncheckedCreateNestedOneWithoutEvaluationSessionInput
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type evaluationSessionCreateOrConnectWithoutEvaluationRecordsInput = {
@@ -611,135 +527,58 @@ export type evaluationSessionUpdateWithoutEvaluationRecordsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  rubric?: Prisma.copilotOutput_rubricUpdateOneRequiredWithoutEvaluationSessionsNestedInput
-  result?: Prisma.evaluationResultUpdateOneWithoutEvaluationSessionNestedInput
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  rubric?: Prisma.rubricUpdateOneRequiredWithoutEvaluationSessionsNestedInput
 }
 
 export type evaluationSessionUncheckedUpdateWithoutEvaluationRecordsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
-  copilotOutputId?: Prisma.StringFieldUpdateOperationsInput | string
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string
-  evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  result?: Prisma.evaluationResultUncheckedUpdateOneWithoutEvaluationSessionNestedInput
-}
-
-export type evaluationSessionCreateWithoutResultInput = {
-  id?: string
-  evaluatorType?: $Enums.EvaluatorType
-  evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  rubric: Prisma.copilotOutput_rubricCreateNestedOneWithoutEvaluationSessionsInput
-  evaluationRecords?: Prisma.evaluationRecordCreateNestedManyWithoutEvaluationSessionInput
-}
-
-export type evaluationSessionUncheckedCreateWithoutResultInput = {
-  id?: string
-  evaluatorType?: $Enums.EvaluatorType
-  copilotOutputId: string
-  rubricId: string
-  evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  evaluationRecords?: Prisma.evaluationRecordUncheckedCreateNestedManyWithoutEvaluationSessionInput
-}
-
-export type evaluationSessionCreateOrConnectWithoutResultInput = {
-  where: Prisma.evaluationSessionWhereUniqueInput
-  create: Prisma.XOR<Prisma.evaluationSessionCreateWithoutResultInput, Prisma.evaluationSessionUncheckedCreateWithoutResultInput>
-}
-
-export type evaluationSessionUpsertWithoutResultInput = {
-  update: Prisma.XOR<Prisma.evaluationSessionUpdateWithoutResultInput, Prisma.evaluationSessionUncheckedUpdateWithoutResultInput>
-  create: Prisma.XOR<Prisma.evaluationSessionCreateWithoutResultInput, Prisma.evaluationSessionUncheckedCreateWithoutResultInput>
-  where?: Prisma.evaluationSessionWhereInput
-}
-
-export type evaluationSessionUpdateToOneWithWhereWithoutResultInput = {
-  where?: Prisma.evaluationSessionWhereInput
-  data: Prisma.XOR<Prisma.evaluationSessionUpdateWithoutResultInput, Prisma.evaluationSessionUncheckedUpdateWithoutResultInput>
-}
-
-export type evaluationSessionUpdateWithoutResultInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  rubric?: Prisma.copilotOutput_rubricUpdateOneRequiredWithoutEvaluationSessionsNestedInput
-  evaluationRecords?: Prisma.evaluationRecordUpdateManyWithoutEvaluationSessionNestedInput
-}
-
-export type evaluationSessionUncheckedUpdateWithoutResultInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
-  copilotOutputId?: Prisma.StringFieldUpdateOperationsInput | string
-  rubricId?: Prisma.StringFieldUpdateOperationsInput | string
-  evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
-  evaluationRecords?: Prisma.evaluationRecordUncheckedUpdateManyWithoutEvaluationSessionNestedInput
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type evaluationSessionCreateManyRubricInput = {
   id?: string
   evaluatorType?: $Enums.EvaluatorType
   evaluatorId: string
-  modelName?: string | null
-  startedAt?: Date | string
-  completedAt?: Date | string | null
+  createdAt?: Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type evaluationSessionUpdateWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   evaluationRecords?: Prisma.evaluationRecordUpdateManyWithoutEvaluationSessionNestedInput
-  result?: Prisma.evaluationResultUpdateOneWithoutEvaluationSessionNestedInput
 }
 
 export type evaluationSessionUncheckedUpdateWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   evaluationRecords?: Prisma.evaluationRecordUncheckedUpdateManyWithoutEvaluationSessionNestedInput
-  result?: Prisma.evaluationResultUncheckedUpdateOneWithoutEvaluationSessionNestedInput
 }
 
 export type evaluationSessionUncheckedUpdateManyWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorType?: Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string
-  modelName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  analysis?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 
@@ -775,89 +614,76 @@ export type EvaluationSessionCountOutputTypeCountEvaluationRecordsArgs<ExtArgs e
 
 export type evaluationSessionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  evaluatorType?: boolean
-  copilotOutputId?: boolean
   rubricId?: boolean
+  evaluatorType?: boolean
   evaluatorId?: boolean
-  modelName?: boolean
-  startedAt?: boolean
-  completedAt?: boolean
+  createdAt?: boolean
   metadata?: boolean
-  rubric?: boolean | Prisma.copilotOutput_rubricDefaultArgs<ExtArgs>
+  analysis?: boolean
+  rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
   evaluationRecords?: boolean | Prisma.evaluationSession$evaluationRecordsArgs<ExtArgs>
-  result?: boolean | Prisma.evaluationSession$resultArgs<ExtArgs>
   _count?: boolean | Prisma.EvaluationSessionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["evaluationSession"]>
 
 export type evaluationSessionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  evaluatorType?: boolean
-  copilotOutputId?: boolean
   rubricId?: boolean
+  evaluatorType?: boolean
   evaluatorId?: boolean
-  modelName?: boolean
-  startedAt?: boolean
-  completedAt?: boolean
+  createdAt?: boolean
   metadata?: boolean
-  rubric?: boolean | Prisma.copilotOutput_rubricDefaultArgs<ExtArgs>
+  analysis?: boolean
+  rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["evaluationSession"]>
 
 export type evaluationSessionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  evaluatorType?: boolean
-  copilotOutputId?: boolean
   rubricId?: boolean
+  evaluatorType?: boolean
   evaluatorId?: boolean
-  modelName?: boolean
-  startedAt?: boolean
-  completedAt?: boolean
+  createdAt?: boolean
   metadata?: boolean
-  rubric?: boolean | Prisma.copilotOutput_rubricDefaultArgs<ExtArgs>
+  analysis?: boolean
+  rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["evaluationSession"]>
 
 export type evaluationSessionSelectScalar = {
   id?: boolean
-  evaluatorType?: boolean
-  copilotOutputId?: boolean
   rubricId?: boolean
+  evaluatorType?: boolean
   evaluatorId?: boolean
-  modelName?: boolean
-  startedAt?: boolean
-  completedAt?: boolean
+  createdAt?: boolean
   metadata?: boolean
+  analysis?: boolean
 }
 
-export type evaluationSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "evaluatorType" | "copilotOutputId" | "rubricId" | "evaluatorId" | "modelName" | "startedAt" | "completedAt" | "metadata", ExtArgs["result"]["evaluationSession"]>
+export type evaluationSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "rubricId" | "evaluatorType" | "evaluatorId" | "createdAt" | "metadata" | "analysis", ExtArgs["result"]["evaluationSession"]>
 export type evaluationSessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  rubric?: boolean | Prisma.copilotOutput_rubricDefaultArgs<ExtArgs>
+  rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
   evaluationRecords?: boolean | Prisma.evaluationSession$evaluationRecordsArgs<ExtArgs>
-  result?: boolean | Prisma.evaluationSession$resultArgs<ExtArgs>
   _count?: boolean | Prisma.EvaluationSessionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type evaluationSessionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  rubric?: boolean | Prisma.copilotOutput_rubricDefaultArgs<ExtArgs>
+  rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
 }
 export type evaluationSessionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  rubric?: boolean | Prisma.copilotOutput_rubricDefaultArgs<ExtArgs>
+  rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>
 }
 
 export type $evaluationSessionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "evaluationSession"
   objects: {
-    rubric: Prisma.$copilotOutput_rubricPayload<ExtArgs>
+    rubric: Prisma.$rubricPayload<ExtArgs>
     evaluationRecords: Prisma.$evaluationRecordPayload<ExtArgs>[]
-    result: Prisma.$evaluationResultPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    evaluatorType: $Enums.EvaluatorType
-    copilotOutputId: string
     rubricId: string
+    evaluatorType: $Enums.EvaluatorType
     evaluatorId: string
-    modelName: string | null
-    startedAt: Date
-    completedAt: Date | null
+    createdAt: Date
     metadata: runtime.JsonValue | null
+    analysis: runtime.JsonValue | null
   }, ExtArgs["result"]["evaluationSession"]>
   composites: {}
 }
@@ -1252,9 +1078,8 @@ readonly fields: evaluationSessionFieldRefs;
  */
 export interface Prisma__evaluationSessionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  rubric<T extends Prisma.copilotOutput_rubricDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.copilotOutput_rubricDefaultArgs<ExtArgs>>): Prisma.Prisma__copilotOutput_rubricClient<runtime.Types.Result.GetResult<Prisma.$copilotOutput_rubricPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  rubric<T extends Prisma.rubricDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.rubricDefaultArgs<ExtArgs>>): Prisma.Prisma__rubricClient<runtime.Types.Result.GetResult<Prisma.$rubricPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   evaluationRecords<T extends Prisma.evaluationSession$evaluationRecordsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.evaluationSession$evaluationRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$evaluationRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  result<T extends Prisma.evaluationSession$resultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.evaluationSession$resultArgs<ExtArgs>>): Prisma.Prisma__evaluationResultClient<runtime.Types.Result.GetResult<Prisma.$evaluationResultPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1285,14 +1110,12 @@ export interface Prisma__evaluationSessionClient<T, Null = never, ExtArgs extend
  */
 export interface evaluationSessionFieldRefs {
   readonly id: Prisma.FieldRef<"evaluationSession", 'String'>
-  readonly evaluatorType: Prisma.FieldRef<"evaluationSession", 'EvaluatorType'>
-  readonly copilotOutputId: Prisma.FieldRef<"evaluationSession", 'String'>
   readonly rubricId: Prisma.FieldRef<"evaluationSession", 'String'>
+  readonly evaluatorType: Prisma.FieldRef<"evaluationSession", 'EvaluatorType'>
   readonly evaluatorId: Prisma.FieldRef<"evaluationSession", 'String'>
-  readonly modelName: Prisma.FieldRef<"evaluationSession", 'String'>
-  readonly startedAt: Prisma.FieldRef<"evaluationSession", 'DateTime'>
-  readonly completedAt: Prisma.FieldRef<"evaluationSession", 'DateTime'>
+  readonly createdAt: Prisma.FieldRef<"evaluationSession", 'DateTime'>
   readonly metadata: Prisma.FieldRef<"evaluationSession", 'Json'>
+  readonly analysis: Prisma.FieldRef<"evaluationSession", 'Json'>
 }
     
 
@@ -1715,25 +1538,6 @@ export type evaluationSession$evaluationRecordsArgs<ExtArgs extends runtime.Type
   take?: number
   skip?: number
   distinct?: Prisma.EvaluationRecordScalarFieldEnum | Prisma.EvaluationRecordScalarFieldEnum[]
-}
-
-/**
- * evaluationSession.result
- */
-export type evaluationSession$resultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the evaluationResult
-   */
-  select?: Prisma.evaluationResultSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the evaluationResult
-   */
-  omit?: Prisma.evaluationResultOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.evaluationResultInclude<ExtArgs> | null
-  where?: Prisma.evaluationResultWhereInput
 }
 
 /**

@@ -1,6 +1,6 @@
 # AGENTS.md - GraphQL Resolvers
 
-> **Scope:** src/graphql/resolvers/ | **Generated:** 2026-05-24 | **Status:** UPDATED
+> **Scope:** src/graphql/resolvers/ | **Generated:** 2026-05-26 | **Status:** UPDATED
 
 Guidelines for managing the GraphQL API layer in this repository.
 

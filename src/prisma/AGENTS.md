@@ -1,6 +1,6 @@
 # PRISMA DATABASE LAYER
 
-**Scope:** `src/prisma/` | **Updated:** 2026-05-24
+**Scope:** `src/prisma/` | **Updated:** 2026-05-26
 
 Database schema, migrations, and generated client. Prisma 7, PostgreSQL via `@prisma/adapter-pg`.
 

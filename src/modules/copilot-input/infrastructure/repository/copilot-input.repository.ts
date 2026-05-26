@@ -64,31 +64,4 @@ export class CopilotInputRepository implements ICopilotInputRepository {
     });
   }
 
-  async getCopilotInputByGoldenSetIdAndUserInputId(
-    goldenSetId: string,
-    userInputId: string,
-  ): Promise<{
-    goldenSetEntity: GoldenSetEntity;
-    userInputEntity: UserInputEntity;
-  }> {
-    const result = await prisma.goldenSet_userInput.findUnique({
-      where: { goldenSetId_userInputId: { goldenSetId, userInputId } },
-      include: { goldenSet: true, userInput: true, copilotOutput: true },
-    });
-    if (!result) {
-      throw new Error(
-        `No association found for GoldenSet ID ${goldenSetId} and UserInput ID ${userInputId}`,
-      );
-    }
-    return {
-      goldenSetEntity: repositoryDateMapper(
-        result.goldenSet,
-        new GoldenSetEntity(result.goldenSet, result.goldenSet.id),
-      ),
-      userInputEntity: repositoryDateMapper(
-        result.userInput,
-        new UserInputEntity(result.userInput, result.userInput.id),
-      ),
-    };
-  }
 }

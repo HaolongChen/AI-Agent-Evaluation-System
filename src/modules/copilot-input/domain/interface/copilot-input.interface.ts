@@ -18,6 +18,7 @@ import type {
   UserInputReturnType,
 } from "./user-input.interface.ts";
 
+
 export type CopilotInputOptions = {
   name: "copilotInput";
   options: {

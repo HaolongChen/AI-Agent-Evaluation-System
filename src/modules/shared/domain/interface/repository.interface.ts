@@ -19,8 +19,7 @@ export type BaseOptions<
     : {
         [Name in Exclude<U, E | T>]: BaseOptions<
           Name,
-          T | E,
-          U
+          T | E
         >["options"] extends Record<string, never>
           ? true
           : BaseOptions<Name, T | E> | boolean;

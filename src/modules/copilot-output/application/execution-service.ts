@@ -1,7 +1,7 @@
 /* eslint-disable unicorn/no-null */
 import type { Account } from "../../account/application/account-handler.ts";
-import type { ICopilotInputRepository } from "../../copilot-input/domain/interface/copilot-input.interface.ts";
-import type { IProjectLifecycle } from "../../copilot-input/domain/interface/project-lifecycle.interface.ts";
+import type { ICopilotInputRepository } from "../../golden-set/domain/interface/copilot-input.interface.ts";
+import type { IProjectLifecycle } from "../../golden-set/domain/interface/project-lifecycle.interface.ts";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";

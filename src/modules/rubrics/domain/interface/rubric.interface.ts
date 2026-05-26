@@ -21,10 +21,5 @@ export interface IRubricRepository extends IRepository<RubricEntity> {
     userInputId: string,
   ): Promise<RubricAggregate[]>;
 
-  linkRubricToCopilotOutput(
-    rubricId: string,
-    copilotOutputId: string,
-  ): Promise<void>;
-
   findById(id: string): Promise<RubricAggregate>;
 }

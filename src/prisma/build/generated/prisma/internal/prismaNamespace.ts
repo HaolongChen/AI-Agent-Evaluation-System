@@ -387,7 +387,7 @@ export const ModelName = {
   goldenSet: 'goldenSet',
   project: 'project',
   userInput: 'userInput',
-  schema_userInput: 'schema_userInput',
+  copilotInput: 'copilotInput',
   copilotServer: 'copilotServer',
   copilotSession: 'copilotSession',
   copilotOutput: 'copilotOutput',
@@ -411,7 +411,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "goldenSet" | "project" | "userInput" | "schema_userInput" | "copilotServer" | "copilotSession" | "copilotOutput" | "rubric" | "criteria" | "agentFeedbacks" | "evaluationSession" | "evaluationRecord"
+    modelProps: "goldenSet" | "project" | "userInput" | "copilotInput" | "copilotServer" | "copilotSession" | "copilotOutput" | "rubric" | "criteria" | "agentFeedbacks" | "evaluationSession" | "evaluationRecord"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -637,77 +637,77 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
-    schema_userInput: {
-      payload: Prisma.$schema_userInputPayload<ExtArgs>
-      fields: Prisma.schema_userInputFieldRefs
+    copilotInput: {
+      payload: Prisma.$copilotInputPayload<ExtArgs>
+      fields: Prisma.copilotInputFieldRefs
       operations: {
         findUnique: {
-          args: Prisma.schema_userInputFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload> | null
+          args: Prisma.copilotInputFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload> | null
         }
         findUniqueOrThrow: {
-          args: Prisma.schema_userInputFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload>
+          args: Prisma.copilotInputFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload>
         }
         findFirst: {
-          args: Prisma.schema_userInputFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload> | null
+          args: Prisma.copilotInputFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload> | null
         }
         findFirstOrThrow: {
-          args: Prisma.schema_userInputFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload>
+          args: Prisma.copilotInputFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload>
         }
         findMany: {
-          args: Prisma.schema_userInputFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload>[]
+          args: Prisma.copilotInputFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload>[]
         }
         create: {
-          args: Prisma.schema_userInputCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload>
+          args: Prisma.copilotInputCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload>
         }
         createMany: {
-          args: Prisma.schema_userInputCreateManyArgs<ExtArgs>
+          args: Prisma.copilotInputCreateManyArgs<ExtArgs>
           result: BatchPayload
         }
         createManyAndReturn: {
-          args: Prisma.schema_userInputCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload>[]
+          args: Prisma.copilotInputCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload>[]
         }
         delete: {
-          args: Prisma.schema_userInputDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload>
+          args: Prisma.copilotInputDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload>
         }
         update: {
-          args: Prisma.schema_userInputUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload>
+          args: Prisma.copilotInputUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload>
         }
         deleteMany: {
-          args: Prisma.schema_userInputDeleteManyArgs<ExtArgs>
+          args: Prisma.copilotInputDeleteManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateMany: {
-          args: Prisma.schema_userInputUpdateManyArgs<ExtArgs>
+          args: Prisma.copilotInputUpdateManyArgs<ExtArgs>
           result: BatchPayload
         }
         updateManyAndReturn: {
-          args: Prisma.schema_userInputUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload>[]
+          args: Prisma.copilotInputUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload>[]
         }
         upsert: {
-          args: Prisma.schema_userInputUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$schema_userInputPayload>
+          args: Prisma.copilotInputUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$copilotInputPayload>
         }
         aggregate: {
-          args: Prisma.Schema_userInputAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateSchema_userInput>
+          args: Prisma.CopilotInputAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCopilotInput>
         }
         groupBy: {
-          args: Prisma.schema_userInputGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.Schema_userInputGroupByOutputType>[]
+          args: Prisma.copilotInputGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CopilotInputGroupByOutputType>[]
         }
         count: {
-          args: Prisma.schema_userInputCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.Schema_userInputCountAggregateOutputType> | number
+          args: Prisma.copilotInputCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CopilotInputCountAggregateOutputType> | number
         }
       }
     }
@@ -1372,13 +1372,13 @@ export const UserInputScalarFieldEnum = {
 export type UserInputScalarFieldEnum = (typeof UserInputScalarFieldEnum)[keyof typeof UserInputScalarFieldEnum]
 
 
-export const Schema_userInputScalarFieldEnum = {
+export const CopilotInputScalarFieldEnum = {
   id: 'id',
   goldenSetId: 'goldenSetId',
   userInputId: 'userInputId'
 } as const
 
-export type Schema_userInputScalarFieldEnum = (typeof Schema_userInputScalarFieldEnum)[keyof typeof Schema_userInputScalarFieldEnum]
+export type CopilotInputScalarFieldEnum = (typeof CopilotInputScalarFieldEnum)[keyof typeof CopilotInputScalarFieldEnum]
 
 
 export const CopilotServerScalarFieldEnum = {
@@ -1737,7 +1737,7 @@ export type GlobalOmitConfig = {
   goldenSet?: Prisma.goldenSetOmit
   project?: Prisma.projectOmit
   userInput?: Prisma.userInputOmit
-  schema_userInput?: Prisma.schema_userInputOmit
+  copilotInput?: Prisma.copilotInputOmit
   copilotServer?: Prisma.copilotServerOmit
   copilotSession?: Prisma.copilotSessionOmit
   copilotOutput?: Prisma.copilotOutputOmit

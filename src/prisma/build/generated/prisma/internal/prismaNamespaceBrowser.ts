@@ -54,7 +54,7 @@ export const ModelName = {
   goldenSet: 'goldenSet',
   project: 'project',
   userInput: 'userInput',
-  schema_userInput: 'schema_userInput',
+  copilotInput: 'copilotInput',
   copilotServer: 'copilotServer',
   copilotSession: 'copilotSession',
   copilotOutput: 'copilotOutput',
@@ -111,13 +111,13 @@ export const UserInputScalarFieldEnum = {
 export type UserInputScalarFieldEnum = (typeof UserInputScalarFieldEnum)[keyof typeof UserInputScalarFieldEnum]
 
 
-export const Schema_userInputScalarFieldEnum = {
+export const CopilotInputScalarFieldEnum = {
   id: 'id',
   goldenSetId: 'goldenSetId',
   userInputId: 'userInputId'
 } as const
 
-export type Schema_userInputScalarFieldEnum = (typeof Schema_userInputScalarFieldEnum)[keyof typeof Schema_userInputScalarFieldEnum]
+export type CopilotInputScalarFieldEnum = (typeof CopilotInputScalarFieldEnum)[keyof typeof CopilotInputScalarFieldEnum]
 
 
 export const CopilotServerScalarFieldEnum = {

@@ -57,10 +57,10 @@ export type project = Prisma.projectModel
  */
 export type userInput = Prisma.userInputModel
 /**
- * Model schema_userInput
+ * Model copilotInput
  * 
  */
-export type schema_userInput = Prisma.schema_userInputModel
+export type copilotInput = Prisma.copilotInputModel
 /**
  * Model copilotServer
  * 

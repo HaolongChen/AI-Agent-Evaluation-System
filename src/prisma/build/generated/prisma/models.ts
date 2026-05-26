@@ -11,7 +11,7 @@
 export type * from './models/goldenSet.ts'
 export type * from './models/project.ts'
 export type * from './models/userInput.ts'
-export type * from './models/schema_userInput.ts'
+export type * from './models/copilotInput.ts'
 export type * from './models/copilotServer.ts'
 export type * from './models/copilotSession.ts'
 export type * from './models/copilotOutput.ts'

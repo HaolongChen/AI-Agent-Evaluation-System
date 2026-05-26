@@ -38,7 +38,7 @@ model goldenSet {
   // projectName String?               @map("project_name") // denormalized for easier querying, corresponds to the name field in project table
   // copilotType CopilotType           @default(dataModelBuilder) @map("copilot_type") // e.g., 'dataModelBuilder', 'uiBuilder', 'actionFlowBuilder', 'logAnalyzer', 'agentBuilder'
   // modelName   String                @default("undefined") @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
-  userInputs schema_userInput[]
+  userInputs copilotInput[]
   updatedAt  DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
   // evaluationSessions evaluationSession[]
 
@@ -64,10 +64,10 @@ model userInput {
   content    String             @map("input_content") // user input
   createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   // createdBy  String                @default("unknown") @map("created_by") // userId or "auto-generated" for system-generated inputs
-  goldenSets schema_userInput[]
+  goldenSets copilotInput[]
 }
 
-model schema_userInput {
+model copilotInput {
   id          String @id @default(uuid())
   goldenSetId String @map("golden_set_id")
   userInputId String @map("user_input_id")
@@ -92,7 +92,7 @@ model copilotServer {
 model copilotSession {
   id                String           @id @default(uuid())
   schemaUserInputId String           @map("schema_user_input_id")
-  copilotInput      schema_userInput @relation(fields: [schemaUserInputId], references: [id])
+  copilotInput      copilotInput @relation(fields: [schemaUserInputId], references: [id])
   copilotServerId   String           @map("copilot_server_id")
   copilotServer     copilotServer    @relation(fields: [copilotServerId], references: [id])
 

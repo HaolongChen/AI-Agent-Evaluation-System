@@ -166,14 +166,14 @@ export type goldenSetWhereInput = {
   id?: Prisma.StringFilter<"goldenSet"> | string
   schemaId?: Prisma.StringFilter<"goldenSet"> | string
   updatedAt?: Prisma.DateTimeFilter<"goldenSet"> | Date | string
-  userInputs?: Prisma.Schema_userInputListRelationFilter
+  userInputs?: Prisma.CopilotInputListRelationFilter
 }
 
 export type goldenSetOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   schemaId?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  userInputs?: Prisma.schema_userInputOrderByRelationAggregateInput
+  userInputs?: Prisma.copilotInputOrderByRelationAggregateInput
 }
 
 export type goldenSetWhereUniqueInput = Prisma.AtLeast<{
@@ -183,7 +183,7 @@ export type goldenSetWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.goldenSetWhereInput[]
   NOT?: Prisma.goldenSetWhereInput | Prisma.goldenSetWhereInput[]
   updatedAt?: Prisma.DateTimeFilter<"goldenSet"> | Date | string
-  userInputs?: Prisma.Schema_userInputListRelationFilter
+  userInputs?: Prisma.CopilotInputListRelationFilter
 }, "id" | "schemaId">
 
 export type goldenSetOrderByWithAggregationInput = {
@@ -208,28 +208,28 @@ export type goldenSetCreateInput = {
   id?: string
   schemaId: string
   updatedAt?: Date | string
-  userInputs?: Prisma.schema_userInputCreateNestedManyWithoutGoldenSetInput
+  userInputs?: Prisma.copilotInputCreateNestedManyWithoutGoldenSetInput
 }
 
 export type goldenSetUncheckedCreateInput = {
   id?: string
   schemaId: string
   updatedAt?: Date | string
-  userInputs?: Prisma.schema_userInputUncheckedCreateNestedManyWithoutGoldenSetInput
+  userInputs?: Prisma.copilotInputUncheckedCreateNestedManyWithoutGoldenSetInput
 }
 
 export type goldenSetUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schemaId?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  userInputs?: Prisma.schema_userInputUpdateManyWithoutGoldenSetNestedInput
+  userInputs?: Prisma.copilotInputUpdateManyWithoutGoldenSetNestedInput
 }
 
 export type goldenSetUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   schemaId?: Prisma.StringFieldUpdateOperationsInput | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  userInputs?: Prisma.schema_userInputUncheckedUpdateManyWithoutGoldenSetNestedInput
+  userInputs?: Prisma.copilotInputUncheckedUpdateManyWithoutGoldenSetNestedInput
 }
 
 export type goldenSetCreateManyInput = {
@@ -362,7 +362,7 @@ export type GoldenSetCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ex
  * GoldenSetCountOutputType without action
  */
 export type GoldenSetCountOutputTypeCountUserInputsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.schema_userInputWhereInput
+  where?: Prisma.copilotInputWhereInput
 }
 
 
@@ -403,7 +403,7 @@ export type goldenSetIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
 export type $goldenSetPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "goldenSet"
   objects: {
-    userInputs: Prisma.$schema_userInputPayload<ExtArgs>[]
+    userInputs: Prisma.$copilotInputPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -803,7 +803,7 @@ readonly fields: goldenSetFieldRefs;
  */
 export interface Prisma__goldenSetClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  userInputs<T extends Prisma.goldenSet$userInputsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.goldenSet$userInputsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$schema_userInputPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  userInputs<T extends Prisma.goldenSet$userInputsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.goldenSet$userInputsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$copilotInputPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1233,23 +1233,23 @@ export type goldenSetDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
  */
 export type goldenSet$userInputsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the schema_userInput
+   * Select specific fields to fetch from the copilotInput
    */
-  select?: Prisma.schema_userInputSelect<ExtArgs> | null
+  select?: Prisma.copilotInputSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the schema_userInput
+   * Omit specific fields from the copilotInput
    */
-  omit?: Prisma.schema_userInputOmit<ExtArgs> | null
+  omit?: Prisma.copilotInputOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.schema_userInputInclude<ExtArgs> | null
-  where?: Prisma.schema_userInputWhereInput
-  orderBy?: Prisma.schema_userInputOrderByWithRelationInput | Prisma.schema_userInputOrderByWithRelationInput[]
-  cursor?: Prisma.schema_userInputWhereUniqueInput
+  include?: Prisma.copilotInputInclude<ExtArgs> | null
+  where?: Prisma.copilotInputWhereInput
+  orderBy?: Prisma.copilotInputOrderByWithRelationInput | Prisma.copilotInputOrderByWithRelationInput[]
+  cursor?: Prisma.copilotInputWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.Schema_userInputScalarFieldEnum | Prisma.Schema_userInputScalarFieldEnum[]
+  distinct?: Prisma.CopilotInputScalarFieldEnum | Prisma.CopilotInputScalarFieldEnum[]
 }
 
 /**

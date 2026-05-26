@@ -8,17 +8,9 @@ export class CreateGoldenSetUseCase {
 
   async execute(
     schemaId: string,
-    copilotType?: z.infer<typeof copilotTypeEnum>,
-    modelName?: string,
-    projectExId?: string,
-    projectName?: string,
   ) {
     const goldenSetEntity = new GoldenSetEntity({
       schemaId,
-      copilotType: copilotType ?? "dataModelBuilder",
-      modelName: modelName ?? "undefined",
-      projectExId,
-      projectName,
     });
     await this.repository.save(goldenSetEntity);
     return goldenSetEntity.getData();

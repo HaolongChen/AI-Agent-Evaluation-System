@@ -5,7 +5,7 @@ import {
 import { UserInputEntity } from "../../domain/entity/user-input.entity.js";
 import type {
   IUserInputRepository,
-  UserInputOptions,
+
 } from "../../domain/interface/user-input.interface.ts";
 
 export class UserInputRepository implements IUserInputRepository {
@@ -31,16 +31,6 @@ export class UserInputRepository implements IUserInputRepository {
       ),
     );
   }
-  async getAll(): Promise<Array<UserInputEntity>> {
-    const userInputs = await prisma.userInput.findMany();
-    return userInputs.map((userInput) =>
-      repositoryDateMapper(
-        userInput,
-        new UserInputEntity(userInput, userInput.id),
-      ),
-    );
-  }
-
   // async addGoldenSetAssociation(
   //   userInputId: string,
   //   goldenSetId: string,
@@ -74,15 +64,9 @@ export class UserInputRepository implements IUserInputRepository {
   }
   async findById(
     id: string,
-    options?: UserInputOptions,
   ): Promise<UserInputEntity> {
     const userInput = await prisma.userInput.findUnique({
       where: { id },
-      include: options
-        ? optionsToInclude(
-            options as unknown as Parameters<typeof optionsToInclude>[0],
-          )
-        : undefined,
     });
     if (!userInput) {
       throw new Error(`UserInput with ID ${id} not found`);

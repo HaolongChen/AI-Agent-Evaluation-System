@@ -4,7 +4,6 @@ import type {
   IRepository,
 } from "../../../shared/domain/interface/repository.interface.ts";
 import type { GoldenSetEntity } from "../entity/golden-set.entity.ts";
-import type { UserInputEntity } from "../entity/user-input.entity.ts";
 import type { goldenSetFiltersSchema } from "../schema/golden-set.schema.ts";
 import type {
   CopilotInputOptions,
@@ -32,15 +31,15 @@ export type GoldenSetReturnType<T> = T extends {
 export interface IGoldenSetRepository extends IRepository<GoldenSetEntity> {
   findById(id: string): Promise<GoldenSetEntity>;
 
-  getByUserInputId(userInputId: string): Promise<Array<GoldenSetEntity>>;
+  // getByUserInputId(userInputId: string): Promise<Array<GoldenSetEntity>>;
 
-  getCopilotInputByGoldenSetIdAndUserInputId(
-    goldenSetId: string,
-    userInputId: string,
-  ): Promise<{
-    goldenSetEntity: GoldenSetEntity;
-    userInputEntity: UserInputEntity;
-  }>;
+  // getCopilotInputByGoldenSetIdAndUserInputId(
+  //   goldenSetId: string,
+  //   userInputId: string,
+  // ): Promise<{
+  //   goldenSetEntity: GoldenSetEntity;
+  //   userInputEntity: UserInputEntity;
+  // }>;
 
   getByFilters(
     filters: z.infer<typeof goldenSetFiltersSchema>,

@@ -27,12 +27,12 @@ export type BaseOptions<
 } & BaseOptionsName<T>;
 
 export type ExcludeOptions<
-  T extends BaseOptionsName & { options: { [key: string]: unknown } },
+  T extends BaseOptionsName & { options: { [P in string]: unknown } },
   E extends string,
-> = {
+> = E extends keyof T['options'] ? {
   options: Omit<T["options"], E>;
   name: T["name"];
-};
+} : never;
 
 export type BaseOptionsReturnType<
   A extends string = string,

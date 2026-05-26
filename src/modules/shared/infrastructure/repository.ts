@@ -26,7 +26,7 @@ export const optionsToInclude = <
 	options: BaseOptions<T, E, U>,
 ) => {
 	if (!options.options) {
-		return { [options.name]: true };
+		return { [options.name]: true } as const;
 	}
 	const include: Record<string, unknown> = {};
 	for (const [key, value] of Object.entries(options.options)) {
@@ -45,9 +45,16 @@ export const optionsToInclude = <
 };
 
 export type IncludeDataReturnType<
-	T extends BaseOptions,
+	T extends BaseOptions | boolean,
 	E extends Entity = Entity,
-> = {
-  // [ K in T[ "name" ] ]?: E;
-  [ K in keyof T[ "options" ] ]: IncludeDataReturnType<T[ "options" ][ K ], E>;
-};
+> =
+	T extends false ? never
+	: T extends true ? { entity: E }
+	: T extends BaseOptions ?
+		{
+			foreign: {
+				[K in keyof T["options"]]: T['options'][K]['options'] extends Record<string, never> ? true : IncludeDataReturnType<T["options"][K], E>;
+			};
+			entity?: E;
+		}
+	:	never;

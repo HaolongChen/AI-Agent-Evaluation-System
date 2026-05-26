@@ -137,8 +137,8 @@ export const goldenSetResolver = {
       arguments_: MutationLinkGoldenSetToUserInputArguments,
     ): Promise<boolean> => {
       const formCopilotInputUseCase = new FormCopilotInputUseCase({
+        copilotInputRepository: repository.copilotInputRepository,
         goldenSetRepository: repository.goldenSetRepository,
-        userInputRepository: repository.userInputRepository,
       });
       await formCopilotInputUseCase.execute(
         arguments_.context.goldenSetId,

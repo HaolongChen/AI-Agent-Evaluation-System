@@ -1,12 +1,7 @@
 import { prisma } from "../../../../config/prisma.ts";
-import {
-  repositoryDateMapper,
-} from "../../../shared/infrastructure/repository.ts";
+import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { UserInputEntity } from "../../domain/entity/user-input.entity.js";
-import type {
-  IUserInputRepository,
-
-} from "../../domain/interface/user-input.interface.ts";
+import type { IUserInputRepository } from "../../domain/interface/user-input.interface.ts";
 
 export class UserInputRepository implements IUserInputRepository {
   // async getByGoldenSetId(goldenSetId: string): Promise<Array<UserInputEntity>> {
@@ -62,9 +57,7 @@ export class UserInputRepository implements IUserInputRepository {
     });
     repositoryDateMapper(userInput, entity);
   }
-  async findById(
-    id: string,
-  ): Promise<UserInputEntity> {
+  async findById(id: string): Promise<UserInputEntity> {
     const userInput = await prisma.userInput.findUnique({
       where: { id },
     });

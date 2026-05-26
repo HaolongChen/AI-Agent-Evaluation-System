@@ -1,101 +1,61 @@
 import { prisma } from "../../../../config/prisma.ts";
-import {
-  optionsToInclude,
-  repositoryDateMapper,
-} from "../../../shared/infrastructure/repository.ts";
+import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { GoldenSetEntity } from "../../domain/entity/golden-set.entity.js";
 import { UserInputEntity } from "../../domain/entity/user-input.entity.js";
 
 import type {
   CopilotInputFilters,
-  CopilotInputOptions,
-  CopilotInputReturnType,
   ICopilotInputRepository,
 } from "../../domain/interface/copilot-input.interface.ts";
 
-export const copilotInputOptionsToInclude = (options: CopilotInputOptions) => {
-  return optionsToInclude(
-    options as unknown as Parameters<typeof optionsToInclude>[0],
-  );
-};
-
 export class CopilotInputRepository implements ICopilotInputRepository {
-  async create<T extends CopilotInputOptions>(
+  async create(
     goldenSetEntity: GoldenSetEntity,
     userInputEntity: UserInputEntity,
-    options: T,
-  ): Promise<CopilotInputReturnType<T>> {
+  ): Promise<void> {
     const result = await prisma.goldenSet_userInput.create({
       data: {
         goldenSetId: goldenSetEntity.getData("id"),
         userInputId: userInputEntity.getData("id"),
       },
-      include: copilotInputOptionsToInclude(options),
+      include: {
+        goldenSet: true,
+        userInput: true,
+      },
     });
-
-    return result as unknown as CopilotInputReturnType<T>;
+    if (!result) {
+      throw new Error(
+        `Failed to create association between GoldenSet ID ${goldenSetEntity.getData("id")} and UserInput ID ${userInputEntity.getData("id")}`,
+      );
+    }
+    repositoryDateMapper(result.goldenSet, goldenSetEntity);
+    repositoryDateMapper(result.userInput, userInputEntity);
   }
 
-  async getByFilters<T extends CopilotInputOptions>(
-    filters: CopilotInputFilters,
-    options: T,
-  ): Promise<Array<CopilotInputReturnType<T>>> {
+  async getByFilters(filters: CopilotInputFilters): Promise<{
+    goldenSetEntity: GoldenSetEntity[];
+    userInputEntity: UserInputEntity[];
+  }> {
     const results = await prisma.goldenSet_userInput.findMany({
       where: filters,
-      include: copilotInputOptionsToInclude(options),
-    });
-    return results as unknown as Array<CopilotInputReturnType<T>>;
-  }
-
-  async getByUserInputId(userInputId: string): Promise<Array<GoldenSetEntity>> {
-    const records = await prisma.goldenSet_userInput.findMany({
-      where: { userInputId },
-      include: { goldenSet: true, copilotOutput: true },
-    });
-    return records.map(({ goldenSet }) =>
-      repositoryDateMapper(
-        goldenSet,
-        new GoldenSetEntity(goldenSet, goldenSet.id),
-      ),
-    );
-  }
-
-  async getByGoldenSetId(goldenSetId: string): Promise<Array<UserInputEntity>> {
-    const records = await prisma.goldenSet_userInput.findMany({
-      where: { goldenSetId },
-      include: { userInput: true, copilotOutput: true },
-    });
-    return records.map(({ userInput }) =>
-      repositoryDateMapper(
-        userInput,
-        new UserInputEntity(userInput, userInput.id),
-      ),
-    );
-  }
-
-  async addGoldenSetAssociation(
-    userInputId: string,
-    goldenSetId: string,
-  ): Promise<{
-    goldenSetEntity: GoldenSetEntity;
-    userInputEntity: UserInputEntity;
-  }> {
-    const result = await prisma.goldenSet_userInput.create({
-      data: {
-        goldenSetId,
-        userInputId,
+      include: {
+        goldenSet: true,
+        userInput: true,
       },
-      include: { goldenSet: true, userInput: true, copilotOutput: true },
     });
     return {
-      goldenSetEntity: repositoryDateMapper(
-        result.goldenSet,
-        new GoldenSetEntity(result.goldenSet, result.goldenSet.id),
-      ),
-      userInputEntity: repositoryDateMapper(
-        result.userInput,
-        new UserInputEntity(result.userInput, result.userInput.id),
-      ),
+      goldenSetEntity: results.map(({ goldenSet }) => {
+        return repositoryDateMapper(
+          goldenSet,
+          new GoldenSetEntity(goldenSet, goldenSet.id),
+        );
+      }),
+      userInputEntity: results.map(({ userInput }) => {
+        return repositoryDateMapper(
+          userInput,
+          new UserInputEntity(userInput, userInput.id),
+        );
+      }),
     };
   }
 

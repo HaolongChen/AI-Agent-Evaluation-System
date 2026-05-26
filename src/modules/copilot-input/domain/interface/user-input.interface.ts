@@ -1,8 +1,5 @@
-import type {
-  IRepository,
-} from "../../../shared/domain/interface/repository.interface.ts";
+import type { IRepository } from "../../../shared/domain/interface/repository.interface.ts";
 import type { UserInputEntity } from "../entity/user-input.entity.ts";
-
 
 export interface IUserInputRepository extends IRepository<UserInputEntity> {
   findById(id: string): Promise<UserInputEntity>;

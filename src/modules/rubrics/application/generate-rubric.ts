@@ -27,12 +27,12 @@ export class GenerateRubricUseCase {
 
   async execute(goldenSetId: string, userInputId: string) {
     const copilotInput =
-      await this.repository.copilotInputRepository.getCopilotInputByGoldenSetIdAndUserInputId(
+      await this.repository.copilotInputRepository.getByFilters({
         goldenSetId,
         userInputId,
-      );
-    const schemaId = copilotInput.goldenSetEntity.getData("schemaId");
-    const query = copilotInput.userInputEntity.getData("content");
+      });
+    const schemaId = copilotInput.goldenSetEntity[0].getData("schemaId");
+    const query = copilotInput.userInputEntity[0].getData("content");
     const rubricId = randomUUID();
     const feedbacks: Feedbacks = {
       "rubrics-generator-agent": new Feedback<"rubrics-generator-agent">(

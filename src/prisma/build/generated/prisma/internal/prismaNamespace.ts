@@ -1366,7 +1366,8 @@ export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeo
 export const UserInputScalarFieldEnum = {
   id: 'id',
   content: 'content',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  createdBy: 'createdBy'
 } as const
 
 export type UserInputScalarFieldEnum = (typeof UserInputScalarFieldEnum)[keyof typeof UserInputScalarFieldEnum]
@@ -1375,7 +1376,8 @@ export type UserInputScalarFieldEnum = (typeof UserInputScalarFieldEnum)[keyof t
 export const CopilotInputScalarFieldEnum = {
   id: 'id',
   goldenSetId: 'goldenSetId',
-  userInputId: 'userInputId'
+  userInputId: 'userInputId',
+  createdAt: 'createdAt'
 } as const
 
 export type CopilotInputScalarFieldEnum = (typeof CopilotInputScalarFieldEnum)[keyof typeof CopilotInputScalarFieldEnum]

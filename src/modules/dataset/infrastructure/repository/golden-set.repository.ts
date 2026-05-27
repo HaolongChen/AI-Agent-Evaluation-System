@@ -1,7 +1,5 @@
-import type { output } from "zod";
 import { GoldenSetEntity } from "../../domain/entity/golden-set.entity.js";
 import type { IGoldenSetRepository } from "../../domain/interface/golden-set.interface.ts";
-import type { goldenSetFiltersSchema } from "../../domain/schema/golden-set.schema.ts";
 import { prisma } from "../../../../config/prisma.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 
@@ -51,18 +49,20 @@ export class GoldenSetRepository implements IGoldenSetRepository {
   //     ),
   //   );
   // }
-  async getByFilters(
-    filters: output<typeof goldenSetFiltersSchema>,
-  ): Promise<Array<GoldenSetEntity>> {
-    const goldenSets = await prisma.goldenSet.findMany({
-      where: { ...filters },
+  async findBySchemaId(
+    schemaId: string
+  ): Promise<GoldenSetEntity> {
+    const goldenSet = await prisma.goldenSet.findUnique({
+      where: { schemaId },
     });
-    return goldenSets.map((goldenSet) =>
-      repositoryDateMapper(
-        goldenSet,
-        new GoldenSetEntity(goldenSet, goldenSet.id),
-      ),
+    if (!goldenSet) {
+      throw new Error(`GoldenSet with Schema ID ${schemaId} not found`);
+    }
+    return repositoryDateMapper(
+      goldenSet,
+      new GoldenSetEntity(goldenSet, goldenSet.id),
     );
+
   }
   // async addUserInputAssociation(
   //   goldenSetId: string,

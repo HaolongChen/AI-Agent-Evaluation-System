@@ -1,18 +1,4 @@
-import type { GoldenSetEntity } from "../entity/golden-set.entity.js";
-import type { UserInputEntity } from "../entity/user-input.entity.js";
+import type { IRepository } from "../../../shared/domain/interface/repository.interface.ts";
+import type { CopilotInputEntity } from "../entity/copilot-input.entity.ts";
 
-
-export interface ICopilotInputRepository<T extends CopilotInputEntity> extends IRepository<T> {
-  
-  ): Promise<{
-    goldenSetEntity: GoldenSetEntity;
-    userInputEntity: UserInputEntity;
-  }>;
-
-  getByFilters(filters: CopilotInputFilters): Promise<
-    Array<{
-      goldenSetEntity: GoldenSetEntity;
-      userInputEntity: UserInputEntity;
-    }>
-  >;
-}
+export interface ICopilotInputRepository extends IRepository<CopilotInputEntity> {}

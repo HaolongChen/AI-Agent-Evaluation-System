@@ -63,7 +63,7 @@ model userInput {
   // description String?
   content    String             @map("input_content") // user input
   createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
-  // createdBy  String                @default("unknown") @map("created_by") // userId or "auto-generated" for system-generated inputs
+  createdBy  String                @default("unknown") @map("created_by") // userId or "auto-generated" for system-generated inputs
   goldenSets copilotInput[]
 }
 
@@ -76,6 +76,7 @@ model copilotInput {
   userInput userInput @relation(fields: [userInputId], references: [id])
 
   copilotSessions copilotSession[] @relation(map: "schema_user_input_copilot_session")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@unique([goldenSetId, userInputId], map: "idx_schema_user_input")
 }

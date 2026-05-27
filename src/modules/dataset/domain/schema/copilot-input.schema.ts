@@ -1,4 +1,6 @@
+import { z } from "zod";
+
 export const copilotInputSchema = z.object({
-  goldenSet: goldenSetSchema,
-  userInput: userInputSchema
+  goldenSetId: z.string(),
+  userInputId: z.string()
 })

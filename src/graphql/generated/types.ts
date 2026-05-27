@@ -300,336 +300,6 @@ export type LoginMutationVariables = Exact<{
   password: string;
 }>;
 
-export type WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches_patches =
-  { __typename: "SchemaCrdtPatch"; patchBase64: string };
-
-export type WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches = {
-  __typename: "SchemaCrdtPatches";
-  lastPatchExId: string | null;
-  patches: Array<WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
-};
-
-export type WechatMiniProgramAppDetailFragment_latestSchema = {
-  __typename: "CrdtSchema";
-  crdtModelUrl: string | null;
-  crdtPatches: WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches | null;
-};
-
-export type WechatMiniProgramAppDetailFragment = {
-  __typename: "WechatMiniProgramApp";
-  exId: string | null;
-  projectExId: string;
-  name: string;
-  appExId: string | null;
-  latestSchema: WechatMiniProgramAppDetailFragment_latestSchema | null;
-};
-
-export type WechatMiniProgramAppDetailFragmentVariables = Exact<{
-  [key: string]: never;
-}>;
-
-export type ProjectAppDetailFragment_latestSchema_crdtPatches_patches = {
-  __typename: "SchemaCrdtPatch";
-  patchBase64: string;
-};
-
-export type ProjectAppDetailFragment_latestSchema_crdtPatches = {
-  __typename: "SchemaCrdtPatches";
-  lastPatchExId: string | null;
-  patches: Array<ProjectAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
-};
-
-export type ProjectAppDetailFragment_latestSchema = {
-  __typename: "CrdtSchema";
-  crdtModelUrl: string | null;
-  crdtPatches: ProjectAppDetailFragment_latestSchema_crdtPatches | null;
-};
-
-export type ProjectAppDetailFragment = {
-  __typename: "Project";
-  projectExId: string;
-  schemaExId: string | null;
-  zeroUrl: string | null;
-  zeroSubscriptionUrl: string | null;
-  projectName: string;
-  appExId: string | null;
-  adminToken: string | null;
-  latestSchema: ProjectAppDetailFragment_latestSchema | null;
-};
-
-export type ProjectAppDetailFragmentVariables = Exact<{ [key: string]: never }>;
-
-export type WebAppDetailFragment_latestSchema_crdtPatches_patches = {
-  __typename: "SchemaCrdtPatch";
-  patchBase64: string;
-};
-
-export type WebAppDetailFragment_latestSchema_crdtPatches = {
-  __typename: "SchemaCrdtPatches";
-  lastPatchExId: string | null;
-  patches: Array<WebAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
-};
-
-export type WebAppDetailFragment_latestSchema = {
-  __typename: "CrdtSchema";
-  crdtModelUrl: string | null;
-  crdtPatches: WebAppDetailFragment_latestSchema_crdtPatches | null;
-};
-
-export type WebAppDetailFragment = {
-  __typename: "WebApp";
-  exId: string | null;
-  name: string;
-  projectExId: string;
-  appExId: string | null;
-  latestSchema: WebAppDetailFragment_latestSchema | null;
-};
-
-export type WebAppDetailFragmentVariables = Exact<{ [key: string]: never }>;
-
-export type MobileAppDetailFragment_latestSchema_crdtPatches_patches = {
-  __typename: "SchemaCrdtPatch";
-  patchBase64: string;
-};
-
-export type MobileAppDetailFragment_latestSchema_crdtPatches = {
-  __typename: "SchemaCrdtPatches";
-  lastPatchExId: string | null;
-  patches: Array<MobileAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
-};
-
-export type MobileAppDetailFragment_latestSchema = {
-  __typename: "CrdtSchema";
-  crdtModelUrl: string | null;
-  crdtPatches: MobileAppDetailFragment_latestSchema_crdtPatches | null;
-};
-
-export type MobileAppDetailFragment = {
-  __typename: "MobileApp";
-  exId: string | null;
-  name: string;
-  projectExId: string;
-  appExId: string | null;
-  latestSchema: MobileAppDetailFragment_latestSchema | null;
-};
-
-export type MobileAppDetailFragmentVariables = Exact<{ [key: string]: never }>;
-
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_MobileApp = {
-  __typename: "MobileApp";
-  exId: string | null;
-  name: string;
-  projectExId: string;
-  appExId: string | null;
-  latestSchema: MobileAppDetailFragment_latestSchema | null;
-};
-
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project = {
-  __typename: "Project";
-  projectExId: string;
-  schemaExId: string | null;
-  zeroUrl: string | null;
-  zeroSubscriptionUrl: string | null;
-  projectName: string;
-  appExId: string | null;
-  adminToken: string | null;
-  latestSchema: ProjectAppDetailFragment_latestSchema | null;
-};
-
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp = {
-  __typename: "WebApp";
-  exId: string | null;
-  name: string;
-  projectExId: string;
-  appExId: string | null;
-  latestSchema: WebAppDetailFragment_latestSchema | null;
-};
-
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp =
-  {
-    __typename: "WechatMiniProgramApp";
-    exId: string | null;
-    projectExId: string;
-    name: string;
-    appExId: string | null;
-    latestSchema: WechatMiniProgramAppDetailFragment_latestSchema | null;
-  };
-
-export type FetchAppDetailByExIdQuery_fetchAppDetailByExId =
-  | FetchAppDetailByExIdQuery_fetchAppDetailByExId_MobileApp
-  | FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project
-  | FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp
-  | FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp;
-
-export type FetchAppDetailByExIdQuery = {
-  __typename: "Query";
-  fetchAppDetailByExId: FetchAppDetailByExIdQuery_fetchAppDetailByExId | null;
-};
-
-export type FetchAppDetailByExIdQueryVariables = Exact<{
-  projectExId: string;
-  appExId?: string | undefined;
-  appVersionExId?: string | undefined;
-}>;
-
-export type AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates_inputType =
-  {
-    __typename: "NodeTemplateVariable";
-    name: string | null;
-    type: ColumnType | null;
-    defaultValue: unknown;
-    required: boolean;
-    description: string | null;
-  };
-
-export type AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates_outputType =
-  {
-    __typename: "NodeTemplateVariable";
-    name: string | null;
-    type: ColumnType | null;
-    defaultValue: unknown;
-    required: boolean;
-    description: string | null;
-  };
-
-export type AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates = {
-  __typename: "AfCodeTemplate";
-  async: boolean;
-  exId: string;
-  author: unknown;
-  displayName: string;
-  logoUrl: string;
-  status: AfCodeTemplateStatus | null;
-  templateGroup: string;
-  updatedAt: unknown;
-  version: string | null;
-  inputType: Array<AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates_inputType | null>;
-  outputType: Array<AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates_outputType | null>;
-};
-
-export type AfCustomCodeTemplatesQuery = {
-  __typename: "Query";
-  visibleAfCustomCodeTemplates: Array<AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates | null> | null;
-};
-
-export type AfCustomCodeTemplatesQueryVariables = Exact<{
-  [key: string]: never;
-}>;
-
-export type SupportedCustomModelDescriptorQuery_supportedCustomModelDescriptor =
-  {
-    __typename: "SupportedCustomModelDescriptor";
-    chatModelDescriptors: Array<unknown> | null;
-    embeddingModelDescriptors: Array<unknown> | null;
-  };
-
-export type SupportedCustomModelDescriptorQuery = {
-  __typename: "Query";
-  supportedCustomModelDescriptor: SupportedCustomModelDescriptorQuery_supportedCustomModelDescriptor | null;
-};
-
-export type SupportedCustomModelDescriptorQueryVariables = Exact<{
-  [key: string]: never;
-}>;
-
-export type ImportProjectSchemaManualMutation = {
-  __typename: "Mutation";
-  importProjectSchemaManual: string | null;
-};
-
-export type ImportProjectSchemaManualMutationVariables = Exact<{
-  projectExId: string;
-  crdtModel: unknown;
-  appExId?: string | undefined;
-  versionExId?: string | undefined;
-}>;
-
-export type CheckProjectNameDuplicateQuery = {
-  __typename: "Query";
-  checkProjectNameDuplicate: boolean;
-};
-
-export type CheckProjectNameDuplicateQueryVariables = Exact<{
-  projectName: string;
-}>;
-
-export type FeaturesQuery_features = {
-  __typename: "FeatureStatus";
-  featureName: string;
-  featureExId: string;
-  description: string;
-  enabled: boolean;
-};
-
-export type FeaturesQuery = {
-  __typename: "Query";
-  features: Array<FeaturesQuery_features>;
-};
-
-export type FeaturesQueryVariables = Exact<{
-  projectExId: string;
-}>;
-
-export type CreateProjectInOrganizationAsyncMutation = {
-  __typename: "Mutation";
-  createProjectInOrganizationAsync: string | null;
-};
-
-export type CreateProjectInOrganizationAsyncMutationVariables = Exact<{
-  projectName: string;
-  templateExId?: string | undefined;
-  platform?: Platform | undefined;
-  projectSpaceType: ProjectSpaceType;
-  organizationExId: string;
-  forBeginnerGuide?: boolean | undefined;
-  category?: ProjectContentCategory | undefined;
-  useRefactoredComponent?: boolean | undefined;
-  useNewType?: boolean | undefined;
-}>;
-
-export type OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged =
-  {
-    __typename: "ProjectCreationResult";
-    projectExId: string | null;
-    status: ProjectCreationStatus | null;
-  };
-
-export type OnProjectCreationStatusChangedSubscription = {
-  __typename: "Subscription";
-  onProjectCreationStatusChanged: OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged | null;
-};
-
-export type OnProjectCreationStatusChangedSubscriptionVariables = Exact<{
-  uniqueId: string;
-}>;
-
-export type DeleteProjectMutation = {
-  __typename: "Mutation";
-  deleteProject: boolean;
-};
-
-export type DeleteProjectMutationVariables = Exact<{
-  projectExId: string;
-}>;
-
-export type DeleteProjectByIdsMutation = {
-  __typename: "Mutation";
-  deleteProjectByIds: boolean;
-};
-
-export type DeleteProjectByIdsMutationVariables = Exact<{
-  ids: Array<unknown> | unknown;
-}>;
-
-export type FixAliPayDataBindingMutation = {
-  __typename: "Mutation";
-  fixAliPayDataBinding: boolean;
-};
-
-export type FixAliPayDataBindingMutationVariables = Exact<{
-  projectId: unknown;
-}>;
-
 export type GetCopilotSubscriptionCountQuery = {
   __typename: "Query";
   copilotSubscriptionCount: unknown;
@@ -1173,4 +843,334 @@ export type OnCopilotSessionUpdatesSubscription = {
 
 export type OnCopilotSessionUpdatesSubscriptionVariables = Exact<{
   sessionExId: string;
+}>;
+
+export type WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches_patches =
+  { __typename: "SchemaCrdtPatch"; patchBase64: string };
+
+export type WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches = {
+  __typename: "SchemaCrdtPatches";
+  lastPatchExId: string | null;
+  patches: Array<WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
+};
+
+export type WechatMiniProgramAppDetailFragment_latestSchema = {
+  __typename: "CrdtSchema";
+  crdtModelUrl: string | null;
+  crdtPatches: WechatMiniProgramAppDetailFragment_latestSchema_crdtPatches | null;
+};
+
+export type WechatMiniProgramAppDetailFragment = {
+  __typename: "WechatMiniProgramApp";
+  exId: string | null;
+  projectExId: string;
+  name: string;
+  appExId: string | null;
+  latestSchema: WechatMiniProgramAppDetailFragment_latestSchema | null;
+};
+
+export type WechatMiniProgramAppDetailFragmentVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type ProjectAppDetailFragment_latestSchema_crdtPatches_patches = {
+  __typename: "SchemaCrdtPatch";
+  patchBase64: string;
+};
+
+export type ProjectAppDetailFragment_latestSchema_crdtPatches = {
+  __typename: "SchemaCrdtPatches";
+  lastPatchExId: string | null;
+  patches: Array<ProjectAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
+};
+
+export type ProjectAppDetailFragment_latestSchema = {
+  __typename: "CrdtSchema";
+  crdtModelUrl: string | null;
+  crdtPatches: ProjectAppDetailFragment_latestSchema_crdtPatches | null;
+};
+
+export type ProjectAppDetailFragment = {
+  __typename: "Project";
+  projectExId: string;
+  schemaExId: string | null;
+  zeroUrl: string | null;
+  zeroSubscriptionUrl: string | null;
+  projectName: string;
+  appExId: string | null;
+  adminToken: string | null;
+  latestSchema: ProjectAppDetailFragment_latestSchema | null;
+};
+
+export type ProjectAppDetailFragmentVariables = Exact<{ [key: string]: never }>;
+
+export type WebAppDetailFragment_latestSchema_crdtPatches_patches = {
+  __typename: "SchemaCrdtPatch";
+  patchBase64: string;
+};
+
+export type WebAppDetailFragment_latestSchema_crdtPatches = {
+  __typename: "SchemaCrdtPatches";
+  lastPatchExId: string | null;
+  patches: Array<WebAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
+};
+
+export type WebAppDetailFragment_latestSchema = {
+  __typename: "CrdtSchema";
+  crdtModelUrl: string | null;
+  crdtPatches: WebAppDetailFragment_latestSchema_crdtPatches | null;
+};
+
+export type WebAppDetailFragment = {
+  __typename: "WebApp";
+  exId: string | null;
+  name: string;
+  projectExId: string;
+  appExId: string | null;
+  latestSchema: WebAppDetailFragment_latestSchema | null;
+};
+
+export type WebAppDetailFragmentVariables = Exact<{ [key: string]: never }>;
+
+export type MobileAppDetailFragment_latestSchema_crdtPatches_patches = {
+  __typename: "SchemaCrdtPatch";
+  patchBase64: string;
+};
+
+export type MobileAppDetailFragment_latestSchema_crdtPatches = {
+  __typename: "SchemaCrdtPatches";
+  lastPatchExId: string | null;
+  patches: Array<MobileAppDetailFragment_latestSchema_crdtPatches_patches | null> | null;
+};
+
+export type MobileAppDetailFragment_latestSchema = {
+  __typename: "CrdtSchema";
+  crdtModelUrl: string | null;
+  crdtPatches: MobileAppDetailFragment_latestSchema_crdtPatches | null;
+};
+
+export type MobileAppDetailFragment = {
+  __typename: "MobileApp";
+  exId: string | null;
+  name: string;
+  projectExId: string;
+  appExId: string | null;
+  latestSchema: MobileAppDetailFragment_latestSchema | null;
+};
+
+export type MobileAppDetailFragmentVariables = Exact<{ [key: string]: never }>;
+
+export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_MobileApp = {
+  __typename: "MobileApp";
+  exId: string | null;
+  name: string;
+  projectExId: string;
+  appExId: string | null;
+  latestSchema: MobileAppDetailFragment_latestSchema | null;
+};
+
+export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project = {
+  __typename: "Project";
+  projectExId: string;
+  schemaExId: string | null;
+  zeroUrl: string | null;
+  zeroSubscriptionUrl: string | null;
+  projectName: string;
+  appExId: string | null;
+  adminToken: string | null;
+  latestSchema: ProjectAppDetailFragment_latestSchema | null;
+};
+
+export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp = {
+  __typename: "WebApp";
+  exId: string | null;
+  name: string;
+  projectExId: string;
+  appExId: string | null;
+  latestSchema: WebAppDetailFragment_latestSchema | null;
+};
+
+export type FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp =
+  {
+    __typename: "WechatMiniProgramApp";
+    exId: string | null;
+    projectExId: string;
+    name: string;
+    appExId: string | null;
+    latestSchema: WechatMiniProgramAppDetailFragment_latestSchema | null;
+  };
+
+export type FetchAppDetailByExIdQuery_fetchAppDetailByExId =
+  | FetchAppDetailByExIdQuery_fetchAppDetailByExId_MobileApp
+  | FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project
+  | FetchAppDetailByExIdQuery_fetchAppDetailByExId_WebApp
+  | FetchAppDetailByExIdQuery_fetchAppDetailByExId_WechatMiniProgramApp;
+
+export type FetchAppDetailByExIdQuery = {
+  __typename: "Query";
+  fetchAppDetailByExId: FetchAppDetailByExIdQuery_fetchAppDetailByExId | null;
+};
+
+export type FetchAppDetailByExIdQueryVariables = Exact<{
+  projectExId: string;
+  appExId?: string | undefined;
+  appVersionExId?: string | undefined;
+}>;
+
+export type AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates_inputType =
+  {
+    __typename: "NodeTemplateVariable";
+    name: string | null;
+    type: ColumnType | null;
+    defaultValue: unknown;
+    required: boolean;
+    description: string | null;
+  };
+
+export type AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates_outputType =
+  {
+    __typename: "NodeTemplateVariable";
+    name: string | null;
+    type: ColumnType | null;
+    defaultValue: unknown;
+    required: boolean;
+    description: string | null;
+  };
+
+export type AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates = {
+  __typename: "AfCodeTemplate";
+  async: boolean;
+  exId: string;
+  author: unknown;
+  displayName: string;
+  logoUrl: string;
+  status: AfCodeTemplateStatus | null;
+  templateGroup: string;
+  updatedAt: unknown;
+  version: string | null;
+  inputType: Array<AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates_inputType | null>;
+  outputType: Array<AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates_outputType | null>;
+};
+
+export type AfCustomCodeTemplatesQuery = {
+  __typename: "Query";
+  visibleAfCustomCodeTemplates: Array<AfCustomCodeTemplatesQuery_visibleAfCustomCodeTemplates | null> | null;
+};
+
+export type AfCustomCodeTemplatesQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type SupportedCustomModelDescriptorQuery_supportedCustomModelDescriptor =
+  {
+    __typename: "SupportedCustomModelDescriptor";
+    chatModelDescriptors: Array<unknown> | null;
+    embeddingModelDescriptors: Array<unknown> | null;
+  };
+
+export type SupportedCustomModelDescriptorQuery = {
+  __typename: "Query";
+  supportedCustomModelDescriptor: SupportedCustomModelDescriptorQuery_supportedCustomModelDescriptor | null;
+};
+
+export type SupportedCustomModelDescriptorQueryVariables = Exact<{
+  [key: string]: never;
+}>;
+
+export type ImportProjectSchemaManualMutation = {
+  __typename: "Mutation";
+  importProjectSchemaManual: string | null;
+};
+
+export type ImportProjectSchemaManualMutationVariables = Exact<{
+  projectExId: string;
+  crdtModel: unknown;
+  appExId?: string | undefined;
+  versionExId?: string | undefined;
+}>;
+
+export type CheckProjectNameDuplicateQuery = {
+  __typename: "Query";
+  checkProjectNameDuplicate: boolean;
+};
+
+export type CheckProjectNameDuplicateQueryVariables = Exact<{
+  projectName: string;
+}>;
+
+export type FeaturesQuery_features = {
+  __typename: "FeatureStatus";
+  featureName: string;
+  featureExId: string;
+  description: string;
+  enabled: boolean;
+};
+
+export type FeaturesQuery = {
+  __typename: "Query";
+  features: Array<FeaturesQuery_features>;
+};
+
+export type FeaturesQueryVariables = Exact<{
+  projectExId: string;
+}>;
+
+export type CreateProjectInOrganizationAsyncMutation = {
+  __typename: "Mutation";
+  createProjectInOrganizationAsync: string | null;
+};
+
+export type CreateProjectInOrganizationAsyncMutationVariables = Exact<{
+  projectName: string;
+  templateExId?: string | undefined;
+  platform?: Platform | undefined;
+  projectSpaceType: ProjectSpaceType;
+  organizationExId: string;
+  forBeginnerGuide?: boolean | undefined;
+  category?: ProjectContentCategory | undefined;
+  useRefactoredComponent?: boolean | undefined;
+  useNewType?: boolean | undefined;
+}>;
+
+export type OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged =
+  {
+    __typename: "ProjectCreationResult";
+    projectExId: string | null;
+    status: ProjectCreationStatus | null;
+  };
+
+export type OnProjectCreationStatusChangedSubscription = {
+  __typename: "Subscription";
+  onProjectCreationStatusChanged: OnProjectCreationStatusChangedSubscription_onProjectCreationStatusChanged | null;
+};
+
+export type OnProjectCreationStatusChangedSubscriptionVariables = Exact<{
+  uniqueId: string;
+}>;
+
+export type DeleteProjectMutation = {
+  __typename: "Mutation";
+  deleteProject: boolean;
+};
+
+export type DeleteProjectMutationVariables = Exact<{
+  projectExId: string;
+}>;
+
+export type DeleteProjectByIdsMutation = {
+  __typename: "Mutation";
+  deleteProjectByIds: boolean;
+};
+
+export type DeleteProjectByIdsMutationVariables = Exact<{
+  ids: Array<unknown> | unknown;
+}>;
+
+export type FixAliPayDataBindingMutation = {
+  __typename: "Mutation";
+  fixAliPayDataBinding: boolean;
+};
+
+export type FixAliPayDataBindingMutationVariables = Exact<{
+  projectId: unknown;
 }>;

@@ -1,3 +1,4 @@
+import { CopilotInputAggregate } from "../domain/aggregate/copilot-input.aggregate.ts";
 import type { ICopilotInputRepository } from "../domain/interface/copilot-input.interface.ts";
 import type { IGoldenSetRepository } from "../domain/interface/golden-set.interface.ts";
 import type { IUserInputRepository } from "../domain/interface/user-input.interface.ts";
@@ -15,11 +16,9 @@ export class FormCopilotInputUseCase {
     const copilotInputs =
       await this.repository.copilotInputRepository.getByFilters({
         userInputId,
+        goldenSetId,
       });
-    const linkedGoldenSet = copilotInputs.find(
-      ({ goldenSetEntity }) => goldenSetEntity.getData("id") === goldenSetId,
-    );
-    if (linkedGoldenSet) {
+    if (copilotInputs.length > 0) {
       throw new Error(
         `UserInput ID ${userInputId} is already associated with GoldenSet ID ${goldenSetId}`,
       );
@@ -28,11 +27,12 @@ export class FormCopilotInputUseCase {
       this.repository.goldenSetRepository.findById(goldenSetId),
       this.repository.userInputRepository.findById(userInputId),
     ]);
-    const newCopilotInput = await this.repository.copilotInputRepository.create(
+    const copilotInputAggregate = new CopilotInputAggregate(
       goldenSetEntity,
       userInputEntity,
     );
-    return newCopilotInput;
+    await this.repository.copilotInputRepository.save(copilotInputAggregate);
+    return copilotInputAggregate;
   }
 }
 

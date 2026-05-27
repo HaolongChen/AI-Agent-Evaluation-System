@@ -3,7 +3,10 @@ import { repositoryDateMapper } from "../../../shared/infrastructure/repository.
 import { CopilotInputAggregate } from "../../domain/aggregate/copilot-input.aggregate.ts";
 import { GoldenSetEntity } from "../../domain/entity/golden-set.entity.ts";
 import { UserInputEntity } from "../../domain/entity/user-input.entity.ts";
-import type { ICopilotInputRepository } from "../../domain/interface/copilot-input.interface.ts";
+import type {
+  CopilotInputFilters,
+  ICopilotInputRepository,
+} from "../../domain/interface/copilot-input.interface.ts";
 import {
   goldenSetDataMapper,
   type GoldenSetRepositoryType,
@@ -60,6 +63,18 @@ export const copilotInputDataMapper = (
 };
 
 export class CopilotInputRepository implements ICopilotInputRepository {
+  async getByFilters(
+    filters?: CopilotInputFilters,
+  ): Promise<CopilotInputAggregate[]> {
+    const results = await prisma.copilotInput.findMany({
+      where: filters,
+      include: {
+        goldenSet: true,
+        userInput: true,
+      },
+    });
+    return results.map((result) => copilotInputDataMapper(result));
+  }
   async findById(id: string): Promise<CopilotInputAggregate> {
     const result = await prisma.copilotInput.findUnique({
       where: { id },

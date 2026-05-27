@@ -28,7 +28,8 @@ export type CopilotServerMinAggregateOutputType = {
   id: string | null;
   name: string | null;
   description: string | null;
-  endpoint: string | null;
+  wsEndpoint: string | null;
+  gqlEndpoint: string | null;
   createdAt: Date | null;
 };
 
@@ -36,7 +37,8 @@ export type CopilotServerMaxAggregateOutputType = {
   id: string | null;
   name: string | null;
   description: string | null;
-  endpoint: string | null;
+  wsEndpoint: string | null;
+  gqlEndpoint: string | null;
   createdAt: Date | null;
 };
 
@@ -44,7 +46,8 @@ export type CopilotServerCountAggregateOutputType = {
   id: number;
   name: number;
   description: number;
-  endpoint: number;
+  wsEndpoint: number;
+  gqlEndpoint: number;
   createdAt: number;
   _all: number;
 };
@@ -53,7 +56,8 @@ export type CopilotServerMinAggregateInputType = {
   id?: true;
   name?: true;
   description?: true;
-  endpoint?: true;
+  wsEndpoint?: true;
+  gqlEndpoint?: true;
   createdAt?: true;
 };
 
@@ -61,7 +65,8 @@ export type CopilotServerMaxAggregateInputType = {
   id?: true;
   name?: true;
   description?: true;
-  endpoint?: true;
+  wsEndpoint?: true;
+  gqlEndpoint?: true;
   createdAt?: true;
 };
 
@@ -69,7 +74,8 @@ export type CopilotServerCountAggregateInputType = {
   id?: true;
   name?: true;
   description?: true;
-  endpoint?: true;
+  wsEndpoint?: true;
+  gqlEndpoint?: true;
   createdAt?: true;
   _all?: true;
 };
@@ -161,7 +167,8 @@ export type CopilotServerGroupByOutputType = {
   id: string;
   name: string;
   description: string | null;
-  endpoint: string;
+  wsEndpoint: string;
+  gqlEndpoint: string;
   createdAt: Date;
   _count: CopilotServerCountAggregateOutputType | null;
   _min: CopilotServerMinAggregateOutputType | null;
@@ -189,7 +196,8 @@ export type copilotServerWhereInput = {
   id?: Prisma.StringFilter<"copilotServer"> | string;
   name?: Prisma.StringFilter<"copilotServer"> | string;
   description?: Prisma.StringNullableFilter<"copilotServer"> | string | null;
-  endpoint?: Prisma.StringFilter<"copilotServer"> | string;
+  wsEndpoint?: Prisma.StringFilter<"copilotServer"> | string;
+  gqlEndpoint?: Prisma.StringFilter<"copilotServer"> | string;
   createdAt?: Prisma.DateTimeFilter<"copilotServer"> | Date | string;
   copilotSessions?: Prisma.CopilotSessionListRelationFilter;
 };
@@ -198,7 +206,8 @@ export type copilotServerOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
   description?: Prisma.SortOrderInput | Prisma.SortOrder;
-  endpoint?: Prisma.SortOrder;
+  wsEndpoint?: Prisma.SortOrder;
+  gqlEndpoint?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   copilotSessions?: Prisma.copilotSessionOrderByRelationAggregateInput;
 };
@@ -211,7 +220,8 @@ export type copilotServerWhereUniqueInput = Prisma.AtLeast<
     NOT?: Prisma.copilotServerWhereInput | Prisma.copilotServerWhereInput[];
     name?: Prisma.StringFilter<"copilotServer"> | string;
     description?: Prisma.StringNullableFilter<"copilotServer"> | string | null;
-    endpoint?: Prisma.StringFilter<"copilotServer"> | string;
+    wsEndpoint?: Prisma.StringFilter<"copilotServer"> | string;
+    gqlEndpoint?: Prisma.StringFilter<"copilotServer"> | string;
     createdAt?: Prisma.DateTimeFilter<"copilotServer"> | Date | string;
     copilotSessions?: Prisma.CopilotSessionListRelationFilter;
   },
@@ -222,7 +232,8 @@ export type copilotServerOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
   description?: Prisma.SortOrderInput | Prisma.SortOrder;
-  endpoint?: Prisma.SortOrder;
+  wsEndpoint?: Prisma.SortOrder;
+  gqlEndpoint?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   _count?: Prisma.copilotServerCountOrderByAggregateInput;
   _max?: Prisma.copilotServerMaxOrderByAggregateInput;
@@ -243,7 +254,8 @@ export type copilotServerScalarWhereWithAggregatesInput = {
     | Prisma.StringNullableWithAggregatesFilter<"copilotServer">
     | string
     | null;
-  endpoint?: Prisma.StringWithAggregatesFilter<"copilotServer"> | string;
+  wsEndpoint?: Prisma.StringWithAggregatesFilter<"copilotServer"> | string;
+  gqlEndpoint?: Prisma.StringWithAggregatesFilter<"copilotServer"> | string;
   createdAt?:
     | Prisma.DateTimeWithAggregatesFilter<"copilotServer">
     | Date
@@ -254,7 +266,8 @@ export type copilotServerCreateInput = {
   id?: string;
   name: string;
   description?: string | null;
-  endpoint: string;
+  wsEndpoint: string;
+  gqlEndpoint: string;
   createdAt?: Date | string;
   copilotSessions?: Prisma.copilotSessionCreateNestedManyWithoutCopilotServerInput;
 };
@@ -263,7 +276,8 @@ export type copilotServerUncheckedCreateInput = {
   id?: string;
   name: string;
   description?: string | null;
-  endpoint: string;
+  wsEndpoint: string;
+  gqlEndpoint: string;
   createdAt?: Date | string;
   copilotSessions?: Prisma.copilotSessionUncheckedCreateNestedManyWithoutCopilotServerInput;
 };
@@ -272,7 +286,8 @@ export type copilotServerUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  endpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  wsEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  gqlEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   copilotSessions?: Prisma.copilotSessionUpdateManyWithoutCopilotServerNestedInput;
 };
@@ -281,7 +296,8 @@ export type copilotServerUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  endpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  wsEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  gqlEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   copilotSessions?: Prisma.copilotSessionUncheckedUpdateManyWithoutCopilotServerNestedInput;
 };
@@ -290,7 +306,8 @@ export type copilotServerCreateManyInput = {
   id?: string;
   name: string;
   description?: string | null;
-  endpoint: string;
+  wsEndpoint: string;
+  gqlEndpoint: string;
   createdAt?: Date | string;
 };
 
@@ -298,7 +315,8 @@ export type copilotServerUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  endpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  wsEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  gqlEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -306,7 +324,8 @@ export type copilotServerUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  endpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  wsEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  gqlEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -314,7 +333,8 @@ export type copilotServerCountOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
   description?: Prisma.SortOrder;
-  endpoint?: Prisma.SortOrder;
+  wsEndpoint?: Prisma.SortOrder;
+  gqlEndpoint?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
 
@@ -322,7 +342,8 @@ export type copilotServerMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
   description?: Prisma.SortOrder;
-  endpoint?: Prisma.SortOrder;
+  wsEndpoint?: Prisma.SortOrder;
+  gqlEndpoint?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
 
@@ -330,7 +351,8 @@ export type copilotServerMinOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   name?: Prisma.SortOrder;
   description?: Prisma.SortOrder;
-  endpoint?: Prisma.SortOrder;
+  wsEndpoint?: Prisma.SortOrder;
+  gqlEndpoint?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
 };
 
@@ -373,7 +395,8 @@ export type copilotServerCreateWithoutCopilotSessionsInput = {
   id?: string;
   name: string;
   description?: string | null;
-  endpoint: string;
+  wsEndpoint: string;
+  gqlEndpoint: string;
   createdAt?: Date | string;
 };
 
@@ -381,7 +404,8 @@ export type copilotServerUncheckedCreateWithoutCopilotSessionsInput = {
   id?: string;
   name: string;
   description?: string | null;
-  endpoint: string;
+  wsEndpoint: string;
+  gqlEndpoint: string;
   createdAt?: Date | string;
 };
 
@@ -417,7 +441,8 @@ export type copilotServerUpdateWithoutCopilotSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  endpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  wsEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  gqlEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -425,7 +450,8 @@ export type copilotServerUncheckedUpdateWithoutCopilotSessionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   name?: Prisma.StringFieldUpdateOperationsInput | string;
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
-  endpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  wsEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
+  gqlEndpoint?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
@@ -477,7 +503,8 @@ export type copilotServerSelect<
     id?: boolean;
     name?: boolean;
     description?: boolean;
-    endpoint?: boolean;
+    wsEndpoint?: boolean;
+    gqlEndpoint?: boolean;
     createdAt?: boolean;
     copilotSessions?:
       | boolean
@@ -495,7 +522,8 @@ export type copilotServerSelectCreateManyAndReturn<
     id?: boolean;
     name?: boolean;
     description?: boolean;
-    endpoint?: boolean;
+    wsEndpoint?: boolean;
+    gqlEndpoint?: boolean;
     createdAt?: boolean;
   },
   ExtArgs["result"]["copilotServer"]
@@ -509,7 +537,8 @@ export type copilotServerSelectUpdateManyAndReturn<
     id?: boolean;
     name?: boolean;
     description?: boolean;
-    endpoint?: boolean;
+    wsEndpoint?: boolean;
+    gqlEndpoint?: boolean;
     createdAt?: boolean;
   },
   ExtArgs["result"]["copilotServer"]
@@ -519,7 +548,8 @@ export type copilotServerSelectScalar = {
   id?: boolean;
   name?: boolean;
   description?: boolean;
-  endpoint?: boolean;
+  wsEndpoint?: boolean;
+  gqlEndpoint?: boolean;
   createdAt?: boolean;
 };
 
@@ -527,7 +557,7 @@ export type copilotServerOmit<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
     runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
-  "id" | "name" | "description" | "endpoint" | "createdAt",
+  "id" | "name" | "description" | "wsEndpoint" | "gqlEndpoint" | "createdAt",
   ExtArgs["result"]["copilotServer"]
 >;
 export type copilotServerInclude<
@@ -559,7 +589,8 @@ export type $copilotServerPayload<
       id: string;
       name: string;
       description: string | null;
-      endpoint: string;
+      wsEndpoint: string;
+      gqlEndpoint: string;
       createdAt: Date;
     },
     ExtArgs["result"]["copilotServer"]
@@ -1178,7 +1209,8 @@ export interface copilotServerFieldRefs {
   readonly id: Prisma.FieldRef<"copilotServer", "String">;
   readonly name: Prisma.FieldRef<"copilotServer", "String">;
   readonly description: Prisma.FieldRef<"copilotServer", "String">;
-  readonly endpoint: Prisma.FieldRef<"copilotServer", "String">;
+  readonly wsEndpoint: Prisma.FieldRef<"copilotServer", "String">;
+  readonly gqlEndpoint: Prisma.FieldRef<"copilotServer", "String">;
   readonly createdAt: Prisma.FieldRef<"copilotServer", "DateTime">;
 }
 

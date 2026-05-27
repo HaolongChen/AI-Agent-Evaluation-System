@@ -1,7 +1,4 @@
-/* eslint-disable unicorn/no-null */
 import type { Account } from "../../account/application/account-handler.ts";
-import type { ICopilotInputRepository } from "../../copilot-input/domain/interface/copilot-input.interface.ts";
-import type { IProjectLifecycle } from "../../copilot-input/domain/interface/project-lifecycle.interface.ts";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
@@ -9,13 +6,19 @@ import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { createNewSession } from "../infrastructure/copilot-network.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
+import type { ICopilotInputRepository } from "../../dataset/domain/interface/copilot-input.interface.ts";
+import type { IProjectLifecycle } from "../../dataset/domain/interface/project-lifecycle.interface.ts";
+import { CopilotSessionAggregate } from "../domain/aggregate/copilot-session.aggregate.ts";
+import type { ICopilotServerRepository } from "../domain/interface/copilot-server.interface.ts";
+import type { ICopilotSessionRepository } from "../domain/interface/copilot-session.interface.ts";
 
 export class ExecuteCopilotUseCase {
   private isProjectTemporary = true;
   constructor(
     private repository: {
-      copilotOutputRepository: ICopilotOutputRepository;
+      copilotSessionRepository: ICopilotSessionRepository;
       copilotInputRepository: ICopilotInputRepository;
+      copilotServerRepository: ICopilotServerRepository;
     },
     private projectLifecycle: IProjectLifecycle,
     private account: Account,
@@ -25,40 +28,45 @@ export class ExecuteCopilotUseCase {
     goldenSetId: string;
     userInputId: string;
     projectExId?: string;
-  }): Promise<CopilotJobEntity> {
+  }): Promise<CopilotSessionAggregate> {
     const copilotInput =
       await this.repository.copilotInputRepository.getByFilters({
         goldenSetId: data.goldenSetId,
         userInputId: data.userInputId,
       });
-    const goldenSetEntity = copilotInput[0].goldenSetEntity;
-    const userInputEntity = copilotInput[0].userInputEntity;
+    const goldenSetEntity = copilotInput[0].getEntity("goldenSet")[0];
+    const userInputEntity = copilotInput[0].getEntity("userInput")[0];
 
     const { projectExId, schemaGraph } = data.projectExId
       ? await this.projectLifecycle.importExistingProject(data.projectExId)
-      : goldenSetEntity.getData("projectExId")
-        ? await this.projectLifecycle.importExistingProject(
-            goldenSetEntity.getData("projectExId")!,
-          )
-        : await this.projectLifecycle.createTemporaryProject(
-            this.generateProjectName(data.goldenSetId, data.userInputId),
-            goldenSetEntity.getData("schemaId"),
-          );
-    if (goldenSetEntity.getData("projectExId")) {
-      this.isProjectTemporary = false;
-    }
+      : await this.projectLifecycle.createTemporaryProject(
+          this.generateProjectName(data.goldenSetId, data.userInputId),
+          goldenSetEntity.getData("schemaId"),
+        );
     const copilotSessionExId = await createNewSession(
       projectExId,
       await this.account.getGQLClient(),
     );
 
-    return new CopilotJobEntity({
-      projectExId,
+    const copilotServerEntity =
+      await this.repository.copilotServerRepository.getDefault();
+
+    const session = new CopilotSessionAggregate(
+      copilotInput[0],
+      copilotServerEntity,
       copilotSessionExId,
-      query: userInputEntity.getData("content"),
-      wsUrl: process.env.SUBSCRIPTION_GRAPHQL_URL,
-      schemaGraph,
-    });
+    );
+    session.setEntity(
+      "copilotJob",
+      new CopilotJobEntity({
+        copilotSessionExId,
+        projectExId,
+        schemaGraph,
+        wsUrl: copilotServerEntity.getData("wsEndpoint"),
+        query: userInputEntity.getData("content"),
+      }),
+    );
+    return session;
   }
 
   private generateProjectName(
@@ -73,7 +81,8 @@ export class ExecuteCopilotUseCase {
     userInputId: string;
     projectExId?: string;
   }) {
-    const copilotJobEntity = await this.setupEnvironment(data);
+    const copilotSession = await this.setupEnvironment(data);
+    const copilotJobEntity = copilotSession.getEntity("copilotJob")[0];
     const wsClient = await this.account.getWsClient();
     const gqlClient = await this.account.getGQLClient();
     try {
@@ -84,13 +93,8 @@ export class ExecuteCopilotUseCase {
       );
       const orchestrator = new SessionOrchestrator(runner, copilotJobEntity);
       const result = await orchestrator.run();
-      const copilotOutputEntity = this.jobEntityToOutputEntity(
-        result,
-        data.goldenSetId,
-        data.userInputId,
-      );
-      await this.repository.copilotOutputRepository.save(copilotOutputEntity);
-      return copilotOutputEntity.getData();
+      await this.repository.copilotSessionRepository.save(copilotSession);
+      return copilotSession.getEntity("copilotOutput")[0].getData();
     } catch (error) {
       logger.error("Error setting up copilot execution environment:", error);
       this.account.clearWsClient();
@@ -100,24 +104,5 @@ export class ExecuteCopilotUseCase {
         await this.projectLifecycle.deleteTemporaryProject();
       }
     }
-  }
-
-  private jobEntityToOutputEntity(
-    jobEntity: CopilotJobEntity,
-    goldenSetId: string,
-    userInputId: string,
-  ): CopilotOutputEntity {
-    if (!jobEntity.aiResponse) {
-      throw new Error(
-        "AI response is empty, cannot create CopilotOutputEntity",
-      );
-    }
-    return new CopilotOutputEntity({
-      goldenSetId,
-      userInputId,
-      editableText: jobEntity.editableText ?? null,
-      aiResponse: jobEntity.aiResponse,
-      copilotSessionExId: jobEntity.getData("copilotSessionExId"),
-    });
   }
 }

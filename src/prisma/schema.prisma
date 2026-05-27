@@ -85,7 +85,8 @@ model copilotServer {
   id              String           @id @default(uuid())
   name            String           @map("name") // e.g., 'aws-us-east-1', 'azure-westus2'
   description     String?          @map("description")
-  endpoint        String           @map("endpoint") // e.g., 'https://zionbackend.functorz.work/api/subscription'
+  wsEndpoint      String           @map("wsEndpoint") // e.g., 'https://zionbackend.functorz.work/api/subscription'
+  gqlEndpoint     String           @map("gqlEndpoint") // e.g., 'https://zionbackend.functorz.work/api/graphql'
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   copilotSessions copilotSession[]
 }

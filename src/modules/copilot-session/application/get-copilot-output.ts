@@ -1,9 +1,10 @@
 import type { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
+import type { ICopilotSessionRepository } from "../domain/interface/copilot-session.interface.ts";
 
 export class GetCopilotOutputUseCase {
   constructor(
-    private repository: { copilotOutputRepository: ICopilotOutputRepository },
+    private repository: { copilotSessionRepository: ICopilotSessionRepository },
   ) {}
 
   async execute(copilotInputId: string): Promise<CopilotOutputEntity>;

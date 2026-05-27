@@ -1457,7 +1457,8 @@ export const CopilotServerScalarFieldEnum = {
   id: "id",
   name: "name",
   description: "description",
-  endpoint: "endpoint",
+  wsEndpoint: "wsEndpoint",
+  gqlEndpoint: "gqlEndpoint",
   createdAt: "createdAt",
 } as const;
 

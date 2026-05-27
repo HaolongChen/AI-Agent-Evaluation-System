@@ -3647,6 +3647,10 @@ type Mutation {
     projectExId: String!
     version: String!
   ): Boolean!
+  changeProjectToComponentRefactorProject(
+    appExId: String
+    projectExId: String!
+  ): Boolean!
   changeTemplateVisibility(
     templateExId: String!
     visibility: Visibility!

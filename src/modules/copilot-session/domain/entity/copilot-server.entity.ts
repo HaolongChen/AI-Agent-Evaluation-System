@@ -7,3 +7,9 @@ export class CopilotServerEntity extends Entity<typeof copilotServerSchema> {
     super(data, copilotServerSchema, id);
   }
 }
+
+export const mockCopilotServerEntity = new CopilotServerEntity({
+  wsEndpoint: process.env.SUBSCRIPTION_GRAPHQL_URL,
+  gqlEndpoint: process.env.BACKEND_GRAPHQL_URL,
+  name: "mock server",
+});

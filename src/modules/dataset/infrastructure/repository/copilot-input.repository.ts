@@ -1,12 +1,12 @@
 import { prisma } from "../../../../config/prisma.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
-import { CopilotInputEntity } from "../../domain/entity/copilot-input.entity.ts";
+import { CopilotInputAggregate } from "../../domain/aggregate/copilot-input.aggregate.ts";
 import { GoldenSetEntity } from "../../domain/entity/golden-set.entity.ts";
 import { UserInputEntity } from "../../domain/entity/user-input.entity.ts";
 import type { ICopilotInputRepository } from "../../domain/interface/copilot-input.interface.ts";
 
 export class CopilotInputRepository implements ICopilotInputRepository {
-	async findById(id: string): Promise<CopilotInputEntity> {
+	async findById(id: string): Promise<CopilotInputAggregate> {
 		const result = await prisma.copilotInput.findUnique({
 			where: { id },
 			include: {
@@ -17,29 +17,31 @@ export class CopilotInputRepository implements ICopilotInputRepository {
 		if (!result) {
 			throw new Error(`CopilotInput with ID ${id} not found`);
 		}
-		return repositoryDateMapper(
-			result,
-			new CopilotInputEntity(
-				repositoryDateMapper(
-					result.goldenSet,
-					new GoldenSetEntity(result.goldenSet, result.id),
-				),
-				repositoryDateMapper(
-					result.userInput,
-					new UserInputEntity(result.userInput, result.userInputId),
-				),
-				result.id,
-			),
-		) as unknown as CopilotInputEntity;
+		const goldenSetEntity = repositoryDateMapper(
+			result.goldenSet,
+			new GoldenSetEntity(result.goldenSet, result.goldenSet.id),
+		);
+		const userInputEntity = repositoryDateMapper(
+			result.userInput,
+			new UserInputEntity(result.userInput, result.userInputId),
+		);
+		const copilotInputAggregate = new CopilotInputAggregate(
+			goldenSetEntity,
+			userInputEntity,
+			result.id,
+		);
+
+		return repositoryDateMapper(result, copilotInputAggregate);
 	}
-	async save(entity: CopilotInputEntity): Promise<void> {
+	async save(data: CopilotInputAggregate): Promise<void> {
 		const result = await prisma.copilotInput.create({
 			data: {
-				goldenSetId: entity.goldenSetEntity.getData("id"),
-				userInputId: entity.userInputEntity.getData("id"),
+				id: data.getData("id"),
+				goldenSetId: data.getEntity("goldenSet")[0].getData("id"),
+				userInputId: data.getEntity("userInput")[0].getData("id"),
 			},
 			// include: { userInput: true, goldenSet: true },
 		});
-		repositoryDateMapper(result, entity);
+		repositoryDateMapper(result, data);
 	}
 }

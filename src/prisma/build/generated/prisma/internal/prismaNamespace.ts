@@ -1396,7 +1396,7 @@ export type CopilotServerScalarFieldEnum = (typeof CopilotServerScalarFieldEnum)
 
 export const CopilotSessionScalarFieldEnum = {
   id: 'id',
-  schemaUserInputId: 'schemaUserInputId',
+  copilotInputId: 'copilotInputId',
   copilotServerId: 'copilotServerId',
   createdAt: 'createdAt'
 } as const

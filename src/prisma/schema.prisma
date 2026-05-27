@@ -32,14 +32,14 @@ enum EvaluatorType {
 
 // context
 model goldenSet {
-  id         String             @id @default(uuid())
-  schemaId   String             @unique @map("schema_id")
+  id         String         @id @default(uuid())
+  schemaId   String         @unique @map("schema_id")
   // projectExId String?               @map("project_ex_id") // corresponds to the projectExId in LangGraph
   // projectName String?               @map("project_name") // denormalized for easier querying, corresponds to the name field in project table
   // copilotType CopilotType           @default(dataModelBuilder) @map("copilot_type") // e.g., 'dataModelBuilder', 'uiBuilder', 'actionFlowBuilder', 'logAnalyzer', 'agentBuilder'
   // modelName   String                @default("undefined") @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
   userInputs copilotInput[]
-  updatedAt  DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedAt  DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
   // evaluationSessions evaluationSession[]
 
   // @@unique([schemaId], map: "unique_golden_set") // add copilot type
@@ -59,11 +59,11 @@ model project {
 }
 
 model userInput {
-  id         String             @id @default(uuid())
+  id         String         @id @default(uuid())
   // description String?
-  content    String             @map("input_content") // user input
-  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy  String                @default("unknown") @map("created_by") // userId or "auto-generated" for system-generated inputs
+  content    String         @map("input_content") // user input
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy  String         @default("unknown") @map("created_by") // userId or "auto-generated" for system-generated inputs
   goldenSets copilotInput[]
 }
 
@@ -91,15 +91,16 @@ model copilotServer {
 }
 
 model copilotSession {
-  id                String           @id @default(uuid())
-  schemaUserInputId String           @map("schema_user_input_id")
-  copilotInput      copilotInput @relation(fields: [schemaUserInputId], references: [id])
-  copilotServerId   String           @map("copilot_server_id")
-  copilotServer     copilotServer    @relation(fields: [copilotServerId], references: [id])
+  id                String        @id @default(uuid())
+  copilotInputId String        @map("schema_user_input_id")
+  copilotInput      copilotInput  @relation(fields: [copilotInputId], references: [id])
+  copilotServerId   String        @map("copilot_server_id")
+  copilotServer     copilotServer @relation(fields: [copilotServerId], references: [id])
 
   copilotOutput copilotOutput?
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  @@index([copilotInputId, copilotServerId], map: "idx_schema_user_input_copilot_server")
 }
 
 model copilotOutput {

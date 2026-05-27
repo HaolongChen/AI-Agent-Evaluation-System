@@ -6,9 +6,9 @@ export interface ExternalRepositoryDate {
   updatedAt?: z.infer<z.ZodDate>;
 }
 
-export function repositoryDateMapper<T extends z.ZodObject>(
+export function repositoryDateMapper<T extends Entity>(
   data: ExternalRepositoryDate,
-  entity: Entity<T>,
+  entity: T,
 ) {
   entity.setData({ createdAt: data.createdAt, updatedAt: data.updatedAt });
   return entity;

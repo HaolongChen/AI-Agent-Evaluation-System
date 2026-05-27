@@ -1,4 +1,4 @@
 import type { IRepository } from "../../../shared/domain/interface/repository.interface.ts";
-import type { CopilotInputEntity } from "../entity/copilot-input.entity.ts";
+import type { CopilotInputAggregate } from "../aggregate/copilot-input.aggregate.ts";
 
-export interface ICopilotInputRepository extends IRepository<CopilotInputEntity> {}
+export interface ICopilotInputRepository extends IRepository<CopilotInputAggregate> {}

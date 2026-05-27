@@ -4,29 +4,6 @@ import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.t
 import type { ICopilotOutputRepository } from "../../domain/interface/copilot-output.interface.ts";
 
 export class CopilotOutputRepository implements ICopilotOutputRepository {
-  async getByGoldenSetIdAndUserInputId(
-    goldenSetId: string,
-    userInputId: string,
-  ): Promise<CopilotOutputEntity[]> {
-    const copilotInput = await prisma.goldenSet_userInput.findUnique({
-      where: { goldenSetId_userInputId: { goldenSetId, userInputId } },
-      include: { copilotOutput: true },
-    });
-    if (!copilotInput) {
-      throw new Error(
-        `No association found for GoldenSet ID ${goldenSetId} and UserInput ID ${userInputId}`,
-      );
-    }
-    if (
-      !copilotInput.copilotOutput ||
-      copilotInput.copilotOutput.length === 0
-    ) {
-      return [];
-    }
-    return copilotInput.copilotOutput.map((output) =>
-      repositoryDateMapper(output, new CopilotOutputEntity(output, output.id)),
-    );
-  }
   async save(entity: CopilotOutputEntity): Promise<void> {
     const output = await prisma.copilotOutput.create({
       data: entity.getData(),

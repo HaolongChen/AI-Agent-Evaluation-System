@@ -7,6 +7,7 @@ import { CopilotSessionAggregate } from "../../domain/aggregate/copilot-session.
 import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import { CopilotServerEntity } from "../../domain/entity/copilot-server.entity.ts";
 import type { ICopilotSessionRepository } from "../../domain/interface/copilot-session.interface.ts";
+import { CopilotOutputRepository } from "./copilot-output.repository.ts";
 
 type CopilotSessionReturnType = {
 	copilotInput: {
@@ -112,11 +113,30 @@ export class CopilotSessionRepository implements ICopilotSessionRepository {
 			return copilotSessionDataMapper(result, undefined, copilotServer);
 		});
 	}
-	saveCopilotOutput(copilotOutput: CopilotOutputEntity): Promise<void> {
-		throw new Error("Method not implemented.");
-	}
-	save(entity: CopilotSessionAggregate): Promise<void> {
-		throw new Error("Method not implemented.");
+	async saveCopilotOutput(data: CopilotSessionAggregate): Promise<void> {
+    const copilotOutput = data.getEntity( "copilotOutput" );
+    if (!copilotOutput || copilotOutput.length !== 1) {
+      throw new Error("No CopilotOutput entity found in the provided CopilotSessionAggregate");
+    }
+    const copilotOutputRepository = new CopilotOutputRepository();
+    await copilotOutputRepository.save(copilotOutput[0]);
+  }
+  async save ( entity: CopilotSessionAggregate ): Promise<void>
+  {
+    const copilotInput = entity.getEntity( "copilotInput" );
+    const copilotServer = entity.getEntity( "copilotServer" );
+    if(copilotInput.length !== 1 || copilotServer.length !== 1) {
+      throw new Error("CopilotSessionAggregate must have exactly one CopilotInputAggregate and one CopilotServerEntity");
+    }
+    const result = await prisma.copilotSession.create( {
+      data: {
+        ...entity.getData(),
+        copilotInputId: copilotInput[ 0 ].getData( "id" ),
+        copilotServerId: copilotServer[ 0 ].getData( "id" ),
+      }
+    } );
+    repositoryDateMapper( result, entity );
+    await this.saveCopilotOutput( entity );
 	}
 	async findById(id: string): Promise<CopilotSessionAggregate> {
 		return copilotSessionDataMapper(

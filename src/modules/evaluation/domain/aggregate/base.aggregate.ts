@@ -2,15 +2,12 @@ import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.t
 import type {
   Entity,
   EntityMetadata,
+  PickMethodNames,
 } from "../../../shared/domain/entity/entity.ts";
 import { BaseSessionEntity } from "../entity/session.entity.ts";
 import type { sessionIdentifierSchema } from "../schema/session.schema.ts";
 
-export type PickMethodNames<T> = {
-  [K in keyof T]: T[K] extends (...arguments_: unknown[]) => unknown
-    ? K
-    : never;
-}[keyof T];
+
 
 export class BaseSessionAggregateRoot<
   T extends typeof sessionIdentifierSchema,

@@ -3,8 +3,8 @@ import { Entity } from "../../../shared/domain/entity/entity.ts";
 import { rubricSchema, criteriaSchema } from "../schema/rubric.schema.ts";
 
 export class RubricEntity extends Entity<typeof rubricSchema> {
-  constructor(data: z.infer<typeof rubricSchema>, id?: string) {
-    super(data, rubricSchema, id);
+  constructor(id?: string) {
+    super( {}, rubricSchema, id);
   }
 }
 

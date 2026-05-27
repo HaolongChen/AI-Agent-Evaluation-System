@@ -2,8 +2,4 @@ import type { IRepository } from "../../../shared/domain/interface/repository.in
 import type { CopilotOutputEntity } from "../entity/copilot-output.entity.ts";
 
 export interface ICopilotOutputRepository extends IRepository<CopilotOutputEntity> {
-  getByGoldenSetIdAndUserInputId(
-    goldenSetId: string,
-    userInputId: string,
-  ): Promise<CopilotOutputEntity[]>;
 }

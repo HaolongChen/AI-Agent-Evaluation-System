@@ -7,17 +7,21 @@ import { CopilotSessionEntity } from "../entity/copilot-session.entity.ts";
 import { copilotSessionSchema } from "../schema/copilot-session.schema.ts";
 
 export class CopilotSessionAggregate extends AggregateRoot<
-	typeof copilotSessionSchema,
-	EntityMetadata,
-	{ copilotInput: CopilotInputAggregate; copilotServer: CopilotServerEntity; copilotOutput: CopilotOutputEntity }
+  typeof copilotSessionSchema,
+  EntityMetadata,
+  {
+    copilotInput: CopilotInputAggregate;
+    copilotServer: CopilotServerEntity;
+    copilotOutput: CopilotOutputEntity;
+  }
 > {
-	constructor(
-		copilotInputAggregate: CopilotInputAggregate,
-		copilotServerEntity: CopilotServerEntity,
-		id?: string,
-	) {
-		super(new CopilotSessionEntity(id));
-		this.setEntity("copilotInput", copilotInputAggregate);
-		this.setEntity("copilotServer", copilotServerEntity);
-	}
+  constructor(
+    copilotInputAggregate: CopilotInputAggregate,
+    copilotServerEntity: CopilotServerEntity,
+    id?: string,
+  ) {
+    super(new CopilotSessionEntity(id));
+    this.setEntity("copilotInput", copilotInputAggregate);
+    this.setEntity("copilotServer", copilotServerEntity);
+  }
 }

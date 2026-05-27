@@ -2,7 +2,7 @@ import type { IRepository } from "../../../shared/domain/interface/repository.in
 import type { GoldenSetEntity } from "../entity/golden-set.entity.ts";
 
 export interface IGoldenSetRepository extends IRepository<GoldenSetEntity> {
-  findById ( id: string ): Promise<GoldenSetEntity>;
+  findById(id: string): Promise<GoldenSetEntity>;
 
   findBySchemaId(schemaId: string): Promise<GoldenSetEntity>;
 }

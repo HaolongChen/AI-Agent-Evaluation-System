@@ -4,7 +4,7 @@ import { rubricSchema, criteriaSchema } from "../schema/rubric.schema.ts";
 
 export class RubricEntity extends Entity<typeof rubricSchema> {
   constructor(id?: string) {
-    super( {}, rubricSchema, id);
+    super({}, rubricSchema, id);
   }
 }
 

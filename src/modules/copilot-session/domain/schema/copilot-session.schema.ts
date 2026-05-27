@@ -1,4 +1,3 @@
 import { z } from "zod";
 
-export const copilotSessionSchema = z.object( {
-})
+export const copilotSessionSchema = z.object({});

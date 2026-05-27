@@ -91,15 +91,17 @@ model copilotServer {
 }
 
 model copilotSession {
-  id                String        @id @default(uuid())
-  copilotInputId String        @map("schema_user_input_id")
-  copilotInput      copilotInput  @relation(fields: [copilotInputId], references: [id])
-  copilotServerId   String        @map("copilot_server_id")
-  copilotServer     copilotServer @relation(fields: [copilotServerId], references: [id])
+  id              String        @id @default(uuid())
+  copilotInputId  String        @map("schema_user_input_id")
+  copilotInput    copilotInput  @relation(fields: [copilotInputId], references: [id])
+  copilotServerId String        @map("copilot_server_id")
+  copilotServer   copilotServer @relation(fields: [copilotServerId], references: [id])
 
   copilotOutput copilotOutput?
+  rubric        rubric[]       @relation("copilotSession_rubric")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
   @@index([copilotInputId, copilotServerId], map: "idx_schema_user_input_copilot_server")
 }
 
@@ -119,7 +121,7 @@ model copilotOutput {
   // totalTokens       Int?     @map("total_tokens") // input_tokens + output_tokens + reasoning tokens
   // contextPercentage Decimal? @map("context_percentage") @db.Decimal(5, 2) // % of max context window used
 
-  rubrics rubric[] @relation("copilotOutput_rubric")
+  // rubrics rubric[] @relation("copilotOutput_rubric")
 }
 
 // model copilotOutput_rubric {
@@ -139,12 +141,12 @@ model copilotOutput {
 model rubric {
   id String @id @default(uuid())
 
-  copilotOutputId String @map("copilot_output_id")
+  copilotSessionExId String @map("copilot_session_ex_id")
   // goldenSetId String @map("golden_set_id")
   // userInputId String @map("user_input_id")
 
   // copilotInput   goldenSet_userInput    @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
-  copilotOutputs copilotOutput    @relation("copilotOutput_rubric", fields: [copilotOutputId], references: [id])
+  copilotSession copilotSession   @relation("copilotSession_rubric", fields: [copilotSessionExId], references: [id])
   criterion      criteria[]
   agentFeedbacks agentFeedbacks[]
 

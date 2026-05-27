@@ -156,7 +156,7 @@ export type CopilotOutputScalarFieldEnum = (typeof CopilotOutputScalarFieldEnum)
 
 export const RubricScalarFieldEnum = {
   id: 'id',
-  copilotOutputId: 'copilotOutputId',
+  copilotSessionExId: 'copilotSessionExId',
   createdAt: 'createdAt'
 } as const
 

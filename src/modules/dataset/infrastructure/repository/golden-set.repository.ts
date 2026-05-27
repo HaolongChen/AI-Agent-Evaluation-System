@@ -49,9 +49,7 @@ export class GoldenSetRepository implements IGoldenSetRepository {
   //     ),
   //   );
   // }
-  async findBySchemaId(
-    schemaId: string
-  ): Promise<GoldenSetEntity> {
+  async findBySchemaId(schemaId: string): Promise<GoldenSetEntity> {
     const goldenSet = await prisma.goldenSet.findUnique({
       where: { schemaId },
     });
@@ -62,7 +60,6 @@ export class GoldenSetRepository implements IGoldenSetRepository {
       goldenSet,
       new GoldenSetEntity(goldenSet, goldenSet.id),
     );
-
   }
   // async addUserInputAssociation(
   //   goldenSetId: string,

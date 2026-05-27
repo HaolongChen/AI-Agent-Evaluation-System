@@ -7,8 +7,6 @@ import type {
 import { BaseSessionEntity } from "../entity/session.entity.ts";
 import type { sessionIdentifierSchema } from "../schema/session.schema.ts";
 
-
-
 export class BaseSessionAggregateRoot<
   T extends typeof sessionIdentifierSchema,
   AEP extends Record<string, Entity> = Record<string, Entity>,

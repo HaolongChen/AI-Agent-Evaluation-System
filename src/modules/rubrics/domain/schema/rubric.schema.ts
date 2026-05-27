@@ -1,7 +1,6 @@
 import z from "zod";
 
-export const rubricSchema = z.object({
-});
+export const rubricSchema = z.object({});
 
 export const criteriaSchema = z.object({
   content: z.string(),

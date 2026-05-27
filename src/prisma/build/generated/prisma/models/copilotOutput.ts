@@ -183,7 +183,6 @@ export type copilotOutputWhereInput = {
   copilotSessionExId?: Prisma.StringFilter<"copilotOutput"> | string
   createdAt?: Prisma.DateTimeFilter<"copilotOutput"> | Date | string
   copilotSession?: Prisma.XOR<Prisma.CopilotSessionScalarRelationFilter, Prisma.copilotSessionWhereInput>
-  rubrics?: Prisma.RubricListRelationFilter
 }
 
 export type copilotOutputOrderByWithRelationInput = {
@@ -193,7 +192,6 @@ export type copilotOutputOrderByWithRelationInput = {
   copilotSessionExId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   copilotSession?: Prisma.copilotSessionOrderByWithRelationInput
-  rubrics?: Prisma.rubricOrderByRelationAggregateInput
 }
 
 export type copilotOutputWhereUniqueInput = Prisma.AtLeast<{
@@ -206,7 +204,6 @@ export type copilotOutputWhereUniqueInput = Prisma.AtLeast<{
   aiResponse?: Prisma.StringFilter<"copilotOutput"> | string
   createdAt?: Prisma.DateTimeFilter<"copilotOutput"> | Date | string
   copilotSession?: Prisma.XOR<Prisma.CopilotSessionScalarRelationFilter, Prisma.copilotSessionWhereInput>
-  rubrics?: Prisma.RubricListRelationFilter
 }, "id" | "copilotSessionExId">
 
 export type copilotOutputOrderByWithAggregationInput = {
@@ -237,7 +234,6 @@ export type copilotOutputCreateInput = {
   aiResponse: string
   createdAt?: Date | string
   copilotSession: Prisma.copilotSessionCreateNestedOneWithoutCopilotOutputInput
-  rubrics?: Prisma.rubricCreateNestedManyWithoutCopilotOutputsInput
 }
 
 export type copilotOutputUncheckedCreateInput = {
@@ -246,7 +242,6 @@ export type copilotOutputUncheckedCreateInput = {
   aiResponse: string
   copilotSessionExId: string
   createdAt?: Date | string
-  rubrics?: Prisma.rubricUncheckedCreateNestedManyWithoutCopilotOutputsInput
 }
 
 export type copilotOutputUpdateInput = {
@@ -255,7 +250,6 @@ export type copilotOutputUpdateInput = {
   aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   copilotSession?: Prisma.copilotSessionUpdateOneRequiredWithoutCopilotOutputNestedInput
-  rubrics?: Prisma.rubricUpdateManyWithoutCopilotOutputsNestedInput
 }
 
 export type copilotOutputUncheckedUpdateInput = {
@@ -264,7 +258,6 @@ export type copilotOutputUncheckedUpdateInput = {
   aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  rubrics?: Prisma.rubricUncheckedUpdateManyWithoutCopilotOutputsNestedInput
 }
 
 export type copilotOutputCreateManyInput = {
@@ -319,11 +312,6 @@ export type copilotOutputMinOrderByAggregateInput = {
   createdAt?: Prisma.SortOrder
 }
 
-export type CopilotOutputScalarRelationFilter = {
-  is?: Prisma.copilotOutputWhereInput
-  isNot?: Prisma.copilotOutputWhereInput
-}
-
 export type copilotOutputCreateNestedOneWithoutCopilotSessionInput = {
   create?: Prisma.XOR<Prisma.copilotOutputCreateWithoutCopilotSessionInput, Prisma.copilotOutputUncheckedCreateWithoutCopilotSessionInput>
   connectOrCreate?: Prisma.copilotOutputCreateOrConnectWithoutCopilotSessionInput
@@ -356,26 +344,11 @@ export type copilotOutputUncheckedUpdateOneWithoutCopilotSessionNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.copilotOutputUpdateToOneWithWhereWithoutCopilotSessionInput, Prisma.copilotOutputUpdateWithoutCopilotSessionInput>, Prisma.copilotOutputUncheckedUpdateWithoutCopilotSessionInput>
 }
 
-export type copilotOutputCreateNestedOneWithoutRubricsInput = {
-  create?: Prisma.XOR<Prisma.copilotOutputCreateWithoutRubricsInput, Prisma.copilotOutputUncheckedCreateWithoutRubricsInput>
-  connectOrCreate?: Prisma.copilotOutputCreateOrConnectWithoutRubricsInput
-  connect?: Prisma.copilotOutputWhereUniqueInput
-}
-
-export type copilotOutputUpdateOneRequiredWithoutRubricsNestedInput = {
-  create?: Prisma.XOR<Prisma.copilotOutputCreateWithoutRubricsInput, Prisma.copilotOutputUncheckedCreateWithoutRubricsInput>
-  connectOrCreate?: Prisma.copilotOutputCreateOrConnectWithoutRubricsInput
-  upsert?: Prisma.copilotOutputUpsertWithoutRubricsInput
-  connect?: Prisma.copilotOutputWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.copilotOutputUpdateToOneWithWhereWithoutRubricsInput, Prisma.copilotOutputUpdateWithoutRubricsInput>, Prisma.copilotOutputUncheckedUpdateWithoutRubricsInput>
-}
-
 export type copilotOutputCreateWithoutCopilotSessionInput = {
   id?: string
   editableText?: string | null
   aiResponse: string
   createdAt?: Date | string
-  rubrics?: Prisma.rubricCreateNestedManyWithoutCopilotOutputsInput
 }
 
 export type copilotOutputUncheckedCreateWithoutCopilotSessionInput = {
@@ -383,7 +356,6 @@ export type copilotOutputUncheckedCreateWithoutCopilotSessionInput = {
   editableText?: string | null
   aiResponse: string
   createdAt?: Date | string
-  rubrics?: Prisma.rubricUncheckedCreateNestedManyWithoutCopilotOutputsInput
 }
 
 export type copilotOutputCreateOrConnectWithoutCopilotSessionInput = {
@@ -407,7 +379,6 @@ export type copilotOutputUpdateWithoutCopilotSessionInput = {
   editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  rubrics?: Prisma.rubricUpdateManyWithoutCopilotOutputsNestedInput
 }
 
 export type copilotOutputUncheckedUpdateWithoutCopilotSessionInput = {
@@ -415,86 +386,8 @@ export type copilotOutputUncheckedUpdateWithoutCopilotSessionInput = {
   editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  rubrics?: Prisma.rubricUncheckedUpdateManyWithoutCopilotOutputsNestedInput
 }
 
-export type copilotOutputCreateWithoutRubricsInput = {
-  id?: string
-  editableText?: string | null
-  aiResponse: string
-  createdAt?: Date | string
-  copilotSession: Prisma.copilotSessionCreateNestedOneWithoutCopilotOutputInput
-}
-
-export type copilotOutputUncheckedCreateWithoutRubricsInput = {
-  id?: string
-  editableText?: string | null
-  aiResponse: string
-  copilotSessionExId: string
-  createdAt?: Date | string
-}
-
-export type copilotOutputCreateOrConnectWithoutRubricsInput = {
-  where: Prisma.copilotOutputWhereUniqueInput
-  create: Prisma.XOR<Prisma.copilotOutputCreateWithoutRubricsInput, Prisma.copilotOutputUncheckedCreateWithoutRubricsInput>
-}
-
-export type copilotOutputUpsertWithoutRubricsInput = {
-  update: Prisma.XOR<Prisma.copilotOutputUpdateWithoutRubricsInput, Prisma.copilotOutputUncheckedUpdateWithoutRubricsInput>
-  create: Prisma.XOR<Prisma.copilotOutputCreateWithoutRubricsInput, Prisma.copilotOutputUncheckedCreateWithoutRubricsInput>
-  where?: Prisma.copilotOutputWhereInput
-}
-
-export type copilotOutputUpdateToOneWithWhereWithoutRubricsInput = {
-  where?: Prisma.copilotOutputWhereInput
-  data: Prisma.XOR<Prisma.copilotOutputUpdateWithoutRubricsInput, Prisma.copilotOutputUncheckedUpdateWithoutRubricsInput>
-}
-
-export type copilotOutputUpdateWithoutRubricsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  copilotSession?: Prisma.copilotSessionUpdateOneRequiredWithoutCopilotOutputNestedInput
-}
-
-export type copilotOutputUncheckedUpdateWithoutRubricsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  editableText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
-
-/**
- * Count Type CopilotOutputCountOutputType
- */
-
-export type CopilotOutputCountOutputType = {
-  rubrics: number
-}
-
-export type CopilotOutputCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  rubrics?: boolean | CopilotOutputCountOutputTypeCountRubricsArgs
-}
-
-/**
- * CopilotOutputCountOutputType without action
- */
-export type CopilotOutputCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the CopilotOutputCountOutputType
-   */
-  select?: Prisma.CopilotOutputCountOutputTypeSelect<ExtArgs> | null
-}
-
-/**
- * CopilotOutputCountOutputType without action
- */
-export type CopilotOutputCountOutputTypeCountRubricsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.rubricWhereInput
-}
 
 
 export type copilotOutputSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -504,8 +397,6 @@ export type copilotOutputSelect<ExtArgs extends runtime.Types.Extensions.Interna
   copilotSessionExId?: boolean
   createdAt?: boolean
   copilotSession?: boolean | Prisma.copilotSessionDefaultArgs<ExtArgs>
-  rubrics?: boolean | Prisma.copilotOutput$rubricsArgs<ExtArgs>
-  _count?: boolean | Prisma.CopilotOutputCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["copilotOutput"]>
 
 export type copilotOutputSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -537,8 +428,6 @@ export type copilotOutputSelectScalar = {
 export type copilotOutputOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "editableText" | "aiResponse" | "copilotSessionExId" | "createdAt", ExtArgs["result"]["copilotOutput"]>
 export type copilotOutputInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   copilotSession?: boolean | Prisma.copilotSessionDefaultArgs<ExtArgs>
-  rubrics?: boolean | Prisma.copilotOutput$rubricsArgs<ExtArgs>
-  _count?: boolean | Prisma.CopilotOutputCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type copilotOutputIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   copilotSession?: boolean | Prisma.copilotSessionDefaultArgs<ExtArgs>
@@ -551,7 +440,6 @@ export type $copilotOutputPayload<ExtArgs extends runtime.Types.Extensions.Inter
   name: "copilotOutput"
   objects: {
     copilotSession: Prisma.$copilotSessionPayload<ExtArgs>
-    rubrics: Prisma.$rubricPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -954,7 +842,6 @@ readonly fields: copilotOutputFieldRefs;
 export interface Prisma__copilotOutputClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   copilotSession<T extends Prisma.copilotSessionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.copilotSessionDefaultArgs<ExtArgs>>): Prisma.Prisma__copilotSessionClient<runtime.Types.Result.GetResult<Prisma.$copilotSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  rubrics<T extends Prisma.copilotOutput$rubricsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.copilotOutput$rubricsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$rubricPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1387,30 +1274,6 @@ export type copilotOutputDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many copilotOutputs to delete.
    */
   limit?: number
-}
-
-/**
- * copilotOutput.rubrics
- */
-export type copilotOutput$rubricsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the rubric
-   */
-  select?: Prisma.rubricSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the rubric
-   */
-  omit?: Prisma.rubricOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.rubricInclude<ExtArgs> | null
-  where?: Prisma.rubricWhereInput
-  orderBy?: Prisma.rubricOrderByWithRelationInput | Prisma.rubricOrderByWithRelationInput[]
-  cursor?: Prisma.rubricWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.RubricScalarFieldEnum | Prisma.RubricScalarFieldEnum[]
 }
 
 /**

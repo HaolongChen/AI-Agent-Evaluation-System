@@ -1511,19 +1511,9 @@ type CopilotOutput {
   editableText: String
 
   """
-  Parent golden set ID
-  """
-  goldenSetId: String!
-
-  """
   Unique identifier
   """
   id: String!
-
-  """
-  Associated user input ID
-  """
-  userInputId: String!
 }
 
 type CopilotSession {
@@ -2689,19 +2679,9 @@ Identified uniquely by (schemaId, copilotType, modelName).
 """
 type GoldenSet {
   """
-  Type of copilot being evaluated
-  """
-  copilotType: CopilotType!
-
-  """
   Unique database identifier
   """
   id: String!
-
-  """
-  Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')
-  """
-  modelName: String
 
   """
   External project identifier from Functorz
@@ -2710,37 +2690,27 @@ type GoldenSet {
 }
 
 input GoldenSetFilters {
-  copilotType: CopilotType
-  modelName: String
   schemaId: String
 }
 
 input GoldenSetInput {
-  copilotType: CopilotType
-  modelName: String
   schemaId: String!
 }
 
 type GoldenSetWithInputs {
-  """
-  Type of copilot being evaluated
-  """
-  copilotType: CopilotType!
-
   """
   Unique database identifier
   """
   id: String!
 
   """
-  Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')
-  """
-  modelName: String
-
-  """
   External project identifier from Functorz
   """
   schemaId: String!
+
+  """
+  Type of copilot being evaluated
+  """
   userInputs: [UserInput]!
 }
 
@@ -7133,9 +7103,7 @@ type RpsAtInstant {
 
 type Rubric {
   criterion: [Criteria!]!
-  goldenSetId: String!
   id: String!
-  userInputId: String!
 }
 
 enum RuntimeAlertType {

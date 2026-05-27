@@ -1,29 +1,10 @@
-import type { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
-import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
 import type { ICopilotSessionRepository } from "../domain/interface/copilot-session.interface.ts";
 
 export class GetCopilotOutputUseCase {
-  constructor(
-    private repository: { copilotSessionRepository: ICopilotSessionRepository },
-  ) {}
+  constructor(private repository: ICopilotSessionRepository) {}
 
-  async execute(copilotInputId: string): Promise<CopilotOutputEntity>;
-  async execute(filters: {
-    goldenSetId: string;
-    userInputId: string;
-  }): Promise<CopilotOutputEntity[]>;
-  async execute(
-    arguments_: string | { goldenSetId: string; userInputId: string },
-  ) {
-    if (typeof arguments_ === "string") {
-      return await this.repository.copilotOutputRepository.findById(arguments_);
-    } else {
-      const results =
-        await this.repository.copilotOutputRepository.getByGoldenSetIdAndUserInputId(
-          arguments_.goldenSetId,
-          arguments_.userInputId,
-        );
-      return results;
-    }
+  async execute(copilotSessionId: string) {
+    const result = await this.repository.findById(copilotSessionId);
+    return result.getEntity("copilotOutput")[0];
   }
 }

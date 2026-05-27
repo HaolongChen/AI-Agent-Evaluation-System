@@ -13,6 +13,10 @@ import type { IUserInputRepository } from "../modules/dataset/domain/interface/u
 import { GoldenSetRepository } from "../modules/dataset/infrastructure/repository/golden-set.repository.ts";
 import { ProjectRepository } from "../modules/dataset/infrastructure/repository/project.repository.ts";
 import { UserInputRepository } from "../modules/dataset/infrastructure/repository/user-input.repository.ts";
+import type { ICopilotSessionRepository } from "../modules/copilot-session/domain/interface/copilot-session.interface.ts";
+import type { ICopilotServerRepository } from "../modules/copilot-session/domain/interface/copilot-server.interface.ts";
+import { CopilotSessionRepository } from "../modules/copilot-session/infrastructure/repository/copilot-session.repository.ts";
+import { CopilotServerRepository } from "../modules/copilot-session/infrastructure/repository/copilot-server.repository.ts";
 
 export function createRepositoryBundle(): RepositoryInjectionType {
   const projectRepository = new ProjectRepository();
@@ -24,6 +28,8 @@ export function createRepositoryBundle(): RepositoryInjectionType {
     copilotOutputRepository: new CopilotOutputRepository(),
     copilotInputRepository: new CopilotInputRepository(),
     agentFeedbackRepository: new AgentFeedbackRepository(),
+    copilotServerRepository: new CopilotServerRepository(),
+    copilotSessionRepository: new CopilotSessionRepository(),
   };
 }
 
@@ -34,6 +40,8 @@ export type RepositoryInjectionType = {
   rubricRepository: IRubricRepository;
   copilotOutputRepository: ICopilotOutputRepository;
   copilotInputRepository: ICopilotInputRepository;
+  copilotSessionRepository: ICopilotSessionRepository;
+  copilotServerRepository: ICopilotServerRepository;
   agentFeedbackRepository: IRepository<AgentFeedbackEntity>;
 };
 

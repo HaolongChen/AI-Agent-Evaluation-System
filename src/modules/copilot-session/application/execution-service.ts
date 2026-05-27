@@ -1,11 +1,9 @@
 import type { Account } from "../../account/application/account-handler.ts";
 import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
-import type { ICopilotOutputRepository } from "../domain/interface/copilot-output.interface.ts";
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { createNewSession } from "../infrastructure/copilot-network.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
-import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 import type { ICopilotInputRepository } from "../../dataset/domain/interface/copilot-input.interface.ts";
 import type { IProjectLifecycle } from "../../dataset/domain/interface/project-lifecycle.interface.ts";
 import { CopilotSessionAggregate } from "../domain/aggregate/copilot-session.aggregate.ts";
@@ -92,7 +90,7 @@ export class ExecuteCopilotUseCase {
         gqlClient,
       );
       const orchestrator = new SessionOrchestrator(runner, copilotJobEntity);
-      const result = await orchestrator.run();
+      await orchestrator.run();
       await this.repository.copilotSessionRepository.save(copilotSession);
       return copilotSession.getEntity("copilotOutput")[0].getData();
     } catch (error) {

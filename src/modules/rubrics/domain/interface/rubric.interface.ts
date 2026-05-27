@@ -1,11 +1,12 @@
+import type { CopilotSessionAggregate } from "../../../copilot-session/domain/aggregate/copilot-session.aggregate.ts";
 import type { IRepository } from "../../../shared/domain/interface/repository.interface.ts";
 import type { RubricAggregate } from "../aggregate/rubric.aggregate.ts";
-import type { CriteriaEntity, RubricEntity } from "../entity/rubric.entity.ts";
+import type { CriteriaEntity } from "../entity/rubric.entity.ts";
 
-export interface IRubricRepository extends IRepository<RubricEntity> {
-  saveWithCriterion(rubricAggregate: RubricAggregate): Promise<void>;
-
-  getCriterionByRubricId(rubricId: string): Promise<CriteriaEntity[]>;
+export interface IRubricRepository extends IRepository<RubricAggregate> {
+  getByCopilotSession(
+    copilotSession: CopilotSessionAggregate,
+  ): Promise<Array<RubricAggregate>>;
 
   addCriterionToRubric(
     rubricId: string,
@@ -15,11 +16,4 @@ export interface IRubricRepository extends IRepository<RubricEntity> {
   deleteCriterion(criterionId: string): Promise<void>;
 
   deleteRubric(rubricId: string): Promise<void>;
-
-  getByGoldenSetIdAndUserInputId(
-    goldenSetId: string,
-    userInputId: string,
-  ): Promise<RubricAggregate[]>;
-
-  findById(id: string): Promise<RubricAggregate>;
 }

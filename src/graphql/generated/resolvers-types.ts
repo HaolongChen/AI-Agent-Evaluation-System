@@ -49,12 +49,8 @@ export type CopilotOutput = {
   createdAt: Scalars["String"]["output"];
   /** The copilot's generated output content */
   editableText: Maybe<Scalars["String"]["output"]>;
-  /** Parent golden set ID */
-  goldenSetId: Scalars["String"]["output"];
   /** Unique identifier */
   id: Scalars["String"]["output"];
-  /** Associated user input ID */
-  userInputId: Scalars["String"]["output"];
 };
 
 /** Type of AI Copilot being evaluated. */
@@ -159,38 +155,27 @@ export enum EvaluatorType {
  */
 export type GoldenSet = {
   __typename: "GoldenSet";
-  /** Type of copilot being evaluated */
-  copilotType: CopilotType;
   /** Unique database identifier */
   id: Scalars["String"]["output"];
-  /** Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro') */
-  modelName: Maybe<Scalars["String"]["output"]>;
   /** External project identifier from Functorz */
   schemaId: Scalars["String"]["output"];
 };
 
 export type GoldenSetFilters = {
-  copilotType: InputMaybe<CopilotType>;
-  modelName: InputMaybe<Scalars["String"]["input"]>;
   schemaId: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type GoldenSetInput = {
-  copilotType: InputMaybe<CopilotType>;
-  modelName: InputMaybe<Scalars["String"]["input"]>;
   schemaId: Scalars["String"]["input"];
 };
 
 export type GoldenSetWithInputs = {
   __typename: "GoldenSetWithInputs";
-  /** Type of copilot being evaluated */
-  copilotType: CopilotType;
   /** Unique database identifier */
   id: Scalars["String"]["output"];
-  /** Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro') */
-  modelName: Maybe<Scalars["String"]["output"]>;
   /** External project identifier from Functorz */
   schemaId: Scalars["String"]["output"];
+  /** Type of copilot being evaluated */
   userInputs: Array<Maybe<UserInput>>;
 };
 
@@ -321,9 +306,7 @@ export type ResultFilters = {
 export type Rubric = {
   __typename: "Rubric";
   criterion: Array<Criteria>;
-  goldenSetId: Scalars["String"]["output"];
   id: Scalars["String"]["output"];
-  userInputId: Scalars["String"]["output"];
 };
 
 export type SessionFilters = {
@@ -560,9 +543,7 @@ export type CopilotOutputResolvers<
     ParentType,
     ContextType
   >;
-  goldenSetId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  userInputId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
 }>;
 
 export type CriteriaResolvers<
@@ -643,9 +624,7 @@ export type GoldenSetResolvers<
   ParentType extends ResolversParentTypes["GoldenSet"] =
     ResolversParentTypes["GoldenSet"],
 > = ResolversObject<{
-  copilotType: Resolver<ResolversTypes["CopilotType"], ParentType, ContextType>;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  modelName: Resolver<Maybe<ResolversTypes["String"]>, ParentType, ContextType>;
   schemaId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
 }>;
 
@@ -654,9 +633,7 @@ export type GoldenSetWithInputsResolvers<
   ParentType extends ResolversParentTypes["GoldenSetWithInputs"] =
     ResolversParentTypes["GoldenSetWithInputs"],
 > = ResolversObject<{
-  copilotType: Resolver<ResolversTypes["CopilotType"], ParentType, ContextType>;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  modelName: Resolver<Maybe<ResolversTypes["String"]>, ParentType, ContextType>;
   schemaId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   userInputs: Resolver<
     Array<Maybe<ResolversTypes["UserInput"]>>,
@@ -817,9 +794,7 @@ export type RubricResolvers<
     ParentType,
     ContextType
   >;
-  goldenSetId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  userInputId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
 }>;
 
 export type UserInputResolvers<

@@ -1,8 +1,8 @@
 import { repository } from "../../DI/repository.ts";
-import { ExecuteCopilotUseCase } from "../../modules/copilot-output/application/execution-service.ts";
-import type { CopilotOutputEntity } from "../../modules/copilot-output/domain/entity/copilot-output.entity.ts";
+import { ExecuteCopilotUseCase } from "../../modules/copilot-session/application/execution-service.ts";
+import type { CopilotOutputEntity } from "../../modules/copilot-session/domain/entity/copilot-output.entity.ts";
 import { GenerateRubricUseCase } from "../../modules/rubrics/application/generate-rubric.ts";
-import { ProjectLifecycleAdapter } from "../../modules/copilot-input/application/project-lifecycle.ts";
+import { ProjectLifecycleAdapter } from "../../modules/dataset/application/project-lifecycle.ts";
 import type { RubricAggregate } from "../../modules/rubrics/domain/aggregate/rubric.aggregate.ts";
 
 import type {
@@ -14,22 +14,20 @@ import type {
   Rubric,
 } from "../generated/resolvers-types.ts";
 import { getMyAccount } from "../../DI/account.ts";
+import { GetCopilotInputByFiltersUseCase } from "../../modules/dataset/application/form-copilot-input.ts";
 
 const toGraphqlRubric = (
   rubric: ReturnType<RubricAggregate["getAllData"]>,
 ): Rubric => {
   return {
     __typename: "Rubric",
-    ...rubric,
-    criterion: rubric.criterion.map((item) => ({
-      id: item.id,
-      rubricId: item.rubricId,
-      content: item.content,
-      expectation: item.expectedAnswer,
-      weight: Number(item.weight),
-      reasoning: item.reasoning,
-      createdAt: item.createdAt!.toISOString(),
+    ...rubric.aggregator,
+    criterion: rubric.entities.criterion.map((item) => ({
+      ...item.getData(),
+      expectation: item.getData("expectedAnswer"),
+      rubricId: rubric.aggregator.id,
       __typename: "Criteria",
+      reasoning: item.getData("reasoning") ?? "",
     })),
   };
 };
@@ -57,13 +55,27 @@ export const rubricResolver = {
     getRubricByContext: async (
       _: unknown,
       arguments_: QueryGetRubricByContextArguments,
-    ): Promise<Rubric[]> => {
-      const rubrics =
-        await repository.rubricRepository.getByGoldenSetIdAndUserInputId(
-          arguments_.context.goldenSetId,
-          arguments_.context.userInputId,
+    ): Promise<Rubric[][]> => {
+      const getCopilotInputByFiltersUseCase =
+        new GetCopilotInputByFiltersUseCase({
+          copilotInputRepository: repository.copilotInputRepository,
+        });
+      const copilotInputs = await getCopilotInputByFiltersUseCase.execute({
+        goldenSetId: arguments_.context.goldenSetId,
+        userInputId: arguments_.context.userInputId,
+      });
+      const sessions =
+        await repository.copilotSessionRepository.getByCopilotInput(
+          copilotInputs[0],
         );
-      return rubrics.map((rubric) => toGraphqlRubric(rubric.getAllData()));
+      const rubrics = await Promise.all(
+        sessions.map((session) =>
+          repository.rubricRepository.getByCopilotSession(session),
+        ),
+      );
+      return rubrics.map((rubric) =>
+        rubric.map((item) => toGraphqlRubric(item.getAllData())),
+      );
     },
   },
 
@@ -79,7 +91,8 @@ export const rubricResolver = {
       );
       const executeCopilotUseCase = new ExecuteCopilotUseCase(
         {
-          copilotOutputRepository: repository.copilotOutputRepository,
+          copilotSessionRepository: repository.copilotSessionRepository,
+          copilotServerRepository: repository.copilotServerRepository,
           copilotInputRepository: repository.copilotInputRepository,
         },
         projectLifecycle,

@@ -69,10 +69,10 @@ type GoldenSet {
   id: String!
   "External project identifier from Functorz"
   schemaId: String!
-  "Type of copilot being evaluated"
-  copilotType: CopilotType!
-  "Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
-  modelName: String
+  # "Type of copilot being evaluated"
+  # copilotType: CopilotType!
+  # "Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
+  # modelName: String
 }
 
 type GoldenSetsAndUserInputs {
@@ -86,9 +86,9 @@ type GoldenSetWithInputs {
   "External project identifier from Functorz"
   schemaId: String!
   "Type of copilot being evaluated"
-  copilotType: CopilotType!
-  "Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
-  modelName: String
+  # copilotType: CopilotType!
+  # "Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
+  # modelName: String
   userInputs: [UserInput]!
 }
 
@@ -122,10 +122,6 @@ including performance metrics (latency, tokens, context usage).
 type CopilotOutput {
   "Unique identifier"
   id: String!
-  "Parent golden set ID"
-  goldenSetId: String!
-  "Associated user input ID"
-  userInputId: String!
   "The copilot's generated output content"
   editableText: String
   aiResponse: String!
@@ -136,8 +132,6 @@ type CopilotOutput {
 
 type Rubric {
   id: String!
-  goldenSetId: String!
-  userInputId: String!
   criterion: [Criteria!]!
 }
 
@@ -216,8 +210,8 @@ type EvaluationResult {
 
 input GoldenSetFilters {
   schemaId: String
-  copilotType: CopilotType
-  modelName: String
+  # copilotType: CopilotType
+  # modelName: String
 }
 
 input SessionFilters {
@@ -256,8 +250,8 @@ input HumanEvaluationInput {
 
 input GoldenSetInput {
   schemaId: String!
-  copilotType: CopilotType
-  modelName: String
+  # copilotType: CopilotType
+  # modelName: String
 }
 
 input UserInputInput {

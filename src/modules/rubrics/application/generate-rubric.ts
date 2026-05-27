@@ -1,5 +1,5 @@
 import { generateRubrics } from "./rubricsGenerator/rubrics-generator.ts";
-import type { ICopilotInputRepository } from "../../copilot-input/domain/interface/copilot-input.interface.ts";
+import type { ICopilotInputRepository } from "../../dataset/domain/interface/copilot-input.interface.ts";
 import type { IRubricRepository } from "../domain/interface/rubric.interface.ts";
 import { RubricAggregate } from "../domain/aggregate/rubric.aggregate.ts";
 import {

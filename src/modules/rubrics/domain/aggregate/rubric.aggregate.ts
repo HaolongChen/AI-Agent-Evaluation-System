@@ -4,12 +4,12 @@ import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
 import { RubricEntity, type CriteriaEntity } from "../entity/rubric.entity.ts";
 import type { rubricSchema } from "../schema/rubric.schema.ts";
 
-export class RubricAggregate extends AggregateRoot<
-  typeof rubricSchema,
-  EntityMetadata,
-  { criterion: CriteriaEntity; copilotSession: CopilotSessionAggregate }
-> {
-
+export class RubricAggregate<
+  T extends {
+    criterion: CriteriaEntity;
+    copilotSession: CopilotSessionAggregate;
+  } = { criterion: CriteriaEntity; copilotSession: CopilotSessionAggregate },
+> extends AggregateRoot<typeof rubricSchema, EntityMetadata, T> {
   constructor(copilotSessionAggregate: CopilotSessionAggregate, id?: string) {
     super(new RubricEntity(id));
     this.setEntity("copilotSession", copilotSessionAggregate);

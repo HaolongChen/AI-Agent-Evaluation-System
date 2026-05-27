@@ -3,6 +3,21 @@ import type { IGoldenSetRepository } from "../../domain/interface/golden-set.int
 import { prisma } from "../../../../config/prisma.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 
+export type GoldenSetRepositoryType = {
+  id: string;
+  schemaId: string;
+  updatedAt: Date;
+};
+
+export const goldenSetDataMapper = (
+  goldenSet: GoldenSetRepositoryType,
+): GoldenSetEntity => {
+  return repositoryDateMapper(
+    goldenSet,
+    new GoldenSetEntity(goldenSet, goldenSet.id),
+  );
+};
+
 export class GoldenSetRepository implements IGoldenSetRepository {
   // async getCopilotInputByGoldenSetIdAndUserInputId(
   //   goldenSetId: string,
@@ -56,10 +71,7 @@ export class GoldenSetRepository implements IGoldenSetRepository {
     if (!goldenSet) {
       throw new Error(`GoldenSet with Schema ID ${schemaId} not found`);
     }
-    return repositoryDateMapper(
-      goldenSet,
-      new GoldenSetEntity(goldenSet, goldenSet.id),
-    );
+    return goldenSetDataMapper(goldenSet);
   }
   // async addUserInputAssociation(
   //   goldenSetId: string,
@@ -97,9 +109,6 @@ export class GoldenSetRepository implements IGoldenSetRepository {
     if (!goldenSet) {
       throw new Error(`GoldenSet with ID ${id} not found`);
     }
-    return repositoryDateMapper(
-      goldenSet,
-      new GoldenSetEntity(goldenSet, goldenSet.id),
-    );
+    return goldenSetDataMapper(goldenSet);
   }
 }

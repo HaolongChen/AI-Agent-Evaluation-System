@@ -58,7 +58,7 @@ type RawEntityValue<
   M extends EntityMetadata,
   K extends EntityKey<T, M>,
 > = K extends keyof M
-  ? M[K]
+  ? M[K & keyof M]
   : K extends keyof z.infer<T>
     ? z.infer<T>[K & keyof z.infer<T>]
     : never;
@@ -77,20 +77,20 @@ export class Entity<
   M extends EntityMetadata = EntityMetadata,
 > {
   private _data: z.infer<T>;
-  private _metadata: M;
+  private _metadata: Partial<M>;
   public schema: T;
   constructor(entity: Entity<T, M>);
   constructor(
     data: z.infer<T>,
     schema: T,
     id?: string,
-    metadata?: Omit<EntityMetadata, "id">,
+    metadata?: Partial<Omit<M, "id">>,
   );
   constructor(
     argument1: Entity<T, M> | z.infer<T>,
     argument2?: T,
     argument3?: string,
-    argument4?: Exclude<M, { id: string }>,
+    argument4?: Partial<Omit<M, "id">>,
   ) {
     if (argument1 instanceof Entity) {
       this._data = argument1._data;

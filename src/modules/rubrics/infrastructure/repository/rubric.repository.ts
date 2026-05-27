@@ -1,5 +1,11 @@
 import { prisma } from "../../../../config/prisma.ts";
 import type { Decimal } from "../../../../prisma/build/generated/prisma/internal/prismaNamespace.ts";
+import type { CopilotSessionAggregate } from "../../../copilot-session/domain/aggregate/copilot-session.aggregate.ts";
+import {
+  copilotSessionDataMapper,
+  type CopilotSessionDataMapperParameter,
+  type CopilotSessionRepositoryType,
+} from "../../../copilot-session/infrastructure/repository/copilot-session.repository.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { RubricAggregate } from "../../domain/aggregate/rubric.aggregate.js";
 import {
@@ -8,7 +14,7 @@ import {
 } from "../../domain/entity/rubric.entity.js";
 import type { IRubricRepository } from "../../domain/interface/rubric.interface.ts";
 
-interface Criteria {
+export type CriteriaRepositoryType = {
   id: string;
   createdAt: Date;
   rubricId: string;
@@ -16,42 +22,65 @@ interface Criteria {
   expectedAnswer: boolean;
   weight: Decimal;
   reasoning: string | null;
-}
+};
 
-interface Rubric {
+export type RubricRepositoryType = {
   id: string;
-  goldenSetId: string;
-  userInputId: string;
+  copilotSessionExId: string;
   createdAt: Date;
-  criterion: Criteria[];
-}
-export class RubricRepository implements IRubricRepository {
-  private buildCriteriaEntity(criteria: Criteria): CriteriaEntity {
-    return repositoryDateMapper(
-      criteria,
-      new CriteriaEntity(
-        {
-          ...criteria,
-          weight: Number(criteria.weight),
-          reasoning: criteria.reasoning ?? undefined,
-        },
-        criteria.id,
-      ),
-    );
-  }
-  private buildRubricAggregate(rubric: Rubric): RubricAggregate {
-    const rubricAggregate = new RubricAggregate(
-      repositoryDateMapper(rubric, new RubricEntity(rubric, rubric.id)),
-    );
-    for (const criteria of rubric.criterion) {
-      rubricAggregate.pushEntity(
-        "criterion",
-        this.buildCriteriaEntity(criteria),
-      );
-    }
-    return rubricAggregate;
-  }
+  criterion?: CriteriaRepositoryType[];
+  copilotSession?: CopilotSessionRepositoryType;
+};
 
+export const criteriaDataMapper = (
+  data: CriteriaRepositoryType,
+): CriteriaEntity => {
+  return repositoryDateMapper(
+    data,
+    new CriteriaEntity(
+      {
+        ...data,
+        weight: Number(data.weight),
+        reasoning: data.reasoning ?? undefined,
+      },
+      data.id,
+    ),
+  );
+};
+
+export type RubricDataMapperParameter = {
+  criterion?: CriteriaEntity[];
+  copilotSession?: {
+    aggregate?: CopilotSessionAggregate;
+    entity?: CopilotSessionDataMapperParameter;
+  };
+};
+
+export const rubricDataMapper = (
+  data: RubricRepositoryType,
+  entity?: RubricDataMapperParameter,
+): RubricAggregate => {
+  const criterion = data.criterion
+    ? data.criterion.map((criteria) => criteriaDataMapper(criteria))
+    : (entity?.criterion ?? []);
+  const copilotSession = data.copilotSession
+    ? copilotSessionDataMapper(
+        data.copilotSession,
+        entity?.copilotSession?.entity,
+      )
+    : entity?.copilotSession?.aggregate;
+  if (!copilotSession) {
+    throw new Error("Missing required copilotSession data for RubricAggregate");
+  }
+  const rubricAggregate = repositoryDateMapper(
+    data,
+    new RubricAggregate(copilotSession, data.id),
+  );
+  rubricAggregate.setEntity("criterion", criterion);
+  return rubricAggregate;
+};
+
+export class RubricRepository implements IRubricRepository {
   async getByGoldenSetIdAndUserInputId(
     goldenSetId: string,
     userInputId: string,

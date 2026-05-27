@@ -1,46 +1,28 @@
 import { prisma } from "../../../../config/prisma.ts";
 import { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
-import { GoldenSetEntity } from "../../../dataset/domain/entity/golden-set.entity.ts";
-import { UserInputEntity } from "../../../dataset/domain/entity/user-input.entity.ts";
+import {
+  copilotInputDataMapper,
+  type CopilotInputDataMapperParameter,
+  type CopilotInputRepositoryType,
+} from "../../../dataset/infrastructure/repository/copilot-input.repository.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { CopilotSessionAggregate } from "../../domain/aggregate/copilot-session.aggregate.ts";
 import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import { CopilotServerEntity } from "../../domain/entity/copilot-server.entity.ts";
 import type { ICopilotSessionRepository } from "../../domain/interface/copilot-session.interface.ts";
-import { CopilotOutputRepository } from "./copilot-output.repository.ts";
+import {
+  CopilotOutputRepository,
+  type CopilotOutputRepositoryType,
+} from "./copilot-output.repository.ts";
+import {
+  copilotServerDataMapper,
+  type CopilotServerRepositoryType,
+} from "./copilot-server.repository.ts";
 
-type CopilotSessionReturnType = {
-  copilotInput: {
-    id: string;
-    goldenSetId: string;
-    userInputId: string;
-    createdAt: Date;
-    goldenSet?: {
-      id: string;
-      schemaId: string;
-      updatedAt: Date;
-    };
-    userInput?: {
-      id: string;
-      content: string;
-      createdAt: Date;
-      createdBy: string;
-    };
-  };
-  copilotOutput: {
-    id: string;
-    editableText: string | null;
-    aiResponse: string;
-    copilotSessionExId: string;
-    createdAt: Date;
-  } | null;
-  copilotServer: {
-    id: string;
-    name: string;
-    description: string | null;
-    endpoint: string;
-    createdAt: Date;
-  };
+export type CopilotSessionRepositoryType = {
+  copilotInput?: CopilotInputRepositoryType;
+  copilotOutput?: CopilotOutputRepositoryType | null;
+  copilotServer?: CopilotServerRepositoryType;
 } & {
   id: string;
   copilotInputId: string;
@@ -48,42 +30,34 @@ type CopilotSessionReturnType = {
   createdAt: Date;
 };
 
+export type CopilotSessionDataMapperParameter = {
+  copilotInput?: {
+    aggregate?: CopilotInputAggregate;
+    entity?: CopilotInputDataMapperParameter;
+  };
+  copilotServer?: CopilotServerEntity;
+};
+
 export const copilotSessionDataMapper = (
-  data: CopilotSessionReturnType,
-  stationaryCopilotInputAggregate?: CopilotInputAggregate,
-  stationaryCopilotServerEntity?: CopilotServerEntity,
+  data: CopilotSessionRepositoryType,
+  entity?: CopilotSessionDataMapperParameter,
 ): CopilotSessionAggregate => {
+  const copilotInput =
+    entity?.copilotInput?.aggregate ??
+    (data.copilotInput
+      ? copilotInputDataMapper(data.copilotInput, entity?.copilotInput?.entity)
+      : undefined);
+  const copilotServer =
+    entity?.copilotServer ??
+    (data.copilotServer
+      ? copilotServerDataMapper(data.copilotServer)
+      : undefined);
+  if (!copilotInput || !copilotServer) {
+    throw new Error("Missing required data for CopilotSessionAggregate");
+  }
   const result = repositoryDateMapper(
     data,
-    new CopilotSessionAggregate(
-      repositoryDateMapper(
-        data.copilotInput,
-        stationaryCopilotInputAggregate ||
-          new CopilotInputAggregate(
-            repositoryDateMapper(
-              data.copilotInput.goldenSet!,
-              new GoldenSetEntity(
-                data.copilotInput.goldenSet!,
-                data.copilotInput.goldenSetId,
-              ),
-            ),
-            repositoryDateMapper(
-              data.copilotInput.userInput!,
-              new UserInputEntity(
-                data.copilotInput.userInput!,
-                data.copilotInput.userInputId,
-              ),
-            ),
-            data.copilotInput.id,
-          ),
-      ),
-      repositoryDateMapper(
-        data.copilotServer,
-        stationaryCopilotServerEntity ||
-          new CopilotServerEntity(data.copilotServer, data.copilotServerId),
-      ),
-      data.id,
-    ),
+    new CopilotSessionAggregate(copilotInput, copilotServer, data.id),
   );
   if (data.copilotOutput) {
     result.setEntity(
@@ -110,7 +84,7 @@ export class CopilotSessionRepository implements ICopilotSessionRepository {
       },
     });
     return results.map((result) => {
-      return copilotSessionDataMapper(result, undefined, copilotServer);
+      return copilotSessionDataMapper(result, { copilotServer });
     });
   }
   async saveCopilotOutput(data: CopilotSessionAggregate): Promise<void> {
@@ -165,7 +139,9 @@ export class CopilotSessionRepository implements ICopilotSessionRepository {
       },
     });
     return results.map((result) => {
-      return copilotSessionDataMapper(result, copilotInput);
+      return copilotSessionDataMapper(result, {
+        copilotInput: { aggregate: copilotInput },
+      });
     });
   }
 }

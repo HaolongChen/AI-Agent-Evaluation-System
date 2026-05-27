@@ -3,6 +3,23 @@ import { repositoryDateMapper } from "../../../shared/infrastructure/repository.
 import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import type { ICopilotOutputRepository } from "../../domain/interface/copilot-output.interface.ts";
 
+export type CopilotOutputRepositoryType = {
+  id: string;
+  editableText: string | null;
+  aiResponse: string;
+  copilotSessionExId: string;
+  createdAt: Date;
+};
+
+export const copilotOutputDataMapper = (
+  copilotOutput: CopilotOutputRepositoryType,
+): CopilotOutputEntity => {
+  return repositoryDateMapper(
+    copilotOutput,
+    new CopilotOutputEntity(copilotOutput, copilotOutput.id),
+  );
+};
+
 export class CopilotOutputRepository implements ICopilotOutputRepository {
   async save(entity: CopilotOutputEntity): Promise<void> {
     const output = await prisma.copilotOutput.create({
@@ -17,9 +34,6 @@ export class CopilotOutputRepository implements ICopilotOutputRepository {
     if (!copilotOutput) {
       throw new Error(`CopilotOutput with id ${id} not found`);
     }
-    return repositoryDateMapper(
-      copilotOutput,
-      new CopilotOutputEntity(copilotOutput, copilotOutput.id),
-    );
+    return copilotOutputDataMapper(copilotOutput);
   }
 }

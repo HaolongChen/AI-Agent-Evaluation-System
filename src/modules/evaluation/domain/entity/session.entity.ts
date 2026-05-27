@@ -1,30 +1,7 @@
 import z from "zod";
-import {
-  Entity,
-  type EntityMetadata,
-} from "../../../shared/domain/entity/entity.ts";
-import {
-  evaluationSessionSchema,
-  sessionIdentifierSchema,
-} from "../schema/session.schema.ts";
-import type { evaluationRecordSchema } from "../schema/record.schema.ts";
-import type { evaluationResultSchema } from "../schema/result.schema.ts";
-
-export class BaseSessionEntity<
-  T extends
-    | typeof evaluationSessionSchema
-    | typeof evaluationRecordSchema
-    | typeof evaluationResultSchema
-    | typeof sessionIdentifierSchema,
-  M extends EntityMetadata = EntityMetadata,
-> extends Entity<T, M> {
-  public get identifier(): z.infer<typeof sessionIdentifierSchema> {
-    const fields = Object.values(z.keyof(sessionIdentifierSchema).enum);
-    return this.getData(fields) as z.infer<typeof sessionIdentifierSchema>;
-  }
-}
-
-export class EvaluationSessionEntity extends BaseSessionEntity<
+import { Entity } from "../../../shared/domain/entity/entity.ts";
+import { evaluationSessionSchema } from "../schema/session.schema.ts";
+export class EvaluationSessionEntity extends Entity<
   typeof evaluationSessionSchema
 > {
   constructor(data: z.infer<typeof evaluationSessionSchema>, id?: string) {

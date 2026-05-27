@@ -3,6 +3,19 @@ import { repositoryDateMapper } from "../../../shared/infrastructure/repository.
 import { UserInputEntity } from "../../domain/entity/user-input.entity.js";
 import type { IUserInputRepository } from "../../domain/interface/user-input.interface.ts";
 
+export type UserInputRepositoryType = {
+  id: string;
+  content: string;
+  createdAt: Date;
+  createdBy: string;
+};
+
+export const userInputDataMapper = (
+  data: UserInputRepositoryType,
+): UserInputEntity => {
+  return repositoryDateMapper(data, new UserInputEntity(data, data.id));
+};
+
 export class UserInputRepository implements IUserInputRepository {
   // async getByGoldenSetId(goldenSetId: string): Promise<Array<UserInputEntity>> {
   //   const goldenSets = await prisma.goldenSet_userInput.findMany({
@@ -19,12 +32,7 @@ export class UserInputRepository implements IUserInputRepository {
 
   async getAll(): Promise<Array<UserInputEntity>> {
     const userInputs = await prisma.userInput.findMany();
-    return userInputs.map((userInput) =>
-      repositoryDateMapper(
-        userInput,
-        new UserInputEntity(userInput, userInput.id),
-      ),
-    );
+    return userInputs.map((element) => userInputDataMapper(element));
   }
   // async addGoldenSetAssociation(
   //   userInputId: string,
@@ -64,9 +72,6 @@ export class UserInputRepository implements IUserInputRepository {
     if (!userInput) {
       throw new Error(`UserInput with ID ${id} not found`);
     }
-    return repositoryDateMapper(
-      userInput,
-      new UserInputEntity(userInput, userInput.id),
-    );
+    return userInputDataMapper(userInput);
   }
 }

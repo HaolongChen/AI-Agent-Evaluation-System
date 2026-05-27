@@ -32,8 +32,14 @@ export type Scalars = {
 };
 
 export type CopilotInput = {
+  __typename: "CopilotInput";
+  copilotSessions: Array<Maybe<CopilotSession>>;
+  goldenSet: GoldenSet;
+  userInput: UserInput;
+};
+
+export type CopilotInputInput = {
   goldenSetId: Scalars["String"]["input"];
-  projectExId: InputMaybe<Scalars["String"]["input"]>;
   userInputId: Scalars["String"]["input"];
 };
 
@@ -53,6 +59,13 @@ export type CopilotOutput = {
   id: Scalars["String"]["output"];
 };
 
+export type CopilotSession = {
+  __typename: "CopilotSession";
+  copilotOutput: Maybe<CopilotOutput>;
+  id: Scalars["String"]["output"];
+  rubrics: Array<Maybe<Rubric>>;
+};
+
 /** Type of AI Copilot being evaluated. */
 export enum CopilotType {
   /** Workflow builder for action flows */
@@ -70,7 +83,7 @@ export enum CopilotType {
 export type Criteria = {
   __typename: "Criteria";
   content: Scalars["String"]["output"];
-  expectation: Scalars["Boolean"]["output"];
+  expectedAnswer: Scalars["Boolean"]["output"];
   id: Scalars["String"]["output"];
   reasoning: Maybe<Scalars["String"]["output"]>;
   rubricId: Scalars["String"]["output"];
@@ -105,24 +118,6 @@ export type EvaluationRecord = {
 };
 
 /**
- * Final evaluation result aggregating all rubric criterion scores
- * and generating a comprehensive report.
- */
-export type EvaluationResult = {
-  __typename: "EvaluationResult";
-  analysis: Scalars["String"]["output"];
-  /** Audit trail of workflow steps and decisions */
-  auditTrace: Maybe<Array<Maybe<Scalars["String"]["output"]>>>;
-  copilotOutputId: Scalars["String"]["output"];
-  evaluatorId: Scalars["String"]["output"];
-  /** Unique result identifier */
-  id: Scalars["String"]["output"];
-  /** Aggregated score across all weighted criteria (0 - 100) */
-  overallScore: Scalars["Float"]["output"];
-  rubricId: Scalars["String"]["output"];
-};
-
-/**
  * An evaluation session represents a single run of the evaluation workflow
  * against a golden set, producing rubric criteria and scored results.
  */
@@ -136,8 +131,6 @@ export type EvaluationSession = {
   evaluatorType: EvaluatorType;
   /** Unique session identifier */
   id: Scalars["String"]["output"];
-  /** LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro') */
-  modelName: Maybe<Scalars["String"]["output"]>;
   rubricId: Scalars["String"]["output"];
   /** Timestamp when session started */
   startedAt: Maybe<Scalars["String"]["output"]>;
@@ -161,28 +154,8 @@ export type GoldenSet = {
   schemaId: Scalars["String"]["output"];
 };
 
-export type GoldenSetFilters = {
-  schemaId: InputMaybe<Scalars["String"]["input"]>;
-};
-
 export type GoldenSetInput = {
   schemaId: Scalars["String"]["input"];
-};
-
-export type GoldenSetWithInputs = {
-  __typename: "GoldenSetWithInputs";
-  /** Unique database identifier */
-  id: Scalars["String"]["output"];
-  /** External project identifier from Functorz */
-  schemaId: Scalars["String"]["output"];
-  /** Type of copilot being evaluated */
-  userInputs: Array<Maybe<UserInput>>;
-};
-
-export type GoldenSetsAndUserInputs = {
-  __typename: "GoldenSetsAndUserInputs";
-  goldenSet: GoldenSet;
-  userInputs: UserInput;
 };
 
 export type HumanEvaluationInput = {
@@ -218,11 +191,11 @@ export type MutationDeleteProjectArgs = {
 };
 
 export type MutationExecuteCopilotArgs = {
-  context: CopilotInput;
+  context: CopilotInputInput;
 };
 
 export type MutationGenerateRubricArgs = {
-  context: CopilotInput;
+  context: CopilotInputInput;
 };
 
 export type MutationInitializeGoldenSetArgs = {
@@ -230,7 +203,7 @@ export type MutationInitializeGoldenSetArgs = {
 };
 
 export type MutationLinkGoldenSetToUserInputArgs = {
-  context: CopilotInput;
+  context: CopilotInputInput;
 };
 
 export type MutationRunCrdtTestArgs = {
@@ -243,30 +216,19 @@ export type MutationSubmitHumanEvaluationArgs = {
 
 export type Query = {
   __typename: "Query";
-  getCopilotInputByFilters: Array<Maybe<GoldenSetsAndUserInputs>>;
-  getEvaluationResultById: EvaluationResult;
-  getEvaluationResults: Array<Maybe<EvaluationResult>>;
+  getCopilotInput: Array<Maybe<CopilotInput>>;
   getEvaluationSessionById: EvaluationSession;
   getEvaluationSessions: Array<Maybe<EvaluationSession>>;
   getGoldenSetById: GoldenSet;
-  getGoldenSets: Array<Maybe<GoldenSet>>;
-  getRubricByContext: Array<Maybe<Rubric>>;
+  getGoldenSetBySchemaId: GoldenSet;
   getRubricById: Rubric;
   getUserInputById: UserInput;
   getUserInputs: Array<Maybe<UserInput>>;
 };
 
-export type QueryGetCopilotInputByFiltersArgs = {
+export type QueryGetCopilotInputArgs = {
   goldenSetId: InputMaybe<Scalars["String"]["input"]>;
   userInputId: InputMaybe<Scalars["String"]["input"]>;
-};
-
-export type QueryGetEvaluationResultByIdArgs = {
-  id: Scalars["String"]["input"];
-};
-
-export type QueryGetEvaluationResultsArgs = {
-  filters: InputMaybe<ResultFilters>;
 };
 
 export type QueryGetEvaluationSessionByIdArgs = {
@@ -281,12 +243,8 @@ export type QueryGetGoldenSetByIdArgs = {
   id: Scalars["String"]["input"];
 };
 
-export type QueryGetGoldenSetsArgs = {
-  filters: InputMaybe<GoldenSetFilters>;
-};
-
-export type QueryGetRubricByContextArgs = {
-  context: CopilotInput;
+export type QueryGetGoldenSetBySchemaIdArgs = {
+  schemaId: Scalars["String"]["input"];
 };
 
 export type QueryGetRubricByIdArgs = {
@@ -297,15 +255,10 @@ export type QueryGetUserInputByIdArgs = {
   id: Scalars["String"]["input"];
 };
 
-export type ResultFilters = {
-  copilotOutputId: InputMaybe<Scalars["String"]["input"]>;
-  evaluatorId: InputMaybe<Scalars["String"]["input"]>;
-  rubricId: InputMaybe<Scalars["String"]["input"]>;
-};
-
 export type Rubric = {
   __typename: "Rubric";
   criterion: Array<Criteria>;
+  evaluationSessions: Array<Maybe<EvaluationSession>>;
   id: Scalars["String"]["output"];
 };
 
@@ -333,17 +286,6 @@ export type UserInput = {
 export type UserInputInput = {
   content: Scalars["String"]["input"];
   createdBy: InputMaybe<Scalars["String"]["input"]>;
-};
-
-export type UserInputWIthGoldenSets = {
-  __typename: "UserInputWIthGoldenSets";
-  /** The actual prompt or query content */
-  content: Scalars["String"]["output"];
-  /** Timestamp when input was added */
-  createdAt: Scalars["String"]["output"];
-  goldenSets: Array<Maybe<GoldenSet>>;
-  /** Unique identifier */
-  id: Scalars["String"]["output"];
 };
 
 export type WithIndex<TObject> = TObject & Record<string, any>;
@@ -469,61 +411,67 @@ export type DirectiveResolverFn<
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
   Boolean: ResolverTypeWrapper<Scalars["Boolean"]["output"]>;
-  CopilotInput: CopilotInput;
+  CopilotInput: ResolverTypeWrapper<CopilotInput>;
+  CopilotInputInput: CopilotInputInput;
   CopilotOutput: ResolverTypeWrapper<CopilotOutput>;
+  CopilotSession: ResolverTypeWrapper<CopilotSession>;
   CopilotType: CopilotType;
   Criteria: ResolverTypeWrapper<Criteria>;
   EvaluationInput: EvaluationInput;
   EvaluationRecord: ResolverTypeWrapper<EvaluationRecord>;
-  EvaluationResult: ResolverTypeWrapper<EvaluationResult>;
   EvaluationSession: ResolverTypeWrapper<EvaluationSession>;
   EvaluatorType: EvaluatorType;
   Float: ResolverTypeWrapper<Scalars["Float"]["output"]>;
   GoldenSet: ResolverTypeWrapper<GoldenSet>;
-  GoldenSetFilters: GoldenSetFilters;
   GoldenSetInput: GoldenSetInput;
-  GoldenSetWithInputs: ResolverTypeWrapper<GoldenSetWithInputs>;
-  GoldenSetsAndUserInputs: ResolverTypeWrapper<GoldenSetsAndUserInputs>;
   HumanEvaluationInput: HumanEvaluationInput;
   Int: ResolverTypeWrapper<Scalars["Int"]["output"]>;
   Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
-  ResultFilters: ResultFilters;
   Rubric: ResolverTypeWrapper<Rubric>;
   SessionFilters: SessionFilters;
   String: ResolverTypeWrapper<Scalars["String"]["output"]>;
   UserInput: ResolverTypeWrapper<UserInput>;
   UserInputInput: UserInputInput;
-  UserInputWIthGoldenSets: ResolverTypeWrapper<UserInputWIthGoldenSets>;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
   Boolean: Scalars["Boolean"]["output"];
   CopilotInput: CopilotInput;
+  CopilotInputInput: CopilotInputInput;
   CopilotOutput: CopilotOutput;
+  CopilotSession: CopilotSession;
   Criteria: Criteria;
   EvaluationInput: EvaluationInput;
   EvaluationRecord: EvaluationRecord;
-  EvaluationResult: EvaluationResult;
   EvaluationSession: EvaluationSession;
   Float: Scalars["Float"]["output"];
   GoldenSet: GoldenSet;
-  GoldenSetFilters: GoldenSetFilters;
   GoldenSetInput: GoldenSetInput;
-  GoldenSetWithInputs: GoldenSetWithInputs;
-  GoldenSetsAndUserInputs: GoldenSetsAndUserInputs;
   HumanEvaluationInput: HumanEvaluationInput;
   Int: Scalars["Int"]["output"];
   Mutation: Record<PropertyKey, never>;
   Query: Record<PropertyKey, never>;
-  ResultFilters: ResultFilters;
   Rubric: Rubric;
   SessionFilters: SessionFilters;
   String: Scalars["String"]["output"];
   UserInput: UserInput;
   UserInputInput: UserInputInput;
-  UserInputWIthGoldenSets: UserInputWIthGoldenSets;
+}>;
+
+export type CopilotInputResolvers<
+  ContextType = undefined,
+  ParentType extends ResolversParentTypes["CopilotInput"] =
+    ResolversParentTypes["CopilotInput"],
+> = ResolversObject<{
+  copilotSessions: Resolver<
+    Array<Maybe<ResolversTypes["CopilotSession"]>>,
+    ParentType,
+    ContextType
+  >;
+  goldenSet: Resolver<ResolversTypes["GoldenSet"], ParentType, ContextType>;
+  userInput: Resolver<ResolversTypes["UserInput"], ParentType, ContextType>;
 }>;
 
 export type CopilotOutputResolvers<
@@ -546,13 +494,31 @@ export type CopilotOutputResolvers<
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
 }>;
 
+export type CopilotSessionResolvers<
+  ContextType = undefined,
+  ParentType extends ResolversParentTypes["CopilotSession"] =
+    ResolversParentTypes["CopilotSession"],
+> = ResolversObject<{
+  copilotOutput: Resolver<
+    Maybe<ResolversTypes["CopilotOutput"]>,
+    ParentType,
+    ContextType
+  >;
+  id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
+  rubrics: Resolver<
+    Array<Maybe<ResolversTypes["Rubric"]>>,
+    ParentType,
+    ContextType
+  >;
+}>;
+
 export type CriteriaResolvers<
   ContextType = undefined,
   ParentType extends ResolversParentTypes["Criteria"] =
     ResolversParentTypes["Criteria"],
 > = ResolversObject<{
   content: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  expectation: Resolver<ResolversTypes["Boolean"], ParentType, ContextType>;
+  expectedAnswer: Resolver<ResolversTypes["Boolean"], ParentType, ContextType>;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   reasoning: Resolver<Maybe<ResolversTypes["String"]>, ParentType, ContextType>;
   rubricId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
@@ -570,24 +536,6 @@ export type EvaluationRecordResolvers<
   evaluatorId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   feedback: Resolver<Maybe<ResolversTypes["String"]>, ParentType, ContextType>;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  rubricId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-}>;
-
-export type EvaluationResultResolvers<
-  ContextType = undefined,
-  ParentType extends ResolversParentTypes["EvaluationResult"] =
-    ResolversParentTypes["EvaluationResult"],
-> = ResolversObject<{
-  analysis: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  auditTrace: Resolver<
-    Maybe<Array<Maybe<ResolversTypes["String"]>>>,
-    ParentType,
-    ContextType
-  >;
-  copilotOutputId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  evaluatorId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  overallScore: Resolver<ResolversTypes["Float"], ParentType, ContextType>;
   rubricId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
 }>;
 
@@ -614,7 +562,6 @@ export type EvaluationSessionResolvers<
     ContextType
   >;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  modelName: Resolver<Maybe<ResolversTypes["String"]>, ParentType, ContextType>;
   rubricId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   startedAt: Resolver<Maybe<ResolversTypes["String"]>, ParentType, ContextType>;
 }>;
@@ -626,29 +573,6 @@ export type GoldenSetResolvers<
 > = ResolversObject<{
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   schemaId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-}>;
-
-export type GoldenSetWithInputsResolvers<
-  ContextType = undefined,
-  ParentType extends ResolversParentTypes["GoldenSetWithInputs"] =
-    ResolversParentTypes["GoldenSetWithInputs"],
-> = ResolversObject<{
-  id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  schemaId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  userInputs: Resolver<
-    Array<Maybe<ResolversTypes["UserInput"]>>,
-    ParentType,
-    ContextType
-  >;
-}>;
-
-export type GoldenSetsAndUserInputsResolvers<
-  ContextType = undefined,
-  ParentType extends ResolversParentTypes["GoldenSetsAndUserInputs"] =
-    ResolversParentTypes["GoldenSetsAndUserInputs"],
-> = ResolversObject<{
-  goldenSet: Resolver<ResolversTypes["GoldenSet"], ParentType, ContextType>;
-  userInputs: Resolver<ResolversTypes["UserInput"], ParentType, ContextType>;
 }>;
 
 export type MutationResolvers<
@@ -717,23 +641,11 @@ export type QueryResolvers<
   ParentType extends ResolversParentTypes["Query"] =
     ResolversParentTypes["Query"],
 > = ResolversObject<{
-  getCopilotInputByFilters: Resolver<
-    Array<Maybe<ResolversTypes["GoldenSetsAndUserInputs"]>>,
+  getCopilotInput: Resolver<
+    Array<Maybe<ResolversTypes["CopilotInput"]>>,
     ParentType,
     ContextType,
-    QueryGetCopilotInputByFiltersArgs
-  >;
-  getEvaluationResultById: Resolver<
-    ResolversTypes["EvaluationResult"],
-    ParentType,
-    ContextType,
-    RequireFields<QueryGetEvaluationResultByIdArgs, "id">
-  >;
-  getEvaluationResults: Resolver<
-    Array<Maybe<ResolversTypes["EvaluationResult"]>>,
-    ParentType,
-    ContextType,
-    QueryGetEvaluationResultsArgs
+    QueryGetCopilotInputArgs
   >;
   getEvaluationSessionById: Resolver<
     ResolversTypes["EvaluationSession"],
@@ -753,17 +665,11 @@ export type QueryResolvers<
     ContextType,
     RequireFields<QueryGetGoldenSetByIdArgs, "id">
   >;
-  getGoldenSets: Resolver<
-    Array<Maybe<ResolversTypes["GoldenSet"]>>,
+  getGoldenSetBySchemaId: Resolver<
+    ResolversTypes["GoldenSet"],
     ParentType,
     ContextType,
-    QueryGetGoldenSetsArgs
-  >;
-  getRubricByContext: Resolver<
-    Array<Maybe<ResolversTypes["Rubric"]>>,
-    ParentType,
-    ContextType,
-    RequireFields<QueryGetRubricByContextArgs, "context">
+    RequireFields<QueryGetGoldenSetBySchemaIdArgs, "schemaId">
   >;
   getRubricById: Resolver<
     ResolversTypes["Rubric"],
@@ -794,6 +700,11 @@ export type RubricResolvers<
     ParentType,
     ContextType
   >;
+  evaluationSessions: Resolver<
+    Array<Maybe<ResolversTypes["EvaluationSession"]>>,
+    ParentType,
+    ContextType
+  >;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
 }>;
 
@@ -807,33 +718,16 @@ export type UserInputResolvers<
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
 }>;
 
-export type UserInputWIthGoldenSetsResolvers<
-  ContextType = undefined,
-  ParentType extends ResolversParentTypes["UserInputWIthGoldenSets"] =
-    ResolversParentTypes["UserInputWIthGoldenSets"],
-> = ResolversObject<{
-  content: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  createdAt: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  goldenSets: Resolver<
-    Array<Maybe<ResolversTypes["GoldenSet"]>>,
-    ParentType,
-    ContextType
-  >;
-  id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-}>;
-
 export type Resolvers<ContextType = undefined> = ResolversObject<{
+  CopilotInput: CopilotInputResolvers<ContextType>;
   CopilotOutput: CopilotOutputResolvers<ContextType>;
+  CopilotSession: CopilotSessionResolvers<ContextType>;
   Criteria: CriteriaResolvers<ContextType>;
   EvaluationRecord: EvaluationRecordResolvers<ContextType>;
-  EvaluationResult: EvaluationResultResolvers<ContextType>;
   EvaluationSession: EvaluationSessionResolvers<ContextType>;
   GoldenSet: GoldenSetResolvers<ContextType>;
-  GoldenSetWithInputs: GoldenSetWithInputsResolvers<ContextType>;
-  GoldenSetsAndUserInputs: GoldenSetsAndUserInputsResolvers<ContextType>;
   Mutation: MutationResolvers<ContextType>;
   Query: QueryResolvers<ContextType>;
   Rubric: RubricResolvers<ContextType>;
   UserInput: UserInputResolvers<ContextType>;
-  UserInputWIthGoldenSets: UserInputWIthGoldenSetsResolvers<ContextType>;
 }>;

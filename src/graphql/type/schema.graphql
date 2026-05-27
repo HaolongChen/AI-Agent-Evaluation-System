@@ -1,28 +1,19 @@
 type Query {
   getGoldenSetById(id: String!): GoldenSet!
 
-  getGoldenSets(filters: GoldenSetFilters): [GoldenSet]!
+  getGoldenSetBySchemaId(schemaId: String!): GoldenSet!
 
   getUserInputById(id: String!): UserInput!
 
   getUserInputs: [UserInput]!
 
-  getCopilotInputByFilters(
-    goldenSetId: String
-    userInputId: String
-  ): [GoldenSetsAndUserInputs]!
+  getCopilotInput(goldenSetId: String, userInputId: String): [CopilotInput]!
 
   getEvaluationSessionById(id: String!): EvaluationSession!
 
   getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!
 
   getRubricById(id: String!): Rubric!
-
-  getRubricByContext(context: CopilotInput!): [Rubric]!
-
-  getEvaluationResultById(id: String!): EvaluationResult!
-
-  getEvaluationResults(filters: ResultFilters): [EvaluationResult]!
 }
 
 type Mutation {
@@ -30,11 +21,11 @@ type Mutation {
 
   createUserInput(input: UserInputInput!): UserInput!
 
-  linkGoldenSetToUserInput(context: CopilotInput!): Boolean!
+  linkGoldenSetToUserInput(context: CopilotInputInput!): Boolean!
 
-  generateRubric(context: CopilotInput!): Rubric!
+  generateRubric(context: CopilotInputInput!): Rubric!
 
-  executeCopilot(context: CopilotInput!): CopilotOutput!
+  executeCopilot(context: CopilotInputInput!): CopilotOutput!
 
   submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
 
@@ -75,31 +66,10 @@ type GoldenSet {
   # modelName: String
 }
 
-type GoldenSetsAndUserInputs {
+type CopilotInput {
   goldenSet: GoldenSet!
-  userInputs: UserInput!
-}
-
-type GoldenSetWithInputs {
-  "Unique database identifier"
-  id: String!
-  "External project identifier from Functorz"
-  schemaId: String!
-  "Type of copilot being evaluated"
-  # copilotType: CopilotType!
-  # "Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
-  # modelName: String
-  userInputs: [UserInput]!
-}
-
-type UserInputWIthGoldenSets {
-  "Unique identifier"
-  id: String!
-  "The actual prompt or query content"
-  content: String!
-  "Timestamp when input was added"
-  createdAt: String!
-  goldenSets: [GoldenSet]!
+  userInput: UserInput!
+  copilotSessions: [CopilotSession]!
 }
 
 """
@@ -113,6 +83,12 @@ type UserInput {
   content: String!
   "Timestamp when input was added"
   createdAt: String!
+}
+
+type CopilotSession {
+  id: String!
+  copilotOutput: CopilotOutput
+  rubrics: [Rubric]!
 }
 
 """
@@ -133,6 +109,7 @@ type CopilotOutput {
 type Rubric {
   id: String!
   criterion: [Criteria!]!
+  evaluationSessions: [EvaluationSession]!
 }
 
 type Criteria {
@@ -141,7 +118,7 @@ type Criteria {
   # version: String!
   # title: String
   content: String!
-  expectation: Boolean!
+  expectedAnswer: Boolean!
   reasoning: String
   weight: Float!
 }
@@ -162,8 +139,8 @@ type EvaluationSession {
   rubricId: String!
   evaluatorId: String!
   evaluatorType: EvaluatorType!
-  "LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')"
-  modelName: String
+  # "LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')"
+  # modelName: String
   evaluationRecords: [EvaluationRecord]!
   "Timestamp when session started"
   startedAt: String
@@ -189,30 +166,24 @@ type EvaluationRecord {
   feedback: String
 }
 
-"""
-Final evaluation result aggregating all rubric criterion scores
-and generating a comprehensive report.
-"""
-type EvaluationResult {
-  "Unique result identifier"
-  id: String!
-  evaluatorId: String!
-  copilotOutputId: String!
-  rubricId: String!
+# """
+# Final evaluation result aggregating all rubric criterion scores
+# and generating a comprehensive report.
+# """
+# type EvaluationResult {
+#   "Unique result identifier"
+#   id: String!
+#   evaluatorId: String!
+#   copilotOutputId: String!
+#   rubricId: String!
 
-  "Aggregated score across all weighted criteria (0 - 100)"
-  overallScore: Float!
+#   "Aggregated score across all weighted criteria (0 - 100)"
+#   overallScore: Float!
 
-  analysis: String!
-  "Audit trail of workflow steps and decisions"
-  auditTrace: [String]
-}
-
-input GoldenSetFilters {
-  schemaId: String
-  # copilotType: CopilotType
-  # modelName: String
-}
+#   analysis: String!
+#   "Audit trail of workflow steps and decisions"
+#   auditTrace: [String]
+# }
 
 input SessionFilters {
   evaluatorId: String
@@ -221,24 +192,12 @@ input SessionFilters {
   evaluatorType: EvaluatorType
 }
 
-input ResultFilters {
-  evaluatorId: String
-  copilotOutputId: String
-  rubricId: String
-}
-
 input EvaluationInput {
   criteriaId: String!
   "Binary evaluation"
   evaluation: Boolean!
   "Detailed explanation of the evaluation"
   feedback: String
-}
-
-input CopilotInput {
-  goldenSetId: String!
-  userInputId: String!
-  projectExId: String
 }
 
 input HumanEvaluationInput {
@@ -250,11 +209,14 @@ input HumanEvaluationInput {
 
 input GoldenSetInput {
   schemaId: String!
-  # copilotType: CopilotType
-  # modelName: String
 }
 
 input UserInputInput {
   content: String!
   createdBy: String
+}
+
+input CopilotInputInput {
+  goldenSetId: String!
+  userInputId: String!
 }

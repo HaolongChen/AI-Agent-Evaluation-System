@@ -1448,9 +1448,14 @@ type CopilotInitialStateMessage implements CopilotContentMessage {
   terminated: Boolean
 }
 
-input CopilotInput {
+type CopilotInput {
+  copilotSessions: [CopilotSession]!
+  goldenSet: GoldenSet!
+  userInput: UserInput!
+}
+
+input CopilotInputInput {
   goldenSetId: String!
-  projectExId: String
   userInputId: String!
 }
 
@@ -1517,12 +1522,15 @@ type CopilotOutput {
 }
 
 type CopilotSession {
+  copilotOutput: CopilotOutput
   createdAt: OffsetDateTime!
   errors: [CopilotError!]!
   evaluations: [CopilotEvaluation!]!
+  id: String!
   llmCalls: [CopilotLlmCall!]!
   messages: [CopilotMessage!]!
   project: Project!
+  rubrics: [Rubric]!
   sessionExId: String!
   terminated: Boolean!
   title: String
@@ -1826,7 +1834,7 @@ input CreateProjectInputInput {
 
 type Criteria {
   content: String!
-  expectation: Boolean!
+  expectedAnswer: Boolean!
   id: String!
   reasoning: String
   rubricId: String!
@@ -2509,32 +2517,6 @@ type EvaluationRecord {
 }
 
 """
-Final evaluation result aggregating all rubric criterion scores
-and generating a comprehensive report.
-"""
-type EvaluationResult {
-  analysis: String!
-
-  """
-  Audit trail of workflow steps and decisions
-  """
-  auditTrace: [String]
-  copilotOutputId: String!
-  evaluatorId: String!
-
-  """
-  Unique result identifier
-  """
-  id: String!
-
-  """
-  Aggregated score across all weighted criteria (0 - 100)
-  """
-  overallScore: Float!
-  rubricId: String!
-}
-
-"""
 An evaluation session represents a single run of the evaluation workflow
 against a golden set, producing rubric criteria and scored results.
 """
@@ -2552,11 +2534,6 @@ type EvaluationSession {
   Unique session identifier
   """
   id: String!
-
-  """
-  LLM model used for agent evaluation (e.g., 'gpt-4o', 'gemini-pro')
-  """
-  modelName: String
   rubricId: String!
 
   """
@@ -2689,34 +2666,8 @@ type GoldenSet {
   schemaId: String!
 }
 
-input GoldenSetFilters {
-  schemaId: String
-}
-
 input GoldenSetInput {
   schemaId: String!
-}
-
-type GoldenSetWithInputs {
-  """
-  Unique database identifier
-  """
-  id: String!
-
-  """
-  External project identifier from Functorz
-  """
-  schemaId: String!
-
-  """
-  Type of copilot being evaluated
-  """
-  userInputs: [UserInput]!
-}
-
-type GoldenSetsAndUserInputs {
-  goldenSet: GoldenSet!
-  userInputs: UserInput!
 }
 
 type HasuraConfig {
@@ -4020,7 +3971,7 @@ type Mutation {
   ): Boolean!
   endAllComputingPowerKitsInProject(projectExId: String!): Boolean!
   endSession(sessionExId: String!): Boolean!
-  executeCopilot(context: CopilotInput!): CopilotOutput!
+  executeCopilot(context: CopilotInputInput!): CopilotOutput!
   executeOverdueMigrationTasks: Boolean!
   exitOrganization(organizationExId: String!): Boolean!
   expeditedWechatMiniAppRegister(
@@ -4116,7 +4067,7 @@ type Mutation {
     promoCodeProductRules: [ProductCommissionRuleDtoInput!]!
     startAt: OffsetDateTime!
   ): PromoCode
-  generateRubric(context: CopilotInput!): Rubric!
+  generateRubric(context: CopilotInputInput!): Rubric!
   generateSchemaModel(schemaId: Long!): Boolean!
   generateServerSchemaForAllDeployedSchema: Boolean!
   generateServerSchemaForNonDeletedSchema: Boolean!
@@ -4206,7 +4157,7 @@ type Mutation {
   joinProjectByShareTokenV2(code: String!): CollaborativeSharedResource_Project!
   latestSession(projectExId: String!, sessionType: CopilotSessionType!): String
   leaveCollaboration(appExId: String, projectExId: String!): Boolean!
-  linkGoldenSetToUserInput(context: CopilotInput!): Boolean!
+  linkGoldenSetToUserInput(context: CopilotInputInput!): Boolean!
   log(logs: [ClientLogEntryInput]!): Boolean!
   login(
     gaClientId: String
@@ -6674,12 +6625,7 @@ type Query {
   ): CollaborativeSharedResource_ShareToken
   getBannerItems(paginator: ConnectionPaginatorInput): Connection_BannerItem
   getCodeComponentDocFileUrl(packageExId: String!): String
-  getCopilotInputByFilters(
-    goldenSetId: String
-    userInputId: String
-  ): [GoldenSetsAndUserInputs]!
-  getEvaluationResultById(id: String!): EvaluationResult!
-  getEvaluationResults(filters: ResultFilters): [EvaluationResult]!
+  getCopilotInput(goldenSetId: String, userInputId: String): [CopilotInput]!
   getEvaluationSessionById(id: String!): EvaluationSession!
   getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!
   getFileByExId(
@@ -6689,7 +6635,7 @@ type Query {
   ): StoredFile!
   getFileById(appExId: String, fileId: Long!, projectExId: String!): StoredFile!
   getGoldenSetById(id: String!): GoldenSet!
-  getGoldenSets(filters: GoldenSetFilters): [GoldenSet]!
+  getGoldenSetBySchemaId(schemaId: String!): GoldenSet!
   getImageByExId(
     appExId: String
     imageExId: String!
@@ -6712,7 +6658,6 @@ type Query {
     projectExId: String!
   ): Connection_StoredImage
   getQueryById(queryId: Long!): String
-  getRubricByContext(context: CopilotInput!): [Rubric]!
   getRubricById(id: String!): Rubric!
   getTabBarIcons: [StoredImage]!
   getUserInputById(id: String!): UserInput!
@@ -7086,12 +7031,6 @@ type ResourceUsage {
   usedResource: Limit
 }
 
-input ResultFilters {
-  copilotOutputId: String
-  evaluatorId: String
-  rubricId: String
-}
-
 type Role {
   roleName: String
 }
@@ -7103,6 +7042,7 @@ type RpsAtInstant {
 
 type Rubric {
   criterion: [Criteria!]!
+  evaluationSessions: [EvaluationSession]!
   id: String!
 }
 
@@ -7854,24 +7794,6 @@ type UserInput {
 input UserInputInput {
   content: String!
   createdBy: String
-}
-
-type UserInputWIthGoldenSets {
-  """
-  The actual prompt or query content
-  """
-  content: String!
-
-  """
-  Timestamp when input was added
-  """
-  createdAt: String!
-  goldenSets: [GoldenSet]!
-
-  """
-  Unique identifier
-  """
-  id: String!
 }
 
 type UserQuestion {

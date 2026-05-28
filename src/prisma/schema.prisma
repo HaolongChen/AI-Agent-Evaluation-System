@@ -46,16 +46,21 @@ model goldenSet {
 }
 
 model project {
-  id          String   @id @default(uuid())
-  projectExId String   @map("project_ex_id") // corresponds to the projectExId in LangGraph
-  schemaId    String   @map("schema_id")
-  name        String   @map("name")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy   String   @default("unknown") @map("created_by") // userId or "system" for system-generated projects
+  id             String   @id @default(uuid())
+  copilotInputId String   @map("copilot_input_id") // corresponds to the copilotInputId in the copilotInput table for traceability
+  copilotServerId String  @map("copilot_server_id") // corresponds to the copilotServerId in the copilotServer table for traceability
+  projectExId    String   @map("project_ex_id")
+  name           String   @map("name")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy      String   @default("unknown") @map("created_by") // userId or "system" for system-generated projects
+
+  copilotInput copilotInput @relation("project_copilotInput", fields: [copilotInputId], references: [id])
+  copilotServer copilotServer @relation(fields: [copilotServerId], references: [id])
+  copilotSession copilotSession?
 
   @@unique([projectExId], map: "unique_project_ex_id")
-  @@unique([schemaId], map: "unique_project_schema_id")
   @@unique([name], map: "unique_project_name")
+  @@index([copilotInputId, copilotServerId], map: "idx_project_copilot_input_server_id")
 }
 
 model userInput {
@@ -75,35 +80,31 @@ model copilotInput {
   goldenSet goldenSet @relation(fields: [goldenSetId], references: [id])
   userInput userInput @relation(fields: [userInputId], references: [id])
 
-  copilotSessions copilotSession[] @relation(map: "schema_user_input_copilot_session")
-  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  projects  project[] @relation("project_copilotInput")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@unique([goldenSetId, userInputId], map: "idx_schema_user_input")
 }
 
 model copilotServer {
-  id              String           @id @default(uuid())
-  name            String           @map("name") // e.g., 'aws-us-east-1', 'azure-westus2'
-  description     String?          @map("description")
-  wsEndpoint      String           @map("wsEndpoint") // e.g., 'https://zionbackend.functorz.work/api/subscription'
-  gqlEndpoint     String           @map("gqlEndpoint") // e.g., 'https://zionbackend.functorz.work/api/graphql'
-  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  copilotSessions copilotSession[]
+  id          String    @id @default(uuid())
+  name        String    @map("name") // e.g., 'aws-us-east-1', 'azure-westus2'
+  description String?   @map("description")
+  wsEndpoint  String    @map("wsEndpoint") // e.g., 'https://zionbackend.functorz.work/api/subscription'
+  gqlEndpoint String    @map("gqlEndpoint") // e.g., 'https://zionbackend.functorz.work/api/graphql'
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  project     project[]
 }
 
 model copilotSession {
   id              String        @id @default(uuid())
-  copilotInputId  String        @map("schema_user_input_id")
-  copilotInput    copilotInput  @relation(fields: [copilotInputId], references: [id])
-  copilotServerId String        @map("copilot_server_id")
-  copilotServer   copilotServer @relation(fields: [copilotServerId], references: [id])
+  projectId       String        @unique @map("project_id")
+  project         project       @relation(fields: [projectId], references: [id])
 
   copilotOutput copilotOutput?
   rubric        rubric[]       @relation("copilotSession_rubric")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  @@index([copilotInputId, copilotServerId], map: "idx_schema_user_input_copilot_server")
 }
 
 model copilotOutput {

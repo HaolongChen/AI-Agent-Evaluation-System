@@ -63,6 +63,28 @@ export const copilotInputDataMapper = (
 };
 
 export class CopilotInputRepository implements ICopilotInputRepository {
+  async addUserInput ( goldenSet: GoldenSetEntity, userInputs: UserInputEntity[] ): Promise<CopilotInputAggregate[]>
+  {
+    const result = Promise.all( userInputs.map( async ( userInput ) =>
+    {
+      const copilotInput = await prisma.copilotInput.upsert( {
+        where: {
+          goldenSetId_userInputId: {
+            goldenSetId: goldenSet.getData( "id" ),
+            userInputId: userInput.getData( "id" ),
+          }
+        },
+        update: {},
+        create: {
+          goldenSetId: goldenSet.getData( "id" ),
+          userInputId: userInput.getData( "id" ),
+        },
+        include: { goldenSet: true, userInput: true },
+      } );
+      return copilotInputDataMapper( copilotInput );
+    } ) );
+    return result;
+  }
   async getByFilters(
     filters: CopilotInputFilters,
   ): Promise<CopilotInputAggregate>;

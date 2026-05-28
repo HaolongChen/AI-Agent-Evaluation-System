@@ -2,7 +2,7 @@ import { repository } from "../../DI/repository.ts";
 import { ExecuteCopilotUseCase } from "../../modules/copilot-session/application/execution-service.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-session/domain/entity/copilot-output.entity.ts";
 import { GenerateRubricUseCase } from "../../modules/rubrics/application/generate-rubric.ts";
-import { ProjectLifecycleAdapter } from "../../modules/dataset/application/project-lifecycle.ts";
+import { ProjectLifecycleAdapter } from "../../modules/copilot-session/application/project-lifecycle.ts";
 import type { RubricAggregate } from "../../modules/rubrics/domain/aggregate/rubric.aggregate.ts";
 
 import type {

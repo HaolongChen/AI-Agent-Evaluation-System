@@ -1,6 +1,6 @@
 import type { Account } from "../../account/application/account-handler.ts";
 import type { IProjectRepository } from "../domain/interface/project.interface.ts";
-import type { IProjectLifecycle } from "../domain/interface/project-lifecycle.interface.ts";
+import type { IProjectLifecycle } from "../domain/interface/zion-project.interface.ts";
 import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-system.ts";
 import { ProjectService } from "./project-service.ts";
 
@@ -13,7 +13,7 @@ export class ProjectLifecycleAdapter implements IProjectLifecycle {
   ) {}
 
   async importExistingProject(projectExId: string, initialSchemaId?: string) {
-    const projectService = new ProjectService(this.account, this.repository);
+    const projectService = new ProjectService(this.account);
     const schemaManager = await projectService.getProjectInZion(projectExId);
     if (initialSchemaId && schemaManager.getSchemaId() !== initialSchemaId) {
       await schemaManager.importSchemaManual(initialSchemaId);
@@ -36,7 +36,6 @@ export class ProjectLifecycleAdapter implements IProjectLifecycle {
   ): Promise<{ projectExId: string; schemaGraph: OpaqueSchemaGraph }> {
     this.projectService = new ProjectService(
       this.account,
-      this.repository,
       projectName,
       initialSchemaId,
     );

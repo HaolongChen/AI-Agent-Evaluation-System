@@ -5,10 +5,11 @@ import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { createNewSession } from "../infrastructure/copilot-network.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import type { ICopilotInputRepository } from "../../dataset/domain/interface/copilot-input.interface.ts";
-import type { IProjectLifecycle } from "../../dataset/domain/interface/project-lifecycle.interface.ts";
+import type { IProjectLifecycle } from "../domain/interface/zion-project.interface.ts";
 import { CopilotSessionAggregate } from "../domain/aggregate/copilot-session.aggregate.ts";
-import type { ICopilotServerRepository } from "../domain/interface/copilot-server.interface.ts";
+import type { ICopilotServerRepository } from "../../dataset/domain/interface/copilot-server.interface.ts";
 import type { ICopilotSessionRepository } from "../domain/interface/copilot-session.interface.ts";
+import type { CopilotInputAggregate } from "../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 
 export class ExecuteCopilotUseCase {
   private isProjectTemporary = true;
@@ -22,9 +23,8 @@ export class ExecuteCopilotUseCase {
     private account: Account,
   ) {}
 
-  async setupEnvironment(data: {
-    goldenSetId: string;
-    userInputId: string;
+	async setupEnvironment ( data: {
+		copilotInput: CopilotInputAggregate,
     projectExId?: string;
   }): Promise<CopilotSessionAggregate> {
     const copilotInput =

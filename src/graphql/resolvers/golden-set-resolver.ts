@@ -22,14 +22,14 @@ import {
   type UserInput,
 } from "../generated/resolvers-types.ts";
 import { GraphQLError } from "graphql";
-import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/dataset/infrastructure/project-manager.ts";
+import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/copilot-session/infrastructure/project-manager.ts";
 import { NetworkClient } from "../../modules/shared/application/graphql-client.ts";
 import type {
   FixAliPayDataBindingMutation,
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
 import { logger } from "../../modules/shared/infrastructure/logger.ts";
-import { ProjectLifecycleAdapter } from "../../modules/dataset/application/project-lifecycle.ts";
+import { ProjectLifecycleAdapter } from "../../modules/copilot-session/application/project-lifecycle.ts";
 import { getMyAccount } from "../../DI/account.ts";
 import type { GoldenSetEntity } from "../../modules/dataset/domain/entity/golden-set.entity.ts";
 import type { UserInputEntity } from "../../modules/dataset/domain/entity/user-input.entity.ts";

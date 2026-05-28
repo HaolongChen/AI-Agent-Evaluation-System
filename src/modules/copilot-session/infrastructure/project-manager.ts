@@ -226,3 +226,29 @@ export const createProjectWithTaskIdReturned = async (
   }
   return taskId;
 };
+
+export const createZionProject = async (
+  projectName: string,
+  account: Account,
+  organizationExId: string,
+  useNewType: boolean = true,
+  useRefactoredComponent: boolean = true,
+  platform: Platform = "WEB",
+  projectSpaceType: ProjectSpaceType = "PERSONAL",
+  category: ProjectContentCategory = "OTHERS",
+) =>
+{
+  const gqlClient = await account.getGQLClient();
+  const taskId = await createProjectWithTaskIdReturned(
+    projectName,
+    gqlClient,
+    organizationExId,
+    useNewType,
+    useRefactoredComponent,
+    platform,
+    projectSpaceType,
+    category,
+  );
+  const projectExId = await createProjectSubscription(taskId, account);
+  return projectExId;
+}

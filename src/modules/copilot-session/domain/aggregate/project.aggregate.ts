@@ -1,41 +1,33 @@
-import type { CopilotServerEntity } from "../../../copilot-session/domain/entity/copilot-server.entity.ts";
+import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
-import type { GoldenSetEntity } from "../entity/golden-set.entity.ts";
 import { ProjectEntity } from "../entity/project.entity.ts";
 import { projectSchema } from "../schema/project.schema.ts";
+import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 
 export class ProjectAggregate extends AggregateRoot<
 	typeof projectSchema,
 	EntityMetadata,
-	{ goldenSet: GoldenSetEntity; copilotServer: CopilotServerEntity }
+	{ copilotInput: CopilotInputAggregate; copilotServer: CopilotServerEntity }
 > {
 	constructor(data: ProjectAggregate);
 	constructor(
-		goldenSetEntity: GoldenSetEntity,
+		copilotInputAggregate: CopilotInputAggregate,
 		copilotServerEntity: CopilotServerEntity,
-		id?: string,
+		projectEntity: ProjectEntity,
 	);
 	constructor(
-		argument1: ProjectAggregate | GoldenSetEntity,
+		argument1: ProjectAggregate | CopilotInputAggregate,
 		argument2?: CopilotServerEntity,
-		argument3?: string,
+		argument3?: ProjectEntity,
 	) {
 		if (argument1 instanceof ProjectAggregate) {
 			super(argument1);
-			this.setEntity("goldenSet", argument1.getEntity("goldenSet"));
+			this.setEntity("copilotInput", argument1.getEntity("copilotInput"));
 			this.setEntity("copilotServer", argument1.getEntity("copilotServer"));
 		} else {
-			super(
-				new ProjectEntity(
-					{
-						name: `Project-${Date.now()}`,
-						projectExId: `project-${Date.now()}`,
-					},
-					argument3,
-				),
-			);
-			this.setEntity("goldenSet", argument1);
+			super(argument3!);
+			this.setEntity("copilotInput", argument1);
 			this.setEntity("copilotServer", argument2!);
 		}
 	}

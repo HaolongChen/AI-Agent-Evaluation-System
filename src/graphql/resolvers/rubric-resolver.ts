@@ -77,44 +77,44 @@ export const rubricResolver = {
     //     );
     //   },
     // },
+  },
 
-    Mutation: {
-      executeCopilot: async (
-        _: unknown,
-        arguments_: MutationExecuteCopilotArguments,
-      ): Promise<CopilotOutput> => {
-        const myAccount = await getMyAccount();
-        const projectLifecycle = new ProjectLifecycleAdapter(
-          myAccount,
-          repository.projectRepository,
+  Mutation: {
+    executeCopilot: async (
+      _: unknown,
+      arguments_: MutationExecuteCopilotArguments,
+    ): Promise<CopilotOutput> => {
+      const myAccount = await getMyAccount();
+      const projectLifecycle = new ProjectLifecycleAdapter(
+        myAccount,
+        repository.projectRepository,
+      );
+      const executeCopilotUseCase = new ExecuteCopilotUseCase(
+        {
+          copilotSessionRepository: repository.copilotSessionRepository,
+          copilotServerRepository: repository.copilotServerRepository,
+          copilotInputRepository: repository.copilotInputRepository,
+        },
+        projectLifecycle,
+        myAccount,
+      );
+      const copilotOutput = await executeCopilotUseCase.executeV2(
+        arguments_.context,
+      );
+      return toGraphqlCopilotOutput(copilotOutput);
+    },
+    generateRubric: async (
+      _: unknown,
+      arguments_: MutationGenerateRubricArguments,
+    ): Promise<Rubric[]> => {
+      const generateRubricUseCase = new GenerateRubricUseCase(repository);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [feedbacks, ...rubricAggregate] =
+        await generateRubricUseCase.execute(
+          arguments_.context.goldenSetId,
+          arguments_.context.userInputId,
         );
-        const executeCopilotUseCase = new ExecuteCopilotUseCase(
-          {
-            copilotSessionRepository: repository.copilotSessionRepository,
-            copilotServerRepository: repository.copilotServerRepository,
-            copilotInputRepository: repository.copilotInputRepository,
-          },
-          projectLifecycle,
-          myAccount,
-        );
-        const copilotOutput = await executeCopilotUseCase.executeV2(
-          arguments_.context,
-        );
-        return toGraphqlCopilotOutput(copilotOutput);
-      },
-      generateRubric: async (
-        _: unknown,
-        arguments_: MutationGenerateRubricArguments,
-      ): Promise<Rubric> => {
-        const generateRubricUseCase = new GenerateRubricUseCase(repository);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { feedbacks, ...rubricAggregate } =
-          await generateRubricUseCase.execute(
-            arguments_.context.goldenSetId,
-            arguments_.context.userInputId,
-          );
-        return toGraphqlRubric(rubricAggregate);
-      },
+      return rubricAggregate.map((r) => toGraphqlRubric(r));
     },
   },
 };

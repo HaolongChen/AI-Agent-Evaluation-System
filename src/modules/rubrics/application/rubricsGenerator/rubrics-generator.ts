@@ -23,9 +23,7 @@ export const generateRubrics = async (
   schemaId: string,
   query: string,
   feedbacks: Feedbacks,
-): Promise<{
-  criterion: z.infer<typeof responseSchema>;
-}> => {
+): Promise<z.infer<typeof responseSchema>> => {
   await setupEnvironment(schemaId);
 
   const saveFeedbacksTool = save_agent_feedbacks(
@@ -72,5 +70,5 @@ export const generateRubrics = async (
       // recursionLimit: 100,
     },
   );
-  return { criterion: response.structuredResponse };
+  return response.structuredResponse;
 };

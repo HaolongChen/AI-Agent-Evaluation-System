@@ -13,12 +13,12 @@ export class FormCopilotInputUseCase {
   ) {}
 
   async execute(goldenSetId: string, userInputId: string) {
-    const copilotInputs =
+    const copilotInput =
       await this.repository.copilotInputRepository.getByFilters({
         userInputId,
         goldenSetId,
       });
-    if (copilotInputs.length > 0) {
+    if (copilotInput) {
       throw new Error(
         `UserInput ID ${userInputId} is already associated with GoldenSet ID ${goldenSetId}`,
       );

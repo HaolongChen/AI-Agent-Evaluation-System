@@ -64,8 +64,33 @@ export const copilotInputDataMapper = (
 
 export class CopilotInputRepository implements ICopilotInputRepository {
   async getByFilters(
-    filters?: CopilotInputFilters,
-  ): Promise<CopilotInputAggregate[]> {
+    filters: CopilotInputFilters,
+  ): Promise<CopilotInputAggregate>;
+  async getByFilters(
+    filters?: Partial<CopilotInputFilters> | undefined,
+  ): Promise<CopilotInputAggregate[]>;
+  async getByFilters<T extends Partial<CopilotInputFilters> | undefined>(
+    filters: T,
+  ): Promise<
+    T extends CopilotInputFilters
+      ? CopilotInputAggregate
+      : CopilotInputAggregate[]
+  > {
+    if (filters?.goldenSetId && filters?.userInputId) {
+      return copilotInputDataMapper(
+        await prisma.copilotInput.findUniqueOrThrow({
+          where: {
+            goldenSetId_userInputId: {
+              goldenSetId: filters.goldenSetId,
+              userInputId: filters.userInputId,
+            },
+          },
+          include: { goldenSet: true, userInput: true },
+        }),
+      ) as T extends CopilotInputFilters
+        ? CopilotInputAggregate
+        : CopilotInputAggregate[];
+    }
     const results = await prisma.copilotInput.findMany({
       where: filters,
       include: {
@@ -73,7 +98,11 @@ export class CopilotInputRepository implements ICopilotInputRepository {
         userInput: true,
       },
     });
-    return results.map((result) => copilotInputDataMapper(result));
+    return results.map((result) =>
+      copilotInputDataMapper(result),
+    ) as T extends CopilotInputFilters
+      ? CopilotInputAggregate
+      : CopilotInputAggregate[];
   }
   async findById(id: string): Promise<CopilotInputAggregate> {
     const result = await prisma.copilotInput.findUnique({
@@ -92,8 +121,8 @@ export class CopilotInputRepository implements ICopilotInputRepository {
     const result = await prisma.copilotInput.create({
       data: {
         id: data.getData("id"),
-        goldenSetId: data.getEntity("goldenSet")[0].getData("id"),
-        userInputId: data.getEntity("userInput")[0].getData("id"),
+        goldenSetId: data.getEntity("goldenSet").getData("id"),
+        userInputId: data.getEntity("userInput").getData("id"),
       },
       // include: { userInput: true, goldenSet: true },
     });

@@ -6,9 +6,9 @@ import type { rubricSchema } from "../schema/rubric.schema.ts";
 
 export class RubricAggregate<
   T extends {
-    criterion: CriteriaEntity;
+    criterion: CriteriaEntity[];
     copilotSession: CopilotSessionAggregate;
-  } = { criterion: CriteriaEntity; copilotSession: CopilotSessionAggregate },
+  } = { criterion: CriteriaEntity[]; copilotSession: CopilotSessionAggregate },
 > extends AggregateRoot<typeof rubricSchema, EntityMetadata, T> {
   constructor(copilotSessionAggregate: CopilotSessionAggregate, id?: string) {
     super(new RubricEntity(id));

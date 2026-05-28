@@ -89,18 +89,18 @@ export class CopilotSessionRepository implements ICopilotSessionRepository {
   }
   async saveCopilotOutput(data: CopilotSessionAggregate): Promise<void> {
     const copilotOutput = data.getEntity("copilotOutput");
-    if (!copilotOutput || copilotOutput.length !== 1) {
+    if (!copilotOutput) {
       throw new Error(
         "No CopilotOutput entity found in the provided CopilotSessionAggregate",
       );
     }
     const copilotOutputRepository = new CopilotOutputRepository();
-    await copilotOutputRepository.save(copilotOutput[0]);
+    await copilotOutputRepository.save(copilotOutput);
   }
   async save(entity: CopilotSessionAggregate): Promise<void> {
     const copilotInput = entity.getEntity("copilotInput");
     const copilotServer = entity.getEntity("copilotServer");
-    if (copilotInput.length !== 1 || copilotServer.length !== 1) {
+    if (!copilotInput || !copilotServer) {
       throw new Error(
         "CopilotSessionAggregate must have exactly one CopilotInputAggregate and one CopilotServerEntity",
       );
@@ -108,8 +108,8 @@ export class CopilotSessionRepository implements ICopilotSessionRepository {
     const result = await prisma.copilotSession.create({
       data: {
         ...entity.getData(),
-        copilotInputId: copilotInput[0].getData("id"),
-        copilotServerId: copilotServer[0].getData("id"),
+        copilotInputId: copilotInput.getData("id"),
+        copilotServerId: copilotServer.getData("id"),
       },
     });
     repositoryDateMapper(result, entity);

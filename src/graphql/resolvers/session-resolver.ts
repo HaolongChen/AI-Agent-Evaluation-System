@@ -12,29 +12,29 @@ const toGraphqlSession = (
 ): EvaluationSession => {
   return {
     ...session.aggregator,
-    rubricId: session.entities.rubric[0].getData("id"),
+    rubricId: session.entities.rubric.getData("id"),
     __typename: "EvaluationSession",
-    copilotOutputId: session.entities.rubric[0]
-      .getEntity("copilotSession")[0]
-      .getEntity("copilotOutput")[0]
+    copilotOutputId: session.entities.rubric
+      .getEntity("copilotSession")
+      .getEntity("copilotOutput")
       .getData("id"),
     createdAt: session.aggregator.createdAt?.toISOString(),
     evaluatorType: session.aggregator.evaluatorType as EvaluatorType,
-    evaluationRecords: session.entities.rubric[0]
+    evaluationRecords: session.entities.rubric
       .getEntity("criterion")
       .map((criteria) => {
         return {
-          ...criteria.getEntity("evaluationRecord")[0].getData(),
-          rubricId: session.entities.rubric[0].getData("id"),
+          ...criteria.getEntity("evaluationRecord").getData(),
+          rubricId: session.entities.rubric.getData("id"),
           __typename: "EvaluationRecord",
-          copilotOutputId: session.entities.rubric[0]
-            .getEntity("copilotSession")[0]
-            .getEntity("copilotOutput")[0]
+          copilotOutputId: session.entities.rubric
+            .getEntity("copilotSession")
+            .getEntity("copilotOutput")
             .getData("id"),
           evaluatorId: session.aggregator.evaluatorId,
           criteriaId: criteria.getData("id"),
           feedback:
-            criteria.getEntity("evaluationRecord")[0].getData("feedback") ??
+            criteria.getEntity("evaluationRecord").getData("feedback") ??
             undefined,
         };
       }),

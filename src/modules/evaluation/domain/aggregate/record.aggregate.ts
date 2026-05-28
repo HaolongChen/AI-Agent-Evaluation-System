@@ -14,26 +14,18 @@ export class CriteriaRecordAggregate extends AggregateRoot<
     super(criteria);
   }
 
-  isDone(): boolean {
-    return (
-      this.getEntity("evaluationRecord").length === 1 &&
-      this.getEntity("evaluationRecord")[0].getData("criteriaId") ===
-        this.getData("id")
-    );
-  }
-
   addEvaluationRecord(record: EvaluationRecordEntity) {
-    this.setEntity("evaluationRecord", [record]);
+    this.setEntity("evaluationRecord", record);
   }
 }
 
 export class EvaluationRecordAggregate extends RubricAggregate<{
   copilotSession: CopilotSessionAggregate;
-  criterion: CriteriaRecordAggregate;
+  criterion: CriteriaRecordAggregate[];
 }> {
   constructor(rubricAggregate: RubricAggregate) {
-    super(rubricAggregate.getEntity("copilotSession")[0]);
-    this.setEntity(
+    super(rubricAggregate.getEntity("copilotSession"));
+    this.pushEntity(
       "criterion",
       rubricAggregate
         .getEntity("criterion")

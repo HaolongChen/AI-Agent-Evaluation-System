@@ -32,8 +32,8 @@ export class ExecuteCopilotUseCase {
         goldenSetId: data.goldenSetId,
         userInputId: data.userInputId,
       });
-    const goldenSetEntity = copilotInput[0].getEntity("goldenSet")[0];
-    const userInputEntity = copilotInput[0].getEntity("userInput")[0];
+    const goldenSetEntity = copilotInput.getEntity("goldenSet");
+    const userInputEntity = copilotInput.getEntity("userInput");
 
     const { projectExId, schemaGraph } = data.projectExId
       ? await this.projectLifecycle.importExistingProject(data.projectExId)
@@ -50,7 +50,7 @@ export class ExecuteCopilotUseCase {
       await this.repository.copilotServerRepository.getDefault();
 
     const session = new CopilotSessionAggregate(
-      copilotInput[0],
+      copilotInput,
       copilotServerEntity,
       copilotSessionExId,
     );
@@ -80,7 +80,7 @@ export class ExecuteCopilotUseCase {
     projectExId?: string;
   }) {
     const copilotSession = await this.setupEnvironment(data);
-    const copilotJobEntity = copilotSession.getEntity("copilotJob")[0];
+    const copilotJobEntity = copilotSession.getEntity("copilotJob");
     const wsClient = await this.account.getWsClient();
     const gqlClient = await this.account.getGQLClient();
     try {
@@ -92,7 +92,7 @@ export class ExecuteCopilotUseCase {
       const orchestrator = new SessionOrchestrator(runner, copilotJobEntity);
       await orchestrator.run();
       await this.repository.copilotSessionRepository.save(copilotSession);
-      return copilotSession.getEntity("copilotOutput")[0].getData();
+      return copilotSession.getEntity("copilotOutput").getData();
     } catch (error) {
       logger.error("Error setting up copilot execution environment:", error);
       this.account.clearWsClient();

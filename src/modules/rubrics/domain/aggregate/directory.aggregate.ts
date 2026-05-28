@@ -13,7 +13,7 @@ import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
 export class DirectoryAggregate extends AggregateRoot<
   typeof folderEntrySchema,
   EntityMetadata,
-  { folderEntry: FolderEntryEntity; fileEntry: FileEntryEntity }
+  { folderEntry: FolderEntryEntity[]; fileEntry: FileEntryEntity[] }
 > {
   private _entriesMap: Map<string, FolderEntryEntity | FileEntryEntity> =
     new Map();

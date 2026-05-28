@@ -2,10 +2,16 @@ import type { IRepository } from "../../../shared/domain/interface/repository.in
 import type { CopilotInputAggregate } from "../aggregate/copilot-input.aggregate.ts";
 
 export type CopilotInputFilters = {
-  goldenSetId?: string;
-  userInputId?: string;
+  goldenSetId: string;
+  userInputId: string;
 };
 
 export interface ICopilotInputRepository extends IRepository<CopilotInputAggregate> {
-  getByFilters(filters?: CopilotInputFilters): Promise<CopilotInputAggregate[]>;
+  getByFilters<T extends Partial<CopilotInputFilters> | undefined>(
+    filters: T,
+  ): Promise<
+    T extends Required<CopilotInputFilters>
+      ? CopilotInputAggregate
+      : CopilotInputAggregate[]
+  >;
 }

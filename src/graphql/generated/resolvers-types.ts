@@ -169,7 +169,7 @@ export type Mutation = {
   createUserInput: UserInput;
   deleteProject: Scalars["Boolean"]["output"];
   executeCopilot: CopilotOutput;
-  generateRubric: Rubric;
+  generateRubric: Array<Maybe<Rubric>>;
   initializeGoldenSet: GoldenSet;
   linkGoldenSetToUserInput: Scalars["Boolean"]["output"];
   runCrdtTest: Maybe<Scalars["String"]["output"]>;
@@ -598,7 +598,7 @@ export type MutationResolvers<
     RequireFields<MutationExecuteCopilotArgs, "context">
   >;
   generateRubric: Resolver<
-    ResolversTypes["Rubric"],
+    Array<Maybe<ResolversTypes["Rubric"]>>,
     ParentType,
     ContextType,
     RequireFields<MutationGenerateRubricArgs, "context">

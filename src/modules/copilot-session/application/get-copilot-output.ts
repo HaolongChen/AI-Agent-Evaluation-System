@@ -5,6 +5,6 @@ export class GetCopilotOutputUseCase {
 
   async execute(copilotSessionId: string) {
     const result = await this.repository.findById(copilotSessionId);
-    return result.getEntity("copilotOutput")[0];
+    return result.getEntity("copilotOutput");
   }
 }

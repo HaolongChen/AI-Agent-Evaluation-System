@@ -102,19 +102,19 @@ export class EvaluationSessionRepository implements IEvaluationSessionRepository
     });
   }
   async save(entity: EvaluationSessionAggregate): Promise<void> {
-    const records = entity.getEntity("rubric")[0].getEntity("criterion");
+    const records = entity.getEntity("rubric").getEntity("criterion");
     const result = await prisma.evaluationSession.create({
       data: {
         ...entity.getData(),
         rubric: {
-          connect: { id: entity.getEntity("rubric")[0].getData("id") },
+          connect: { id: entity.getEntity("rubric").getData("id") },
         },
         ...(records.length > 0 && {
           evaluationRecords: {
             createMany: {
               data: records.map((record) => {
                 return {
-                  ...record.getEntity("evaluationRecord")[0].getData(),
+                  ...record.getEntity("evaluationRecord").getData(),
                   criteriaId: record.getData("id"),
                 };
               }),
@@ -127,11 +127,11 @@ export class EvaluationSessionRepository implements IEvaluationSessionRepository
       },
     });
     evaluationSessionDataMapper(result, {
-      rubric: { aggregate: entity.getEntity("rubric")[0] },
+      rubric: { aggregate: entity.getEntity("rubric") },
       evaluationRecords: entity
-        .getEntity("rubric")[0]
+        .getEntity("rubric")
         .getEntity("criterion")
-        .map((c) => c.getEntity("evaluationRecord")[0]),
+        .map((c) => c.getEntity("evaluationRecord")),
     });
   }
   async findById(id: string): Promise<EvaluationSessionAggregate> {

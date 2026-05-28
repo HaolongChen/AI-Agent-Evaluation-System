@@ -67,8 +67,8 @@ export const copilotInputDataMapper = (
   data: ReturnType<CopilotInputAggregate["getAllData"]>,
 ): CopilotInput => {
   return {
-    goldenSet: goldenSetDataMapper(data.entities.goldenSet[0].getData()),
-    userInput: userInputDataMapper(data.entities.userInput[0].getData()),
+    goldenSet: goldenSetDataMapper(data.entities.goldenSet.getData()),
+    userInput: userInputDataMapper(data.entities.userInput.getData()),
     copilotSessions: [],
     __typename: "CopilotInput",
   };

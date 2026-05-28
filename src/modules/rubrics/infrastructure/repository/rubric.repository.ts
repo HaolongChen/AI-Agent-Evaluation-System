@@ -75,7 +75,7 @@ export const rubricDataMapper = (
     data,
     new RubricAggregate(copilotSession, data.id),
   );
-  rubricAggregate.setEntity("criterion", criterion);
+  rubricAggregate.pushEntity("criterion", criterion);
   return rubricAggregate;
 };
 
@@ -127,7 +127,7 @@ export class RubricRepository implements IRubricRepository {
         ...aggregate.getData(),
         copilotSession: {
           connect: {
-            id: aggregate.getEntity("copilotSession")[0].getData("id"),
+            id: aggregate.getEntity("copilotSession").getData("id"),
           },
         },
         criterion: {
@@ -142,7 +142,7 @@ export class RubricRepository implements IRubricRepository {
     });
     rubricDataMapper(data, {
       criterion: aggregate.getEntity("criterion"),
-      copilotSession: { aggregate: aggregate.getEntity("copilotSession")[0] },
+      copilotSession: { aggregate: aggregate.getEntity("copilotSession") },
     });
   }
   async findById(id: string): Promise<RubricAggregate> {

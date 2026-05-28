@@ -4063,7 +4063,7 @@ type Mutation {
     promoCodeProductRules: [ProductCommissionRuleDtoInput!]!
     startAt: OffsetDateTime!
   ): PromoCode
-  generateRubric(context: CopilotInputInput!): Rubric!
+  generateRubric(context: CopilotInputInput!): [Rubric]!
   generateSchemaModel(schemaId: Long!): Boolean!
   generateServerSchemaForAllDeployedSchema: Boolean!
   generateServerSchemaForNonDeletedSchema: Boolean!

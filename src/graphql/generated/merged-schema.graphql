@@ -2521,11 +2521,12 @@ An evaluation session represents a single run of the evaluation workflow
 against a golden set, producing rubric criteria and scored results.
 """
 type EvaluationSession {
-  """
-  Timestamp when session completed (null if still running)
-  """
-  completedAt: String
   copilotOutputId: String!
+
+  """
+  Timestamp when session started
+  """
+  createdAt: String
   evaluationRecords: [EvaluationRecord]!
   evaluatorId: String!
   evaluatorType: EvaluatorType!
@@ -2535,11 +2536,6 @@ type EvaluationSession {
   """
   id: String!
   rubricId: String!
-
-  """
-  Timestamp when session started
-  """
-  startedAt: String
 }
 
 enum EvaluatorType {

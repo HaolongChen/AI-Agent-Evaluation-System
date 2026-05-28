@@ -7,6 +7,7 @@ import {
   GetCopilotInputByFiltersUseCase,
 } from "../../modules/dataset/application/form-copilot-input.ts";
 import {
+  type CopilotInput,
   // CopilotType,
   type GoldenSet,
   type MutationCreateProjectArgs as MutationCreateProjectArguments,
@@ -14,12 +15,11 @@ import {
   type MutationDeleteProjectArgs as MutationDeleteProjectArguments,
   type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
   type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
+  type QueryGetCopilotInputArgs as QueryGetCopilotInputArguments,
+  type QueryGetGoldenSetBySchemaIdArgs as QueryGetGoldenSetBySchemaIdArguments,
   type QueryGetGoldenSetByIdArgs as QueryGetGoldenSetByIdArguments,
-  type QueryGetGoldenSetsArgs as QueryGetGoldenSetsArguments,
   type QueryGetUserInputByIdArgs as QueryGetUserInputByIdArguments,
-  type QueryGetCopilotInputByFiltersArgs as QueryGetCopilotInputByFiltersArguments,
   type UserInput,
-  type GoldenSetsAndUserInputs,
 } from "../generated/resolvers-types.ts";
 import { GraphQLError } from "graphql";
 import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/dataset/infrastructure/project-manager.ts";
@@ -65,20 +65,21 @@ export const userInputDataMapper = (
 
 export const copilotInputDataMapper = (
   data: ReturnType<CopilotInputAggregate["getAllData"]>,
-): GoldenSetsAndUserInputs => {
+): CopilotInput => {
   return {
     goldenSet: goldenSetDataMapper(data.entities.goldenSet[0].getData()),
-    userInputs: userInputDataMapper(data.entities.userInput[0].getData()),
-    __typename: "GoldenSetsAndUserInputs",
+    userInput: userInputDataMapper(data.entities.userInput[0].getData()),
+    copilotSessions: [],
+    __typename: "CopilotInput",
   };
 };
 
 export const goldenSetResolver = {
   Query: {
-    getCopilotInputByFilters: async (
+    getCopilotInput: async (
       _: unknown,
-      arguments_: QueryGetCopilotInputByFiltersArguments,
-    ): Promise<GoldenSetsAndUserInputs[]> => {
+      arguments_: QueryGetCopilotInputArguments,
+    ): Promise<CopilotInput[]> => {
       const getCopilotInputByFiltersUseCase =
         new GetCopilotInputByFiltersUseCase({
           copilotInputRepository: repository.copilotInputRepository,
@@ -116,15 +117,12 @@ export const goldenSetResolver = {
       );
       return goldenSetDataMapper(goldenSet.getData());
     },
-    getGoldenSets: async (
+    getGoldenSetBySchemaId: async (
       _: unknown,
-      arguments_: QueryGetGoldenSetsArguments,
+      arguments_: QueryGetGoldenSetBySchemaIdArguments,
     ): Promise<GoldenSet[]> => {
-      if (!arguments_.filters?.schemaId) {
-        return [];
-      }
       const goldenSet = await repository.goldenSetRepository.findBySchemaId(
-        arguments_.filters.schemaId,
+        arguments_.schemaId,
       );
       return [goldenSetDataMapper(goldenSet.getData())];
     },

@@ -1,27 +1,43 @@
 import type { EvaluationSessionAggregate } from "../../modules/evaluation/domain/aggregate/session.aggregate.ts";
 import {
-  EvaluatorType,
-  type EvaluationResult,
   type EvaluationSession,
+  type EvaluatorType,
   type MutationSubmitHumanEvaluationArgs as MutationSubmitHumanEvaluationArguments,
-  type QueryGetEvaluationResultByIdArgs as QueryGetEvaluationResultByIdArguments,
-  type QueryGetEvaluationResultsArgs as QueryGetEvaluationResultsArguments,
   type QueryGetEvaluationSessionByIdArgs as QueryGetEvaluationSessionByIdArguments,
   type QueryGetEvaluationSessionsArgs as QueryGetEvaluationSessionsArguments,
 } from "../generated/resolvers-types.ts";
 
 const toGraphqlSession = (
-  session: ReturnType<EvaluationSessionAggregate["getData"]>,
+  session: ReturnType<EvaluationSessionAggregate["getAllData"]>,
 ): EvaluationSession => {
   return {
-    ...session,
-    id: session.id ?? "",
+    ...session.aggregator,
+    rubricId: session.entities.rubric[0].getData("id"),
     __typename: "EvaluationSession",
-    evaluatorType: session.evaluatorType as EvaluatorType,
-    modelName: session.modelName ?? undefined,
-    completedAt: undefined,
-    startedAt: undefined,
-    evaluationRecords: [],
+    copilotOutputId: session.entities.rubric[0]
+      .getEntity("copilotSession")[0]
+      .getEntity("copilotOutput")[0]
+      .getData("id"),
+    createdAt: session.aggregator.createdAt?.toISOString(),
+    evaluatorType: session.aggregator.evaluatorType as EvaluatorType,
+    evaluationRecords: session.entities.rubric[0]
+      .getEntity("criterion")
+      .map((criteria) => {
+        return {
+          ...criteria.getEntity("evaluationRecord")[0].getData(),
+          rubricId: session.entities.rubric[0].getData("id"),
+          __typename: "EvaluationRecord",
+          copilotOutputId: session.entities.rubric[0]
+            .getEntity("copilotSession")[0]
+            .getEntity("copilotOutput")[0]
+            .getData("id"),
+          evaluatorId: session.aggregator.evaluatorId,
+          criteriaId: criteria.getData("id"),
+          feedback:
+            criteria.getEntity("evaluationRecord")[0].getData("feedback") ??
+            undefined,
+        };
+      }),
   };
 };
 
@@ -37,18 +53,6 @@ export const sessionResolver = {
       _: unknown,
       arguments_: QueryGetEvaluationSessionsArguments,
     ): Promise<EvaluationSession[]> => {
-      throw new Error("Method not implemented.");
-    },
-    getEvaluationResultById: async (
-      _: unknown,
-      arguments_: QueryGetEvaluationResultByIdArguments,
-    ): Promise<EvaluationResult> => {
-      throw new Error("Method not implemented.");
-    },
-    getEvaluationResults: async (
-      _: unknown,
-      arguments_: QueryGetEvaluationResultsArguments,
-    ): Promise<EvaluationResult[]> => {
       throw new Error("Method not implemented.");
     },
   },

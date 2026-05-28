@@ -123,17 +123,15 @@ export type EvaluationRecord = {
  */
 export type EvaluationSession = {
   __typename: "EvaluationSession";
-  /** Timestamp when session completed (null if still running) */
-  completedAt: Maybe<Scalars["String"]["output"]>;
   copilotOutputId: Scalars["String"]["output"];
+  /** Timestamp when session started */
+  createdAt: Maybe<Scalars["String"]["output"]>;
   evaluationRecords: Array<Maybe<EvaluationRecord>>;
   evaluatorId: Scalars["String"]["output"];
   evaluatorType: EvaluatorType;
   /** Unique session identifier */
   id: Scalars["String"]["output"];
   rubricId: Scalars["String"]["output"];
-  /** Timestamp when session started */
-  startedAt: Maybe<Scalars["String"]["output"]>;
 };
 
 export enum EvaluatorType {
@@ -544,12 +542,8 @@ export type EvaluationSessionResolvers<
   ParentType extends ResolversParentTypes["EvaluationSession"] =
     ResolversParentTypes["EvaluationSession"],
 > = ResolversObject<{
-  completedAt: Resolver<
-    Maybe<ResolversTypes["String"]>,
-    ParentType,
-    ContextType
-  >;
   copilotOutputId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
+  createdAt: Resolver<Maybe<ResolversTypes["String"]>, ParentType, ContextType>;
   evaluationRecords: Resolver<
     Array<Maybe<ResolversTypes["EvaluationRecord"]>>,
     ParentType,
@@ -563,7 +557,6 @@ export type EvaluationSessionResolvers<
   >;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
   rubricId: Resolver<ResolversTypes["String"], ParentType, ContextType>;
-  startedAt: Resolver<Maybe<ResolversTypes["String"]>, ParentType, ContextType>;
 }>;
 
 export type GoldenSetResolvers<

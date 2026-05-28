@@ -143,9 +143,7 @@ type EvaluationSession {
   # modelName: String
   evaluationRecords: [EvaluationRecord]!
   "Timestamp when session started"
-  startedAt: String
-  "Timestamp when session completed (null if still running)"
-  completedAt: String
+  createdAt: String
 }
 
 """

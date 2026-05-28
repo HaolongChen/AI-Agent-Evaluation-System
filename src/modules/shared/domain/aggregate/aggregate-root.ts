@@ -36,11 +36,11 @@ export class AggregateRoot<
   }
 
   getAllData(): {
-    aggregator: ReturnType<AggregateRoot<T, M, E>["getData"]>;
+    aggregator: ReturnType<Entity<T, M>["getData"]>;
     entities: { [K in keyof E]: E[K][] };
   } {
     return {
-      aggregator: this.getData(),
+      aggregator: super.getData(),
       entities: this.getEntity(),
     };
   }

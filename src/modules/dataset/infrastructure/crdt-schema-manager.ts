@@ -251,18 +251,6 @@ export class TypeSystemStore {
     private projectExId: string,
   ) {}
 
-  simpleSchemaIdValidation(schemaId: string): boolean {
-    // Simple validation to check if the schemaId is a non-empty string
-    if (schemaId.trim().length === 0) {
-      logger.error("Invalid schemaId: Schema ID cannot be an empty string.");
-      return false;
-    }
-    if (!/^[0-9]+$/.test(schemaId)) {
-      logger.error("Invalid schemaId: Schema ID must be a numeric string.");
-      return false;
-    }
-    return true;
-  }
 
   async importSchemaManual(schemaId: string): Promise<void> {
     if (!this.appDetail) {
@@ -296,11 +284,8 @@ export class TypeSystemStore {
     }
     const path = new URL(
       this.appDetail.latestSchema.crdtModelUrl,
-    ).pathname.split("/");
-    if (this.simpleSchemaIdValidation(path[2])) {
-      return path[2];
-    }
-    throw new Error(`Invalid schemaId extracted from crdtModelUrl: ${path[2]}`);
+    ).pathname.split( "/" );
+    return path[ 2 ];
   }
 
   buildProjectEntity() {

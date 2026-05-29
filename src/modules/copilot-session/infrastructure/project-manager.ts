@@ -15,6 +15,7 @@ import type {
 import type { Account } from "../../account/application/account-handler.ts";
 import type { GQLClient } from "../../shared/application/graphql-client.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
+import type { ProjectEntity } from "../domain/entity/project.entity.ts";
 export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
   query CheckProjectNameDuplicate($projectName: String!) {
     checkProjectNameDuplicate(projectName: $projectName)
@@ -228,27 +229,21 @@ export const createProjectWithTaskIdReturned = async (
 };
 
 export const createZionProject = async (
-  projectName: string,
   account: Account,
-  organizationExId: string,
-  useNewType: boolean = true,
-  useRefactoredComponent: boolean = true,
-  platform: Platform = "WEB",
-  projectSpaceType: ProjectSpaceType = "PERSONAL",
-  category: ProjectContentCategory = "OTHERS",
-) =>
-{
+
+  projectEntity: ProjectEntity,
+) => {
   const gqlClient = await account.getGQLClient();
   const taskId = await createProjectWithTaskIdReturned(
-    projectName,
+    projectEntity.getData("name"),
     gqlClient,
-    organizationExId,
-    useNewType,
-    useRefactoredComponent,
-    platform,
-    projectSpaceType,
-    category,
+    account.account.getAccountInfo().account.currentOrganization.exId,
+    projectEntity.getData("useNewType"),
+    projectEntity.getData("useRefactoredComponent"),
+    projectEntity.getData("platform"),
+    projectEntity.getData("projectScopeType"),
+    projectEntity.getData("category"),
   );
   const projectExId = await createProjectSubscription(taskId, account);
   return projectExId;
-}
+};

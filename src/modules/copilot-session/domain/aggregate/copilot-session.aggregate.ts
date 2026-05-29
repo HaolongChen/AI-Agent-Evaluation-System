@@ -9,17 +9,14 @@ import type { ProjectAggregate } from "./project.aggregate.ts";
 export class CopilotSessionAggregate extends AggregateRoot<
   typeof copilotSessionSchema,
   EntityMetadata,
-	{
-		project: ProjectAggregate;
+  {
+    project: ProjectAggregate;
     copilotOutput: CopilotOutputEntity;
     copilotJob: CopilotJobEntity;
   }
 > {
-	constructor (
-		projectAggregate: ProjectAggregate,
-    id?: string,
-  ) {
-		super( new CopilotSessionEntity( id ) );
-		this.setEntity( "project", projectAggregate );
+  constructor(projectAggregate: ProjectAggregate, id?: string) {
+    super(new CopilotSessionEntity(id));
+    this.setEntity("project", projectAggregate);
   }
 }

@@ -15,7 +15,10 @@ export interface ICopilotInputRepository extends IRepository<CopilotInputAggrega
     T extends Required<CopilotInputFilters>
       ? CopilotInputAggregate
       : CopilotInputAggregate[]
-		>;
+  >;
 
-	addUserInput(goldenSet: GoldenSetEntity, userInputs: UserInputEntity[]): Promise<CopilotInputAggregate[]>
+  addUserInput(
+    goldenSet: GoldenSetEntity,
+    userInputs: UserInputEntity[],
+  ): Promise<CopilotInputAggregate[]>;
 }

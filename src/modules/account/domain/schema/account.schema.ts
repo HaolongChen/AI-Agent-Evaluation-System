@@ -10,5 +10,11 @@ export interface AccountInfo {
   account: {
     exId: string;
     username: string;
+    currentOrganization: OrganizationInfo;
   };
 }
+
+export type OrganizationInfo = {
+  exId: string;
+  name: string;
+};

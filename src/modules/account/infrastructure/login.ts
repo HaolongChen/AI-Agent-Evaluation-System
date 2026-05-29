@@ -13,14 +13,25 @@ import type { AccountInfo } from "../domain/schema/account.schema.ts";
 // Document
 // ---------------------------------------------------------------------------
 
+const ORGANIZATION_FRAGMENT = gql`
+  fragment organizationFragment on Organization {
+    exId
+    name
+  }
+`;
+
 const ACCOUNT_FRAGMENT = gql`
   fragment accountInfoFragment on AccountInfo {
     accessToken
     account {
       exId
       username
+      currentOrganization {
+        ...organizationFragment
+      }
     }
   }
+  ${ORGANIZATION_FRAGMENT}
 `;
 
 const LOGIN_MUTATION = gql`

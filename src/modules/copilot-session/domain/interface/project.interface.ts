@@ -4,7 +4,11 @@ import type { IRepository } from "../../../shared/domain/interface/repository.in
 import type { ProjectAggregate } from "../aggregate/project.aggregate.ts";
 
 export interface IProjectRepository extends IRepository<ProjectAggregate> {
-  getByCopilotInput(copilotInput: CopilotInputAggregate): Promise<Array<ProjectAggregate>>
-  getByCopilotServer(copilotServer: CopilotServerEntity): Promise<Array<ProjectAggregate>>;
+  getByCopilotInput(
+    copilotInput: CopilotInputAggregate,
+  ): Promise<Array<ProjectAggregate>>;
+  getByCopilotServer(
+    copilotServer: CopilotServerEntity,
+  ): Promise<Array<ProjectAggregate>>;
   deleteById(id: string): Promise<void>;
 }

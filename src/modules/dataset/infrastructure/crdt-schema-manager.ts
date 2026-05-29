@@ -23,27 +23,10 @@ import type {
 import type { Account } from "../../account/application/account-handler.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import { getDangerousAccount } from "../../../DI/account.ts";
+import { ProjectEntity } from "../../copilot-session/domain/entity/project.entity.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
-
-const WECHAT_MINI_PROGRAM_APP_DETAIL_FRAGMENT = gql`
-  fragment WechatMiniProgramAppDetail on WechatMiniProgramApp {
-    latestSchema {
-      crdtModelUrl
-      crdtPatches {
-        lastPatchExId
-        patches {
-          patchBase64
-        }
-      }
-    }
-    exId
-    projectExId
-    name
-    appExId
-  }
-`;
 
 const PROJECT_APP_DETAIL_FRAGMENT = gql`
   fragment ProjectAppDetail on Project {
@@ -63,7 +46,33 @@ const PROJECT_APP_DETAIL_FRAGMENT = gql`
     projectName
     appExId
     adminToken
+    category
+    type
+    projectSpace {
+      projectSpaceType
+    }
   }
+`;
+const WECHAT_MINI_PROGRAM_APP_DETAIL_FRAGMENT = gql`
+  fragment WechatMiniProgramAppDetail on WechatMiniProgramApp {
+    latestSchema {
+      crdtModelUrl
+      crdtPatches {
+        lastPatchExId
+        patches {
+          patchBase64
+        }
+      }
+    }
+    exId
+    projectExId
+    name
+    appExId
+    project {
+      ...ProjectAppDetail
+    }
+  }
+  ${PROJECT_APP_DETAIL_FRAGMENT}
 `;
 
 const WEB_APP_DETAIL_FRAGMENT = gql`
@@ -81,7 +90,11 @@ const WEB_APP_DETAIL_FRAGMENT = gql`
     name
     projectExId
     appExId
+    project {
+      ...ProjectAppDetail
+    }
   }
+  ${PROJECT_APP_DETAIL_FRAGMENT}
 `;
 
 const MOBILE_APP_DETAIL_FRAGMENT = gql`
@@ -99,7 +112,11 @@ const MOBILE_APP_DETAIL_FRAGMENT = gql`
     name
     projectExId
     appExId
+    project {
+      ...ProjectAppDetail
+    }
   }
+  ${PROJECT_APP_DETAIL_FRAGMENT}
 `;
 
 const FETCH_APP_DETAIL_QUERY = gql`
@@ -220,20 +237,13 @@ export class TypeSystemStore {
     return this.currSchemaGraph;
   }
 
-  getProjectExId(): string {
-    if (this.appDetail) {
-      return this.appDetail.projectExId;
-    }
-    throw new Error("App detail is not loaded, cannot get projectExId");
-  }
-
-  getProjectName(): string {
+  get projectInfo() {
     if (this.appDetail) {
       return this.appDetail.__typename === "Project"
-        ? this.appDetail.projectName
-        : this.appDetail.name;
+        ? this.appDetail
+        : this.appDetail.project;
     }
-    throw new Error("App detail is not loaded, cannot get project name");
+    throw new Error("App detail is not loaded, cannot get project info");
   }
 
   constructor(
@@ -291,6 +301,24 @@ export class TypeSystemStore {
       return path[2];
     }
     throw new Error(`Invalid schemaId extracted from crdtModelUrl: ${path[2]}`);
+  }
+
+  buildProjectEntity() {
+    const projectInfo = this.projectInfo;
+    const projectEntity = new ProjectEntity({
+      name: projectInfo.projectName,
+      category: projectInfo.category ?? "OTHERS",
+      projectScopeType:
+        projectInfo.projectSpace?.projectSpaceType ?? "PERSONAL",
+      useNewType: true,
+      useRefactoredComponent: true,
+      platform: "WEB",
+    });
+    projectEntity.setData({
+      projectExId: this.projectExId,
+      schemaId: this.getSchemaId(),
+    });
+    return projectEntity;
   }
 
   async fetchAppDetailByExId() {

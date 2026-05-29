@@ -23,8 +23,8 @@ export class ExecuteCopilotUseCase {
     private account: Account,
   ) {}
 
-	async setupEnvironment ( data: {
-		copilotInput: CopilotInputAggregate,
+  async setupEnvironment(data: {
+    copilotInput: CopilotInputAggregate;
     projectExId?: string;
   }): Promise<CopilotSessionAggregate> {
     const copilotInput =

@@ -42,18 +42,18 @@ export type EntityMetadata = {
   id: string;
 };
 
-type EntityKey<
+export type EntityKey<
   T extends z.ZodObject = z.ZodObject,
   M extends EntityMetadata = EntityMetadata,
 > = keyof (z.infer<T> & M);
 
 export type OneOrMany<T> = T | T[];
 
-type OneOrMoreEntityKey<
-  T extends z.ZodObject = z.ZodObject,
-  M extends EntityMetadata = EntityMetadata,
-> = OneOrMany<EntityKey<T, M>>;
-type RawEntityValue<
+// type OneOrMoreEntityKey<
+//   T extends z.ZodObject = z.ZodObject,
+//   M extends EntityMetadata = EntityMetadata,
+// > = OneOrMany<EntityKey<T, M>>;
+export type RawEntityValue<
   T extends z.ZodObject,
   M extends EntityMetadata,
   K extends EntityKey<T, M>,
@@ -63,21 +63,21 @@ type RawEntityValue<
     ? z.infer<T>[K & keyof z.infer<T>]
     : never;
 
-type EntityValue<
-  T extends z.ZodObject,
-  M extends EntityMetadata,
-  K extends OneOrMoreEntityKey<T, M>,
-> =
-  K extends EntityKey<T, M>
-    ? RawEntityValue<T, M, K>
-    : { [Key in keyof K]: RawEntityValue<T, M, K[Key] & EntityKey<T, M>> };
+// type EntityValue<
+//   T extends z.ZodObject,
+//   M extends EntityMetadata,
+//   K extends OneOrMoreEntityKey<T, M>,
+// > =
+//   K extends EntityKey<T, M>
+//     ? RawEntityValue<T, M, K>
+//     : { [Key in keyof K]: RawEntityValue<T, M, K[Key] & EntityKey<T, M>> };
 
 export class Entity<
   T extends z.ZodObject = z.ZodObject,
   M extends EntityMetadata = EntityMetadata,
 > {
   private _data: z.infer<T>;
-  private _metadata: Partial<M>;
+  private _metadata: M;
   public schema: T;
   constructor(entity: Entity<T, M>);
   constructor(
@@ -109,22 +109,26 @@ export class Entity<
     }
   }
 
-  getData<K extends OneOrMoreEntityKey<T, M>>(keys: K): EntityValue<T, M, K>;
+  getData<K extends EntityKey<T, M>>(keys: K): RawEntityValue<T, M, K>;
   getData(): z.infer<T> & M;
-  getData<K extends OneOrMoreEntityKey<T, M>>(
+  getData<K extends EntityKey<T, M>>(
     keys?: K,
-  ): EntityValue<T, M, K> | (z.infer<T> & M) {
+  ): RawEntityValue<T, M, K> | (z.infer<T> & M) {
     if (keys) {
       if (Array.isArray(keys)) {
         if (keys.length === 0) {
           return this.getData();
         }
-        return keys.map((key) => this.getData(key)) as EntityValue<T, M, K>;
+        // return keys.map((key) => this.getData(key)) as EntityValue<T, M, K>;
       } else {
         if (Object.keys(z.keyof(this.schema).enum).includes(keys as string)) {
-          return this._data[keys as keyof z.infer<T>] as EntityValue<T, M, K>;
+          return this._data[keys as keyof z.infer<T>] as RawEntityValue<
+            T,
+            M,
+            K
+          >;
         }
-        return this._metadata[keys as keyof M] as EntityValue<T, M, K>;
+        return this._metadata[keys as keyof M] as RawEntityValue<T, M, K>;
       }
     }
     return { ...this._data, ...this._metadata } as z.infer<T> & M;

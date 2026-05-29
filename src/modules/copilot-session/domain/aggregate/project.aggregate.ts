@@ -6,29 +6,29 @@ import { projectSchema } from "../schema/project.schema.ts";
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 
 export class ProjectAggregate extends AggregateRoot<
-	typeof projectSchema,
-	EntityMetadata,
-	{ copilotInput: CopilotInputAggregate; copilotServer: CopilotServerEntity }
+  typeof projectSchema,
+  EntityMetadata,
+  { copilotInput: CopilotInputAggregate; copilotServer: CopilotServerEntity }
 > {
-	constructor(data: ProjectAggregate);
-	constructor(
-		copilotInputAggregate: CopilotInputAggregate,
-		copilotServerEntity: CopilotServerEntity,
-		projectEntity: ProjectEntity,
-	);
-	constructor(
-		argument1: ProjectAggregate | CopilotInputAggregate,
-		argument2?: CopilotServerEntity,
-		argument3?: ProjectEntity,
-	) {
-		if (argument1 instanceof ProjectAggregate) {
-			super(argument1);
-			this.setEntity("copilotInput", argument1.getEntity("copilotInput"));
-			this.setEntity("copilotServer", argument1.getEntity("copilotServer"));
-		} else {
-			super(argument3!);
-			this.setEntity("copilotInput", argument1);
-			this.setEntity("copilotServer", argument2!);
-		}
-	}
+  constructor(data: ProjectAggregate);
+  constructor(
+    copilotInputAggregate: CopilotInputAggregate,
+    copilotServerEntity: CopilotServerEntity,
+    projectEntity: ProjectEntity,
+  );
+  constructor(
+    argument1: ProjectAggregate | CopilotInputAggregate,
+    argument2?: CopilotServerEntity,
+    argument3?: ProjectEntity,
+  ) {
+    if (argument1 instanceof ProjectAggregate) {
+      super(argument1);
+      this.setEntity("copilotInput", argument1.getEntity("copilotInput"));
+      this.setEntity("copilotServer", argument1.getEntity("copilotServer"));
+    } else {
+      super(argument3!);
+      this.setEntity("copilotInput", argument1);
+      this.setEntity("copilotServer", argument2!);
+    }
+  }
 }

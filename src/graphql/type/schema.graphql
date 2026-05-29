@@ -29,10 +29,10 @@ type Mutation {
 
   submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
 
-  createProject(projectName: String): GoldenSet!
+  # createProject(projectName: String): GoldenSet!
   runCrdtTest(number: Int!): String
 
-  deleteProject(projectExId: String!): Boolean!
+  # deleteProject(projectExId: String!): Boolean!
 }
 """
 Type of AI Copilot being evaluated.

@@ -1,7 +1,10 @@
 import { CopilotInputAggregate } from "../domain/aggregate/copilot-input.aggregate.ts";
 import { GoldenSetEntity } from "../domain/entity/golden-set.entity.ts";
 import { UserInputEntity } from "../domain/entity/user-input.entity.ts";
-import type { ICopilotInputRepository } from "../domain/interface/copilot-input.interface.ts";
+import type {
+  CopilotInputFilters,
+  ICopilotInputRepository,
+} from "../domain/interface/copilot-input.interface.ts";
 import type { IGoldenSetRepository } from "../domain/interface/golden-set.interface.ts";
 import type { IUserInputRepository } from "../domain/interface/user-input.interface.ts";
 
@@ -56,9 +59,12 @@ export class GetCopilotInputByFiltersUseCase {
     },
   ) {}
 
-  async execute(data: { goldenSetId?: string; userInputId?: string }) {
-    const copilotInputs =
-      await this.repository.copilotInputRepository.getByFilters(data);
-    return copilotInputs;
+  async execute(copilotInputId: string): Promise<CopilotInputAggregate>;
+  async execute(filters: Partial<CopilotInputFilters>): Promise<unknown>;
+  async execute(data: string | Partial<CopilotInputFilters>) {
+    if (typeof data === "string") {
+      return await this.repository.copilotInputRepository.findById(data);
+    }
+    return await this.repository.copilotInputRepository.getByFilters(data);
   }
 }

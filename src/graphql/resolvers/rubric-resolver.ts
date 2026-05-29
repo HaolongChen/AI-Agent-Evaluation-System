@@ -2,7 +2,6 @@ import { repository } from "../../DI/repository.ts";
 import { ExecuteCopilotUseCase } from "../../modules/copilot-session/application/execution-service.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-session/domain/entity/copilot-output.entity.ts";
 import { GenerateRubricUseCase } from "../../modules/rubrics/application/generate-rubric.ts";
-import { ProjectLifecycleAdapter } from "../../modules/copilot-session/application/project-lifecycle.ts";
 import type { RubricAggregate } from "../../modules/rubrics/domain/aggregate/rubric.aggregate.ts";
 
 import type {
@@ -13,6 +12,9 @@ import type {
   Rubric,
 } from "../generated/resolvers-types.ts";
 import { getMyAccount } from "../../DI/account.ts";
+import { CreateProjectUseCase } from "../../modules/copilot-session/application/create-project.ts";
+import { GetCopilotInputByFiltersUseCase } from "../../modules/dataset/application/copilot-input.ts";
+import { GetCopilotServerUseCase } from "../../modules/dataset/application/copilot-server.ts";
 
 const toGraphqlRubric = (
   rubric: ReturnType<RubricAggregate["getAllData"]>,
@@ -85,9 +87,26 @@ export const rubricResolver = {
       arguments_: MutationExecuteCopilotArguments,
     ): Promise<CopilotOutput> => {
       const myAccount = await getMyAccount();
-      const projectLifecycle = new ProjectLifecycleAdapter(
+      const copilotInputUseCase = new GetCopilotInputByFiltersUseCase({
+        copilotInputRepository: repository.copilotInputRepository,
+      });
+      const copilotInput = await copilotInputUseCase.execute(
+        arguments_.context.copilotInputId,
+      );
+      const copilotServerUseCase = new GetCopilotServerUseCase(
+        repository.copilotServerRepository,
+      );
+      const copilotServer = await copilotServerUseCase.execute();
+      const createProjectUseCase = new CreateProjectUseCase(
+        {
+          projectRepository: repository.projectRepository,
+          zionProjectRepository: repository.zionProjectRepository(myAccount),
+        },
         myAccount,
-        repository.projectRepository,
+      );
+      const project = await createProjectUseCase.execute(
+        copilotInput,
+        copilotServer,
       );
       const executeCopilotUseCase = new ExecuteCopilotUseCase(
         {
@@ -95,12 +114,9 @@ export const rubricResolver = {
           copilotServerRepository: repository.copilotServerRepository,
           copilotInputRepository: repository.copilotInputRepository,
         },
-        projectLifecycle,
         myAccount,
       );
-      const copilotOutput = await executeCopilotUseCase.executeV2(
-        arguments_.context,
-      );
+      const copilotOutput = await executeCopilotUseCase.executeV2(project);
       return toGraphqlCopilotOutput(copilotOutput);
     },
     generateRubric: async (

@@ -3,16 +3,14 @@ import { repository } from "../../DI/repository.ts";
 import { CreateGoldenSetUseCase } from "../../modules/dataset/application/create-golden-set.ts";
 import { CreateUserInputUseCase } from "../../modules/dataset/application/create-user-input.ts";
 import {
-  FormCopilotInputUseCase,
+  BuildCopilotInputUseCase,
   GetCopilotInputByFiltersUseCase,
 } from "../../modules/dataset/application/copilot-input.ts";
 import {
   type CopilotInput,
   // CopilotType,
   type GoldenSet,
-  type MutationCreateProjectArgs as MutationCreateProjectArguments,
   type MutationCreateUserInputArgs as MutationCreateUserInputArguments,
-  type MutationDeleteProjectArgs as MutationDeleteProjectArguments,
   type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
   type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
   type QueryGetCopilotInputArgs as QueryGetCopilotInputArguments,
@@ -157,7 +155,7 @@ export const goldenSetResolver = {
       _: unknown,
       arguments_: MutationLinkGoldenSetToUserInputArguments,
     ): Promise<boolean> => {
-      const formCopilotInputUseCase = new FormCopilotInputUseCase({
+      const formCopilotInputUseCase = new BuildCopilotInputUseCase({
         copilotInputRepository: repository.copilotInputRepository,
         goldenSetRepository: repository.goldenSetRepository,
         userInputRepository: repository.userInputRepository,
@@ -168,41 +166,37 @@ export const goldenSetResolver = {
       return true;
     },
 
-    createProject: async (
-      _: unknown,
-      arguments_: MutationCreateProjectArguments,
-    ): Promise<GoldenSet> => {
-      const projectLifecycle = new ProjectLifecycleAdapter(
-        await getMyAccount(),
-        repository.projectRepository,
-      );
-      await projectLifecycle.createTemporaryProject(
-        arguments_.projectName ?? `temp-project-${Date.now()}`,
-      );
-      const projectService = projectLifecycle.projectService;
-      const schemaManager = projectService?.getSchemaManager();
-      const schemaId = schemaManager?.getSchemaId();
-      if (!schemaId) {
-        throw new Error("Failed to create project: schema ID is undefined");
-      }
-      const createGoldenSetUseCase = new CreateGoldenSetUseCase(
-        repository.goldenSetRepository,
-      );
-      const goldenSet = await createGoldenSetUseCase.execute(schemaId);
-      return goldenSetDataMapper(goldenSet);
-    },
-    deleteProject: async (
-      _: unknown,
-      arguments_: MutationDeleteProjectArguments,
-    ): Promise<boolean> => {
-      const projectLifecycle = new ProjectLifecycleAdapter(
-        await getMyAccount(),
-        repository.projectRepository,
-      );
-      await projectLifecycle.importExistingProject(arguments_.projectExId);
-      await projectLifecycle.deleteTemporaryProject();
-      return true;
-    },
+    // createProject: async (
+    //   _: unknown,
+    //   arguments_: MutationCreateProjectArguments,
+    // ): Promise<GoldenSet> =>
+    // {
+    //   const zionProject = new ZionProjectEntity( {projectName: arguments_.projectName ?? `temp-project-${Date.now()}`});
+    //   const projectEntity = await repository.zionProjectRepository(await getMyAccount()).createZionProject(zionProject);
+    //   const projectService = projectLifecycle.projectService;
+    //   const schemaManager = projectService?.getSchemaManager();
+    //   const schemaId = schemaManager?.getSchemaId();
+    //   if (!schemaId) {
+    //     throw new Error("Failed to create project: schema ID is undefined");
+    //   }
+    //   const createGoldenSetUseCase = new CreateGoldenSetUseCase(
+    //     repository.goldenSetRepository,
+    //   );
+    //   const goldenSet = await createGoldenSetUseCase.execute(schemaId);
+    //   return goldenSetDataMapper(goldenSet);
+    // },
+    // deleteProject: async (
+    //   _: unknown,
+    //   arguments_: MutationDeleteProjectArguments,
+    // ): Promise<boolean> => {
+    //   const projectLifecycle = new ProjectLifecycleAdapter(
+    //     await getMyAccount(),
+    //     repository.projectRepository,
+    //   );
+    //   await projectLifecycle.importExistingProject(arguments_.projectExId);
+    //   await projectLifecycle.deleteTemporaryProject();
+    //   return true;
+    // },
     runCrdtTest: async (
       _: unknown,
       arguments_: { number: number },

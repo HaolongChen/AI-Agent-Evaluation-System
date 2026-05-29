@@ -170,9 +170,7 @@ export type HumanEvaluationInput = {
 
 export type Mutation = {
   __typename: "Mutation";
-  createProject: GoldenSet;
   createUserInput: UserInput;
-  deleteProject: Scalars["Boolean"]["output"];
   executeCopilot: CopilotOutput;
   generateRubric: Array<Maybe<Rubric>>;
   initializeGoldenSet: GoldenSet;
@@ -181,16 +179,8 @@ export type Mutation = {
   submitHumanEvaluation: EvaluationSession;
 };
 
-export type MutationCreateProjectArgs = {
-  projectName: InputMaybe<Scalars["String"]["input"]>;
-};
-
 export type MutationCreateUserInputArgs = {
   input: UserInputInput;
-};
-
-export type MutationDeleteProjectArgs = {
-  projectExId: Scalars["String"]["input"];
 };
 
 export type MutationExecuteCopilotArgs = {
@@ -585,23 +575,11 @@ export type MutationResolvers<
   ParentType extends ResolversParentTypes["Mutation"] =
     ResolversParentTypes["Mutation"],
 > = ResolversObject<{
-  createProject: Resolver<
-    ResolversTypes["GoldenSet"],
-    ParentType,
-    ContextType,
-    MutationCreateProjectArgs
-  >;
   createUserInput: Resolver<
     ResolversTypes["UserInput"],
     ParentType,
     ContextType,
     RequireFields<MutationCreateUserInputArgs, "input">
-  >;
-  deleteProject: Resolver<
-    ResolversTypes["Boolean"],
-    ParentType,
-    ContextType,
-    RequireFields<MutationDeleteProjectArgs, "projectExId">
   >;
   executeCopilot: Resolver<
     ResolversTypes["CopilotOutput"],

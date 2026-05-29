@@ -20,8 +20,7 @@ export type ProjectRepositoryType = {
   copilotInputId: string;
   copilotServerId: string;
   projectExId: string;
-  schemaId: string;
-  name: string;
+  projectName: string;
   createdAt: Date;
   createdBy: string;
   copilotInput?: CopilotInputRepositoryType;
@@ -98,11 +97,17 @@ export class ProjectRepository implements IProjectRepository {
     await prisma.project.delete({ where: { id } });
   }
   async save(data: ProjectAggregate): Promise<void> {
+    const projectName =
+      data.getData("typeSystemStore")?.projectInfo.projectName;
+    if (!projectName) {
+      throw new Error("Project name is required to save a project");
+    }
     const project = await prisma.project.upsert({
       where: { id: data.getData("id") },
       update: {},
       create: {
         ...data.getData(),
+        projectName,
         copilotInputId: data.getEntity("copilotInput").getData("id"),
         copilotServerId: data.getEntity("copilotServer").getData("id"),
       },

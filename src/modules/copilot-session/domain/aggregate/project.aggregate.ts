@@ -1,13 +1,15 @@
 import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
-import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
 import { ProjectEntity } from "../entity/project.entity.ts";
-import { projectSchema } from "../schema/project.schema.ts";
+import {
+  projectSchema,
+  type ProjectMetadata,
+} from "../schema/project.schema.ts";
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 
 export class ProjectAggregate extends AggregateRoot<
   typeof projectSchema,
-  EntityMetadata,
+  ProjectMetadata,
   { copilotInput: CopilotInputAggregate; copilotServer: CopilotServerEntity }
 > {
   constructor(data: ProjectAggregate);

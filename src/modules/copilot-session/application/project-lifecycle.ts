@@ -1,13 +1,18 @@
 import type { Account } from "../../account/application/account-handler.ts";
 import type { IProjectRepository } from "../domain/interface/project.interface.ts";
-import type { IProjectLifecycle, IZionProjectRepository } from "../domain/interface/zion-project.interface.ts";
+import type {
+  IProjectLifecycle,
+  IZionProjectRepository,
+} from "../domain/interface/zion-project.interface.ts";
 import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-system.ts";
 
 export class ProjectLifecycleAdapter implements IProjectLifecycle {
-
   constructor(
     private account: Account,
-    private repository: {projectRepository: IProjectRepository, zionProjectRepository: IZionProjectRepository},
+    private repository: {
+      projectRepository: IProjectRepository;
+      zionProjectRepository: IZionProjectRepository;
+    },
   ) {}
 
   async importExistingProject(projectExId: string, initialSchemaId?: string) {

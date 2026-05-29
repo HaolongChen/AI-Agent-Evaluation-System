@@ -98,8 +98,7 @@ export const ProjectScalarFieldEnum = {
   copilotInputId: "copilotInputId",
   copilotServerId: "copilotServerId",
   projectExId: "projectExId",
-  schemaId: "schemaId",
-  name: "name",
+  projectName: "projectName",
   createdAt: "createdAt",
   createdBy: "createdBy",
 } as const;

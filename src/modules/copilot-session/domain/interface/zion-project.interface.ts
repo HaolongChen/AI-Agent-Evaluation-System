@@ -1,13 +1,15 @@
 import type { ProjectEntity } from "../entity/project.entity.ts";
+import type { ZionProjectEntity } from "../entity/zion-project.entity.ts";
 
 export interface IZionProjectRepository<
-  T extends ProjectEntity = ProjectEntity,
+  T extends ZionProjectEntity = ZionProjectEntity,
+  P extends ProjectEntity = ProjectEntity,
 > {
-  createZionProject(project: T): Promise<void>;
+  createZionProject(project: T): Promise<P>;
 
-  getByProjectExId(projectExId: string): Promise<T>;
+  getTypeSystemStoreByProjectEntity(project: P): Promise<P>;
 
-  deleteZionProject(project: T): Promise<void>;
+  deleteZionProject(project: P): Promise<void>;
 
-  importSchemaToProject(schemaId: string, project: T): Promise<void>;
+  importSchemaToProject(schemaId: string, project: P): Promise<void>;
 }

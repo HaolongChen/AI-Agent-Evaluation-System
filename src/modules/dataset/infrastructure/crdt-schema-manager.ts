@@ -24,6 +24,7 @@ import type { Account } from "../../account/application/account-handler.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import { getDangerousAccount } from "../../../DI/account.ts";
 import { ProjectEntity } from "../../copilot-session/domain/entity/project.entity.ts";
+import { ZionProjectEntity } from "../../copilot-session/domain/entity/zion-project.entity.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -251,7 +252,6 @@ export class TypeSystemStore {
     private projectExId: string,
   ) {}
 
-
   async importSchemaManual(schemaId: string): Promise<void> {
     if (!this.appDetail) {
       throw new Error("App detail is required for importing schema");
@@ -284,24 +284,20 @@ export class TypeSystemStore {
     }
     const path = new URL(
       this.appDetail.latestSchema.crdtModelUrl,
-    ).pathname.split( "/" );
-    return path[ 2 ];
+    ).pathname.split("/");
+    return path[2];
   }
 
   buildProjectEntity() {
     const projectInfo = this.projectInfo;
-    const projectEntity = new ProjectEntity({
-      name: projectInfo.projectName,
+    const projectEntity = new ZionProjectEntity({
+      projectName: projectInfo.projectName,
       category: projectInfo.category ?? "OTHERS",
-      projectScopeType:
+      projectSpaceType:
         projectInfo.projectSpace?.projectSpaceType ?? "PERSONAL",
       useNewType: true,
       useRefactoredComponent: true,
       platform: "WEB",
-    });
-    projectEntity.setData({
-      projectExId: this.projectExId,
-      schemaId: this.getSchemaId(),
     });
     return projectEntity;
   }

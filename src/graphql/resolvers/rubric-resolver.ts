@@ -111,8 +111,7 @@ export const rubricResolver = {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [feedbacks, ...rubricAggregate] =
         await generateRubricUseCase.execute(
-          arguments_.context.goldenSetId,
-          arguments_.context.userInputId,
+          arguments_.context.copilotSessionId,
         );
       return rubricAggregate.map((r) => toGraphqlRubric(r));
     },

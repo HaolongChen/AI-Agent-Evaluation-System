@@ -5,7 +5,7 @@ import { CreateUserInputUseCase } from "../../modules/dataset/application/create
 import {
   FormCopilotInputUseCase,
   GetCopilotInputByFiltersUseCase,
-} from "../../modules/dataset/application/form-copilot-input.ts";
+} from "../../modules/dataset/application/copilot-input.ts";
 import {
   type CopilotInput,
   // CopilotType,
@@ -29,7 +29,6 @@ import type {
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
 import { logger } from "../../modules/shared/infrastructure/logger.ts";
-import { ProjectLifecycleAdapter } from "../../modules/copilot-session/application/project-lifecycle.ts";
 import { getMyAccount } from "../../DI/account.ts";
 import type { GoldenSetEntity } from "../../modules/dataset/domain/entity/golden-set.entity.ts";
 import type { UserInputEntity } from "../../modules/dataset/domain/entity/user-input.entity.ts";
@@ -163,10 +162,9 @@ export const goldenSetResolver = {
         goldenSetRepository: repository.goldenSetRepository,
         userInputRepository: repository.userInputRepository,
       });
-      await formCopilotInputUseCase.execute(
-        arguments_.context.goldenSetId,
+      await formCopilotInputUseCase.execute(arguments_.context.goldenSetId, [
         arguments_.context.userInputId,
-      );
+      ]);
       return true;
     },
 

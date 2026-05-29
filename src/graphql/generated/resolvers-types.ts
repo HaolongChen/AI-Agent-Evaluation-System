@@ -31,6 +31,11 @@ export type Scalars = {
   Float: { input: number; output: number };
 };
 
+export type CopilotExecutionInput = {
+  copilotInputId: Scalars["String"]["input"];
+  copilotServerId: Scalars["String"]["input"];
+};
+
 export type CopilotInput = {
   __typename: "CopilotInput";
   copilotSessions: Array<Maybe<CopilotSession>>;
@@ -189,11 +194,11 @@ export type MutationDeleteProjectArgs = {
 };
 
 export type MutationExecuteCopilotArgs = {
-  context: CopilotInputInput;
+  context: CopilotExecutionInput;
 };
 
 export type MutationGenerateRubricArgs = {
-  context: CopilotInputInput;
+  context: RubricGenerationInput;
 };
 
 export type MutationInitializeGoldenSetArgs = {
@@ -260,6 +265,10 @@ export type Rubric = {
   id: Scalars["String"]["output"];
 };
 
+export type RubricGenerationInput = {
+  copilotSessionId: Scalars["String"]["input"];
+};
+
 export type SessionFilters = {
   copilotOutputId: InputMaybe<Scalars["String"]["input"]>;
   evaluatorId: InputMaybe<Scalars["String"]["input"]>;
@@ -283,7 +292,6 @@ export type UserInput = {
 
 export type UserInputInput = {
   content: Scalars["String"]["input"];
-  createdBy: InputMaybe<Scalars["String"]["input"]>;
 };
 
 export type WithIndex<TObject> = TObject & Record<string, any>;
@@ -409,6 +417,7 @@ export type DirectiveResolverFn<
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
   Boolean: ResolverTypeWrapper<Scalars["Boolean"]["output"]>;
+  CopilotExecutionInput: CopilotExecutionInput;
   CopilotInput: ResolverTypeWrapper<CopilotInput>;
   CopilotInputInput: CopilotInputInput;
   CopilotOutput: ResolverTypeWrapper<CopilotOutput>;
@@ -427,6 +436,7 @@ export type ResolversTypes = ResolversObject<{
   Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Rubric: ResolverTypeWrapper<Rubric>;
+  RubricGenerationInput: RubricGenerationInput;
   SessionFilters: SessionFilters;
   String: ResolverTypeWrapper<Scalars["String"]["output"]>;
   UserInput: ResolverTypeWrapper<UserInput>;
@@ -436,6 +446,7 @@ export type ResolversTypes = ResolversObject<{
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
   Boolean: Scalars["Boolean"]["output"];
+  CopilotExecutionInput: CopilotExecutionInput;
   CopilotInput: CopilotInput;
   CopilotInputInput: CopilotInputInput;
   CopilotOutput: CopilotOutput;
@@ -452,6 +463,7 @@ export type ResolversParentTypes = ResolversObject<{
   Mutation: Record<PropertyKey, never>;
   Query: Record<PropertyKey, never>;
   Rubric: Rubric;
+  RubricGenerationInput: RubricGenerationInput;
   SessionFilters: SessionFilters;
   String: Scalars["String"]["output"];
   UserInput: UserInput;

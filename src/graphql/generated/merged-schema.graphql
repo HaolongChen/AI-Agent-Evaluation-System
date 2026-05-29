@@ -1396,6 +1396,11 @@ type CopilotEvaluation {
   session: CopilotSession!
 }
 
+input CopilotExecutionInput {
+  copilotInputId: String!
+  copilotServerId: String!
+}
+
 type CopilotFeedbackMessage implements CopilotContentMessage {
   evaluatedMessageExId: String!
   feedbackCategory: FeedbackCategory!
@@ -3967,7 +3972,7 @@ type Mutation {
   ): Boolean!
   endAllComputingPowerKitsInProject(projectExId: String!): Boolean!
   endSession(sessionExId: String!): Boolean!
-  executeCopilot(context: CopilotInputInput!): CopilotOutput!
+  executeCopilot(context: CopilotExecutionInput!): CopilotOutput!
   executeOverdueMigrationTasks: Boolean!
   exitOrganization(organizationExId: String!): Boolean!
   expeditedWechatMiniAppRegister(
@@ -4063,7 +4068,7 @@ type Mutation {
     promoCodeProductRules: [ProductCommissionRuleDtoInput!]!
     startAt: OffsetDateTime!
   ): PromoCode
-  generateRubric(context: CopilotInputInput!): [Rubric]!
+  generateRubric(context: RubricGenerationInput!): [Rubric]!
   generateSchemaModel(schemaId: Long!): Boolean!
   generateServerSchemaForAllDeployedSchema: Boolean!
   generateServerSchemaForNonDeletedSchema: Boolean!
@@ -7042,6 +7047,10 @@ type Rubric {
   id: String!
 }
 
+input RubricGenerationInput {
+  copilotSessionId: String!
+}
+
 enum RuntimeAlertType {
   PG_OOM
   PG_READY
@@ -7789,7 +7798,6 @@ type UserInput {
 
 input UserInputInput {
   content: String!
-  createdBy: String
 }
 
 type UserQuestion {

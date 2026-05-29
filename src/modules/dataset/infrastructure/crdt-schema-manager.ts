@@ -23,7 +23,6 @@ import type {
 import type { Account } from "../../account/application/account-handler.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import { getDangerousAccount } from "../../../DI/account.ts";
-import { ProjectEntity } from "../../copilot-session/domain/entity/project.entity.ts";
 import { ZionProjectEntity } from "../../copilot-session/domain/entity/zion-project.entity.ts";
 // ---------------------------------------------------------------------------
 // Documents

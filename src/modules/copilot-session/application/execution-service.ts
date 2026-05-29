@@ -5,11 +5,10 @@ import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { createNewSession } from "../infrastructure/copilot-network.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import type { ICopilotInputRepository } from "../../dataset/domain/interface/copilot-input.interface.ts";
-import type { IProjectLifecycle } from "../domain/interface/zion-project.interface.ts";
 import { CopilotSessionAggregate } from "../domain/aggregate/copilot-session.aggregate.ts";
 import type { ICopilotServerRepository } from "../../dataset/domain/interface/copilot-server.interface.ts";
 import type { ICopilotSessionRepository } from "../domain/interface/copilot-session.interface.ts";
-import type { CopilotInputAggregate } from "../../dataset/domain/aggregate/copilot-input.aggregate.ts";
+import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 
 export class ExecuteCopilotUseCase {
   private isProjectTemporary = true;
@@ -19,67 +18,38 @@ export class ExecuteCopilotUseCase {
       copilotInputRepository: ICopilotInputRepository;
       copilotServerRepository: ICopilotServerRepository;
     },
-    private projectLifecycle: IProjectLifecycle,
     private account: Account,
   ) {}
 
-  async setupEnvironment(data: {
-    copilotInput: CopilotInputAggregate;
-    projectExId?: string;
-  }): Promise<CopilotSessionAggregate> {
-    const copilotInput =
-      await this.repository.copilotInputRepository.getByFilters({
-        goldenSetId: data.goldenSetId,
-        userInputId: data.userInputId,
-      });
-    const goldenSetEntity = copilotInput.getEntity("goldenSet");
-    const userInputEntity = copilotInput.getEntity("userInput");
-
-    const { projectExId, schemaGraph } = data.projectExId
-      ? await this.projectLifecycle.importExistingProject(data.projectExId)
-      : await this.projectLifecycle.createTemporaryProject(
-          this.generateProjectName(data.goldenSetId, data.userInputId),
-          goldenSetEntity.getData("schemaId"),
-        );
+  async setupEnvironment(
+    project: ProjectAggregate,
+  ): Promise<CopilotSessionAggregate> {
     const copilotSessionExId = await createNewSession(
-      projectExId,
+      project.getData("projectExId"),
       await this.account.getGQLClient(),
     );
 
-    const copilotServerEntity =
-      await this.repository.copilotServerRepository.getDefault();
+    const copilotServerEntity = project.getEntity("copilotServer");
 
-    const session = new CopilotSessionAggregate(
-      copilotInput,
-      copilotServerEntity,
-      copilotSessionExId,
-    );
+    const session = new CopilotSessionAggregate(project, copilotSessionExId);
     session.setEntity(
       "copilotJob",
       new CopilotJobEntity({
         copilotSessionExId,
-        projectExId,
-        schemaGraph,
+        projectExId: project.getData("projectExId"),
+        schemaGraph: project.getData("typeSystemStore")?.schemaGraph,
         wsUrl: copilotServerEntity.getData("wsEndpoint"),
-        query: userInputEntity.getData("content"),
+        query: project
+          .getEntity("copilotInput")
+          .getEntity("userInput")
+          .getData("content"),
       }),
     );
     return session;
   }
 
-  private generateProjectName(
-    goldenSetId: string,
-    userInputId: string,
-  ): string {
-    return `temp-project-${goldenSetId[0]}-${userInputId[0]}-${Date.now()}`;
-  }
-
-  async executeV2(data: {
-    goldenSetId: string;
-    userInputId: string;
-    projectExId?: string;
-  }) {
-    const copilotSession = await this.setupEnvironment(data);
+  async executeV2(project: ProjectAggregate) {
+    const copilotSession = await this.setupEnvironment(project);
     const copilotJobEntity = copilotSession.getEntity("copilotJob");
     const wsClient = await this.account.getWsClient();
     const gqlClient = await this.account.getGQLClient();

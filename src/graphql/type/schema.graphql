@@ -23,9 +23,9 @@ type Mutation {
 
   linkGoldenSetToUserInput(context: CopilotInputInput!): Boolean!
 
-  generateRubric(context: CopilotInputInput!): [Rubric]!
+  generateRubric(context: RubricGenerationInput!): [Rubric]!
 
-  executeCopilot(context: CopilotInputInput!): CopilotOutput!
+  executeCopilot(context: CopilotExecutionInput!): CopilotOutput!
 
   submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
 
@@ -211,10 +211,19 @@ input GoldenSetInput {
 
 input UserInputInput {
   content: String!
-  createdBy: String
 }
 
 input CopilotInputInput {
   goldenSetId: String!
   userInputId: String!
+}
+
+input CopilotExecutionInput {
+  copilotInputId: String!
+  copilotServerId: String!
+}
+
+input RubricGenerationInput {
+  copilotSessionId: String!
+  # modelName: String
 }

@@ -81,13 +81,13 @@ export class Entity<
   public schema: T;
   constructor(entity: Entity<T, M>);
   constructor(
-    data: z.infer<T>,
+    data: z.input<T>,
     schema: T,
     id?: string,
     metadata?: Partial<Omit<M, "id">>,
   );
   constructor(
-    argument1: Entity<T, M> | z.infer<T>,
+    argument1: Entity<T, M> | z.input<T>,
     argument2?: T,
     argument3?: string,
     argument4?: Partial<Omit<M, "id">>,

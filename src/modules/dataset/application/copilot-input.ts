@@ -5,7 +5,7 @@ import type { ICopilotInputRepository } from "../domain/interface/copilot-input.
 import type { IGoldenSetRepository } from "../domain/interface/golden-set.interface.ts";
 import type { IUserInputRepository } from "../domain/interface/user-input.interface.ts";
 
-export class FormCopilotInputUseCase {
+export class BuildCopilotInputUseCase {
   constructor(
     private repository: {
       copilotInputRepository: ICopilotInputRepository;

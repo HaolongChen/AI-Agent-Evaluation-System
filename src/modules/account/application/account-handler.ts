@@ -1,4 +1,3 @@
-import { login } from "../infrastructure/login.ts";
 import { AccountService } from "../domain/service/account.service.ts";
 import {
   NetworkClient,
@@ -6,6 +5,7 @@ import {
   type WebSocketClient,
 } from "../../shared/application/graphql-client.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
+import type { ILoginService } from "../domain/interface/login.interface.ts";
 
 export class Account extends AccountService {
   private networkClient: NetworkClient;
@@ -13,6 +13,7 @@ export class Account extends AccountService {
   private wsClient: WebSocketClient | undefined;
   private _sessionId: string;
   constructor(
+    private loginService: ILoginService,
     phoneNumber: string,
     password: string,
     _url?: string,
@@ -29,11 +30,6 @@ export class Account extends AccountService {
 
   get sessionId(): string {
     return this._sessionId;
-  }
-
-  set sessionId(value: string) {
-    this._sessionId = value;
-    this.networkClient.setHeader("X-Session-Id", value);
   }
 
   async getGQLClient(newUrl?: string) {
@@ -65,7 +61,7 @@ export class Account extends AccountService {
   }
 
   async login() {
-    const accountInfo = await login(
+    const accountInfo = await this.loginService.login(
       this.account.getData("phoneNumber"),
       this.account.getData("password"),
     );

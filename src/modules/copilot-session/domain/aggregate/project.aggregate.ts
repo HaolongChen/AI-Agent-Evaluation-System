@@ -6,12 +6,20 @@ import {
   type ProjectMetadata,
 } from "../schema/project.schema.ts";
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
+import type { TypeSystemStore } from "../../../dataset/infrastructure/crdt-schema-manager.ts";
 
 export class ProjectAggregate extends AggregateRoot<
   typeof projectSchema,
   ProjectMetadata,
   { copilotInput: CopilotInputAggregate; copilotServer: CopilotServerEntity }
 > {
+  get typeSystemStore(): TypeSystemStore {
+    const result = this.getData("typeSystemStore");
+    if (!result) {
+      throw new Error("Type system store not found");
+    }
+    return result;
+  }
   constructor(data: ProjectAggregate);
   constructor(
     copilotInputAggregate: CopilotInputAggregate,

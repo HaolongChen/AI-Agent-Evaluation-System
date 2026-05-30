@@ -1,12 +1,10 @@
 import { clearTimeout } from "node:timers";
 import { Event } from "ts-event-target";
-import {
-  CopilotInputEvent,
-  CopilotJobEntity,
-} from "../domain/entity/copilot-job.entity.ts";
+import { CopilotInputEvent } from "../domain/entity/copilot-job.entity.ts";
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { runToolCalls } from "./tool-call-handler.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
+import type { CopilotSessionAggregate } from "../domain/aggregate/copilot-session.aggregate.ts";
 
 /**
  * SessionOrchestrator — encapsulates WebSocket event handling for a single
@@ -20,7 +18,7 @@ export class SessionOrchestrator {
   private static readonly SESSION_TIMEOUT_MS = 2 * 60 * 1000;
   constructor(
     private runner: ExecutionJobRunnerV2,
-    private job: CopilotJobEntity,
+    private session: CopilotSessionAggregate,
   ) {}
 
   /**
@@ -28,7 +26,12 @@ export class SessionOrchestrator {
    * with the CopilotJobEntity when editable text is received, or rejects
    * on error/timeout.
    */
-  async run(): Promise<CopilotJobEntity> {
+  async run(): Promise<void> {
+    const typeSystemStore = this.session.getEntity("project").typeSystemStore;
+    if (!typeSystemStore.schemaGraph) {
+      await typeSystemStore.rehydrate();
+    }
+    const schemaGraph = typeSystemStore.schemaGraph!;
     const { publish, listen } = this.runner.execute();
     let rejectFunction: (error: unknown) => void;
 
@@ -36,16 +39,16 @@ export class SessionOrchestrator {
       rejectFunction(new Error("Session timeout"));
     }, SessionOrchestrator.SESSION_TIMEOUT_MS);
 
-    return new Promise<CopilotJobEntity>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       rejectFunction = reject;
 
       listen("CopilotEditableTextMessage", (event) => {
-        this.job.editableText = event.data.content;
+        this.session.setData({ editableText: event.data.content });
       });
 
       listen("CopilotAiResponseMessage", (event) => {
-        this.job.aiResponse = event.data.content;
-        if (!this.job.editableText) {
+        this.session.setData({ aiResponse: event.data.content });
+        if (!this.session.getData("editableText")) {
           logger.warn(
             "Received AI response before editable text. This may indicate an issue with the backend job execution.",
           );
@@ -54,7 +57,7 @@ export class SessionOrchestrator {
 
       listen("CopilotToolCallBatchMessage", (event) => {
         const { toolCallBatchId, toolCalls } = event.data;
-        const result = runToolCalls(toolCalls, this.job.getData("schemaGraph"));
+        const result = runToolCalls(toolCalls, schemaGraph);
         if (result.error) {
           logger.error(
             `Error executing tool call batch ${toolCallBatchId}:`,
@@ -86,7 +89,9 @@ export class SessionOrchestrator {
       });
 
       listen("CopilotTaskMessage", (event) => {
-        this.job.addTask(event.data);
+        this.session.setData({
+          tasks: [...(this.session.getData("tasks") ?? []), event.data],
+        });
       });
 
       listen("CopilotTerminateMessage", () => {
@@ -96,10 +101,10 @@ export class SessionOrchestrator {
 
       listen("CopilotStateChangeMessage", (event) => {
         if (event.data.currentJobIsRunning === false) {
-          if (this.job.isFinished()) {
+          if (this.session.getData("aiResponse")) {
             clearTimeout(timer);
-            resolve(this.job);
-          } else if (this.job.editableText) {
+            resolve();
+          } else if (this.session.getData("editableText")) {
             publish(
               new CopilotInputEvent("HUMAN_OPERATION", {
                 humanOperationType: "CONTINUE",
@@ -144,7 +149,11 @@ export class SessionOrchestrator {
         if (!event.data.currentJobIsRunning) {
           publish(
             new CopilotInputEvent("HUMAN_INPUT", {
-              content: this.job.getData("query"),
+              content: this.session
+                .getEntity("project")
+                .getEntity("copilotInput")
+                .getEntity("userInput")
+                .getData("content"),
             }),
           );
         }

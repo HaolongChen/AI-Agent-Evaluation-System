@@ -1,7 +1,6 @@
 import path from "node:path";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import type {
-  EntryEntity,
   FileEntryEntity,
   FolderEntryEntity,
 } from "../entity/entry.entity.ts";
@@ -55,7 +54,10 @@ export class DirectoryAggregate extends AggregateRoot<
     offset?: number,
   ): Promise<string> {
     const entry = this.getEntryByName(name);
-    if (entry && (entry as EntryEntity).getData("type") === "file") {
+    if (
+      entry &&
+      (entry as FileEntryEntity & FolderEntryEntity).getData("type") === "file"
+    ) {
       const fullPath = path.join(this.basePath, entry.getEntryPathName());
       const fileStream = createReadStream(fullPath);
       const rl = createInterface({ input: fileStream, crlfDelay: Infinity });

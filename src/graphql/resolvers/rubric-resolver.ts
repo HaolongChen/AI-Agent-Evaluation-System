@@ -122,14 +122,14 @@ export const rubricResolver = {
     generateRubric: async (
       _: unknown,
       arguments_: MutationGenerateRubricArguments,
-    ): Promise<Rubric[]> => {
+    ): Promise<Rubric> => {
       const generateRubricUseCase = new GenerateRubricUseCase(repository);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const [feedbacks, ...rubricAggregate] =
+      const { feedbacks, ...rubricAggregate } =
         await generateRubricUseCase.execute(
           arguments_.context.copilotSessionId,
         );
-      return rubricAggregate.map((r) => toGraphqlRubric(r));
+      return toGraphqlRubric(rubricAggregate);
     },
   },
 };

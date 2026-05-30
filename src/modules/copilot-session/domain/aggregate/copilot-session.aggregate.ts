@@ -7,21 +7,21 @@ import type { CopilotExecutionMetadata } from "../schema/copilot.schema.ts";
 import type { ProjectAggregate } from "./project.aggregate.ts";
 
 export class CopilotSessionAggregate extends AggregateRoot<
-	typeof copilotSessionSchema,
-	EntityMetadata & CopilotExecutionMetadata,
-	{
-		project: ProjectAggregate;
-		copilotOutput: CopilotOutputEntity;
-		// copilotJob: CopilotJobEntity;
-	}
+  typeof copilotSessionSchema,
+  EntityMetadata & CopilotExecutionMetadata,
+  {
+    project: ProjectAggregate;
+    copilotOutput: CopilotOutputEntity;
+    // copilotJob: CopilotJobEntity;
+  }
 > {
-	constructor(
-		projectAggregate: ProjectAggregate,
-		id?: string | CopilotSessionEntity,
-	) {
-		super(
-			id instanceof CopilotSessionEntity ? id : new CopilotSessionEntity(id),
-		);
-		this.setEntity("project", projectAggregate);
-	}
+  constructor(
+    projectAggregate: ProjectAggregate,
+    id?: string | CopilotSessionEntity,
+  ) {
+    super(
+      id instanceof CopilotSessionEntity ? id : new CopilotSessionEntity(id),
+    );
+    this.setEntity("project", projectAggregate);
+  }
 }

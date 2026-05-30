@@ -6,26 +6,18 @@ import {
 } from "../../shared/application/graphql-client.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import type { ILoginService } from "../domain/interface/login.interface.ts";
+import type { NetworkClientEntity } from "../../shared/domain/entity/network-client.entity.ts";
 
 export class Account extends AccountService {
-  private networkClient: NetworkClient;
-  private gqlClient: GQLClient | undefined;
-  private wsClient: WebSocketClient | undefined;
-  private _sessionId: string;
   constructor(
     private loginService: ILoginService,
     phoneNumber: string,
     password: string,
-    _url?: string,
-    headers?: Record<string, string>,
+    private networkClient: NetworkClientEntity,
   ) {
     logger.info("Initializing Account with phoneNumber:", phoneNumber);
     super(phoneNumber, password);
-    this._sessionId = crypto.randomUUID();
-    this.networkClient = new NetworkClient(_url, {
-      ...headers,
-      "X-Session-Id": this._sessionId,
-    });
+    this.networkClient.setHeader("X-Session-Id", crypto.randomUUID());
   }
 
   get sessionId(): string {

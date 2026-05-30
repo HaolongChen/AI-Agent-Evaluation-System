@@ -31,6 +31,8 @@ export class NetworkClientEntity extends Entity<
   }
   constructor(data: z.input<typeof networkClientSchema>, id?: string) {
     super(data, networkClientSchema, id);
+    // Default Configuration
+    this.setHeader("X-Zed-Version", "2.0.7");
   }
 
   setHeader<T extends keyof NetworkClientHeaders>(key: T, value: string) {

@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const networkClientSchema = z.object({
   // headers: z.record( z.string(), z.string() ),
-  wsUrl: z.url(),
-  gqlUrl: z.url(),
+  wsUrl: z.url().default(process.env.SUBSCRIPTION_GRAPHQL_URL),
+  gqlUrl: z.url().default(process.env.BACKEND_GRAPHQL_URL),
 });
 
 export const ZED_VERSION_HEADER_KEY = {

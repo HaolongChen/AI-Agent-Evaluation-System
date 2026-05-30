@@ -9,7 +9,8 @@ export interface ExternalRepositoryDate {
 export function repositoryDateMapper<T extends Entity>(
   data: ExternalRepositoryDate,
   entity: T,
-) {
+)
+{
   entity.setData({ createdAt: data.createdAt, updatedAt: data.updatedAt });
   return entity;
 }

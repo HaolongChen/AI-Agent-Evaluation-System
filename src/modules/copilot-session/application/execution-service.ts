@@ -1,5 +1,4 @@
 import type { Account } from "../../account/application/account-handler.ts";
-import { CopilotJobEntity } from "../domain/entity/copilot-job.entity.ts";
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { createNewSession } from "../infrastructure/copilot-network.ts";
@@ -11,66 +10,50 @@ import type { ICopilotSessionRepository } from "../domain/interface/copilot-sess
 import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 
 export class ExecuteCopilotUseCase {
-  private isProjectTemporary = true;
-  constructor(
-    private repository: {
-      copilotSessionRepository: ICopilotSessionRepository;
-      copilotInputRepository: ICopilotInputRepository;
-      copilotServerRepository: ICopilotServerRepository;
-    },
-    private account: Account,
-  ) {}
+	private isProjectTemporary = true;
+	constructor(
+		private repository: {
+			copilotSessionRepository: ICopilotSessionRepository;
+			copilotInputRepository: ICopilotInputRepository;
+			copilotServerRepository: ICopilotServerRepository;
+		},
+		private account: Account,
+	) {}
 
-  async setupEnvironment(
-    project: ProjectAggregate,
-  ): Promise<CopilotSessionAggregate> {
-    const copilotSessionExId = await createNewSession(
-      project.getData("projectExId"),
-      await this.account.getGQLClient(),
-    );
+	async setupEnvironment(
+		project: ProjectAggregate,
+	): Promise<CopilotSessionAggregate> {
+		const copilotSessionExId = await createNewSession(
+			project.getData("projectExId"),
+			await this.account.getGQLClient(),
+		);
+		const session = new CopilotSessionAggregate(project, copilotSessionExId);
+		return session;
+	}
 
-    const copilotServerEntity = project.getEntity("copilotServer");
-
-    const session = new CopilotSessionAggregate(project, copilotSessionExId);
-    session.setEntity(
-      "copilotJob",
-      new CopilotJobEntity({
-        copilotSessionExId,
-        projectExId: project.getData("projectExId"),
-        schemaGraph: project.getData("typeSystemStore")?.schemaGraph,
-        wsUrl: copilotServerEntity.getData("wsEndpoint"),
-        query: project
-          .getEntity("copilotInput")
-          .getEntity("userInput")
-          .getData("content"),
-      }),
-    );
-    return session;
-  }
-
-  async executeV2(project: ProjectAggregate) {
-    const copilotSession = await this.setupEnvironment(project);
-    const copilotJobEntity = copilotSession.getEntity("copilotJob");
-    const wsClient = await this.account.getWsClient();
-    const gqlClient = await this.account.getGQLClient();
-    try {
-      const runner = new ExecutionJobRunnerV2(
-        copilotJobEntity.getData("copilotSessionExId"),
-        wsClient,
-        gqlClient,
-      );
-      const orchestrator = new SessionOrchestrator(runner, copilotJobEntity);
-      await orchestrator.run();
-      await this.repository.copilotSessionRepository.save(copilotSession);
-      return copilotSession.getEntity("copilotOutput").getData();
-    } catch (error) {
-      logger.error("Error setting up copilot execution environment:", error);
-      this.account.clearWsClient();
-      throw error;
-    } finally {
-      if (this.isProjectTemporary) {
-        await this.projectLifecycle.deleteTemporaryProject();
-      }
-    }
-  }
+	async executeV2(project: ProjectAggregate) {
+		const copilotSession = await this.setupEnvironment(project);
+		const copilotJobEntity = copilotSession.getEntity("copilotJob");
+		const wsClient = await this.account.getWsClient();
+		const gqlClient = await this.account.getGQLClient();
+		try {
+			const runner = new ExecutionJobRunnerV2(
+				copilotJobEntity.getData("copilotSessionExId"),
+				wsClient,
+				gqlClient,
+			);
+			const orchestrator = new SessionOrchestrator(runner, copilotJobEntity);
+			await orchestrator.run();
+			await this.repository.copilotSessionRepository.save(copilotSession);
+			return copilotSession.getEntity("copilotOutput").getData();
+		} catch (error) {
+			logger.error("Error setting up copilot execution environment:", error);
+			this.account.clearWsClient();
+			throw error;
+		} finally {
+			if (this.isProjectTemporary) {
+				await this.projectLifecycle.deleteTemporaryProject();
+			}
+		}
+	}
 }

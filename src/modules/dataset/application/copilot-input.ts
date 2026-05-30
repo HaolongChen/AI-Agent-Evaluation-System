@@ -60,7 +60,7 @@ export class GetCopilotInputByFiltersUseCase {
   ) {}
 
   async execute(copilotInputId: string): Promise<CopilotInputAggregate>;
-  async execute(filters: Partial<CopilotInputFilters>): Promise<unknown>;
+  async execute(filters: Partial<CopilotInputFilters>): Promise<typeof filters extends Required<CopilotInputFilters> ? CopilotInputAggregate : CopilotInputAggregate[]>;
   async execute(data: string | Partial<CopilotInputFilters>) {
     if (typeof data === "string") {
       return await this.repository.copilotInputRepository.findById(data);

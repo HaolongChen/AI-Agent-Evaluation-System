@@ -13,6 +13,7 @@ import {
   type ProjectDataMapperParameters,
   type ProjectRepositoryType,
 } from "./project.repository.ts";
+import type { ICrdtSchemaLifecycle } from "../../domain/interface/crdt-schema-lifecycle.interface.ts";
 
 export type CopilotSessionRepositoryType = {
   copilotOutput?: CopilotOutputRepositoryType | null;
@@ -47,8 +48,8 @@ export const copilotSessionDataMapper = (
 
   const result = repositoryDateMapper(
     data,
-    new CopilotSessionAggregate(project, data.id),
-  );
+    new CopilotSessionAggregate(project, {} as ICrdtSchemaLifecycle, data.id),
+  ); // Faking data here
   if (data.copilotOutput) {
     result.setEntity(
       "copilotOutput",

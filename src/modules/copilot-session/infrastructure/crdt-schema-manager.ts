@@ -21,8 +21,11 @@ import type {
   SupportedCustomModelDescriptorQuery,
 } from "../../../graphql/generated/types.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
-import { ZionProjectEntity } from "../../copilot-session/domain/entity/zion-project.entity.ts";
 import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
+import type {
+  ICrdtSchemaLifecycle,
+  ICrdtSchemaLifecycleFactory,
+} from "../domain/interface/crdt-schema-lifecycle.interface.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -224,7 +227,21 @@ export type SupportedCustomModelDescriptor =
 // TypeSystemStore
 // ---------------------------------------------------------------------------
 
-export class TypeSystemStore {
+export class TypeSystemStoreFactory implements ICrdtSchemaLifecycleFactory {
+  constructor(
+    private gqlClient: IGQLClient,
+    private dangerousGQLClient: IGQLClient,
+  ) {}
+  create(projectExId: string): ICrdtSchemaLifecycle {
+    return new TypeSystemStore(
+      projectExId,
+      this.dangerousGQLClient,
+      this.gqlClient,
+    );
+  }
+}
+
+export class TypeSystemStore implements ICrdtSchemaLifecycle {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;
   private schema: object | null = null;
   private crdtSchemaModel: string | null = null;
@@ -232,17 +249,29 @@ export class TypeSystemStore {
   public afCustomCodeTemplates: AfCustomCodeTemplates = [];
   public supportedCustomModelDescriptor: SupportedCustomModelDescriptor = null;
 
-  get schemaGraph(): OpaqueSchemaGraph | null {
-    return this.currSchemaGraph;
+  async schemaGraph(): Promise<OpaqueSchemaGraph> {
+    if (this.currSchemaGraph) {
+      return this.currSchemaGraph;
+    }
+    return this.rehydrate();
   }
 
-  get projectInfo() {
-    if (this.appDetail) {
-      return this.appDetail.__typename === "Project"
-        ? this.appDetail
-        : this.appDetail.project;
+  async getProjectInfo() {
+    if (!this.appDetail) {
+      logger.error(
+        "App detail is not initialized when getting project info for projectExId:",
+        this.projectExId,
+      );
+      await this.fetchAppDetailByExId();
+      if (!this.appDetail) {
+        throw new Error(
+          "Failed to fetch app detail for projectExId: " + this.projectExId,
+        );
+      }
     }
-    throw new Error("App detail is not loaded, cannot get project info");
+    return this.appDetail.__typename === "Project"
+      ? this.appDetail
+      : this.appDetail.project;
   }
 
   constructor(
@@ -275,28 +304,20 @@ export class TypeSystemStore {
     );
   }
 
-  getSchemaId(): string {
+  async getSchemaId(): Promise<string> {
     if (!this.appDetail?.latestSchema?.crdtModelUrl) {
-      throw new Error("No crdtModelUrl found in app detail");
+      logger.error("App detail or CRDT model URL is missing:", {
+        appDetail: this.appDetail,
+      });
+      await this.fetchAppDetailByExId();
+      if (!this.appDetail?.latestSchema?.crdtModelUrl) {
+        throw new Error("CRDT model URL is missing in app detail");
+      }
     }
     const path = new URL(
       this.appDetail.latestSchema.crdtModelUrl,
     ).pathname.split("/");
     return path[2];
-  }
-
-  buildProjectEntity() {
-    const projectInfo = this.projectInfo;
-    const projectEntity = new ZionProjectEntity({
-      projectName: projectInfo.projectName,
-      category: projectInfo.category ?? "OTHERS",
-      projectSpaceType:
-        projectInfo.projectSpace?.projectSpaceType ?? "PERSONAL",
-      useNewType: true,
-      useRefactoredComponent: true,
-      platform: "WEB",
-    });
-    return projectEntity;
   }
 
   async fetchAppDetailByExId() {
@@ -321,7 +342,7 @@ export class TypeSystemStore {
     }
   }
 
-  async getAFCustomCodeTemplates(): Promise<AfCustomCodeTemplates> {
+  private async getAFCustomCodeTemplates(): Promise<AfCustomCodeTemplates> {
     try {
       if (this.afCustomCodeTemplates.length > 0)
         return this.afCustomCodeTemplates;
@@ -341,7 +362,7 @@ export class TypeSystemStore {
     }
   }
 
-  async getSupportedCustomModelDescriptor(): Promise<
+  private async getSupportedCustomModelDescriptor(): Promise<
     typeof this.supportedCustomModelDescriptor
   > {
     try {
@@ -363,7 +384,7 @@ export class TypeSystemStore {
 
   async rehydrate(schemaId?: string): Promise<OpaqueSchemaGraph> {
     const arrayBuffer = await getSchemaModelById(
-      schemaId || this.getSchemaId(),
+      schemaId || (await this.getSchemaId()),
     );
     await this.getAFCustomCodeTemplates();
     await this.getSupportedCustomModelDescriptor();
@@ -408,7 +429,7 @@ export class TypeSystemStore {
     return schemaGraph;
   }
 
-  public withEnabledFeatures = <T>(function_: () => T): T => {
+  private withEnabledFeatures = <T>(function_: () => T): T => {
     return ZTypeCoreApi.withEnabledFeatures<T>([], function_);
   };
 }

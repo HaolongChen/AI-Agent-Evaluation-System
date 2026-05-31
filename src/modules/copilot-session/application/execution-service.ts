@@ -6,7 +6,8 @@ import { CopilotSessionAggregate } from "../domain/aggregate/copilot-session.agg
 import type { ICopilotServerRepository } from "../../dataset/domain/interface/copilot-server.interface.ts";
 import type { ICopilotSessionRepository } from "../domain/interface/copilot-session.interface.ts";
 import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
-import type { ICopilotNetwork } from "../domain/interface/copilot-network.interface.ts";
+import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
+import type { ICrdtSchemaLifecycleFactory } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
 
 export class ExecuteCopilotUseCase {
   private isProjectTemporary = true;
@@ -16,19 +17,27 @@ export class ExecuteCopilotUseCase {
       copilotInputRepository: ICopilotInputRepository;
       copilotServerRepository: ICopilotServerRepository;
     },
-    private copilotNetworkService: ICopilotNetwork,
+    private CopilotNetworkService: ICopilotNetworkService,
+    private crdtSchemaLifecycleFactory: ICrdtSchemaLifecycleFactory,
   ) {}
 
   async executeV2(project: ProjectAggregate) {
     const copilotSessionExId =
-      await this.copilotNetworkService.createNewSession(
+      await this.CopilotNetworkService.createNewSession(
         project.getData("projectExId"),
       );
-    const session = new CopilotSessionAggregate(project, copilotSessionExId);
+    const crdtSchemaLifecycle = this.crdtSchemaLifecycleFactory.create(
+      project.getData("projectExId"),
+    );
+    const session = new CopilotSessionAggregate(
+      project,
+      crdtSchemaLifecycle,
+      copilotSessionExId,
+    );
     try {
       const runner = new ExecutionJobRunnerV2(
         copilotSessionExId,
-        this.copilotNetworkService,
+        this.CopilotNetworkService,
       );
       const orchestrator = new SessionOrchestrator(runner, session);
       await orchestrator.run();

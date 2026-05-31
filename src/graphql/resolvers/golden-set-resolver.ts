@@ -26,10 +26,10 @@ import type {
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
 import { logger } from "../../modules/shared/infrastructure/logger.ts";
-import { getDangerousAccount, getMyAccount } from "../../DI/account.ts";
 import type { GoldenSetEntity } from "../../modules/dataset/domain/entity/golden-set.entity.ts";
 import type { UserInputEntity } from "../../modules/dataset/domain/entity/user-input.entity.ts";
 import type { CopilotInputAggregate } from "../../modules/dataset/domain/aggregate/copilot-input.aggregate.ts";
+import { createZionInjectionBundle } from "../../DI/zion.ts";
 
 // const copilotTypeMapper = {
 //   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -141,9 +141,10 @@ export const goldenSetResolver = {
       _: unknown,
       arguments_: MutationCreateUserInputArguments,
     ): Promise<UserInput> => {
+      const zionInjection = await createZionInjectionBundle();
       const createUserInputUseCase = new CreateUserInputUseCase(
         repository.userInputRepository,
-        await getMyAccount(),
+        zionInjection.account,
       );
       const userInput = await createUserInputUseCase.execute(
         arguments_.input.content,
@@ -171,7 +172,7 @@ export const goldenSetResolver = {
     // ): Promise<GoldenSet> =>
     // {
     //   const zionProject = new ZionProjectEntity( {projectName: arguments_.projectName ?? `temp-project-${Date.now()}`});
-    //   const projectEntity = await repository.zionProjectRepository(await getMyAccount()).createZionProject(zionProject);
+    //   const projectEntity = await repository.ZionProjectService(await getMyAccount()).createZionProject(zionProject);
     //   const projectService = projectLifecycle.projectService;
     //   const schemaManager = projectService?.getSchemaManager();
     //   const schemaId = schemaManager?.getSchemaId();
@@ -201,6 +202,7 @@ export const goldenSetResolver = {
       arguments_: { number: number },
     ): Promise<string> => {
       try {
+        const zionInjection = await createZionInjectionBundle();
         const zionDatabase = new Client({
           connectionString: process.env.DATABASE_URL_PRODUCTION,
         });
@@ -209,8 +211,7 @@ export const goldenSetResolver = {
           name: "fetch-project-ids",
           text: `SELECT id FROM project ORDER BY id DESC LIMIT ${arguments_.number}`,
         };
-        const dangerousAccount = await getDangerousAccount();
-        const gqlClient = dangerousAccount.gqlClient;
+        const gqlClient = zionInjection.account.gqlClient;
         const result = await zionDatabase.query(fetchProjectId);
         const results = await Promise.allSettled(
           result.rows.map(async ({ id }) => {

@@ -17,17 +17,11 @@ import type { ICopilotSessionRepository } from "../modules/copilot-session/domai
 import type { ICopilotServerRepository } from "../modules/dataset/domain/interface/copilot-server.interface.ts";
 import { CopilotSessionRepository } from "../modules/copilot-session/infrastructure/repository/copilot-session.repository.ts";
 import { CopilotServerRepository } from "../modules/dataset/infrastructure/repository/copilot-server.repository.ts";
-import type { IZionProjectRepository } from "../modules/copilot-session/domain/interface/zion-project.interface.ts";
-import { ZionProjectRepository } from "../modules/copilot-session/infrastructure/zion-project-repository.ts";
-import type { Account } from "../modules/account/application/account-handler.ts";
-
 export function createRepositoryBundle(): RepositoryInjectionType {
   return {
     goldenSetRepository: new GoldenSetRepository(),
     userInputRepository: new UserInputRepository(),
     projectRepository: new ProjectRepository(),
-    zionProjectRepository: (account: Account, dangerousAccount: Account) =>
-      new ZionProjectRepository(account, dangerousAccount),
     rubricRepository: new RubricRepository(),
     copilotOutputRepository: new CopilotOutputRepository(),
     copilotInputRepository: new CopilotInputRepository(),
@@ -41,10 +35,6 @@ export type RepositoryInjectionType = {
   goldenSetRepository: IGoldenSetRepository;
   userInputRepository: IUserInputRepository;
   projectRepository: IProjectRepository;
-  zionProjectRepository: (
-    account: Account,
-    dangerousAccount: Account,
-  ) => IZionProjectRepository;
   rubricRepository: IRubricRepository;
   copilotOutputRepository: ICopilotOutputRepository;
   copilotInputRepository: ICopilotInputRepository;

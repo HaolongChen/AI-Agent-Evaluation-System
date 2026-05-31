@@ -1,4 +1,4 @@
-import type { NetworkClientEntity } from "../../../shared/domain/entity/network-client.entity.ts";
+import { NetworkClientEntity } from "../../../shared/domain/entity/network-client.entity.ts";
 import { AccountEntity } from "../entity/account.entity.ts";
 import type { AccountInfo } from "../schema/account.schema.ts";
 
@@ -7,14 +7,20 @@ export class AccountService {
   private timeout: NodeJS.Timeout | undefined;
   public account: AccountEntity;
   public isLoggedIn = false;
-  constructor(
-    phoneNumber: string,
-    password: string,
-    private networkClient: NetworkClientEntity,
-  ) {
+  public networkClient: NetworkClientEntity;
+  constructor(phoneNumber: string, password: string) {
     this.account = new AccountEntity({ phoneNumber, password });
+    this.networkClient = new NetworkClientEntity({});
 
     this.networkClient.setHeader("X-Session-Id", crypto.randomUUID());
+  }
+
+  updateGQLEndpoint(endpoint: string) {
+    this.networkClient.setData({ gqlUrl: endpoint });
+  }
+
+  updateWebSocketEndpoint(endpoint: string) {
+    this.networkClient.setData({ wsUrl: endpoint });
   }
 
   handleLogin(accountInfo: AccountInfo, force: boolean = false) {

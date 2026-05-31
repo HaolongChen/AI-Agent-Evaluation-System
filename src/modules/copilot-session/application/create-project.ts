@@ -4,13 +4,13 @@ import { generateProjectName } from "../../dataset/domain/service/generate-proje
 import { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 import { ZionProjectEntity } from "../domain/entity/zion-project.entity.ts";
 import type { IProjectRepository } from "../domain/interface/project.interface.ts";
-import type { IZionProjectRepository } from "../domain/interface/zion-project.interface.ts";
+import type { IZionProjectService } from "../domain/interface/zion-project.interface.ts";
 
 export class CreateProjectUseCase {
   constructor(
     private repository: {
       projectRepository: IProjectRepository;
-      zionProjectRepository: IZionProjectRepository;
+      ZionProjectService: IZionProjectService;
     },
   ) {}
 
@@ -25,12 +25,10 @@ export class CreateProjectUseCase {
       ),
     });
     const projectEntity =
-      await this.repository.zionProjectRepository.createZionProject(
-        zionProject,
-      );
+      await this.repository.ZionProjectService.createZionProject(zionProject);
     const projectAggregate = new ProjectAggregate(
       copilotInput,
-      copilotServer,
+      copilotServer.getData("id"),
       projectEntity,
     );
     await this.repository.projectRepository.save(projectAggregate);

@@ -42,7 +42,7 @@ infrastructure/
 
 ## INFRASTRUCTURE
 
-**CopilotNetwork** — WebSocket connection management: opens connections, parses incoming messages, handles connection lifecycle. Contains TODO for session tracking (line 315).
+**CopilotNetworkService** — WebSocket connection management: opens connections, parses incoming messages, handles connection lifecycle. Contains TODO for session tracking (line 315).
 
 ## CROSS-MODULE DEPENDENCY
 

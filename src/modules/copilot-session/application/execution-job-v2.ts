@@ -4,7 +4,7 @@ import {
   type CopilotEventType,
   type CopilotInputEventType,
 } from "../domain/entity/copilot-job.entity.ts";
-import type { ICopilotNetwork } from "../domain/interface/copilot-network.interface.ts";
+import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
 import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-system.ts";
 export class ExecutionJobRunnerV2 {
   private copilotInputEvent: EventTarget<CopilotInputEventType> =
@@ -12,7 +12,7 @@ export class ExecutionJobRunnerV2 {
   private copilotEvent: EventTarget<CopilotEventType> = new EventTarget();
   constructor(
     private sessionExId: string,
-    private copilotNetworkService: ICopilotNetwork,
+    private CopilotNetworkService: ICopilotNetworkService,
   ) {}
 
   execute(schemaGraph: OpaqueSchemaGraph) {
@@ -23,7 +23,7 @@ export class ExecutionJobRunnerV2 {
       }
     });
     this.copilotInputEvent.addEventListener("TERMINATE", (event) => {
-      this.copilotNetworkService.sendMessageToSession(
+      this.CopilotNetworkService.sendMessageToSession(
         this.sessionExId,
         event.type,
         event.data,
@@ -33,7 +33,7 @@ export class ExecutionJobRunnerV2 {
     this.copilotInputEvent.addEventListener(
       "TOOL_CALL_BATCH_RESPONSE",
       (event) => {
-        this.copilotNetworkService.sendMessageToSession(
+        this.CopilotNetworkService.sendMessageToSession(
           this.sessionExId,
           event.type,
           event.data,
@@ -42,21 +42,21 @@ export class ExecutionJobRunnerV2 {
     );
 
     this.copilotInputEvent.addEventListener("HUMAN_INPUT", (event) => {
-      this.copilotNetworkService.sendMessageToSession(
+      this.CopilotNetworkService.sendMessageToSession(
         this.sessionExId,
         event.type,
         event.data,
       );
     });
     this.copilotInputEvent.addEventListener("HUMAN_OPERATION", (event) => {
-      this.copilotNetworkService.sendMessageToSession(
+      this.CopilotNetworkService.sendMessageToSession(
         this.sessionExId,
         event.type,
         event.data,
       );
     });
 
-    const unsubscribe = this.copilotNetworkService.subscribeToSessionUpdates(
+    const unsubscribe = this.CopilotNetworkService.subscribeToSessionUpdates(
       this.sessionExId,
       schemaGraph,
       this.copilotEvent.dispatchEvent.bind(this.copilotEvent),

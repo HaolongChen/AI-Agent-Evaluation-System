@@ -1,17 +1,17 @@
-import type { Account } from "../../account/application/account-handler.ts";
+import type { AccountService } from "../../account/domain/service/account.service.ts";
 import { UserInputEntity } from "../domain/entity/user-input.entity.ts";
 import type { IUserInputRepository } from "../domain/interface/user-input.interface.ts";
 
 export class CreateUserInputUseCase {
   constructor(
     private repository: IUserInputRepository,
-    private account: Account,
+    private account: AccountService,
   ) {}
 
   async execute(content: string) {
     const userInputEntity = new UserInputEntity({
       content,
-      createdBy: this.account.username ?? "unknown",
+      createdBy: this.account.account.getUsername(),
     });
     await this.repository.save(userInputEntity);
     return userInputEntity.getData();

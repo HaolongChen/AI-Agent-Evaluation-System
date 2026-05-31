@@ -4,9 +4,6 @@ import {
   ProjectContentCategory,
   ProjectSpaceType,
 } from "../../../../graphql/generated/types.ts";
-import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
-import type { TypeSystemStore } from "../../../dataset/infrastructure/crdt-schema-manager.ts";
-
 export const projectCreationRequiredSchema = z.object({
   projectName: z.string(),
   useNewType: z.boolean().default(true),
@@ -18,8 +15,5 @@ export const projectCreationRequiredSchema = z.object({
 
 export const projectSchema = z.object({
   projectExId: z.string(),
+  projectName: z.string(),
 });
-
-export type ProjectMetadata = {
-  typeSystemStore?: TypeSystemStore;
-} & EntityMetadata;

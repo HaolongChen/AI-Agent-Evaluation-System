@@ -26,15 +26,9 @@ export class SessionOrchestrator {
    * on error/timeout.
    */
   async run(): Promise<void> {
-    const schemaGraph = this.session
-      .getEntity("project")
-      .getData("typeSystemStore")?.schemaGraph;
-    if (!schemaGraph) {
-      throw new Error(
-        "Failed to get schema graph from project. Cannot start session orchestrator without schema graph.",
-      );
-    }
-    const { publish, listen } = this.runner.execute(schemaGraph);
+    const { publish, listen } = this.runner.execute(
+      await this.session.crdtSchemaLifecycle.schemaGraph(),
+    );
     let rejectFunction: (error: unknown) => void;
 
     const timer = setTimeout(() => {

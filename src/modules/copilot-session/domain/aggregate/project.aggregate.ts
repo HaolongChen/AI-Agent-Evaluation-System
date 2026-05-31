@@ -1,44 +1,33 @@
-import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import { ProjectEntity } from "../entity/project.entity.ts";
-import {
-  projectSchema,
-  type ProjectMetadata,
-} from "../schema/project.schema.ts";
+import { projectSchema } from "../schema/project.schema.ts";
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
-import type { TypeSystemStore } from "../../../dataset/infrastructure/crdt-schema-manager.ts";
+import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
 
 export class ProjectAggregate extends AggregateRoot<
   typeof projectSchema,
-  ProjectMetadata,
-  { copilotInput: CopilotInputAggregate; copilotServer: CopilotServerEntity }
+  EntityMetadata,
+  { copilotInput: CopilotInputAggregate }
 > {
-  get typeSystemStore(): TypeSystemStore {
-    const result = this.getData("typeSystemStore");
-    if (!result) {
-      throw new Error("Type system store not found");
-    }
-    return result;
-  }
-  constructor(data: ProjectAggregate);
+  public copilotServerId: string;
+  constructor(data: ProjectAggregate, copilotServerId: string);
   constructor(
     copilotInputAggregate: CopilotInputAggregate,
-    copilotServerEntity: CopilotServerEntity,
+    copilotServerId: string,
     projectEntity: ProjectEntity,
   );
   constructor(
     argument1: ProjectAggregate | CopilotInputAggregate,
-    argument2?: CopilotServerEntity,
+    copilotServerId: string,
     argument3?: ProjectEntity,
   ) {
     if (argument1 instanceof ProjectAggregate) {
       super(argument1);
       this.setEntity("copilotInput", argument1.getEntity("copilotInput"));
-      this.setEntity("copilotServer", argument1.getEntity("copilotServer"));
     } else {
       super(argument3!);
       this.setEntity("copilotInput", argument1);
-      this.setEntity("copilotServer", argument2!);
     }
+    this.copilotServerId = copilotServerId;
   }
 }

@@ -14,7 +14,7 @@ import type {
 } from "../../../graphql/generated/types.ts";
 import { z } from "zod";
 import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
-import type { ICopilotNetwork } from "../domain/interface/copilot-network.interface.ts";
+import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
 import type { IWebSocketClient } from "../../shared/domain/interface/websocket-client.interface.ts";
 import {
   CopilotEvent,
@@ -291,7 +291,7 @@ export const ON_COPILOT_SESSION_UPDATES = gql`
   ${COPILOT_INITIAL_STATE_MESSAGE_FRAGMENT}
 `;
 
-export class CopilotNetwork implements ICopilotNetwork {
+export class CopilotNetworkService implements ICopilotNetworkService {
   constructor(
     private gqlClient: IGQLClient,
     private wsClient: IWebSocketClient,

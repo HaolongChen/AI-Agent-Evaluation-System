@@ -11,10 +11,10 @@ import type {
   QueryGetRubricByIdArgs as QueryGetRubricByIdArguments,
   Rubric,
 } from "../generated/resolvers-types.ts";
-import { getDangerousAccount, getMyAccount } from "../../DI/account.ts";
 import { CreateProjectUseCase } from "../../modules/copilot-session/application/create-project.ts";
 import { GetCopilotInputByFiltersUseCase } from "../../modules/dataset/application/copilot-input.ts";
 import { GetCopilotServerUseCase } from "../../modules/dataset/application/copilot-server.ts";
+import { createZionInjectionBundle } from "../../DI/zion.ts";
 
 const toGraphqlRubric = (
   rubric: ReturnType<RubricAggregate["getAllData"]>,
@@ -86,10 +86,7 @@ export const rubricResolver = {
       _: unknown,
       arguments_: MutationExecuteCopilotArguments,
     ): Promise<CopilotOutput> => {
-      const [myAccount, dangerousAccount] = await Promise.all([
-        getMyAccount(),
-        getDangerousAccount(),
-      ]);
+      const zionInjection = await createZionInjectionBundle();
       const copilotInputUseCase = new GetCopilotInputByFiltersUseCase({
         copilotInputRepository: repository.copilotInputRepository,
       });
@@ -98,18 +95,13 @@ export const rubricResolver = {
       );
       const copilotServerUseCase = new GetCopilotServerUseCase(
         repository.copilotServerRepository,
+        zionInjection.account,
       );
       const copilotServer = await copilotServerUseCase.execute();
-      const createProjectUseCase = new CreateProjectUseCase(
-        {
-          projectRepository: repository.projectRepository,
-          zionProjectRepository: repository.zionProjectRepository(
-            myAccount,
-            dangerousAccount,
-          ),
-        },
-        myAccount,
-      );
+      const createProjectUseCase = new CreateProjectUseCase({
+        projectRepository: repository.projectRepository,
+        ZionProjectService: zionInjection.zionProjectService,
+      });
       const project = await createProjectUseCase.execute(
         copilotInput,
         copilotServer,
@@ -120,7 +112,8 @@ export const rubricResolver = {
           copilotServerRepository: repository.copilotServerRepository,
           copilotInputRepository: repository.copilotInputRepository,
         },
-        myAccount,
+        zionInjection.CopilotNetworkService,
+        zionInjection.crdtSchemaLifecycleFactory,
       );
       const copilotOutput = await executeCopilotUseCase.executeV2(project);
       return toGraphqlCopilotOutput(copilotOutput);

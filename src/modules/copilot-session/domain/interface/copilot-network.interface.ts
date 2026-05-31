@@ -2,7 +2,7 @@ import type { OpaqueSchemaGraph } from "../../../shared/domain/interface/type-sy
 import type { CopilotEventsList } from "../entity/copilot-job.entity.ts";
 import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
 
-export interface ICopilotNetwork {
+export interface ICopilotNetworkService {
   createNewSession(projectExId: string): Promise<string>;
 
   getLatestSession(projectExId: string): Promise<string | null>;

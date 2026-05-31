@@ -2,67 +2,57 @@
 
 ## OVERVIEW
 
-Domain module for evaluation lifecycle: sessions, judge records, and final results.
+Domain module for evaluation lifecycle: sessions, judge records, results.
 
-**Status: INCOMPLETE** — domain entities/aggregates/schemas are defined, but everything else is unimplemented.
+**Status: INCOMPLETE** — domain entities/aggregates/schemas/interfaces defined. Some infrastructure exists. Application layer empty.
 
 ## STRUCTURE
 
 ```
 evaluation/
 ├── domain/
-│   ├── aggregate/     # SessionAggregate (root), BaseAggregate — DONE
-│   ├── entity/        # SessionEntity, RecordEntity, ResultEntity — DONE
-│   ├── interface/     # EMPTY — no repository interfaces exist
-│   ├── schema/        # Zod schemas (session, record, result) — DONE
-│   └── service/       # EMPTY — no domain services
-├── application/       # EMPTY — no use cases, commands, or queries
-└── infrastructure/    # EMPTY — no Prisma repository implementations
+│   ├── aggregate/     # session.aggregate.ts, record.aggregate.ts
+│   ├── entity/        # session.entity.ts, record.entity.ts (NO ResultEntity)
+│   ├── interface/     # session.interface.ts, record.interface.ts (NOT empty)
+│   ├── schema/        # session.schema.ts, record.schema.ts, result.schema.ts
+│   └── service/       # EMPTY
+├── application/       # EMPTY — no use cases
+└── infrastructure/
+    └── repository/    # session.repository.ts only (EvaluationSessionRepository)
 ```
 
-Only the domain model is defined. Application and infrastructure layers are **completely empty** with no progress.
+## CROSS-MODULE DOMAIN COUPLING
 
-## ENTITIES
+Evaluation domain directly imports from other modules (anti-pattern):
 
-- **EvaluationSessionEntity**: Single evaluation run. Contains goldenSetId, status, timestamps, performance metrics.
-- **EvaluationRecordEntity**: Judge scoring records against a rubric (question answers, scores, explanations).
-- **EvaluationResultEntity**: Final report (overallScore, summary, detailedAnalysis, audit trail).
+| File                    | Imports from                                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `record.aggregate.ts`   | `rubrics/domain/aggregate`, `rubrics/domain/entity`, `rubrics/domain/schema`, `copilot-session/domain/aggregate` |
+| `session.interface.ts`  | `rubrics/domain/aggregate`                                                                                       |
+| `session.repository.ts` | `rubrics/domain/aggregate`, `rubrics/infrastructure/repository`                                                  |
 
-All extend BaseSessionEntity → shared Entity base class.
-
-## AGGREGATE
-
-**EvaluationSessionAggregate** (root). Enforces: same-session-id invariant for records and result. **BaseAggregate** provides shared aggregate plumbing.
+Domain layer should NOT depend on other modules. This violates DDD layer isolation.
 
 ## MIGRATION STATUS
 
-| Component                       | Status                               |
-| ------------------------------- | ------------------------------------ |
-| Domain entities                 | Done                                 |
-| Domain aggregates               | Done                                 |
-| Domain schemas                  | Done                                 |
-| Domain interfaces/IRepositories | EMPTY                                |
-| Domain services                 | EMPTY                                |
-| Application/use cases           | EMPTY                                |
-| Infrastructure/repos            | EMPTY                                |
-| GraphQL resolvers               | ALL 5 throw "Method not implemented" |
+| Component             | Status                                                             |
+| --------------------- | ------------------------------------------------------------------ |
+| Domain entities       | SessionEntity, RecordEntity done. ResultEntity missing.            |
+| Domain aggregates     | SessionAggregate, EvaluationRecordAggregate done.                  |
+| Domain schemas        | Session, record, result Zod schemas done.                          |
+| Domain interfaces     | IEvaluationSessionRepository, IEvaluationRecordRepository defined. |
+| Domain services       | EMPTY                                                              |
+| Application/use cases | EMPTY                                                              |
+| Infrastructure/repos  | session.repository.ts only (save, findById, getByRubric).          |
+| GraphQL resolvers     | 3 methods throw "Method not implemented" (2 queries, 1 mutation).  |
 
-**GraphQL resolvers in `session-resolver.ts`**: All 5 resolver methods throw `new Error("Method not implemented.")`:
+**GraphQL**: `session-resolver.ts` has `getEvaluationSessionById`, `getEvaluationSessions`, `submitHumanEvaluation` — all stubs. `getEvaluationResultById` and `getEvaluationResults` do not exist in resolvers. Module unusable via API.
 
-- Queries: `getEvaluationSessionById`, `getEvaluationSessions`, `getEvaluationResultById`, `getEvaluationResults`
-- Mutation: `submitHumanEvaluation`
-- The module cannot be used via the API.
-
-**Legacy code not yet migrated**: Evaluation logic remains in `src/services/analytics-service.ts` (references to evaluation/session/rubric). This is the future source for application layer migration.
-
-## RECENT CHANGES (post 2026-05-22)
-
-- `BaseSessionAggregateRoot` and `BaseSessionEntity` refactored: replaced `readonly` modifiers with a `getData()` method pattern, added Entity clone constructor support.
-- `EvaluationSessionAggregate.getData()` now returns a typed projection instead of raw entity data.
+**Legacy**: No migration source found — `src/services/analytics-service.ts` does not exist on disk.
 
 ## CONVENTIONS
 
-- Entities extend shared `Entity` base class (`modules/shared/domain/`)
+- Entities extend shared `Entity` base class
 - Schemas use Zod for runtime validation
 - Aggregate root controls entity composition and invariant enforcement
 - Import paths use `.ts` extension (ESM requirement)

@@ -86,7 +86,7 @@ model copilotInput {
   @@unique([goldenSetId, userInputId], map: "idx_schema_user_input")
 }
 
-model copilotServer {
+model copilotServer { // properties of copilots. should also contain copilot model names
   id          String    @id @default(uuid())
   name        String    @map("name") // e.g., 'aws-us-east-1', 'azure-westus2'
   description String?   @map("description")

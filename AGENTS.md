@@ -1,12 +1,12 @@
 # PROJECT KNOWLEDGE BASE (AI Agent Evaluation System)
 
-**Generated:** 2026-05-26 | **Commit:** c3231fd8 | **Branch:** main
+**Generated:** 2026-05-31 | **Commit:** 75e9ddc | **Branch:** main
 
 ## OVERVIEW
 
-End-to-end evaluation framework for Copilot-style agents. DDD vertical slices, PostgreSQL (Prisma 7), GraphQL API. **No LangGraph** — workflow logic lives in module application services.
+End-to-end evaluation framework for Copilot-style agents. DDD vertical slices, PostgreSQL (Prisma 7), GraphQL API. **No LangGraph** — workflow logic lives in module application services. Uses **tsgo** (`@typescript/native-preview`) compiler, NOT `tsc`.
 
-**Architecture**: 6 DDD modules (`src/modules/`) + legacy `analytics-service.ts` (awaiting migration) + GraphQL API + Account abstraction for Functorz backend auth.
+**Architecture**: 6 DDD modules (`src/modules/`) + GraphQL API + Account abstraction for Functorz backend auth.
 
 ## STRUCTURE
 
@@ -16,13 +16,13 @@ AI-Agent-Evaluation-System/
 │   ├── index.ts              # Express + ApolloServer entry
 │   ├── modules/              # DDD vertical slices (see modules/AGENTS.md)
 │   │   ├── account/          # Functorz backend auth (login, GQL/WS client lifecycle)
-│   │   ├── copilot-input/    # Golden Sets, User Inputs, Project management, CRDT
-│   │   ├── copilot-output/   # Copilot job execution via WebSocket
+│   │   ├── dataset/          # Golden Sets, User Inputs, Project management, CRDT (doc: copilot-input)
+│   │   ├── copilot-session/  # Copilot job execution via WebSocket (doc: copilot-output)
 │   │   ├── evaluation/       # Sessions, Records, Results (domain-only, app/infra pending)
 │   │   ├── rubrics/          # Rubric generation via multi-agent orchestration
 │   │   └── shared/           # DDD foundations (Entity, AggregateRoot, IRepository)
 │   ├── prisma/               # Schema, migrations, generated client (committed)
-│   ├── services/             # ⚠️ DEPRECATED — only analytics-service.ts remains
+│   ├── services/             # ⚠️ DEPRECATED — directory empty, services migrated to DDD modules
 │   ├── graphql/              # GraphQL API (resolvers → module use cases)
 │   ├── config/               # Env vars, constants, Prisma singleton
 │   └── DI/                   # Composition root (factory functions)
@@ -31,14 +31,16 @@ AI-Agent-Evaluation-System/
 
 ## DDD MODULES
 
-| Module           | Domain                    | Purpose                                           |
-| ---------------- | ------------------------- | ------------------------------------------------- |
-| `account`        | Functorz Auth             | Login, token management, GQL/WS client lifecycle  |
-| `copilot-input`  | Golden Sets & User Inputs | Evaluation datasets, project CRUD, CRDT schema    |
-| `copilot-output` | Copilot Job Execution     | WebSocket job execution, output capture           |
-| `evaluation`     | Sessions & Results        | Evaluation lifecycle, scoring, reports            |
-| `rubrics`        | Evaluation Criteria       | Multi-agent rubric generation with HITL review    |
-| `shared`         | DDD Foundations           | Entity base, Repository interfaces, Value Objects |
+| Module            | Domain                    | Purpose                                           |
+| ----------------- | ------------------------- | ------------------------------------------------- |
+| `account`         | Functorz Auth             | Login, token management, GQL/WS client lifecycle  |
+| `dataset`         | Golden Sets & User Inputs | Evaluation datasets, project CRUD, CRDT schema    |
+| `copilot-session` | Copilot Job Execution     | WebSocket job execution, output capture           |
+| `evaluation`      | Sessions & Results        | Evaluation lifecycle, scoring, reports            |
+| `rubrics`         | Evaluation Criteria       | Multi-agent rubric generation with HITL review    |
+| `shared`          | DDD Foundations           | Entity base, Repository interfaces, Value Objects |
+
+> **Note**: Module AGENTS.md files refer to `copilot-input` (→ `dataset/`) and `copilot-output` (→ `copilot-session/`) by their documented domain names, not on-disk directory names. See `src/modules/AGENTS.md` for details.
 
 **See `src/modules/AGENTS.md`** for full DDD architecture documentation.
 
@@ -65,12 +67,12 @@ AI-Agent-Evaluation-System/
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
-- **`any` type**: Forbidden. Use `unknown` or proper types. (7+ occurrences across 4 files: `type-system.service.ts`, `crdt-schema-manager.ts`, `copilot.schema.ts`)
+- **`any` type**: Forbidden. Use `unknown` or proper types. (7+ occurrences across 4 files: `type-system.service.ts`, `crdt-schema-manager.ts`, `copilot.schema.ts`, `agent-feedback.schema.ts`)
 - **Promise chaining**: Forbidden. Use `async/await`. (1 violation in `environment-setup.ts`)
 - **Default exports**: Forbidden. Use named exports only.
 - **Direct LLM calls**: Forbidden. Use `invokeWithRetry()`. (⚠️ `invokeWithRetry` has NOT been implemented yet — LLM calls in `rubrics-generator.ts` are unprotected.)
 - **Generated files**: Never hand-edit `src/prisma/build/generated/prisma/` or `src/graphql/generated/`.
-- **Cross-layer imports**: Domain layer must NOT import Application or Infrastructure layers. (4 violations: `prompts.service.ts` domain→app, `feedback.service.ts` domain→infra, `entity.ts` domain→infra, `project-lifecycle-adapter.ts` infra→app)
+- **Cross-layer imports**: Domain layer must NOT import Application or Infrastructure layers. (3 violations: `prompts.service.ts` domain→app, `feedback.service.ts` domain→infra, `entity.ts` domain→infra)
 - **Logic in resolvers**: GraphQL resolvers must be thin — delegate to modules. (1 violation: `runCrdtTest` in `golden-set-resolver.ts` — lines 203-217 uses direct `pg.Client` + raw SQL)
 - **Direct `process.env`**: Must go through `src/config/`. (18 instances across 9 files access `process.env` directly — widespread.)
 - **`src/DI/` directory**: Uses PascalCase — legacy naming, do not replicate.

@@ -1,52 +1,41 @@
 # AGENTS.md - GraphQL Resolvers
 
-> **Scope:** src/graphql/resolvers/ | **Generated:** 2026-05-26 | **Status:** UPDATED
+> **Scope:** src/graphql/resolvers/ | **Generated:** 2026-05-31
 
-Guidelines for managing the GraphQL API layer in this repository.
+Thin resolver layer delegating to DDD module use cases. Not legacy services.
 
-## OVERVIEW
+## Files
 
-Thin resolver layer that delegates to **DDD module use cases** (NOT legacy services). Ensures consistent error handling and data transformation.
+| File                     | Primary Module | Notes                                  |
+| ------------------------ | -------------- | -------------------------------------- |
+| `golden-set-resolver.ts` | `dataset`      | + GQL_FIX from `copilot-session`       |
+| `session-resolver.ts`    | `evaluation`   | All stubs - "not implemented"          |
+| `rubric-resolver.ts`     | `rubrics`      | Also uses `copilot-session`, `dataset` |
 
-## WHERE TO LOOK
+> AnalyticResolver and GraphSessionResolver removed - migrated to DDD modules.
 
-| File                     | Responsibility                             | Module Use Case                         |
-| ------------------------ | ------------------------------------------ | --------------------------------------- |
-| `golden-set-resolver.ts` | Golden Set CRUD and input management       | `copilot-input` module use cases        |
-| `session-resolver.ts`    | Session queries and shared transformations | `evaluation` module (pending migration) |
-| `rubric-resolver.ts`     | Rubric management and review status        | `rubrics` module use cases              |
+## Conventions
 
-> **Note:** AnalyticResolver and GraphSessionResolver do not exist - resolvers migrated to DDD modules.
+- **Standard export**: `{ Query: {...}, Mutation: {...} }`.
+- **Thin logic**: Parse args, delegate to use case, return.
+- **Module imports**: From `src/modules/<module>/application/`. Not `src/services/`.
+- **Data transform**: Use `transformX`/`mapX` to convert module -> GQL shapes.
+- **Repository injection**: Singleton from `src/DI/repository.ts`.
+- **Zion injection**: Async bundle for Functorz backend access.
+- **Error handling**: `try-catch` wrapper. `console.error` logs, `GraphQLError` for users.
 
-## CONVENTIONS
+## HITL Partial Updates
 
-### Structure & Pattern
+- **`questionPatches`**: Modify specific rubric criteria without full replacement.
+- **`answers` array**: Override specific agent scores in `submitHumanEvaluation`.
+- Module use cases merge patches with existing state before persist.
 
-- **Standard Layout**: Export an object with `{ Query: {...}, Mutation: {...} }`.
-- **Thin Logic**: Resolvers must only handle argument parsing and use case delegation.
-- **Module Delegation**: Import use cases from `src/modules/<module>/application/` - NOT from `src/services/`.
-- **Data Transformation**: Use `transformX` or `mapX` functions to convert module outputs to GraphQL schema shapes.
-- **Repository Injection**: Use `repository` from `src/DI/repository.ts` to get module repositories.
+## Known Violations
 
-### Error Handling
+- `golden-set-resolver.ts` `runCrdtTest` (line 200+): `pg.Client` + raw SQL via `DATABASE_URL_PRODUCTION`. Bypasses module layer entirely.
+- `context` is available in resolver signatures but codegen sets `contextType: "undefined"`.
 
-- **Consistent Wrapper**: Always use `try-catch` blocks for all resolver functions.
-- **Logging**: Log detailed errors via `console.error('context message', error)`.
-- **User Errors**: Throw `GraphQLError` for user-facing errors.
+## Signature Changes
 
-### HITL Partial Updates (Patches)
-
-- **Problem**: Avoid resubmitting large objects (entire rubrics or evaluations).
-- **Solution**: Use patch arrays for Human-in-the-Loop mutations.
-- **`questionPatches`**: Modify specific rubric criteria without replacing the entire set.
-- **`answerPatches`**: Override specific agent scores via `submitHumanEvaluation`.
-- **Validation**: Module use cases merge patches with existing state before persistence.
-
-## KNOWN VIOLATIONS
-
-- `golden-set-resolver.ts` `runCrdtTest` (lines 203-217): Direct `pg.Client` + raw SQL query bypasses module layer. Connects to production DB via `DATABASE_URL_PRODUCTION` env var directly. Should delegate to use case.
-
-## SIGNIFICANT CHANGES
-
-- `createProject` mutation signature changed (post 2026-05-22): from `(number: Int!): String!` to `(projectName: String): GoldenSet!`. Now creates a `GoldenSetEntity` via `CreateGoldenSetUseCase` after project initialization.
-- `UserInput` type: `createdBy` field removed from schema.
+- `createProject` (post 2026-05-22): from `(number: Int!): String!` to `(projectName: String): GoldenSet!`. Creates `GoldenSetEntity` via `CreateGoldenSetUseCase`.
+- `UserInput.createdBy` removed from schema.

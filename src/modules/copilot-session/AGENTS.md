@@ -1,57 +1,57 @@
-# copilot-output Module
+# copilot-session Module (domain: copilot-output)
 
-## OVERVIEW
+Executes copilot queries over WebSocket, persists captured outputs.
 
-Executes copilot queries over WebSocket and persists captured outputs.
-
-## STRUCTURE
+## DIRECTORY LAYOUT
 
 ```
 domain/
   entity/          CopilotJobEntity, CopilotOutputEntity
   interface/       ICopilotOutputRepository
   schema/          copilot.schema.ts, copilot-output.schema.ts
-  service/         CopilotJobService (domain logic for job state)
-  value-object/    Value objects for job state
+  service/         CopilotJobService
+  value-object/
+  aggregate/
 application/
-  execution-service.ts       ExecuteCopilotUseCase (orchestrates full job lifecycle)
-  session-orchestrator.ts    SessionOrchestrator (WS event dispatching, 8 listeners)
-  execution-job-v2.ts        ExecutionJobV2 (WebSocket subscription lifecycle)
-  tool-call-handler.ts       ToolCallHandler (dispatches copilot tool calls)
+  execution-service.ts           ExecuteCopilotUseCase (full lifecycle orchestration)
+  session-orchestrator.ts        SessionOrchestrator (8 WS listeners, 2-min timeout)
+  execution-job-v2.ts            WebSocket subscription lifecycle
+  tool-call-handler.ts           Type-dispatched tool call handling
+  crdt-schema-lifecycle.ts       CRDT schema lifecycle
+  create-project.ts              Project creation/import
+  get-copilot-output.ts          Output retrieval
 infrastructure/
-  copilot-network.ts         WebSocket connection management, message parsing
+  copilot-network.ts             WS connection management, message parsing
+  crdt-schema-manager.ts         CRDT schema persistence
+  project-manager.ts             Project lifecycle
+  zion-project-repository.ts     Zion-specific project repo
   repository/
     copilot-output.repository.ts  Prisma-backed ICopilotOutputRepository
 ```
 
-## ENTITIES
+## KEY ENTITIES
 
-- **CopilotJobEntity**: Owns WebSocket lifecycle state (editableText, aiResponse, tasks, isFinished). Created per execution run. `aiResponse` signals job completion (replaces legacy `isTerminated`).
-- **CopilotOutputEntity**: Persisted record of copilot output (editableText, aiResponse, copilotSessionExId) tied to a goldenSetId + userInputId pair.
+- **CopilotJobEntity**: WS lifecycle state (editableText, aiResponse, tasks, isFinished). `aiResponse` signals completion.
+- **CopilotOutputEntity**: Persisted output (editableText, aiResponse, copilotSessionExId) tied to goldenSetId + userInputId.
 
-## DOMAIN SERVICES
+## APPLICATION SERVICES
 
-- **CopilotJobService**: Domain logic for copilot job state management.
-
-## APPLICATION USE CASES
-
-- **ExecuteCopilotUseCase**: Main use case. Fetches golden set/user input from copilot-input, creates/imports a temp project via `IProjectLifecycle` (from copilot-input), opens WebSocket, delegates event handling to `SessionOrchestrator`, persists output, deletes temp project.
-- **SessionOrchestrator**: Encapsulates WebSocket event handling for a session. Registers 8 event listeners (CopilotEditableTextMessage, CopilotToolCallBatchMessage, CopilotTaskMessage, CopilotTerminateMessage, CopilotStateChangeMessage, CopilotErrorMessage, CopilotToolCallBatchExecErrorMessage, CopilotInitialStateMessage), dispatches tool calls via `ToolCallHandler`, and enforces a 2-minute timeout. Extracted from `ExecutionJobV2` to reduce complexity.
-- **ExecutionJobV2**: WebSocket subscription lifecycle. Manages GraphQL subscription setup, message publishing/sending, and connection teardown. Owns the event-target machinery.
-- **ToolCallHandler**: Type-dispatched handler for copilot tool calls during execution.
+- **ExecuteCopilotUseCase**: Main use case. Fetches golden set/user input from copilot-input, creates/imports temp project, opens WS, delegates to SessionOrchestrator, persists output, deletes temp project.
+- **SessionOrchestrator**: 8 event listeners (CopilotEditableTextMessage, CopilotToolCallBatchMessage, CopilotTaskMessage, CopilotTerminateMessage, CopilotStateChangeMessage, CopilotErrorMessage, CopilotToolCallBatchExecErrorMessage, CopilotInitialStateMessage). Dispatches tool calls, enforces 2-min timeout.
+- **ExecutionJobV2**: GraphQL subscription setup, message publishing, connection teardown.
+- **ToolCallHandler**: Type-dispatched handler for copilot tool calls.
 
 ## INFRASTRUCTURE
 
-**CopilotNetworkService** — WebSocket connection management: opens connections, parses incoming messages, handles connection lifecycle. Contains TODO for session tracking (line 315).
+- **CopilotNetworkService**: Opens WS connections, parses messages, handles lifecycle.
 
-## CROSS-MODULE DEPENDENCY
+## CROSS-MODULE DEPS
 
-Depends on **copilot-input**: uses `IGoldenSetRepository.getCopilotInputByGoldenSetIdAndUserInputId()` and `IProjectLifecycle` (createTemporaryProject, importExistingProject, deleteTemporaryProject) to orchestrate execution.
-Depends on **account**: uses Account for WebSocket authentication.
+- **copilot-input**: `IGoldenSetRepository`, `IProjectLifecycle`
+- **account**: WebSocket auth via Account
 
 ## CONVENTIONS
 
-- WebSocket job entities extend Entity for data consistency.
-- ExecutionJobV2 owns socket subscription lifecycle; ToolCallHandler owns message dispatch; SessionOrchestrator owns event handling logic.
-- `.ts` extensions required in imports (ESM).
-- All repository methods throw on missing records (no null returns for singular lookups).
+- ExecutionJobV2 owns socket lifecycle; ToolCallHandler owns dispatch; SessionOrchestrator owns event handling.
+- ESM with `.ts` extensions.
+- Repos throw on missing records (no null returns).

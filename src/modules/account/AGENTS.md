@@ -2,13 +2,14 @@
 
 ## OVERVIEW
 
-Functorz backend authentication: login via phone/username, token management with 1-hour TTL, GQL/WS client lifecycle.
+Functorz backend auth: login via phone/username, token management with 1-hour TTL, GQL/WS client lifecycle.
 
 ## STRUCTURE
 
 ```
 domain/
   entity/          AccountEntity (extends Entity<T>)
+  interface/       ILoginService (contract for login mutations)
   schema/          account.schema.ts (phoneNumber, password, AccountInfo)
   service/         AccountService (login state, token TTL management)
 application/
@@ -17,40 +18,25 @@ infrastructure/
   login.ts         GraphQL mutations for login (phone + username variants)
 ```
 
-**Note**: Simpler than other modules — no `interface/`, `aggregate/`, or `infrastructure/repository/` directories.
+**Note**: No `aggregate/` or `infrastructure/repository/` — account has no DB persistence, no `IAccountRepository`.
 
-## ENTITIES
+## KEY COMPONENTS
 
-**AccountEntity** — Auth credential holder. Stores phoneNumber/password, manages AccountInfo (accessToken, account.exId) with set/clear lifecycle.
+**AccountEntity** — Auth credential holder. Stores phone/password, manages AccountInfo (accessToken, exId) lifecycle.
 
-## DOMAIN SERVICES
+**AccountService** — Login state machine. `handleLogin()` sets token + starts 1-hour TTL. `isLoggedIn` guards auth.
 
-**AccountService** — Login state machine. `handleLogin()` sets token + starts 1-hour TTL timeout. `isLoggedIn` flag guards authenticated operations.
-
-## APPLICATION
-
-**Account** (extends AccountService) — Primary auth facade:
-
-- `login()` — Calls infrastructure login, sets token via `handleLogin()`
-- `ensureLoggedIn()` — Auto-login if not authenticated
-- `getGQLClient()` — Returns graphql-request client with Bearer auth
-- `getWsClient()` — Returns WebSocket client with Bearer auth
-- `clearWsClient()` — Closes and resets WS connection
-- `setAccessToken()` — Manual token injection (for external auth flows)
-- `sessionId` — UUID per Account instance, sent as `X-Session-Id` header
+**Account** (extends AccountService) — Primary facade: `login()`, `ensureLoggedIn()`, `getGQLClient()`, `getWsClient()`, `clearWsClient()`, `setAccessToken()`, `sessionId`.
 
 ## DI
 
-`src/DI/account.ts` exports a `createAccount()` factory function that creates `Account` instances at startup:
+`src/DI/account.ts` exports `createAccount()`, `getMyAccount()`, `getDangerousAccount()` factories.
 
-- `createAccount(phoneNumberOrUsername, password)` — Creates + initializes a new Account
-- `getMyAccount()` — Convenience wrapper using `FUNCTORZ_PHONE_NUMBER`/`FUNCTORZ_PASSWORD`
-- `getDangerousAccount()` — Convenience wrapper using `DANGEROUS_USERNAME`/`DANGEROUS_PASSWORD`
+**Known violation**: These factories read `process.env.FUNCTORZ_PHONE_NUMBER`, `FUNCTORZ_PASSWORD`, `DANGEROUS_USERNAME`, `DANGEROUS_PASSWORD` directly. Must use `src/config/` instead — see `src/modules/AGENTS.md` anti-patterns.
 
 ## CONVENTIONS
 
-- Login supports both phone numbers (+prefix or digits) and usernames
 - Token TTL is 1 hour (3_600_000ms), auto-cleared on expiry
-- WS clients must be cleared before re-authentication to avoid stale connections
-- **No repository pattern**: Account module does NOT follow `IRepository<T>` — no DB persistence, no `IAccountRepository`
-- `infrastructure/login.ts` imports `publicNetworkClient` singleton from `shared/application/graphql-client.ts` directly (not through the Account class)
+- WS clients must be cleared before re-authentication
+- Login supports phone numbers (+prefix/digits) and usernames
+- `infrastructure/login.ts` imports `publicNetworkClient` singleton from `shared/application/graphql-client.ts`

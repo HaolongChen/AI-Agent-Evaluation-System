@@ -1,58 +1,48 @@
-# PRISMA DATABASE LAYER
+# Prisma Database Layer
 
-**Scope:** `src/prisma/` | **Updated:** 2026-05-26
+**Scope:** `src/prisma/` | **Updated:** 2026-05-31
 
-Database schema, migrations, and generated client. Prisma 7, PostgreSQL via `@prisma/adapter-pg`.
+Prisma 7 schema, migrations, generated client. PostgreSQL via `@prisma/adapter-pg`. Config: `prisma.config.ts` at project root (not `package.json`).
 
-## STRUCTURE
+## Structure
 
 ```
 src/prisma/
-├── schema.prisma              # 226 lines, 12 models, ERD generator
-├── migrations/                # Squashed migration (1 file)
-├── build/generated/prisma/    # Committed generated client
-└── ERD.svg
+├── schema.prisma                 # 226 lines, 12 models
+├── migrations/                   # 1 squashed migration file
+└── build/generated/prisma/       # Committed generated client
 ```
 
-## MODELS
+## Models (12)
 
-The schema defines 12 models corresponding to the evaluation lifecycle:
+| Model                  | Purpose                                    |
+| ---------------------- | ------------------------------------------ |
+| `goldenSet`            | Dataset (schemaId, copilotType, modelName) |
+| `project`              | External project tracking                  |
+| `userInput`            | User prompts per golden set                |
+| `goldenSet_userInput`  | Join table (M:N)                           |
+| `copilotOutput`        | Copilot job output                         |
+| `copilotOutput_rubric` | Join table (M:N)                           |
+| `rubric`               | AI-generated criterion sets                |
+| `criteria`             | Individual rubric criteria                 |
+| `agentFeedbacks`       | Multi-agent feedback traces                |
+| `evaluationSession`    | Execution session                          |
+| `evaluationRecord`     | Rubric judgment answers                    |
+| `evaluationResult`     | Final evaluation report                    |
 
-| Model                  | Purpose                                                                        |
-| ---------------------- | ------------------------------------------------------------------------------ |
-| `goldenSet`            | Evaluation dataset — uniquely identified by (schemaId, copilotType, modelName) |
-| `project`              | External project tracking — unique by projectExId, schemaId, and name          |
-| `userInput`            | Individual user-provided prompts per golden set                                |
-| `goldenSet_userInput`  | Join table linking golden sets to user inputs (M:N)                            |
-| `copilotOutput`        | Copilot job output captured per golden-set + user-input                        |
-| `copilotOutput_rubric` | Join table linking copilot outputs to rubrics (M:N)                            |
-| `rubric`               | AI-generated evaluation criterion sets per copilot input                       |
-| `criteria`             | Individual rubric criteria (weight, expected answer, reasoning)                |
-| `agentFeedbacks`       | Multi-agent feedback traces per rubric                                         |
-| `evaluationSession`    | Execution session for an evaluator on a copilot output                         |
-| `evaluationRecord`     | Individual rubric judgment answers (one per criteria)                          |
-| `evaluationResult`     | Final evaluation report (overall score, analysis, audit)                       |
+## Conventions
 
-## CONVENTIONS
+- **All models**: UUID PKs, `@map("snake_case")` on every field, named `@relation` strings
+- **Never hand-edit** `build/generated/prisma/` — committed but auto-generated
+- **Import singleton** from `src/config/prisma.ts` (uses PrismaPg adapter) — never instantiate `PrismaClient` directly
+- **Schema**: `src/prisma/schema.prisma` pointed to by root `prisma.config.ts`
+- **Development**: `pnpm db:push` (no migration file). **Production**: `pnpm db:migrate`
 
-- **Never hand-edit** `src/prisma/build/generated/prisma/` — it is committed but auto-generated.
-- **After schema changes**: run `pnpm db:generate` to regenerate the client.
-- **Development**: use `pnpm db:push` to sync schema to your local DB without creating a migration.
-- **Production**: use `pnpm db:migrate` to apply migrations properly.
-- **Import the Prisma singleton** from `src/config/prisma.ts` — never import `process.env` or instantiate `PrismaClient` directly elsewhere.
-- **`PrismaClient` uses `PrismaPg` adapter** from `@prisma/adapter-pg` — configured in `src/config/prisma.ts`.
-- **Schema location**: `src/prisma/schema.prisma` (not the project root). The `prisma.config.ts` at the project root points to it.
+## Commands
 
-## COMMANDS
-
-```bash
-pnpm db:generate   # Regenerate Prisma client from schema
-pnpm db:push       # Push schema to dev DB (no migration file)
-pnpm db:migrate    # Create and apply a new migration
-pnpm db:studio     # Open Prisma Studio GUI
 ```
-
-## COMPANION DOCS
-
-- `src/modules/AGENTS.md` — DDD module architecture overview
-- `src/config/AGENTS.md` — Config layer including prisma.ts singleton
+pnpm db:generate   Regenerate Prisma client
+pnpm db:push       Sync schema to dev DB (no migration)
+pnpm db:migrate    Apply migrations
+pnpm db:studio     Prisma Studio GUI
+```

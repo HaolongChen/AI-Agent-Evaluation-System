@@ -11,7 +11,7 @@ import type {
   QueryGetRubricByIdArgs as QueryGetRubricByIdArguments,
   Rubric,
 } from "../generated/resolvers-types.ts";
-import { getMyAccount } from "../../DI/account.ts";
+import { getDangerousAccount, getMyAccount } from "../../DI/account.ts";
 import { CreateProjectUseCase } from "../../modules/copilot-session/application/create-project.ts";
 import { GetCopilotInputByFiltersUseCase } from "../../modules/dataset/application/copilot-input.ts";
 import { GetCopilotServerUseCase } from "../../modules/dataset/application/copilot-server.ts";
@@ -86,7 +86,10 @@ export const rubricResolver = {
       _: unknown,
       arguments_: MutationExecuteCopilotArguments,
     ): Promise<CopilotOutput> => {
-      const myAccount = await getMyAccount();
+      const [myAccount, dangerousAccount] = await Promise.all([
+        getMyAccount(),
+        getDangerousAccount(),
+      ]);
       const copilotInputUseCase = new GetCopilotInputByFiltersUseCase({
         copilotInputRepository: repository.copilotInputRepository,
       });
@@ -100,7 +103,10 @@ export const rubricResolver = {
       const createProjectUseCase = new CreateProjectUseCase(
         {
           projectRepository: repository.projectRepository,
-          zionProjectRepository: repository.zionProjectRepository(myAccount),
+          zionProjectRepository: repository.zionProjectRepository(
+            myAccount,
+            dangerousAccount,
+          ),
         },
         myAccount,
       );

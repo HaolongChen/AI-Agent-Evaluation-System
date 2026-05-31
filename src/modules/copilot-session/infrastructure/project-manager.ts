@@ -14,10 +14,10 @@ import type {
   ProjectContentCategory,
   ProjectSpaceType,
 } from "../../../graphql/generated/types.ts";
-import type { Account } from "../../account/application/account-handler.ts";
-import type { GQLClient } from "../../shared/application/graphql-client.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import type { ZionProjectEntity } from "../domain/entity/zion-project.entity.ts";
+import type { IWebSocketClient } from "../../shared/domain/interface/websocket-client.interface.ts";
+import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
 export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
   query CheckProjectNameDuplicate($projectName: String!) {
     checkProjectNameDuplicate(projectName: $projectName)
@@ -90,22 +90,22 @@ export const GQL_FIX_ALIPAY_DATA_BINDING = gql`
 
 export const createProjectSubscription = async (
   taskId: string,
-  account: Account,
+  wsClient: IWebSocketClient,
 ): Promise<string> => {
-  const wsClient = await account.getWsClient();
-  const subscribe = wsClient.gqlSubscribe<
+  const { promise, resolve, reject } = Promise.withResolvers<string>();
+  const unsubscribe = wsClient.subscribe<
     OnProjectCreationStatusChangedSubscription,
     OnProjectCreationStatusChangedSubscriptionVariables
-  >(GQL_ON_PROJECT_CREATION_STATUS_CHANGED, { uniqueId: taskId });
-  let unsubscribeFunction: (() => void) | undefined;
-  const { promise, resolve, reject } = Promise.withResolvers<string>();
-  try {
-    unsubscribeFunction = subscribe({
+  >(
+    GQL_ON_PROJECT_CREATION_STATUS_CHANGED,
+
+    {
       next: (data) => {
         if (!data.onProjectCreationStatusChanged) {
           logger.error(
             "Received invalid subscription payload for project creation",
           );
+          unsubscribe();
           reject(new Error(`Invalid subscription payload for task ${taskId}`));
           return;
         }
@@ -153,20 +153,15 @@ export const createProjectSubscription = async (
           ),
         );
       },
-    });
-    return await promise;
-  } catch (error) {
-    logger.error("Error during project creation subscription");
-    throw error instanceof Error ? error : new Error("Unknown error");
-  } finally {
-    logger.debug("Cleaning up subscription for project creation", { taskId });
-    unsubscribeFunction?.();
-  }
+    },
+    { uniqueId: taskId },
+  );
+  return promise;
 };
 
 export const getProjectFeatures = async (
   projectExId: string,
-  gqlClient: GQLClient,
+  gqlClient: IGQLClient,
 ) => {
   const featureData = await gqlClient.gqlRequest<
     FeaturesQuery,
@@ -177,7 +172,7 @@ export const getProjectFeatures = async (
 
 export const getEnabledFeatureNames = async (
   projectExId: string,
-  gqlClient: GQLClient,
+  gqlClient: IGQLClient,
 ): Promise<string[]> => {
   const features = await getProjectFeatures(projectExId, gqlClient);
   return features
@@ -187,7 +182,7 @@ export const getEnabledFeatureNames = async (
 
 export const isProjectNameDuplicated = async (
   projectName: string,
-  gqlClient: GQLClient,
+  gqlClient: IGQLClient,
 ): Promise<boolean> => {
   const isNameDuplicated = await gqlClient.gqlRequest<
     CheckProjectNameDuplicateQuery,
@@ -197,7 +192,7 @@ export const isProjectNameDuplicated = async (
 };
 
 export const createProjectWithTaskIdReturned = async (
-  gqlClient: GQLClient,
+  gqlClient: IGQLClient,
   config: {
     organizationExId: string;
     projectName: string;
@@ -225,26 +220,23 @@ export const createProjectWithTaskIdReturned = async (
 };
 
 export const createZionProject = async (
-  account: Account,
-
+  gqlClient: IGQLClient,
+  wsClient: IWebSocketClient,
+  organizationExId: string,
   zionProjectEntity: ZionProjectEntity,
 ) => {
-  const gqlClient = await account.getGQLClient();
   const taskId = await createProjectWithTaskIdReturned(gqlClient, {
     ...zionProjectEntity.getData(),
-    organizationExId: account.account.getData("accountInfo")?.account
-      .currentOrganization.exId as string,
+    organizationExId,
   });
-  const projectExId = await createProjectSubscription(taskId, account);
+  const projectExId = await createProjectSubscription(taskId, wsClient);
   return projectExId;
 };
 
 export const deleteProjectInZion = async (
-  account: Account,
+  gqlClient: IGQLClient,
   projectExId: string,
 ): Promise<void> => {
-  const gqlClient = await account.getGQLClient();
-
   logger.info("Deleting project", {
     projectExId,
   });

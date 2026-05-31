@@ -1,8 +1,3 @@
-import type {
-  GQLClient,
-  SubscriptionHandlers,
-  WebSocketClient,
-} from "../../shared/application/graphql-client.ts";
 import {
   type OnCopilotSessionUpdatesSubscriptionVariables,
   type SendMessageToSessionMutation,
@@ -26,14 +21,19 @@ import {
   type CopilotEventType,
   type CopilotInputEventType,
 } from "../domain/entity/copilot-job.entity.ts";
+import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
+import type {
+  IWebSocketClient,
+  SubscriptionHandlers,
+} from "../../shared/domain/interface/websocket-client.interface.ts";
 export class ExecutionJobRunnerV2 {
   private copilotInputEvent: EventTarget<CopilotInputEventType> =
     new EventTarget();
   private copilotEvent: EventTarget<CopilotEventType> = new EventTarget();
   constructor(
     private sessionExId: string,
-    private wsClient: WebSocketClient,
-    private gqlClient: GQLClient,
+    private wsClient: IWebSocketClient,
+    private gqlClient: IGQLClient,
   ) {}
 
   sendMessageToSession = async <T extends keyof CopilotInputMessage>(
@@ -109,12 +109,13 @@ export class ExecutionJobRunnerV2 {
     this.copilotInputEvent.addEventListener("HUMAN_OPERATION", (event) => {
       this.sendMessageToSession(event.type, event.data);
     });
-    const observer = this.wsClient.gqlSubscribe<
+    const unsubscribe = this.wsClient.subscribe<
       OnCopilotSessionUpdatesSubscription,
       OnCopilotSessionUpdatesSubscriptionVariables
-    >(ON_COPILOT_SESSION_UPDATES, { sessionExId: this.sessionExId });
-    const unsubscribe = observer(
+    >(
+      ON_COPILOT_SESSION_UPDATES,
       this.handler(this.copilotEvent.dispatchEvent.bind(this.copilotEvent)),
+      { sessionExId: this.sessionExId },
     );
     return {
       publish: this.copilotInputEvent.dispatchEvent.bind(

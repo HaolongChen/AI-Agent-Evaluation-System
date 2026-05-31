@@ -20,10 +20,9 @@ import type {
   ImportProjectSchemaManualMutationVariables,
   SupportedCustomModelDescriptorQuery,
 } from "../../../graphql/generated/types.ts";
-import type { Account } from "../../account/application/account-handler.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
-import { getDangerousAccount } from "../../../DI/account.ts";
 import { ZionProjectEntity } from "../../copilot-session/domain/entity/zion-project.entity.ts";
+import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -247,8 +246,9 @@ export class TypeSystemStore {
   }
 
   constructor(
-    private account: Account,
     private projectExId: string,
+    private dangerousGQLClient: IGQLClient,
+    private gqlClient: IGQLClient,
   ) {}
 
   async importSchemaManual(schemaId: string): Promise<void> {
@@ -256,9 +256,7 @@ export class TypeSystemStore {
       throw new Error("App detail is required for importing schema");
     }
     await this.rehydrate(schemaId);
-    const dangerousAccount = await getDangerousAccount();
-    const gqlClient = await dangerousAccount.getGQLClient();
-    const mutationData = await gqlClient.gqlRequest<
+    const mutationData = await this.dangerousGQLClient.gqlRequest<
       ImportProjectSchemaManualMutation,
       ImportProjectSchemaManualMutationVariables
     >(IMPORT_PROJECT_SCHEMA_MANUAL, {
@@ -303,8 +301,7 @@ export class TypeSystemStore {
 
   async fetchAppDetailByExId() {
     try {
-      const gqlClient = await this.account.getGQLClient();
-      const data = await gqlClient.gqlRequest<
+      const data = await this.gqlClient.gqlRequest<
         FetchAppDetailByExIdQuery,
         FetchAppDetailByExIdQueryVariables
       >(FETCH_APP_DETAIL_QUERY, {
@@ -328,8 +325,7 @@ export class TypeSystemStore {
     try {
       if (this.afCustomCodeTemplates.length > 0)
         return this.afCustomCodeTemplates;
-      const gqlClient = await this.account.getGQLClient();
-      const data = await gqlClient.gqlRequest<AfCustomCodeTemplatesQuery>(
+      const data = await this.gqlClient.gqlRequest<AfCustomCodeTemplatesQuery>(
         AF_CUSTOM_CODE_TEMPLATES_QUERY,
       );
       if (!data.visibleAfCustomCodeTemplates) {
@@ -351,9 +347,8 @@ export class TypeSystemStore {
     try {
       if (this.supportedCustomModelDescriptor)
         return this.supportedCustomModelDescriptor;
-      const gqlClient = await this.account.getGQLClient();
       const SupportedCustomModelDescriptor =
-        await gqlClient.gqlRequest<SupportedCustomModelDescriptorQuery>(
+        await this.gqlClient.gqlRequest<SupportedCustomModelDescriptorQuery>(
           SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
         );
 

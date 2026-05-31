@@ -56,7 +56,7 @@ export class NetworkClientEntity extends Entity<
           `Header ${key} is not set in NetworkClientEntity ${this.getData("id")}`,
         );
       }
-      result[key] = value || "";
+      result[key] = key === "Authorization" ? `Bearer ${value}` : value || "";
     }
     return result;
   }

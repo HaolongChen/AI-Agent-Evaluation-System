@@ -21,22 +21,16 @@ export class ExecuteCopilotUseCase {
   ) {}
 
   async executeV2(project: ProjectAggregate) {
-    const wsClient = await this.account.getWsClient(
-      project.getEntity("copilotServer").getData("wsEndpoint"),
-    );
-    const gqlClient = await this.account.getGQLClient(
-      project.getEntity("copilotServer").getData("gqlEndpoint"),
-    );
     const copilotSessionExId = await createNewSession(
       project.getData("projectExId"),
-      gqlClient,
+      this.account.gqlClient,
     );
     const session = new CopilotSessionAggregate(project, copilotSessionExId);
     try {
       const runner = new ExecutionJobRunnerV2(
         copilotSessionExId,
-        wsClient,
-        gqlClient,
+        this.account.wsClient,
+        this.account.gqlClient,
       );
       const orchestrator = new SessionOrchestrator(runner, session);
       await orchestrator.run();
@@ -44,7 +38,7 @@ export class ExecuteCopilotUseCase {
       return session.getEntity("copilotOutput").getData();
     } catch (error) {
       logger.error("Error setting up copilot execution environment:", error);
-      this.account.clearWsClient();
+      // this.account.clearWsClient();
       throw error;
     }
   }

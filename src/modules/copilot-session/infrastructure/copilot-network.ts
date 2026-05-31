@@ -1,5 +1,4 @@
 import { gql } from "graphql-request";
-import type { GQLClient } from "../../shared/application/graphql-client.ts";
 import type {
   CreateCopilotSessionMutation,
   CreateCopilotSessionMutationVariables,
@@ -9,6 +8,7 @@ import type {
   GetLatestSessionMutationVariables,
 } from "../../../graphql/generated/types.ts";
 import { z } from "zod";
+import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
 
 export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
   query GetCopilotSubscriptionCount(
@@ -268,7 +268,7 @@ export const ON_COPILOT_SESSION_UPDATES = gql`
 
 export const getLatestSession = async (
   projectExId: string,
-  gqlClient: GQLClient,
+  gqlClient: IGQLClient,
 ): Promise<string | null> => {
   const latestSessionResult = await gqlClient.gqlRequest<
     GetLatestSessionMutation,
@@ -282,7 +282,7 @@ export const getLatestSession = async (
 
 export const createNewSession = async (
   projectExId: string,
-  gqlClient: GQLClient,
+  gqlClient: IGQLClient,
 ): Promise<string> => {
   const newCopilotSessionExId = await gqlClient.gqlRequest<
     CreateCopilotSessionMutation,
@@ -296,7 +296,7 @@ export const createNewSession = async (
 
 export const getSubscriptionCount = async (
   projectExId: string,
-  gqlClient: GQLClient,
+  gqlClient: IGQLClient,
 ): Promise<number> => {
   const copilotSubscriptionCount = await gqlClient.gqlRequest<
     GetCopilotSubscriptionCountQuery,

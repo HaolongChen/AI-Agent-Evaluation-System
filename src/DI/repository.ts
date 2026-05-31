@@ -26,8 +26,8 @@ export function createRepositoryBundle(): RepositoryInjectionType {
     goldenSetRepository: new GoldenSetRepository(),
     userInputRepository: new UserInputRepository(),
     projectRepository: new ProjectRepository(),
-    zionProjectRepository: (account: Account) =>
-      new ZionProjectRepository(account),
+    zionProjectRepository: (account: Account, dangerousAccount: Account) =>
+      new ZionProjectRepository(account, dangerousAccount),
     rubricRepository: new RubricRepository(),
     copilotOutputRepository: new CopilotOutputRepository(),
     copilotInputRepository: new CopilotInputRepository(),
@@ -41,7 +41,10 @@ export type RepositoryInjectionType = {
   goldenSetRepository: IGoldenSetRepository;
   userInputRepository: IUserInputRepository;
   projectRepository: IProjectRepository;
-  zionProjectRepository: (account: Account) => IZionProjectRepository;
+  zionProjectRepository: (
+    account: Account,
+    dangerousAccount: Account,
+  ) => IZionProjectRepository;
   rubricRepository: IRubricRepository;
   copilotOutputRepository: ICopilotOutputRepository;
   copilotInputRepository: ICopilotInputRepository;

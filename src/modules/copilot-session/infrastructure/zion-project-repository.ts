@@ -7,9 +7,17 @@ import type { IZionProjectRepository } from "../domain/interface/zion-project.in
 import { createZionProject, deleteProjectInZion } from "./project-manager.ts";
 
 export class ZionProjectRepository implements IZionProjectRepository {
-  constructor(private account: Account) {}
+  constructor(
+    private account: Account,
+    private dangerousAccount: Account,
+  ) {}
   async createZionProject(project: ZionProjectEntity): Promise<ProjectEntity> {
-    const createdProject = await createZionProject(this.account, project);
+    const createdProject = await createZionProject(
+      this.account.gqlClient,
+      this.account.wsClient,
+      this.account.account.getOrganizationExId(),
+      project,
+    );
     const projectEntity = new ProjectEntity({ projectExId: createdProject });
     await this.getTypeSystemStoreByProjectEntity(projectEntity);
     return projectEntity;
@@ -18,8 +26,9 @@ export class ZionProjectRepository implements IZionProjectRepository {
     project: ProjectEntity,
   ): Promise<ProjectEntity> {
     const typeSystemStore = new TypeSystemStore(
-      this.account,
       project.getData("projectExId"),
+      this.account.gqlClient,
+      this.dangerousAccount.gqlClient,
     );
     await typeSystemStore.fetchAppDetailByExId();
 
@@ -28,7 +37,7 @@ export class ZionProjectRepository implements IZionProjectRepository {
   }
   async deleteZionProject(project: ProjectEntity): Promise<void> {
     const projectExId = project.getData("projectExId");
-    await deleteProjectInZion(this.account, projectExId);
+    await deleteProjectInZion(this.account.gqlClient, projectExId);
   }
   async importSchemaToProject(
     schemaId: string,

@@ -5,10 +5,10 @@ import type {
   LoginWithPhoneNumberMutation,
   LoginWithPhoneNumberMutationVariables,
 } from "../../../graphql/generated/types.ts";
-import { publicNetworkClient } from "../../shared/application/graphql-client.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import type { AccountInfo } from "../domain/schema/account.schema.ts";
 import type { ILoginService } from "../domain/interface/login.interface.ts";
+import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
 
 // ---------------------------------------------------------------------------
 // Document
@@ -61,6 +61,7 @@ export class LoginService implements ILoginService {
   login = async (
     phoneNumberOrUsername: string,
     password: string,
+    gqlClient: IGQLClient,
   ): Promise<AccountInfo> => {
     try {
       let phoneNumber: string | undefined;
@@ -71,21 +72,17 @@ export class LoginService implements ILoginService {
         /^\d+$/.test(phoneNumberOrUsername)
       ) {
         phoneNumber = phoneNumberOrUsername;
-        const data = await publicNetworkClient
-          .buildGQLClient()
-          .gqlRequest<
-            LoginWithPhoneNumberMutation,
-            LoginWithPhoneNumberMutationVariables
-          >(LOGIN_MUTATION, { phoneNumber, password });
+        const data = await gqlClient.gqlRequest<
+          LoginWithPhoneNumberMutation,
+          LoginWithPhoneNumberMutationVariables
+        >(LOGIN_MUTATION, { phoneNumber, password });
         accountInfo = data.loginWithPhoneNumber as AccountInfo;
       } else {
         username = phoneNumberOrUsername;
-        const data = await publicNetworkClient
-          .buildGQLClient()
-          .gqlRequest<
-            LoginMutation,
-            LoginMutationVariables
-          >(LOGIN_WITH_PASSWORD_MUTATION, { username, password });
+        const data = await gqlClient.gqlRequest<
+          LoginMutation,
+          LoginMutationVariables
+        >(LOGIN_WITH_PASSWORD_MUTATION, { username, password });
         accountInfo = data.login as AccountInfo;
       }
 

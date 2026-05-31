@@ -21,13 +21,12 @@ import {
 } from "../generated/resolvers-types.ts";
 import { GraphQLError } from "graphql";
 import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/copilot-session/infrastructure/project-manager.ts";
-import { NetworkClient } from "../../modules/shared/application/graphql-client.ts";
 import type {
   FixAliPayDataBindingMutation,
   FixAliPayDataBindingMutationVariables,
 } from "../generated/types.ts";
 import { logger } from "../../modules/shared/infrastructure/logger.ts";
-import { getMyAccount } from "../../DI/account.ts";
+import { getDangerousAccount, getMyAccount } from "../../DI/account.ts";
 import type { GoldenSetEntity } from "../../modules/dataset/domain/entity/golden-set.entity.ts";
 import type { UserInputEntity } from "../../modules/dataset/domain/entity/user-input.entity.ts";
 import type { CopilotInputAggregate } from "../../modules/dataset/domain/aggregate/copilot-input.aggregate.ts";
@@ -210,12 +209,8 @@ export const goldenSetResolver = {
           name: "fetch-project-ids",
           text: `SELECT id FROM project ORDER BY id DESC LIMIT ${arguments_.number}`,
         };
-        const dangerousNetworkClient = new NetworkClient();
-        dangerousNetworkClient.setHeader(
-          "Authorization",
-          `Bearer ${process.env.DANGEROUS_TOKEN}`,
-        );
-        const gqlClient = dangerousNetworkClient.buildGQLClient();
+        const dangerousAccount = await getDangerousAccount();
+        const gqlClient = dangerousAccount.gqlClient;
         const result = await zionDatabase.query(fetchProjectId);
         const results = await Promise.allSettled(
           result.rows.map(async ({ id }) => {

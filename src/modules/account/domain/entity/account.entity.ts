@@ -25,6 +25,14 @@ export class AccountEntity extends Entity<
     return accountInfo;
   }
 
+  getOrganizationExId(): string {
+    const id = this.getAccountInfo().account.currentOrganization.exId;
+    if (!id) {
+      throw new Error("Organization ExId is not available");
+    }
+    return id;
+  }
+
   clearToken() {
     this.setAccountInfo({} as AccountInfo);
   }

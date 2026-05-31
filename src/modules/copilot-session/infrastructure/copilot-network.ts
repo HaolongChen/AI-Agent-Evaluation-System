@@ -1,14 +1,39 @@
 import { gql } from "graphql-request";
 import type {
+  CopilotToolCallBatchMessageFragment_toolCalls,
   CreateCopilotSessionMutation,
   CreateCopilotSessionMutationVariables,
   GetCopilotSubscriptionCountQuery,
   GetCopilotSubscriptionCountQueryVariables,
   GetLatestSessionMutation,
   GetLatestSessionMutationVariables,
+  OnCopilotSessionUpdatesSubscription,
+  OnCopilotSessionUpdatesSubscriptionVariables,
+  SendMessageToSessionMutation,
+  SendMessageToSessionMutationVariables,
 } from "../../../graphql/generated/types.ts";
 import { z } from "zod";
 import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
+import type { ICopilotNetwork } from "../domain/interface/copilot-network.interface.ts";
+import type { IWebSocketClient } from "../../shared/domain/interface/websocket-client.interface.ts";
+import {
+  CopilotEvent,
+  type CopilotEventsList,
+} from "../domain/entity/copilot-job.entity.ts";
+import {
+  inputMessageTypeList,
+  type CopilotInputMessage,
+} from "../domain/schema/copilot.schema.ts";
+import { logger } from "../../shared/infrastructure/logger.ts";
+import {
+  ClientType,
+  Locale,
+  Product,
+  ZTypeCopilotApi,
+  ZTypeCoreApi,
+  type CopilotApiResultJs,
+  type OpaqueSchemaGraph,
+} from "../../shared/domain/interface/type-system.ts";
 
 export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
   query GetCopilotSubscriptionCount(
@@ -266,50 +291,139 @@ export const ON_COPILOT_SESSION_UPDATES = gql`
   ${COPILOT_INITIAL_STATE_MESSAGE_FRAGMENT}
 `;
 
-export const getLatestSession = async (
-  projectExId: string,
-  gqlClient: IGQLClient,
-): Promise<string | null> => {
-  const latestSessionResult = await gqlClient.gqlRequest<
-    GetLatestSessionMutation,
-    GetLatestSessionMutationVariables
-  >(GET_LATEST_SESSION, {
-    projectExId,
-    sessionType: "COPILOT",
-  });
-  return latestSessionResult.latestSession;
-};
+export class CopilotNetwork implements ICopilotNetwork {
+  constructor(
+    private gqlClient: IGQLClient,
+    private wsClient: IWebSocketClient,
+  ) {}
 
-export const createNewSession = async (
-  projectExId: string,
-  gqlClient: IGQLClient,
-): Promise<string> => {
-  const newCopilotSessionExId = await gqlClient.gqlRequest<
-    CreateCopilotSessionMutation,
-    CreateCopilotSessionMutationVariables
-  >(CREATE_COPILOT_SESSION, {
-    projectExId,
-    sessionType: "COPILOT",
-  });
-  return newCopilotSessionExId.createCopilotSession;
-};
-
-export const getSubscriptionCount = async (
-  projectExId: string,
-  gqlClient: IGQLClient,
-): Promise<number> => {
-  const copilotSubscriptionCount = await gqlClient.gqlRequest<
-    GetCopilotSubscriptionCountQuery,
-    GetCopilotSubscriptionCountQueryVariables
-  >(GET_COPILOT_SUBSCRIPTION_COUNT, {
-    projectExId,
-    sessionType: "COPILOT",
-  });
-  const count = z.coerce
-    .number()
-    .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
-  if (!count.success) {
-    throw new Error(count.error.message);
+  private runCopilotToolCalls(
+    toolCalls: CopilotToolCallBatchMessageFragment_toolCalls[],
+    schemaGraph: OpaqueSchemaGraph,
+  ): CopilotApiResultJs {
+    const product = Product.ZION;
+    const clientType = ClientType.WEB;
+    const locale = Locale.ZH;
+    return ZTypeCopilotApi.toolCalls(
+      ZTypeCoreApi.genZTypeApiContext(
+        schemaGraph,
+        product,
+        clientType,
+        "WEB",
+        locale,
+        // eslint-disable-next-line unicorn/no-null
+        null,
+      ),
+      toolCalls.map((toolCall) => {
+        return {
+          name: toolCall.name,
+          args: toolCall.args,
+          toolCallId: toolCall.id,
+        };
+      }),
+    );
   }
-  return count.data;
-};
+
+  async createNewSession(projectExId: string): Promise<string> {
+    const result = await this.gqlClient.gqlRequest<
+      CreateCopilotSessionMutation,
+      CreateCopilotSessionMutationVariables
+    >(CREATE_COPILOT_SESSION, {
+      projectExId,
+      sessionType: "COPILOT",
+    });
+    return result.createCopilotSession;
+  }
+  async getLatestSession(projectExId: string): Promise<string | null> {
+    const latestSessionResult = await this.gqlClient.gqlRequest<
+      GetLatestSessionMutation,
+      GetLatestSessionMutationVariables
+    >(GET_LATEST_SESSION, {
+      projectExId,
+      sessionType: "COPILOT",
+    });
+    return latestSessionResult.latestSession;
+  }
+  async getSubscriptionCount(projectExId: string): Promise<number> {
+    const copilotSubscriptionCount = await this.gqlClient.gqlRequest<
+      GetCopilotSubscriptionCountQuery,
+      GetCopilotSubscriptionCountQueryVariables
+    >(GET_COPILOT_SUBSCRIPTION_COUNT, {
+      projectExId,
+      sessionType: "COPILOT",
+    });
+    const count = z.coerce
+      .number()
+      .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
+    if (!count.success) {
+      throw new Error(count.error.message);
+    }
+    return count.data;
+  }
+  async sendMessageToSession<T extends keyof CopilotInputMessage>(
+    sessionExId: string,
+    type: T,
+    message: CopilotInputMessage[T],
+  ): Promise<void> {
+    const response = await this.gqlClient.gqlRequest<
+      SendMessageToSessionMutation,
+      SendMessageToSessionMutationVariables
+    >(SEND_MESSAGE_TO_SESSION, {
+      sessionExId,
+      argsInput: {
+        copilotArgs: {
+          [inputMessageTypeList[type]]: message,
+          copilotMessageType: type,
+        },
+      },
+    });
+    if (!response.sendMessageToSession) {
+      throw new Error("Failed to send message to session");
+    }
+  }
+  subscribeToSessionUpdates(
+    sessionExId: string,
+    schemaGraph: OpaqueSchemaGraph,
+    publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
+  ): () => void {
+    return this.wsClient.subscribe<
+      OnCopilotSessionUpdatesSubscription,
+      OnCopilotSessionUpdatesSubscriptionVariables
+    >(
+      ON_COPILOT_SESSION_UPDATES,
+      {
+        next: (data) => {
+          const content = data?.onCopilotSessionUpdate?.content;
+
+          if (!content) {
+            throw new Error("Received subscription update without content");
+          }
+
+          logger.info("Received subscription update:", content);
+          if (content.__typename === "CopilotToolCallBatchMessage") {
+            const toolCalls = content.toolCalls;
+            const result = this.runCopilotToolCalls(toolCalls, schemaGraph);
+            this.sendMessageToSession(sessionExId, "TOOL_CALL_BATCH_RESPONSE", {
+              toolCallBatchId: content.toolCallBatchId,
+              responseByToolCallId: JSON.parse(result.data ?? "{}"),
+              schemaDiff: result.schemaDiff,
+            });
+            return;
+          }
+          const event = new CopilotEvent(
+            content.__typename,
+            content,
+          ) as CopilotEventsList[keyof CopilotEventsList];
+          publish(event);
+        },
+        error: (error) => {
+          logger.error("Subscription error:", error);
+        },
+        complete: () => {
+          logger.info("Subscription completed");
+        },
+      },
+      { sessionExId },
+    );
+  }
+}

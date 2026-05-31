@@ -1,4 +1,3 @@
-import type { Account } from "../../account/application/account-handler.ts";
 import type { CopilotInputAggregate } from "../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 import type { CopilotServerEntity } from "../../dataset/domain/entity/copilot-server.entity.ts";
 import { generateProjectName } from "../../dataset/domain/service/generate-project-name.service.ts";
@@ -13,7 +12,6 @@ export class CreateProjectUseCase {
       projectRepository: IProjectRepository;
       zionProjectRepository: IZionProjectRepository;
     },
-    private account: Account,
   ) {}
 
   async execute(

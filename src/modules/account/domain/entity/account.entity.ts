@@ -33,6 +33,22 @@ export class AccountEntity extends Entity<
     return id;
   }
 
+  getUsername(): string {
+    const username = this.getAccountInfo().account.username;
+    if (!username) {
+      throw new Error("Username is not available");
+    }
+    return username;
+  }
+
+  getAccessToken(): string {
+    const token = this.getAccountInfo().accessToken;
+    if (!token) {
+      throw new Error("Access token is not available");
+    }
+    return token;
+  }
+
   clearToken() {
     this.setAccountInfo({} as AccountInfo);
   }

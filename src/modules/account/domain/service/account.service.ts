@@ -17,8 +17,8 @@ export class AccountService {
     this.networkClient.setHeader("X-Session-Id", crypto.randomUUID());
   }
 
-  handleLogin(accountInfo: AccountInfo) {
-    if (this.isLoggedIn) return;
+  handleLogin(accountInfo: AccountInfo, force: boolean = false) {
+    if (this.isLoggedIn && !force) return;
     this.account.setAccountInfo(accountInfo);
     this.networkClient.setHeader("Authorization", accountInfo.accessToken);
     this.timeout = setTimeout(() => {

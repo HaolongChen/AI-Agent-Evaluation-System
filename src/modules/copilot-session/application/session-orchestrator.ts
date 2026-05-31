@@ -2,7 +2,6 @@ import { clearTimeout } from "node:timers";
 import { Event } from "ts-event-target";
 import { CopilotInputEvent } from "../domain/entity/copilot-job.entity.ts";
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
-import { runToolCalls } from "./tool-call-handler.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import type { CopilotSessionAggregate } from "../domain/aggregate/copilot-session.aggregate.ts";
 
@@ -27,12 +26,15 @@ export class SessionOrchestrator {
    * on error/timeout.
    */
   async run(): Promise<void> {
-    const typeSystemStore = this.session.getEntity("project").typeSystemStore;
-    if (!typeSystemStore.schemaGraph) {
-      await typeSystemStore.rehydrate();
+    const schemaGraph = this.session
+      .getEntity("project")
+      .getData("typeSystemStore")?.schemaGraph;
+    if (!schemaGraph) {
+      throw new Error(
+        "Failed to get schema graph from project. Cannot start session orchestrator without schema graph.",
+      );
     }
-    const schemaGraph = typeSystemStore.schemaGraph!;
-    const { publish, listen } = this.runner.execute();
+    const { publish, listen } = this.runner.execute(schemaGraph);
     let rejectFunction: (error: unknown) => void;
 
     const timer = setTimeout(() => {
@@ -53,39 +55,6 @@ export class SessionOrchestrator {
             "Received AI response before editable text. This may indicate an issue with the backend job execution.",
           );
         }
-      });
-
-      listen("CopilotToolCallBatchMessage", (event) => {
-        const { toolCallBatchId, toolCalls } = event.data;
-        const result = runToolCalls(toolCalls, schemaGraph);
-        if (result.error) {
-          logger.error(
-            `Error executing tool call batch ${toolCallBatchId}:`,
-            result.error,
-          );
-          clearTimeout(timer);
-          reject(
-            new Error(
-              `Error executing tool call batch ${toolCallBatchId}: ${result.error}`,
-            ),
-          );
-          return;
-        }
-        if (result.schemaDiff) {
-          logger.info(
-            `Schema diff produced by tool call batch ${toolCallBatchId}:`,
-            result.schemaDiff,
-          );
-
-          // TODO: apply schema diff to local
-        }
-        publish(
-          new CopilotInputEvent("TOOL_CALL_BATCH_RESPONSE", {
-            toolCallBatchId: event.data.toolCallBatchId,
-            responseByToolCallId: JSON.parse(result.data ?? "{}"),
-            schemaDiff: result.schemaDiff,
-          }),
-        );
       });
 
       listen("CopilotTaskMessage", (event) => {

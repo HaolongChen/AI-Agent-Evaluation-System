@@ -1,19 +1,14 @@
 import { prisma } from "../../../../config/prisma.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
-import { CopilotSessionAggregate } from "../../domain/aggregate/copilot-session.aggregate.ts";
-import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
-import type { ICopilotSessionRepository } from "../../domain/interface/copilot-session.interface.ts";
 import {
-  CopilotOutputRepository,
   type CopilotOutputRepositoryType,
 } from "./copilot-output.repository.ts";
 import type { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
 import {
-  projectDataMapper,
   type ProjectDataMapperParameters,
   type ProjectRepositoryType,
 } from "./project.repository.ts";
-import type { ICrdtSchemaLifecycle } from "../../domain/interface/crdt-schema-lifecycle.interface.ts";
+import { CopilotSessionEntity } from "../../domain/entity/copilot-session.entity.ts";
 
 export type CopilotSessionRepositoryType = {
   copilotOutput?: CopilotOutputRepositoryType | null;
@@ -34,56 +29,48 @@ export type CopilotSessionDataMapperParameter = {
 export const copilotSessionDataMapper = (
   data: CopilotSessionRepositoryType,
   entity?: CopilotSessionDataMapperParameter,
-): CopilotSessionAggregate => {
-  const project =
-    entity?.project?.aggregate ??
-    (data.project
-      ? projectDataMapper(data.project, entity?.project?.entity)
-      : undefined);
-  if (!project) {
-    throw new Error(
-      "Missing required data for CopilotSessionAggregate: project",
-    );
-  }
+): CopilotSessionEntity =>
+{
+  const session = entity?.project?.aggregate?.getEntity( "copilotSession" );
+  return repositoryDateMapper(data, session ?? new CopilotSessionEntity(data.id));
+  // const project =
+  //   entity?.project?.aggregate ??
+  //   (data.project
+  //     ? projectDataMapper(data.project, entity?.project?.entity)
+  //     : undefined);
+  // if (!project) {
+  //   throw new Error(
+  //     "Missing required data for CopilotSessionAggregate: project",
+  //   );
+  // }
 
-  const result = repositoryDateMapper(
-    data,
-    new CopilotSessionAggregate(project, {} as ICrdtSchemaLifecycle, data.id),
-  ); // Faking data here
-  if (data.copilotOutput) {
-    result.setEntity(
-      "copilotOutput",
-      repositoryDateMapper(
-        data.copilotOutput,
-        new CopilotOutputEntity(data.copilotOutput, data.copilotOutput.id),
-      ),
-    );
-  }
-  return result;
+  // const result = repositoryDateMapper(
+  //   data,
+  //   new CopilotSessionAggregate(project, {} as ICrdtSchemaLifecycle, data.id),
+  // ); // Faking data here
+  // if (data.copilotOutput) {
+  //   result.setEntity(
+  //     "copilotOutput",
+  //     repositoryDateMapper(
+  //       data.copilotOutput,
+  //       new CopilotOutputEntity(data.copilotOutput, data.copilotOutput.id),
+  //     ),
+  //   );
+  // }
+  // return result;
 };
 
-export class CopilotSessionRepository implements ICopilotSessionRepository {
-  async saveCopilotOutput(data: CopilotSessionAggregate): Promise<void> {
-    const copilotOutput = data.getEntity("copilotOutput");
-    if (!copilotOutput) {
-      throw new Error(
-        "No CopilotOutput entity found in the provided CopilotSessionAggregate",
-      );
-    }
-    const copilotOutputRepository = new CopilotOutputRepository();
-    await copilotOutputRepository.save(copilotOutput);
-  }
-  async save(entity: CopilotSessionAggregate): Promise<void> {
+export class CopilotSessionRepository {
+  async save(entity: CopilotSessionEntity, projectId: string): Promise<void> {
     const result = await prisma.copilotSession.upsert({
       create: {
-        ...entity.getData(),
-        projectId: entity.getEntity("project").getData("id"),
+        id: entity.getData( "id" ),
+        projectId,
       },
       update: {},
-      where: { id: entity.getData("id") },
+      where: { id: projectId },
     });
     repositoryDateMapper(result, entity);
-    await this.saveCopilotOutput(entity);
   }
   async findById(id: string): Promise<CopilotSessionAggregate> {
     return copilotSessionDataMapper(

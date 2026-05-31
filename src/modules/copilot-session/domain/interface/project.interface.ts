@@ -10,5 +10,8 @@ export interface IProjectRepository extends IRepository<ProjectAggregate> {
   getByCopilotServer(
     copilotServer: CopilotServerEntity,
   ): Promise<Array<ProjectAggregate>>;
-  deleteById(id: string): Promise<void>;
+  deleteById ( id: string ): Promise<void>;
+  saveCopilotSession ( project: ProjectAggregate ): Promise<void>;
+  saveCopilotOutput ( project: ProjectAggregate ): Promise<void>;
+  getProjectsWithCopilotOutput(number: number): Promise<Array<ProjectAggregate>>;
 }

@@ -1,7 +1,6 @@
 import { prisma } from "../../../../config/prisma.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
-import type { ICopilotOutputRepository } from "../../domain/interface/copilot-output.interface.ts";
 
 export type CopilotOutputRepositoryType = {
   id: string;
@@ -20,7 +19,7 @@ export const copilotOutputDataMapper = (
   );
 };
 
-export class CopilotOutputRepository implements ICopilotOutputRepository {
+export class CopilotOutputRepository  {
   async save(entity: CopilotOutputEntity): Promise<void> {
     const output = await prisma.copilotOutput.create({
       data: entity.getData(),

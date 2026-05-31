@@ -144,10 +144,6 @@ model rubric {
   id String @id @default(uuid())
 
   copilotSessionExId String @map("copilot_session_ex_id")
-  // goldenSetId String @map("golden_set_id")
-  // userInputId String @map("user_input_id")
-
-  // copilotInput   goldenSet_userInput    @relation(fields: [goldenSetId, userInputId], references: [goldenSetId, userInputId])
   copilotSession copilotSession   @relation("copilotSession_rubric", fields: [copilotSessionExId], references: [id])
   criterion      criteria[]
   agentFeedbacks agentFeedbacks[]
@@ -171,7 +167,7 @@ model criteria {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   rubric rubric @relation(fields: [rubricId], references: [id])
-
+  evaluationRecord evaluationRecord[] @relation(map: "criteria_evaluation_records")
   @@unique([id, rubricId], map: "unique_criteria_per_set")
 }
 
@@ -221,7 +217,7 @@ model evaluationRecord {
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
 
   evaluationSession evaluationSession @relation(fields: [evaluatorId, rubricId, evaluatorType], references: [evaluatorId, rubricId, evaluatorType], map: "agent_evaluation_session_relation")
-
+  criteria          criteria          @relation(fields: [criteriaId], references: [id], map: "agent_evaluation_record_criteria_relation")
   @@unique([evaluatorId, rubricId, criteriaId], map: "unique_agent_evaluation_record")
 }
 

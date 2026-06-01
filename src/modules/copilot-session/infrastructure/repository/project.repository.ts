@@ -8,6 +8,7 @@ import {
 } from "../../../dataset/infrastructure/repository/copilot-input.repository.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
+import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import { ProjectEntity } from "../../domain/entity/project.entity.ts";
 import { type IProjectRepository } from "../../domain/interface/project.interface.ts";
 
@@ -46,7 +47,11 @@ export const projectDataMapper = (
   const copilotInput =
     entity?.copilotInput?.aggregate ??
     (data.copilotInput
-      ? copilotInputDataMapper(data.copilotInput, entity?.copilotInput?.entity)
+      ? copilotInputDataMapper(
+          data.copilotInput,
+          entity?.copilotInput?.entity,
+          entity?.copilotInput?.aggregate,
+        )
       : undefined);
   if (!copilotInput) {
     throw new Error("Missing required data for CopilotSessionAggregate");
@@ -60,6 +65,19 @@ export const projectDataMapper = (
     );
   if (data.copilotSession?.id) {
     projectAggregate.copilotSessionExId = data.copilotSession.id;
+  }
+  if (data.copilotSession?.copilotOutput) {
+    projectAggregate.setEntity(
+      "copilotOutput",
+      repositoryDateMapper(
+        data.copilotSession.copilotOutput,
+        projectAggregate.getEntity("copilotOutput") ??
+          new CopilotOutputEntity(
+            data.copilotSession.copilotOutput,
+            data.copilotSession.copilotOutput.id,
+          ),
+      ),
+    );
   }
   return repositoryDateMapper(data, projectAggregate);
 };
@@ -175,9 +193,7 @@ export class ProjectRepository implements IProjectRepository {
           : {}),
       },
     });
-    projectDataMapper(project, {
-      copilotInput: { aggregate: data.getEntity("copilotInput") },
-    });
+    projectDataMapper(project, { aggregate: data });
   }
 
   async findById(id: string): Promise<ProjectAggregate> {
@@ -190,7 +206,6 @@ export class ProjectRepository implements IProjectRepository {
             userInput: true,
           },
         },
-        copilotServer: true,
         copilotSession: {
           include: {
             copilotOutput: true,

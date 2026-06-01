@@ -1,5 +1,8 @@
 import type { CopilotApiResultJs } from "../../../shared/domain/interface/type-system.ts";
-import type { CopilotEventsList } from "../entity/copilot-job.entity.ts";
+import type {
+  CopilotEvent,
+  CopilotEventsList,
+} from "../entity/copilot-job.entity.ts";
 import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
 
 export interface ICopilotNetworkService {
@@ -9,9 +12,19 @@ export interface ICopilotNetworkService {
     message: CopilotInputMessage[T],
   ): Promise<void>;
 
+  delegateCopilotToolCall(
+    event: CopilotEvent<"CopilotToolCallBatchMessage">,
+  ): CopilotApiResultJs;
+
+  sendHumanMessage(content: string): Promise<void>;
+
+  sendHumanOperationMessage(): Promise<void>;
+
   subscribeToSessionUpdates(
     publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
   ): () => void;
 
-  runCopilotToolCalls(toolCalls: unknown[]): CopilotApiResultJs;
+  terminateSession(): Promise<void>;
+
+  // runCopilotToolCalls(toolCalls: unknown[]): CopilotApiResultJs;
 }

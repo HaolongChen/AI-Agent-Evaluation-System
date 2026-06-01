@@ -2,7 +2,10 @@ import { clearTimeout } from "node:timers";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 import type { CopilotApiResultJs } from "../../shared/domain/interface/type-system.ts";
-import type { CopilotEventType } from "../domain/entity/copilot-job.entity.ts";
+import type {
+  CopilotEvent,
+  CopilotEventType,
+} from "../domain/entity/copilot-job.entity.ts";
 import type { TypeNameList } from "../domain/schema/copilot.schema.ts";
 
 /**
@@ -24,8 +27,7 @@ export class SessionOrchestrator {
       listener: (event: Extract<CopilotEventType[number], { type: T }>) => void,
     ) => void,
     private runToolCalls: (
-      toolCalls: unknown[],
-      toolCallBatchId: string,
+      event: CopilotEvent<"CopilotToolCallBatchMessage">,
     ) => CopilotApiResultJs,
     private sendHumanMessage: () => void,
     private sendContinueOperation: () => void,
@@ -52,10 +54,7 @@ export class SessionOrchestrator {
       });
 
       this.listen("CopilotToolCallBatchMessage", (event) => {
-        const result = this.runToolCalls(
-          event.data.toolCalls,
-          event.data.toolCallBatchId,
-        );
+        const result = this.runToolCalls(event);
 
         logger.info(
           `Tool call batch executed with result: ${JSON.stringify(result)}`,

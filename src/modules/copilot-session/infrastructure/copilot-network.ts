@@ -291,8 +291,32 @@ export class CopilotNetworkService implements ICopilotNetworkService {
     public sessionExId: string,
     private schemaGraph: OpaqueSchemaGraph,
   ) {}
+  delegateCopilotToolCall(
+    event: CopilotEvent<"CopilotToolCallBatchMessage">,
+  ): CopilotApiResultJs {
+    const result = this.runCopilotToolCalls(event.data.toolCalls);
+    this.sendMessageToSession("TOOL_CALL_BATCH_RESPONSE", {
+      toolCallBatchId: event.data.toolCallBatchId,
+      responseByToolCallId: JSON.parse(result.data ?? "{}"),
+      schemaDiff: result.schemaDiff,
+    });
+    return result;
+  }
+  async sendHumanMessage(content: string): Promise<void> {
+    return this.sendMessageToSession("HUMAN_INPUT", { content });
+  }
 
-  runCopilotToolCalls(
+  async sendHumanOperationMessage(): Promise<void> {
+    return this.sendMessageToSession("HUMAN_OPERATION", {
+      humanOperationType: "CONTINUE",
+    });
+  }
+
+  terminateSession(): Promise<void> {
+    return this.sendMessageToSession("TERMINATE", {});
+  }
+
+  private runCopilotToolCalls(
     toolCalls: CopilotToolCallBatchMessageFragment_toolCalls[],
   ): CopilotApiResultJs {
     const product = Product.ZION;

@@ -16,10 +16,11 @@ export type CopilotServerRepositoryType = {
 
 export const copilotServerDataMapper = (
   copilotServer: CopilotServerRepositoryType,
+  entity?: CopilotServerEntity,
 ): CopilotServerEntity => {
   return repositoryDateMapper(
     copilotServer,
-    new CopilotServerEntity(copilotServer, copilotServer.id),
+    entity || new CopilotServerEntity(copilotServer, copilotServer.id),
   );
 };
 

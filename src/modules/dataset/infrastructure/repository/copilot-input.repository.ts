@@ -33,18 +33,25 @@ export type CopilotInputDataMapperParameter = {
 export const copilotInputDataMapper = (
   copilotInput: CopilotInputRepositoryType,
   entity?: CopilotInputDataMapperParameter,
+  aggregateEntity?: CopilotInputAggregate,
 ): CopilotInputAggregate => {
   let goldenSetEntity: GoldenSetEntity | undefined;
   let userInputEntity: UserInputEntity | undefined;
 
   if (copilotInput.goldenSet) {
-    goldenSetEntity = goldenSetDataMapper(copilotInput.goldenSet);
+    goldenSetEntity = goldenSetDataMapper(
+      copilotInput.goldenSet,
+      aggregateEntity?.getEntity("goldenSet") ?? entity?.goldenSet,
+    );
   } else if (entity && "goldenSet" in entity) {
     goldenSetEntity = entity.goldenSet as GoldenSetEntity;
   }
 
   if (copilotInput.userInput) {
-    userInputEntity = userInputDataMapper(copilotInput.userInput);
+    userInputEntity = userInputDataMapper(
+      copilotInput.userInput,
+      aggregateEntity?.getEntity("userInput") ?? entity?.userInput,
+    );
   } else if (entity && "userInput" in entity) {
     userInputEntity = entity.userInput as UserInputEntity;
   }
@@ -54,11 +61,12 @@ export const copilotInputDataMapper = (
 
   return repositoryDateMapper(
     copilotInput,
-    new CopilotInputAggregate(
-      goldenSetEntity,
-      userInputEntity,
-      copilotInput.id,
-    ),
+    aggregateEntity ||
+      new CopilotInputAggregate(
+        goldenSetEntity,
+        userInputEntity,
+        copilotInput.id,
+      ),
   );
 };
 

@@ -43,6 +43,8 @@ const toGraphqlCopilotOutput = (project: ProjectAggregate): CopilotOutput => {
   }
   return {
     ...copilotOutput.getData(),
+    tasks:
+      copilotOutput.getData("tasks").map((task) => JSON.stringify(task)) ?? [],
     copilotSessionExId: project.copilotSessionExId,
     createdAt: copilotOutput.getData("createdAt")!.toISOString(),
     __typename: "CopilotOutput",

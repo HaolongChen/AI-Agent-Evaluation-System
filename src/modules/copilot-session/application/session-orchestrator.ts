@@ -20,7 +20,7 @@ export class SessionOrchestrator {
   private static readonly SESSION_TIMEOUT_MS = 2 * 60 * 1000;
   private aiResponse: string | undefined;
   private editableText: string | undefined;
-  private tasks: unknown[] = [];
+  private tasks: CopilotEvent<"CopilotTaskMessage">["data"][] = [];
   constructor(
     private listen: <T extends keyof TypeNameList>(
       eventName: T,
@@ -86,6 +86,7 @@ export class SessionOrchestrator {
               new CopilotOutputEntity({
                 aiResponse: this.aiResponse,
                 editableText: this.editableText,
+                tasks: this.tasks,
               }),
             );
           } else if (this.editableText) {

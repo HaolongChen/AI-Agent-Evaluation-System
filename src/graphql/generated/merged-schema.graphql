@@ -1530,6 +1530,7 @@ type CopilotOutput {
   Unique identifier
   """
   id: String!
+  tasks: [String]!
 }
 
 type CopilotSession {

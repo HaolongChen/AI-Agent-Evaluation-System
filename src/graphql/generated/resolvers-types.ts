@@ -69,6 +69,7 @@ export type CopilotOutput = {
   editableText: Maybe<Scalars["String"]["output"]>;
   /** Unique identifier */
   id: Scalars["String"]["output"];
+  tasks: Array<Maybe<Scalars["String"]["output"]>>;
 };
 
 export type CopilotSession = {
@@ -522,6 +523,11 @@ export type CopilotOutputResolvers<
     ContextType
   >;
   id: Resolver<ResolversTypes["String"], ParentType, ContextType>;
+  tasks: Resolver<
+    Array<Maybe<ResolversTypes["String"]>>,
+    ParentType,
+    ContextType
+  >;
 }>;
 
 export type CopilotSessionResolvers<

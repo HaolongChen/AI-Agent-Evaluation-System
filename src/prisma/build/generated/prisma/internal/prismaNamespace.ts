@@ -1479,6 +1479,7 @@ export const CopilotOutputScalarFieldEnum = {
   id: "id",
   editableText: "editableText",
   aiResponse: "aiResponse",
+  tasks: "tasks",
   copilotSessionExId: "copilotSessionExId",
   createdAt: "createdAt",
 } as const;
@@ -1621,6 +1622,22 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<
 >;
 
 /**
+ * Reference to a field of type 'Json[]'
+ */
+export type ListJsonFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "Json[]"
+>;
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "Json"
+>;
+
+/**
  * Reference to a field of type 'Boolean'
  */
 export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<
@@ -1671,14 +1688,6 @@ export type EnumEvaluatorTypeFieldRefInput<$PrismaModel> = FieldRefInputType<
  */
 export type ListEnumEvaluatorTypeFieldRefInput<$PrismaModel> =
   FieldRefInputType<$PrismaModel, "EvaluatorType[]">;
-
-/**
- * Reference to a field of type 'Json'
- */
-export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<
-  $PrismaModel,
-  "Json"
->;
 
 /**
  * Reference to a field of type 'QueryMode'

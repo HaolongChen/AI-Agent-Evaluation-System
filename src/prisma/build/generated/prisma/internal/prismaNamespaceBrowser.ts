@@ -151,6 +151,7 @@ export const CopilotOutputScalarFieldEnum = {
   id: "id",
   editableText: "editableText",
   aiResponse: "aiResponse",
+  tasks: "tasks",
   copilotSessionExId: "copilotSessionExId",
   createdAt: "createdAt",
 } as const;

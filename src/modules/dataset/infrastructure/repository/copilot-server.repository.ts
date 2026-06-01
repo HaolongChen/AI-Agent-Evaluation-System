@@ -1,3 +1,4 @@
+import { prisma } from "../../../../config/prisma.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import {
   CopilotServerEntity,
@@ -25,15 +26,20 @@ export const copilotServerDataMapper = (
 };
 
 export class CopilotServerRepository implements ICopilotServerRepository {
-  getDefault(): Promise<CopilotServerEntity> {
-    return Promise.resolve(mockCopilotServerEntity);
+  async getDefault(): Promise<CopilotServerEntity> {
+    return this.findById(mockCopilotServerEntity.getData("id"));
   }
-  save(entity: CopilotServerEntity): Promise<void> {
-    entity.getData("createdAt");
-    return Promise.resolve();
+  async save(entity: CopilotServerEntity): Promise<void> {
+    const result = await prisma.copilotServer.upsert({
+      where: { id: entity.getData("id") },
+      update: entity.getData(),
+      create: entity.getData(),
+    });
+    copilotServerDataMapper(result, entity);
   }
-  findById(id: string): Promise<CopilotServerEntity> {
-    mockCopilotServerEntity.setData({ id: id });
-    return Promise.resolve(mockCopilotServerEntity);
+  async findById(id: string): Promise<CopilotServerEntity> {
+    mockCopilotServerEntity.setData({ id });
+    await this.save(mockCopilotServerEntity);
+    return mockCopilotServerEntity;
   }
 }

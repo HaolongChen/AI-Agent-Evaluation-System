@@ -31,6 +31,7 @@ const toGraphqlRubric = (
       __typename: "Criteria",
       reasoning: item.getData("reasoning") ?? "",
     })),
+    createdAt: rubric.aggregator.createdAt!.toISOString(),
     evaluationSessions: [],
   };
 };

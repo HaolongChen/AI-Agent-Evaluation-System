@@ -91,7 +91,7 @@ export class CopilotInputRepository implements ICopilotInputRepository {
           },
           include: { goldenSet: true, userInput: true },
         });
-        return copilotInputDataMapper(copilotInput);
+        return copilotInputDataMapper(copilotInput, { goldenSet, userInput });
       }),
     );
     return result;

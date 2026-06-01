@@ -45,6 +45,7 @@ export const goldenSetDataMapper = (
 ): GoldenSet => {
   return {
     ...data,
+    updatedAt: data.updatedAt!.toISOString(),
     // copilotType: copilotTypeMapper[data.copilotType],
     __typename: "GoldenSet",
   };
@@ -66,7 +67,8 @@ export const copilotInputDataMapper = (
   return {
     goldenSet: goldenSetDataMapper(data.entities.goldenSet.getData()),
     userInput: userInputDataMapper(data.entities.userInput.getData()),
-    copilotSessions: [],
+    copilotInputId: data.aggregator.id,
+    createdAt: data.aggregator.createdAt!.toISOString(),
     __typename: "CopilotInput",
   };
 };
@@ -171,49 +173,21 @@ export const goldenSetResolver = {
     linkGoldenSetToUserInput: async (
       _: unknown,
       arguments_: MutationLinkGoldenSetToUserInputArguments,
-    ): Promise<boolean> => {
+    ): Promise<CopilotInput[]> => {
       const formCopilotInputUseCase = new BuildCopilotInputUseCase({
         copilotInputRepository: repository.copilotInputRepository,
         goldenSetRepository: repository.goldenSetRepository,
         userInputRepository: repository.userInputRepository,
       });
-      await formCopilotInputUseCase.execute(arguments_.context.goldenSetId, [
+      const copilotInputs = await formCopilotInputUseCase.execute(
+        arguments_.context.goldenSetId,
         arguments_.context.userInputId,
-      ]);
-      return true;
+      );
+      return copilotInputs.map((copilotInput) =>
+        copilotInputDataMapper(copilotInput.getAllData()),
+      );
     },
 
-    // createProject: async (
-    //   _: unknown,
-    //   arguments_: MutationCreateProjectArguments,
-    // ): Promise<GoldenSet> =>
-    // {
-    //   const zionProject = new ZionProjectEntity( {projectName: arguments_.projectName ?? `temp-project-${Date.now()}`});
-    //   const projectEntity = await repository.ZionProjectService(await getMyAccount()).createZionProject(zionProject);
-    //   const projectService = projectLifecycle.projectService;
-    //   const schemaManager = projectService?.getSchemaManager();
-    //   const schemaId = schemaManager?.getSchemaId();
-    //   if (!schemaId) {
-    //     throw new Error("Failed to create project: schema ID is undefined");
-    //   }
-    //   const createGoldenSetUseCase = new CreateGoldenSetUseCase(
-    //     repository.goldenSetRepository,
-    //   );
-    //   const goldenSet = await createGoldenSetUseCase.execute(schemaId);
-    //   return goldenSetDataMapper(goldenSet);
-    // },
-    // deleteProject: async (
-    //   _: unknown,
-    //   arguments_: MutationDeleteProjectArguments,
-    // ): Promise<boolean> => {
-    //   const projectLifecycle = new ProjectLifecycleAdapter(
-    //     await getMyAccount(),
-    //     repository.projectRepository,
-    //   );
-    //   await projectLifecycle.importExistingProject(arguments_.projectExId);
-    //   await projectLifecycle.deleteTemporaryProject();
-    //   return true;
-    // },
     runCrdtTest: async (
       _: unknown,
       arguments_: { number: number },

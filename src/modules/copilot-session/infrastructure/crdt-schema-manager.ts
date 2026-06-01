@@ -336,7 +336,7 @@ export class TypeSystemStore implements ICrdtSchemaLifecycle {
       }
 
       this.appDetail = data.fetchAppDetailByExId;
-      logger.info("fetched app detail:", this.appDetail);
+      // logger.info("fetched app detail:", this.appDetail);
     } catch (error) {
       logger.error("Error fetching app detail:", error);
       throw error;

@@ -53,8 +53,9 @@ export class NetworkClientEntity extends Entity<
     for (const key of GRAPHQL_HEADER_KEYS) {
       const value = this.getData(key);
       if (!value) {
-        logger.warn(
-          `Header ${key} is not set in NetworkClientEntity ${this.getData()}`,
+        logger.info(
+          `Header ${key} is not set in NetworkClientEntity`,
+          this.getData(),
         );
       }
       result[key] = key === "Authorization" ? `Bearer ${value}` : value || "";
@@ -69,8 +70,9 @@ export class NetworkClientEntity extends Entity<
     for (const key of WEBSOCKET_HEADER_KEYS) {
       const value = this.getData(key);
       if (!value) {
-        logger.warn(
-          `Header ${key} is not set in NetworkClientEntity ${this.getData("id")}`,
+        logger.info(
+          `Header ${key} is not set in NetworkClientEntity`,
+          this.getData(),
         );
       }
       result[key] = value || "";

@@ -1454,14 +1454,20 @@ type CopilotInitialStateMessage implements CopilotContentMessage {
 }
 
 type CopilotInput {
-  copilotSessions: [CopilotSession]!
+  copilotInputId: String!
+  createdAt: String!
   goldenSet: GoldenSet!
   userInput: UserInput!
 }
 
 input CopilotInputInput {
   goldenSetId: String!
-  userInputId: String!
+  userInputId: [String!]!
+}
+
+type CopilotInputWithCopilotSessions {
+  copilotInput: CopilotInput!
+  copilotSessions: [CopilotSession]!
 }
 
 type CopilotLlmCall {
@@ -2665,6 +2671,7 @@ type GoldenSet {
   External project identifier from Functorz
   """
   schemaId: String!
+  updatedAt: String!
 }
 
 input GoldenSetInput {
@@ -4158,7 +4165,7 @@ type Mutation {
   joinProjectByShareTokenV2(code: String!): CollaborativeSharedResource_Project!
   latestSession(projectExId: String!, sessionType: CopilotSessionType!): String
   leaveCollaboration(appExId: String, projectExId: String!): Boolean!
-  linkGoldenSetToUserInput(context: CopilotInputInput!): Boolean!
+  linkGoldenSetToUserInput(context: CopilotInputInput!): [CopilotInput]!
   log(logs: [ClientLogEntryInput]!): Boolean!
   login(
     gaClientId: String
@@ -6626,7 +6633,10 @@ type Query {
   ): CollaborativeSharedResource_ShareToken
   getBannerItems(paginator: ConnectionPaginatorInput): Connection_BannerItem
   getCodeComponentDocFileUrl(packageExId: String!): String
-  getCopilotInput(goldenSetId: String, userInputId: String): [CopilotInput]!
+  getCopilotInput(
+    goldenSetId: String
+    userInputId: String
+  ): [CopilotInputWithCopilotSessions]!
   getEvaluationSessionById(id: String!): EvaluationSession!
   getEvaluationSessions(filters: SessionFilters): [EvaluationSession]!
   getFileByExId(
@@ -7042,6 +7052,7 @@ type RpsAtInstant {
 }
 
 type Rubric {
+  createdAt: String!
   criterion: [Criteria!]!
   evaluationSessions: [EvaluationSession]!
   id: String!

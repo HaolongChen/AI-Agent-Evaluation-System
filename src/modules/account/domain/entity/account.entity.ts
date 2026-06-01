@@ -10,7 +10,7 @@ export class AccountEntity extends Entity<
   { accountInfo?: AccountInfo } & EntityMetadata
 > {
   constructor(data: z.infer<typeof accountSchema>, id?: string) {
-    super(data, accountSchema, id);
+    super(data, accountSchema, {id});
   }
 
   setAccountInfo(accountInfo: AccountInfo) {

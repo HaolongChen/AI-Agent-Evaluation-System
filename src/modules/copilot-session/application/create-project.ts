@@ -1,5 +1,4 @@
 import type { CopilotInputAggregate } from "../../dataset/domain/aggregate/copilot-input.aggregate.ts";
-import type { CopilotServerEntity } from "../../dataset/domain/entity/copilot-server.entity.ts";
 import { generateProjectName } from "../../dataset/domain/service/generate-project-name.service.ts";
 import { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 import { ZionProjectEntity } from "../domain/entity/zion-project.entity.ts";
@@ -16,8 +15,8 @@ export class CreateProjectUseCase {
 
   async execute(
     copilotInput: CopilotInputAggregate,
-    copilotServer: CopilotServerEntity,
-  ) {
+    copilotServerId: string,
+  ): Promise<ProjectAggregate> {
     const zionProject = new ZionProjectEntity({
       projectName: generateProjectName(
         copilotInput.getEntity("goldenSet").getData("id"),
@@ -28,7 +27,7 @@ export class CreateProjectUseCase {
       await this.repository.ZionProjectService.createZionProject(zionProject);
     const projectAggregate = new ProjectAggregate(
       copilotInput,
-      copilotServer.getData("id"),
+      copilotServerId,
       projectEntity,
     );
     await this.repository.projectRepository.save(projectAggregate);

@@ -1,8 +1,6 @@
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
-import type { ICopilotInputRepository } from "../../dataset/domain/interface/copilot-input.interface.ts";
-import type { ICopilotServerRepository } from "../../dataset/domain/interface/copilot-server.interface.ts";
 import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
 import type { ICrdtSchemaLifecycleFactory } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
@@ -12,8 +10,6 @@ export class ExecuteCopilotUseCase {
   private isProjectTemporary = true;
   constructor(
     private repository: {
-      copilotInputRepository: ICopilotInputRepository;
-      copilotServerRepository: ICopilotServerRepository;
       projectRepository: IProjectRepository;
     },
     private CopilotNetworkService: ICopilotNetworkService,
@@ -43,7 +39,7 @@ export class ExecuteCopilotUseCase {
       );
       project.setEntity("copilotOutput", copilotOutput);
       await this.repository.projectRepository.save(project);
-      return copilotOutput;
+      return project;
     } catch (error) {
       logger.error("Error setting up copilot execution environment:", error);
       // this.account.clearWsClient();

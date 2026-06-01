@@ -12,7 +12,6 @@ import {
   type Feedbacks,
 } from "../domain/service/feedback.service.js";
 import { randomUUID } from "node:crypto";
-import type { ICopilotSessionRepository } from "../../copilot-session/domain/interface/copilot-session.interface.ts";
 import type { IProjectRepository } from "../../copilot-session/domain/interface/project.interface.ts";
 
 export class GenerateRubricUseCase {
@@ -20,25 +19,22 @@ export class GenerateRubricUseCase {
     private repository: {
       rubricRepository: IRubricRepository;
       copilotInputRepository: ICopilotInputRepository;
-      copilotSessionRepository: ICopilotSessionRepository;
       agentFeedbackRepository: IRepository<AgentFeedbackEntity>;
       projectRepository: IProjectRepository;
     },
   ) {}
 
-  async execute(copilotSessionId: string) {
-    const session =
-      await this.repository.copilotSessionRepository.findById(copilotSessionId);
+  async execute(projectId: string) {
+    const project =
+      await this.repository.projectRepository.findById(projectId);
     const saveFeedbacksUseCase = new SaveFeedbacksUseCase(
       this.repository.agentFeedbackRepository,
     );
-    const schemaId = session
-      .getEntity("project")
+    const schemaId = project
       .getEntity("copilotInput")
       .getEntity("goldenSet")
       .getData("schemaId");
-    const query = session
-      .getEntity("project")
+    const query = project
       .getEntity("copilotInput")
       .getEntity("userInput")
       .getData("content");
@@ -59,7 +55,7 @@ export class GenerateRubricUseCase {
       ),
     };
     const { criterion } = await generateRubrics(schemaId, query, feedbacks);
-    const rubricAggregate = new RubricAggregate(session, rubricId);
+    const rubricAggregate = new RubricAggregate(project, rubricId);
     rubricAggregate.pushEntity(
       "criterion",
       criterion.map((criteria) => new CriteriaEntity(criteria)),

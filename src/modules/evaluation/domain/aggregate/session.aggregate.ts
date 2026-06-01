@@ -10,6 +10,6 @@ export class EvaluationSessionAggregate extends AggregateRoot<
   { rubric: EvaluationRecordAggregate }
 > {
   constructor(data: EvaluationSessionEntity) {
-    super(data);
+    super(data, {});
   }
 }

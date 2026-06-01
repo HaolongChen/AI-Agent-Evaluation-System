@@ -3,6 +3,6 @@ import { copilotInputSchema } from "../schema/copilot-input.schema.ts";
 
 export class CopilotInputEntity extends Entity<typeof copilotInputSchema> {
   constructor(id?: string) {
-    super({}, copilotInputSchema, id);
+    super({}, copilotInputSchema, {id});
   }
 }

@@ -44,7 +44,7 @@ export class CopilotJobEntity extends Entity<typeof copilotJobSchema> {
     this._editableText = value;
   }
   constructor(data: z.infer<typeof copilotJobSchema>, id?: string) {
-    super(data, copilotJobSchema, id);
+    super(data, copilotJobSchema, {id});
   }
 }
 

@@ -1,4 +1,4 @@
-import type { CopilotSessionAggregate } from "../../../copilot-session/domain/aggregate/copilot-session.aggregate.ts";
+import type { ProjectAggregate } from "../../../copilot-session/domain/aggregate/project.aggregate.ts";
 import { RubricAggregate } from "../../../rubrics/domain/aggregate/rubric.aggregate.ts";
 import type { CriteriaEntity } from "../../../rubrics/domain/entity/rubric.entity.ts";
 import { criteriaSchema } from "../../../rubrics/domain/schema/rubric.schema.ts";
@@ -8,10 +8,10 @@ import type { EvaluationRecordEntity } from "../entity/record.entity.ts";
 export class CriteriaRecordAggregate extends AggregateRoot<
   typeof criteriaSchema,
   EntityMetadata,
-  { evaluationRecord: EvaluationRecordEntity }
+  { evaluationRecord?: EvaluationRecordEntity }
 > {
   constructor(criteria: CriteriaEntity) {
-    super(criteria);
+    super( criteria, {});
   }
 
   addEvaluationRecord(record: EvaluationRecordEntity) {
@@ -20,11 +20,11 @@ export class CriteriaRecordAggregate extends AggregateRoot<
 }
 
 export class EvaluationRecordAggregate extends RubricAggregate<{
-  copilotSession: CopilotSessionAggregate;
+  project: ProjectAggregate;
   criterion: CriteriaRecordAggregate[];
 }> {
   constructor(rubricAggregate: RubricAggregate) {
-    super(rubricAggregate.getEntity("copilotSession"));
+    super(rubricAggregate.getEntity("project"));
     this.pushEntity(
       "criterion",
       rubricAggregate

@@ -16,7 +16,7 @@ export class EvaluationRecordEntity<
     id?: string,
     metadata?: T,
   ) {
-    super(data, evaluationRecordSchema, id);
+    super(data, evaluationRecordSchema, {id});
     if (metadata?.criteriaId) {
       this.setData({ criteriaId: metadata.criteriaId });
     }

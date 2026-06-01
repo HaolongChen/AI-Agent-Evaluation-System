@@ -14,11 +14,10 @@ export class AggregateRoot<
     OneOrMany<Entity>
   >,
 > extends Entity<T, M> {
-  private _entities: { [K in keyof E]: E[K] } = {} as {
-    [K in keyof E]: E[K];
-  };
-  constructor(entity: Entity<T, M>) {
+  private _entities: { [ K in keyof E ]: E[ K ] };
+  constructor(entity: Entity<T, M>, aggregatedEntities: E) {
     super(entity);
+    this._entities = aggregatedEntities;
   }
 
   getEntity(): typeof this._entities;

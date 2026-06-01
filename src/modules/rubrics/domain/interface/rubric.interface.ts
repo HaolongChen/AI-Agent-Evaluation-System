@@ -4,9 +4,7 @@ import type { RubricAggregate } from "../aggregate/rubric.aggregate.ts";
 import type { CriteriaEntity } from "../entity/rubric.entity.ts";
 
 export interface IRubricRepository extends IRepository<RubricAggregate> {
-  getByProject (
-    project: ProjectAggregate
-  ): Promise<Array<RubricAggregate>>;
+  getByProject(project: ProjectAggregate): Promise<Array<RubricAggregate>>;
 
   addCriterionToRubric(
     rubricId: string,

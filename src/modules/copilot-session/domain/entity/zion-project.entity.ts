@@ -9,6 +9,6 @@ export class ZionProjectEntity extends Entity<
     data: z.input<typeof projectCreationRequiredSchema>,
     id?: string,
   ) {
-    super(data, projectCreationRequiredSchema, {id});
+    super(data, projectCreationRequiredSchema, { id });
   }
 }

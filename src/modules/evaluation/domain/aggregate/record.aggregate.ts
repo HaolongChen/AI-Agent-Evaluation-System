@@ -11,7 +11,7 @@ export class CriteriaRecordAggregate extends AggregateRoot<
   { evaluationRecord?: EvaluationRecordEntity }
 > {
   constructor(criteria: CriteriaEntity) {
-    super( criteria, {});
+    super(criteria, {});
   }
 
   addEvaluationRecord(record: EvaluationRecordEntity) {

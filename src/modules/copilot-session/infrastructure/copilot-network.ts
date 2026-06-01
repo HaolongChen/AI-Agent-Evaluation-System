@@ -1,18 +1,11 @@
 import { gql } from "graphql-request";
 import type {
   CopilotToolCallBatchMessageFragment_toolCalls,
-  CreateCopilotSessionMutation,
-  CreateCopilotSessionMutationVariables,
-  GetCopilotSubscriptionCountQuery,
-  GetCopilotSubscriptionCountQueryVariables,
-  GetLatestSessionMutation,
-  GetLatestSessionMutationVariables,
   OnCopilotSessionUpdatesSubscription,
   OnCopilotSessionUpdatesSubscriptionVariables,
   SendMessageToSessionMutation,
   SendMessageToSessionMutationVariables,
 } from "../../../graphql/generated/types.ts";
-import { z } from "zod";
 import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
 import type { IWebSocketClient } from "../../shared/domain/interface/websocket-client.interface.ts";
@@ -295,18 +288,19 @@ export class CopilotNetworkService implements ICopilotNetworkService {
   constructor(
     private gqlClient: IGQLClient,
     private wsClient: IWebSocketClient,
+    public sessionExId: string,
+    private schemaGraph: OpaqueSchemaGraph,
   ) {}
 
-  private runCopilotToolCalls(
+  runCopilotToolCalls(
     toolCalls: CopilotToolCallBatchMessageFragment_toolCalls[],
-    schemaGraph: OpaqueSchemaGraph,
   ): CopilotApiResultJs {
     const product = Product.ZION;
     const clientType = ClientType.WEB;
     const locale = Locale.ZH;
     return ZTypeCopilotApi.toolCalls(
       ZTypeCoreApi.genZTypeApiContext(
-        schemaGraph,
+        this.schemaGraph,
         product,
         clientType,
         "WEB",
@@ -324,44 +318,7 @@ export class CopilotNetworkService implements ICopilotNetworkService {
     );
   }
 
-  async createNewSession(projectExId: string): Promise<string> {
-    const result = await this.gqlClient.gqlRequest<
-      CreateCopilotSessionMutation,
-      CreateCopilotSessionMutationVariables
-    >(CREATE_COPILOT_SESSION, {
-      projectExId,
-      sessionType: "COPILOT",
-    });
-    return result.createCopilotSession;
-  }
-  async getLatestSession(projectExId: string): Promise<string | null> {
-    const latestSessionResult = await this.gqlClient.gqlRequest<
-      GetLatestSessionMutation,
-      GetLatestSessionMutationVariables
-    >(GET_LATEST_SESSION, {
-      projectExId,
-      sessionType: "COPILOT",
-    });
-    return latestSessionResult.latestSession;
-  }
-  async getSubscriptionCount(projectExId: string): Promise<number> {
-    const copilotSubscriptionCount = await this.gqlClient.gqlRequest<
-      GetCopilotSubscriptionCountQuery,
-      GetCopilotSubscriptionCountQueryVariables
-    >(GET_COPILOT_SUBSCRIPTION_COUNT, {
-      projectExId,
-      sessionType: "COPILOT",
-    });
-    const count = z.coerce
-      .number()
-      .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
-    if (!count.success) {
-      throw new Error(count.error.message);
-    }
-    return count.data;
-  }
   async sendMessageToSession<T extends keyof CopilotInputMessage>(
-    sessionExId: string,
     type: T,
     message: CopilotInputMessage[T],
   ): Promise<void> {
@@ -369,7 +326,7 @@ export class CopilotNetworkService implements ICopilotNetworkService {
       SendMessageToSessionMutation,
       SendMessageToSessionMutationVariables
     >(SEND_MESSAGE_TO_SESSION, {
-      sessionExId,
+      sessionExId: this.sessionExId,
       argsInput: {
         copilotArgs: {
           [inputMessageTypeList[type]]: message,
@@ -382,8 +339,6 @@ export class CopilotNetworkService implements ICopilotNetworkService {
     }
   }
   subscribeToSessionUpdates(
-    sessionExId: string,
-    schemaGraph: OpaqueSchemaGraph,
     publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
   ): () => void {
     return this.wsClient.subscribe<
@@ -400,16 +355,6 @@ export class CopilotNetworkService implements ICopilotNetworkService {
           }
 
           logger.info("Received subscription update:", content);
-          if (content.__typename === "CopilotToolCallBatchMessage") {
-            const toolCalls = content.toolCalls;
-            const result = this.runCopilotToolCalls(toolCalls, schemaGraph);
-            this.sendMessageToSession(sessionExId, "TOOL_CALL_BATCH_RESPONSE", {
-              toolCallBatchId: content.toolCallBatchId,
-              responseByToolCallId: JSON.parse(result.data ?? "{}"),
-              schemaDiff: result.schemaDiff,
-            });
-            return;
-          }
           const event = new CopilotEvent(
             content.__typename,
             content,
@@ -423,7 +368,7 @@ export class CopilotNetworkService implements ICopilotNetworkService {
           logger.info("Subscription completed");
         },
       },
-      { sessionExId },
+      { sessionExId: this.sessionExId },
     );
   }
 }

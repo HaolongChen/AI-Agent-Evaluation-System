@@ -20,7 +20,10 @@ export class DirectoryAggregate extends AggregateRoot<
     entity: FolderEntryEntity,
     private basePath: string,
   ) {
-    super( entity, {} as { folderEntry: FolderEntryEntity[]; fileEntry: FileEntryEntity[] } );
+    super(
+      entity,
+      {} as { folderEntry: FolderEntryEntity[]; fileEntry: FileEntryEntity[] },
+    );
     if (!basePath.endsWith("/")) {
       this.basePath = basePath + "/";
     }

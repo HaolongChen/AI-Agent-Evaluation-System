@@ -26,11 +26,16 @@ export class AggregateRoot<
     return name ? this._entities[name] : this._entities;
   }
 
-  pushEntity<K extends Extract<keyof E, keyof {[Key in keyof E as E[Key] extends Entity[] ? Key : never] : E[Key]}>>(
+  pushEntity<
+    K extends Extract<
+      keyof E,
+      keyof {
+        [Key in keyof E as E[Key] extends Entity[] ? Key : never]: E[Key];
+      }
+    >,
+  >(
     name: K,
-    entity: E[K] extends Array<infer U extends Entity>
-      ? OneOrMany<U>
-      : never,
+    entity: E[K] extends Array<infer U extends Entity> ? OneOrMany<U> : never,
   ): void {
     if (Array.isArray(this._entities[name])) {
       this._entities[name].push(...(Array.isArray(entity) ? entity : [entity]));

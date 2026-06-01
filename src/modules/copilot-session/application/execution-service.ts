@@ -1,42 +1,74 @@
-import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
-import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
-import type { ICrdtSchemaLifecycleFactory } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
 import type { IProjectRepository } from "../domain/interface/project.interface.ts";
+import type {
+  CopilotEventType,
+  CopilotInputEventType,
+} from "../domain/entity/copilot-job.entity.ts";
+import { EventTarget } from "ts-event-target";
+import type { CopilotApiResultJs } from "../../shared/domain/interface/type-system.ts";
+import type { ICopilotSessionSetupFactory } from "../domain/interface/copilot-session-setup.interface.ts";
 
 export class ExecuteCopilotUseCase {
   private isProjectTemporary = true;
+  private unsubscribe: undefined | (() => void);
+
+  private copilotInputEvent: EventTarget<CopilotInputEventType> =
+    new EventTarget();
+  private copilotEvent: EventTarget<CopilotEventType> = new EventTarget();
+
   constructor(
     private repository: {
       projectRepository: IProjectRepository;
+      copilotSessionSetupFactory: ICopilotSessionSetupFactory;
     },
-    private CopilotNetworkService: ICopilotNetworkService,
-    private crdtSchemaLifecycleFactory: ICrdtSchemaLifecycleFactory,
   ) {}
 
   async executeV2(project: ProjectAggregate) {
-    const copilotSessionExId =
-      await this.CopilotNetworkService.createNewSession(
-        project.getData("projectExId"),
-      );
-    const crdtSchemaLifecycle = this.crdtSchemaLifecycleFactory.create(
-      project.getData("projectExId"),
-    );
-    project.copilotSessionExId = copilotSessionExId;
-    try {
-      const runner = new ExecutionJobRunnerV2(
-        copilotSessionExId,
-        this.CopilotNetworkService,
-      );
-      const orchestrator = new SessionOrchestrator(runner, crdtSchemaLifecycle);
-      const copilotOutput = await orchestrator.run(
-        project
+    const session = await this.repository.copilotSessionSetupFactory
+      .build(project.getData("projectExId"))
+      .createNewSession();
+    project.copilotSessionExId = session.sessionExId;
+    const runToolCalls = (
+      toolCalls: unknown[],
+      toolCallBatchId: string,
+    ): CopilotApiResultJs => {
+      const result = session.runCopilotToolCalls(toolCalls);
+      session.sendMessageToSession("TOOL_CALL_BATCH_RESPONSE", {
+        toolCallBatchId,
+        responseByToolCallId: JSON.parse(result.data ?? "{}"),
+        schemaDiff: result.schemaDiff,
+      });
+      return result;
+    };
+    const sendHumanInput = () =>
+      session.sendMessageToSession("HUMAN_INPUT", {
+        content: project
           .getEntity("copilotInput")
           .getEntity("userInput")
           .getData("content"),
+      });
+    const terminateSession = () => {
+      session.sendMessageToSession("TERMINATE", {});
+      this.unsubscribe?.();
+    };
+    const sendContinueOperation = () =>
+      session.sendMessageToSession("HUMAN_OPERATION", {
+        humanOperationType: "CONTINUE",
+      });
+    this.unsubscribe = session.subscribeToSessionUpdates(
+      this.copilotEvent.dispatchEvent.bind(this.copilotEvent),
+    );
+    try {
+      const orchestrator = new SessionOrchestrator(
+        this.copilotEvent.addEventListener.bind(this.copilotEvent),
+        runToolCalls.bind(session),
+        sendHumanInput,
+        sendContinueOperation,
+        terminateSession,
       );
+      const copilotOutput = await orchestrator.run();
       project.setEntity("copilotOutput", copilotOutput);
       await this.repository.projectRepository.save(project);
       return project;

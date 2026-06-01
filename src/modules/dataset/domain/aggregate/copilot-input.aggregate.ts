@@ -22,9 +22,15 @@ export class CopilotInputAggregate extends AggregateRoot<
     argument3?: string,
   ) {
     if (argument1 instanceof CopilotInputAggregate) {
-      super( argument1, {goldenSet: argument1.getEntity("goldenSet"), userInput: argument1.getEntity("userInput")} );
+      super(argument1, {
+        goldenSet: argument1.getEntity("goldenSet"),
+        userInput: argument1.getEntity("userInput"),
+      });
     } else {
-      super(new CopilotInputEntity(argument3), {goldenSet: argument1, userInput: argument2!});
+      super(new CopilotInputEntity(argument3), {
+        goldenSet: argument1,
+        userInput: argument2!,
+      });
     }
   }
 }

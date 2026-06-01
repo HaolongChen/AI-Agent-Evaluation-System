@@ -1,10 +1,9 @@
 import { clearTimeout } from "node:timers";
-import { Event } from "ts-event-target";
-import { CopilotInputEvent } from "../domain/entity/copilot-job.entity.ts";
-import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
-import type { ICrdtSchemaLifecycle } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
 import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
+import type { CopilotApiResultJs } from "../../shared/domain/interface/type-system.ts";
+import type { CopilotEventType } from "../domain/entity/copilot-job.entity.ts";
+import type { TypeNameList } from "../domain/schema/copilot.schema.ts";
 
 /**
  * SessionOrchestrator — encapsulates WebSocket event handling for a single
@@ -20,8 +19,17 @@ export class SessionOrchestrator {
   private editableText: string | undefined;
   private tasks: unknown[] = [];
   constructor(
-    private runner: ExecutionJobRunnerV2,
-    private crdtLifecycle: ICrdtSchemaLifecycle,
+    private listen: <T extends keyof TypeNameList>(
+      eventName: T,
+      listener: (event: Extract<CopilotEventType[number], { type: T }>) => void,
+    ) => void,
+    private runToolCalls: (
+      toolCalls: unknown[],
+      toolCallBatchId: string,
+    ) => CopilotApiResultJs,
+    private sendHumanMessage: () => void,
+    private sendContinueOperation: () => void,
+    private terminateSession: () => void,
   ) {}
 
   /**
@@ -29,10 +37,7 @@ export class SessionOrchestrator {
    * with the CopilotJobEntity when editable text is received, or rejects
    * on error/timeout.
    */
-  async run(userInput: string): Promise<CopilotOutputEntity> {
-    const { publish, listen } = this.runner.execute(
-      await this.crdtLifecycle.schemaGraph(),
-    );
+  async run(): Promise<CopilotOutputEntity> {
     let rejectFunction: (error: unknown) => void;
 
     const timer = setTimeout(() => {
@@ -42,11 +47,22 @@ export class SessionOrchestrator {
     return new Promise<CopilotOutputEntity>((resolve, reject) => {
       rejectFunction = reject;
 
-      listen("CopilotEditableTextMessage", (event) => {
+      this.listen("CopilotEditableTextMessage", (event) => {
         this.editableText = event.data.content;
       });
 
-      listen("CopilotAiResponseMessage", (event) => {
+      this.listen("CopilotToolCallBatchMessage", (event) => {
+        const result = this.runToolCalls(
+          event.data.toolCalls,
+          event.data.toolCallBatchId,
+        );
+
+        logger.info(
+          `Tool call batch executed with result: ${JSON.stringify(result)}`,
+        );
+      });
+
+      this.listen("CopilotAiResponseMessage", (event) => {
         this.aiResponse = event.data.content;
         if (!this.editableText) {
           logger.warn(
@@ -55,16 +71,15 @@ export class SessionOrchestrator {
         }
       });
 
-      listen("CopilotTaskMessage", (event) => {
+      this.listen("CopilotTaskMessage", (event) => {
         this.tasks.push(event.data);
       });
 
-      listen("CopilotTerminateMessage", () => {
-        // this.job.setTerminate();
-        publish(new Event("unsubscribe"));
+      this.listen("CopilotTerminateMessage", () => {
+        this.terminateSession();
       });
 
-      listen("CopilotStateChangeMessage", (event) => {
+      this.listen("CopilotStateChangeMessage", (event) => {
         if (event.data.currentJobIsRunning === false) {
           if (this.aiResponse && this.editableText) {
             clearTimeout(timer);
@@ -75,11 +90,7 @@ export class SessionOrchestrator {
               }),
             );
           } else if (this.editableText) {
-            publish(
-              new CopilotInputEvent("HUMAN_OPERATION", {
-                humanOperationType: "CONTINUE",
-              }),
-            );
+            this.sendContinueOperation();
           } else {
             logger.warn(
               "Received job state change indicating job is no longer running, but job is not finished. This may indicate an issue with the backend job execution.",
@@ -88,16 +99,16 @@ export class SessionOrchestrator {
         }
       });
 
-      listen("CopilotErrorMessage", (error) => {
+      this.listen("CopilotErrorMessage", (error) => {
         clearTimeout(timer);
         reject(error);
       });
-      listen("CopilotToolCallBatchExecErrorMessage", (error) => {
+      this.listen("CopilotToolCallBatchExecErrorMessage", (error) => {
         clearTimeout(timer);
         reject(error);
       });
 
-      listen("CopilotInitialStateMessage", (event) => {
+      this.listen("CopilotInitialStateMessage", (event) => {
         if (event.data.terminated) {
           logger.error(
             "Received initial state message for a session that is already running or terminated. This likely indicates an issue with the backend job execution.",
@@ -117,11 +128,7 @@ export class SessionOrchestrator {
           );
         }
         if (!event.data.currentJobIsRunning) {
-          publish(
-            new CopilotInputEvent("HUMAN_INPUT", {
-              content: userInput,
-            }),
-          );
+          this.sendHumanMessage();
         }
       });
     });

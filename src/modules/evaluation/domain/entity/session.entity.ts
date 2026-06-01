@@ -5,6 +5,6 @@ export class EvaluationSessionEntity extends Entity<
   typeof evaluationSessionSchema
 > {
   constructor(data: z.infer<typeof evaluationSessionSchema>, id?: string) {
-    super(data, evaluationSessionSchema, {id});
+    super(data, evaluationSessionSchema, { id });
   }
 }

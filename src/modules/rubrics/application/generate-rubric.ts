@@ -25,8 +25,7 @@ export class GenerateRubricUseCase {
   ) {}
 
   async execute(projectId: string) {
-    const project =
-      await this.repository.projectRepository.findById(projectId);
+    const project = await this.repository.projectRepository.findById(projectId);
     const saveFeedbacksUseCase = new SaveFeedbacksUseCase(
       this.repository.agentFeedbackRepository,
     );

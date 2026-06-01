@@ -1,29 +1,34 @@
 import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
-import type {
-  CopilotEventType,
-  CopilotInputEventType,
-} from "../domain/entity/copilot-job.entity.ts";
+import type { CopilotEventType } from "../domain/entity/copilot-job.entity.ts";
 import { EventTarget } from "ts-event-target";
 import type { ICopilotSessionSetupFactory } from "../domain/interface/copilot-session-setup.interface.ts";
 import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 import type { IProjectRepository } from "../domain/interface/project.interface.ts";
 
 export class ExecuteCopilotUseCase {
-  private isProjectTemporary = true;
-  private unsubscribe: undefined | (() => void);
-
-  private copilotInputEvent: EventTarget<CopilotInputEventType> =
-    new EventTarget();
   private copilotEvent: EventTarget<CopilotEventType> = new EventTarget();
-
+  private _project: ProjectAggregate | undefined;
   constructor(
     private repository: {
       projectRepository: IProjectRepository;
       copilotSessionSetupFactory: ICopilotSessionSetupFactory;
     },
-    private project: ProjectAggregate,
-  ) {}
+    project?: ProjectAggregate,
+  ) {
+    this._project = project;
+  }
+
+  setProject(project: ProjectAggregate) {
+    this._project = project;
+  }
+
+  get project(): ProjectAggregate {
+    if (!this._project) {
+      throw new Error("Project not set for ExecuteCopilotUseCase");
+    }
+    return this._project;
+  }
 
   private createCopilotSession = async () => {
     return this.repository.copilotSessionSetupFactory
@@ -32,12 +37,9 @@ export class ExecuteCopilotUseCase {
   };
 
   async executeV2() {
-    const session = await this.createCopilotSession();
-    this.project.copilotSessionExId = session.sessionExId;
-    this.unsubscribe = session.subscribeToSessionUpdates(
-      this.copilotEvent.dispatchEvent.bind(this.copilotEvent),
-    );
     try {
+      const session = await this.createCopilotSession();
+      this.project.copilotSessionExId = session.sessionExId;
       const orchestrator = new SessionOrchestrator(
         this.copilotEvent.addEventListener.bind(this.copilotEvent),
         session.delegateCopilotToolCall.bind(session),
@@ -51,7 +53,12 @@ export class ExecuteCopilotUseCase {
         session.sendHumanOperationMessage.bind(session),
         session.terminateSession.bind(session),
       );
-      const copilotOutput = await orchestrator.run();
+      const copilotOutputPromise = orchestrator.run();
+      const unsubscribe = session.subscribeToSessionUpdates(
+        this.copilotEvent.dispatchEvent.bind(this.copilotEvent),
+      );
+      const copilotOutput = await copilotOutputPromise;
+      unsubscribe();
       this.project.setEntity("copilotOutput", copilotOutput);
       await this.repository.projectRepository.save(this.project);
       return this.project;

@@ -11,7 +11,8 @@ import {
   // CopilotType,
   type GoldenSet,
   type MutationCreateUserInputArgs as MutationCreateUserInputArguments,
-  type MutationInitializeGoldenSetArgs as MutationInitializeGoldenSetArguments,
+  type MutationCreateGoldenSetWithSchemaIdArgs as MutationCreateGoldenSetWithSchemaIdArguments,
+  type MutationCreateGoldenSetWithProjectExIdArgs as MutationCreateGoldenSetWithProjectExIdArguments,
   type MutationLinkGoldenSetToUserInputArgs as MutationLinkGoldenSetToUserInputArguments,
   type QueryGetCopilotInputArgs as QueryGetCopilotInputArguments,
   type QueryGetGoldenSetBySchemaIdArgs as QueryGetGoldenSetBySchemaIdArguments,
@@ -125,9 +126,9 @@ export const goldenSetResolver = {
   },
 
   Mutation: {
-    initializeGoldenSet: async (
+    createGoldenSetWithSchemaId: async (
       _: unknown,
-      arguments_: MutationInitializeGoldenSetArguments,
+      arguments_: MutationCreateGoldenSetWithSchemaIdArguments,
     ): Promise<GoldenSet> => {
       const createGoldenSetUseCase = new CreateGoldenSetUseCase(
         repository.goldenSetRepository,
@@ -137,6 +138,22 @@ export const goldenSetResolver = {
       );
       return goldenSetDataMapper(goldenSet);
     },
+
+    createGoldenSetWithProjectExId: async (
+      _: unknown,
+      arguments_: MutationCreateGoldenSetWithProjectExIdArguments,
+    ): Promise<GoldenSet> => {
+      const zionInjection = await createZionInjectionBundle();
+      const crdtSchemaLifecycle =
+        zionInjection.crdtSchemaLifecycleFactory.create(arguments_.projectExId);
+      const schemaId = await crdtSchemaLifecycle.getSchemaId();
+      const createGoldenSetUseCase = new CreateGoldenSetUseCase(
+        repository.goldenSetRepository,
+      );
+      const goldenSet = await createGoldenSetUseCase.execute(schemaId);
+      return goldenSetDataMapper(goldenSet);
+    },
+
     createUserInput: async (
       _: unknown,
       arguments_: MutationCreateUserInputArguments,

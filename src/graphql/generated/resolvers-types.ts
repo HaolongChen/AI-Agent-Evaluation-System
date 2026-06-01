@@ -170,13 +170,22 @@ export type HumanEvaluationInput = {
 
 export type Mutation = {
   __typename: "Mutation";
+  createGoldenSetWithProjectExId: GoldenSet;
+  createGoldenSetWithSchemaId: GoldenSet;
   createUserInput: UserInput;
   executeCopilot: CopilotOutput;
   generateRubric: Array<Maybe<Rubric>>;
-  initializeGoldenSet: GoldenSet;
   linkGoldenSetToUserInput: Scalars["Boolean"]["output"];
   runCrdtTest: Maybe<Scalars["String"]["output"]>;
   submitHumanEvaluation: EvaluationSession;
+};
+
+export type MutationCreateGoldenSetWithProjectExIdArgs = {
+  projectExId: Scalars["String"]["input"];
+};
+
+export type MutationCreateGoldenSetWithSchemaIdArgs = {
+  input: GoldenSetInput;
 };
 
 export type MutationCreateUserInputArgs = {
@@ -189,10 +198,6 @@ export type MutationExecuteCopilotArgs = {
 
 export type MutationGenerateRubricArgs = {
   context: RubricGenerationInput;
-};
-
-export type MutationInitializeGoldenSetArgs = {
-  input: GoldenSetInput;
 };
 
 export type MutationLinkGoldenSetToUserInputArgs = {
@@ -575,6 +580,18 @@ export type MutationResolvers<
   ParentType extends ResolversParentTypes["Mutation"] =
     ResolversParentTypes["Mutation"],
 > = ResolversObject<{
+  createGoldenSetWithProjectExId: Resolver<
+    ResolversTypes["GoldenSet"],
+    ParentType,
+    ContextType,
+    RequireFields<MutationCreateGoldenSetWithProjectExIdArgs, "projectExId">
+  >;
+  createGoldenSetWithSchemaId: Resolver<
+    ResolversTypes["GoldenSet"],
+    ParentType,
+    ContextType,
+    RequireFields<MutationCreateGoldenSetWithSchemaIdArgs, "input">
+  >;
   createUserInput: Resolver<
     ResolversTypes["UserInput"],
     ParentType,
@@ -592,12 +609,6 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationGenerateRubricArgs, "context">
-  >;
-  initializeGoldenSet: Resolver<
-    ResolversTypes["GoldenSet"],
-    ParentType,
-    ContextType,
-    RequireFields<MutationInitializeGoldenSetArgs, "input">
   >;
   linkGoldenSetToUserInput: Resolver<
     ResolversTypes["Boolean"],

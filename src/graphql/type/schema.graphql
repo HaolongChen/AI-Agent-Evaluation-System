@@ -17,7 +17,9 @@ type Query {
 }
 
 type Mutation {
-  initializeGoldenSet(input: GoldenSetInput!): GoldenSet!
+  createGoldenSetWithSchemaId(input: GoldenSetInput!): GoldenSet!
+
+  createGoldenSetWithProjectExId(projectExId: String!): GoldenSet!
 
   createUserInput(input: UserInputInput!): UserInput!
 

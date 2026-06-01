@@ -3698,6 +3698,8 @@ type Mutation {
     logoImageId: Long!
   ): Boolean!
   createFeedback(mediaUrls: [String], message: String, miscData: Json): Feedback
+  createGoldenSetWithProjectExId(projectExId: String!): GoldenSet!
+  createGoldenSetWithSchemaId(input: GoldenSetInput!): GoldenSet!
   createMarketRewardRule(
     details: [MarketRewardDetailInputInput!]!
     effectiveAt: OffsetDateTime
@@ -4125,7 +4127,6 @@ type Mutation {
     projectExId: String!
   ): CustomDomain
   initZiroomLogService(ziroomIds: [Long]): Boolean!
-  initializeGoldenSet(input: GoldenSetInput!): GoldenSet!
   initiateOrderAndPayment(
     couponExId: String
     paymentChannel: PaymentChannel

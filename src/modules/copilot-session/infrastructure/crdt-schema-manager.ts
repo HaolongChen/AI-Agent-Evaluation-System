@@ -54,7 +54,7 @@ const PROJECT_APP_DETAIL_FRAGMENT = gql`
       projectSpaceType
     }
   }
-`.definitions;
+`;
 
 const WECHAT_MINI_PROGRAM_APP_DETAIL_FRAGMENT = gql`
   fragment WechatMiniProgramAppDetail on WechatMiniProgramApp {

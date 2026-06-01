@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable unicorn/no-null */
 
-import { gql } from "graphql-request";
+import { gql } from "graphql-tag";
 import { ZTypeCoreApi } from "../../shared/domain/interface/type-system.ts";
 import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-system.ts";
 import { Crdt } from "@functorz/crdt-helper";
@@ -54,7 +54,8 @@ const PROJECT_APP_DETAIL_FRAGMENT = gql`
       projectSpaceType
     }
   }
-`;
+`.definitions;
+
 const WECHAT_MINI_PROGRAM_APP_DETAIL_FRAGMENT = gql`
   fragment WechatMiniProgramAppDetail on WechatMiniProgramApp {
     latestSchema {

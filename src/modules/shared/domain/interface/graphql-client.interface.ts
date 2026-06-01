@@ -1,7 +1,9 @@
+import type { DocumentNode } from "graphql/language/index.js";
+
 export interface IGQLClient {
-  gqlRequest<TData>(document: string): Promise<TData>;
+  gqlRequest<TData>(document: DocumentNode): Promise<TData>;
   gqlRequest<TData, TVariables extends object>(
-    document: string,
+    document: DocumentNode,
     variables: TVariables,
   ): Promise<TData>;
 }

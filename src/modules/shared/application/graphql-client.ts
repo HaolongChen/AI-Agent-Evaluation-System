@@ -1,6 +1,7 @@
 import { GraphQLClient } from "graphql-request";
 import type { IGQLClient } from "../domain/interface/graphql-client.interface.ts";
 import type { NetworkClientEntity } from "../domain/entity/network-client.entity.ts";
+import type { DocumentNode } from "graphql";
 
 export class GQLClient implements IGQLClient {
   private context: ReturnType<NetworkClientEntity["getHeaderForGraphQL"]> & {
@@ -29,13 +30,13 @@ export class GQLClient implements IGQLClient {
     return this.graphqlClient;
   }
 
-  async gqlRequest<TData>(document: string): Promise<TData>;
+  async gqlRequest<TData>(document: DocumentNode): Promise<TData>;
   async gqlRequest<TData, TVariables extends object>(
-    document: string,
+    document: DocumentNode,
     variables: TVariables,
   ): Promise<TData>;
   async gqlRequest<TData>(
-    document: string,
+    document: DocumentNode,
     variables?: unknown,
   ): Promise<TData> {
     const client = this.updateClient();
@@ -45,6 +46,6 @@ export class GQLClient implements IGQLClient {
         variables as Record<string, unknown>,
       );
     }
-    return client.request<TData>(document as string);
+    return client.request<TData>(document);
   }
 }

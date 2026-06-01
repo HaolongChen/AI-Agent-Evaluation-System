@@ -1,6 +1,8 @@
+import type { DocumentNode } from "graphql";
+
 export interface IWebSocketClient {
   subscribe<TData, TVariables extends Record<string, unknown>>(
-    document: string,
+    document: DocumentNode,
     handlers: SubscriptionHandlers<TData>,
     variables?: TVariables,
   ): () => void;

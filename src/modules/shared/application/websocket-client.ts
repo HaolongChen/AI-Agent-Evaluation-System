@@ -7,7 +7,8 @@ import type {
   IWebSocketClient,
   SubscriptionHandlers,
 } from "../domain/interface/websocket-client.interface.ts";
-import type { ExecutionResult } from "graphql";
+import type { DocumentNode, ExecutionResult } from "graphql";
+import { logger } from "../infrastructure/logger.ts";
 
 export class WebSocketClient implements IWebSocketClient {
   private context: ReturnType<NetworkClientEntity["getHeaderForWebSocket"]> & {
@@ -47,12 +48,16 @@ export class WebSocketClient implements IWebSocketClient {
     return this.subscriptionClient;
   }
 
-  private getOperationName(document: string): string {
-    const match = document.match(/subscription \w.*?\(/)?.[0]?.slice(13, -1);
-    if (!match) {
-      throw new Error("Failed to extract operation name from document");
+  private getOperationName(document: DocumentNode): string {
+    for (const definition of document.definitions) {
+      if (definition.kind === "OperationDefinition" && definition.name) {
+        return definition.name.value;
+      }
     }
-    return match;
+    logger.error(
+      `Failed to extract operation name from document: ${JSON.stringify(document)}`,
+    );
+    return "UnnamedSubscription";
   }
 
   private close() {
@@ -61,7 +66,7 @@ export class WebSocketClient implements IWebSocketClient {
   }
 
   subscribe<TData, TVariables extends Record<string, unknown>>(
-    document: string,
+    document: DocumentNode,
     handlers: SubscriptionHandlers<TData>,
     variables?: TVariables,
   ): () => void {

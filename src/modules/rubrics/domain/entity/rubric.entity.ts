@@ -1,5 +1,5 @@
 import type z from "zod";
-import { Entity } from "../../../shared/domain/entity/entity.ts";
+import { Entity, type EntityMetadata } from "../../../shared/domain/entity/entity.ts";
 import { rubricSchema, criteriaSchema } from "../schema/rubric.schema.ts";
 
 export class RubricEntity extends Entity<typeof rubricSchema> {
@@ -8,8 +8,8 @@ export class RubricEntity extends Entity<typeof rubricSchema> {
   }
 }
 
-export class CriteriaEntity extends Entity<typeof criteriaSchema> {
+export class CriteriaEntity extends Entity<typeof criteriaSchema, EntityMetadata & { isSaved: boolean}> {
   constructor(data: z.infer<typeof criteriaSchema>, id?: string) {
-    super(data, criteriaSchema, {id});
+    super(data, criteriaSchema, {id, isSaved: false});
   }
 }

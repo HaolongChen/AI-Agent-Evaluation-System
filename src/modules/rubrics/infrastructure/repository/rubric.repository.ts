@@ -1,5 +1,6 @@
 import { prisma } from "../../../../config/prisma.ts";
 import type { Decimal } from "../../../../prisma/build/generated/prisma/internal/prismaNamespace.ts";
+import type { ProjectAggregate } from "../../../copilot-session/domain/aggregate/project.aggregate.ts";
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import { RubricAggregate } from "../../domain/aggregate/rubric.aggregate.js";
 import { CriteriaEntity } from "../../domain/entity/rubric.entity.js";
@@ -73,18 +74,18 @@ export const rubricDataMapper = (
 };
 
 export class RubricRepository implements IRubricRepository {
-  async getByCopilotSession(
-    copilotSession: CopilotSessionAggregate,
+  async getByProject(
+    project: ProjectAggregate,
   ): Promise<Array<RubricAggregate>> {
     const rubrics = await prisma.rubric.findMany({
       where: {
-        copilotSessionExId: copilotSession.getData("id"),
+        copilotSessionExId: project.copilotSessionExId,
       },
       include: { criterion: true },
     });
     return rubrics.map((rubric) =>
       rubricDataMapper(rubric, {
-        copilotSession: { aggregate: copilotSession },
+        copilotSession: { aggregate: project },
       }),
     );
   }

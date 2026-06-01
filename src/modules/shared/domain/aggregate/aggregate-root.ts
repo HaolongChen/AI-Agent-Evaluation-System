@@ -14,7 +14,7 @@ export class AggregateRoot<
     OneOrMany<Entity>
   >,
 > extends Entity<T, M> {
-  private _entities: { [ K in keyof E ]: E[ K ] };
+  private _entities: E;
   constructor(entity: Entity<T, M>, aggregatedEntities: E) {
     super(entity);
     this._entities = aggregatedEntities;
@@ -26,9 +26,9 @@ export class AggregateRoot<
     return name ? this._entities[name] : this._entities;
   }
 
-  pushEntity<K extends keyof Extract<E, Record<string, Entity[]>>>(
+  pushEntity<K extends Extract<keyof E, keyof {[Key in keyof E as E[Key] extends Entity[] ? Key : never] : E[Key]}>>(
     name: K,
-    entity: E[K & keyof E] extends Array<infer U extends Entity>
+    entity: E[K] extends Array<infer U extends Entity>
       ? OneOrMany<U>
       : never,
   ): void {

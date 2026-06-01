@@ -1,17 +1,23 @@
+import type { z } from "zod";
 import type { ProjectAggregate } from "../../../copilot-session/domain/aggregate/project.aggregate.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
-import { RubricEntity, type CriteriaEntity } from "../entity/rubric.entity.ts";
-import type { rubricSchema } from "../schema/rubric.schema.ts";
+import { CriteriaEntity, RubricEntity } from "../entity/rubric.entity.ts";
+import { criteriaSchema, type rubricSchema } from "../schema/rubric.schema.ts";
 
-export class RubricAggregate<
-  T extends {
-    criterion: CriteriaEntity[];
-    project: ProjectAggregate;
-  } = { criterion: CriteriaEntity[]; project: ProjectAggregate },
-> extends AggregateRoot<typeof rubricSchema, EntityMetadata, T> {
-  constructor(projectAggregate: ProjectAggregate, id?: string) {
-    super( new RubricEntity( id ), {project: projectAggregate} as T);
-    this.setEntity("project", projectAggregate);
-  }
+export class RubricAggregate extends AggregateRoot<
+	typeof rubricSchema,
+	EntityMetadata,
+	{ project: ProjectAggregate; criterion: CriteriaEntity[] }
+> {
+	constructor(projectAggregate: ProjectAggregate, id?: string) {
+		super(new RubricEntity(id), { project: projectAggregate } as {
+			project: ProjectAggregate;
+			criterion: CriteriaEntity[];
+		});
+	}
+
+	addCriteria(data: z.infer<typeof criteriaSchema>, id?: string) {
+		this.pushEntity("criterion", new CriteriaEntity(data, id))
+	}
 }

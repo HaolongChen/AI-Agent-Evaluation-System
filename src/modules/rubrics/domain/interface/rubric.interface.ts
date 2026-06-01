@@ -1,11 +1,11 @@
-import type { CopilotSessionAggregate } from "../../../copilot-session/domain/aggregate/copilot-session.aggregate.ts";
+import type { ProjectAggregate } from "../../../copilot-session/domain/aggregate/project.aggregate.ts";
 import type { IRepository } from "../../../shared/domain/interface/repository.interface.ts";
 import type { RubricAggregate } from "../aggregate/rubric.aggregate.ts";
 import type { CriteriaEntity } from "../entity/rubric.entity.ts";
 
 export interface IRubricRepository extends IRepository<RubricAggregate> {
-  getByCopilotSession(
-    copilotSession: CopilotSessionAggregate,
+  getByProject (
+    project: ProjectAggregate
   ): Promise<Array<RubricAggregate>>;
 
   addCriterionToRubric(

@@ -2,20 +2,19 @@ import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { SessionOrchestrator } from "./session-orchestrator.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import type { ICopilotInputRepository } from "../../dataset/domain/interface/copilot-input.interface.ts";
-import { CopilotSessionAggregate } from "../domain/aggregate/copilot-session.aggregate.ts";
 import type { ICopilotServerRepository } from "../../dataset/domain/interface/copilot-server.interface.ts";
-import type { ICopilotSessionRepository } from "../domain/interface/copilot-session.interface.ts";
 import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
 import type { ICrdtSchemaLifecycleFactory } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
+import type { IProjectRepository } from "../domain/interface/project.interface.ts";
 
 export class ExecuteCopilotUseCase {
   private isProjectTemporary = true;
   constructor(
     private repository: {
-      copilotSessionRepository: ICopilotSessionRepository;
       copilotInputRepository: ICopilotInputRepository;
       copilotServerRepository: ICopilotServerRepository;
+      projectRepository: IProjectRepository;
     },
     private CopilotNetworkService: ICopilotNetworkService,
     private crdtSchemaLifecycleFactory: ICrdtSchemaLifecycleFactory,
@@ -29,20 +28,22 @@ export class ExecuteCopilotUseCase {
     const crdtSchemaLifecycle = this.crdtSchemaLifecycleFactory.create(
       project.getData("projectExId"),
     );
-    const session = new CopilotSessionAggregate(
-      project,
-      crdtSchemaLifecycle,
-      copilotSessionExId,
-    );
+    project.copilotSessionExId = copilotSessionExId;
     try {
       const runner = new ExecutionJobRunnerV2(
         copilotSessionExId,
         this.CopilotNetworkService,
       );
-      const orchestrator = new SessionOrchestrator(runner, session);
-      await orchestrator.run();
-      await this.repository.copilotSessionRepository.save(session);
-      return session.getEntity("copilotOutput").getData();
+      const orchestrator = new SessionOrchestrator(runner, crdtSchemaLifecycle);
+      const copilotOutput = await orchestrator.run(
+        project
+          .getEntity("copilotInput")
+          .getEntity("userInput")
+          .getData("content"),
+      );
+      project.setEntity("copilotOutput", copilotOutput);
+      await this.repository.projectRepository.save(project);
+      return copilotOutput;
     } catch (error) {
       logger.error("Error setting up copilot execution environment:", error);
       // this.account.clearWsClient();

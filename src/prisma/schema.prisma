@@ -86,7 +86,7 @@ model copilotInput {
   @@unique([goldenSetId, userInputId], map: "idx_schema_user_input")
 }
 
-model copilotServer { // properties of copilots. should also contain copilot model names
+model copilotServer {
   id          String    @id @default(uuid())
   name        String    @map("name") // e.g., 'aws-us-east-1', 'azure-westus2'
   description String?   @map("description")
@@ -110,7 +110,7 @@ model copilotSession {
 model copilotOutput {
   id                 String         @id @default(uuid())
   copilotSession     copilotSession @relation(fields: [copilotSessionExId], references: [id])
-  editableText       String?        @map("output_content") // copilot output
+  editableText       String         @map("output_content") // copilot output
   aiResponse         String         @map("ai_response") // AI response
   copilotSessionExId String         @unique @map("copilot_session_id") // corresponds to the sessionId in LangGraph for traceability
   createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -143,10 +143,10 @@ model copilotOutput {
 model rubric {
   id String @id @default(uuid())
 
-  copilotSessionExId String @map("copilot_session_ex_id")
-  copilotSession copilotSession   @relation("copilotSession_rubric", fields: [copilotSessionExId], references: [id])
-  criterion      criteria[]
-  agentFeedbacks agentFeedbacks[]
+  copilotSessionExId String           @map("copilot_session_ex_id")
+  copilotSession     copilotSession   @relation("copilotSession_rubric", fields: [copilotSessionExId], references: [id])
+  criterion          criteria[]
+  agentFeedbacks     agentFeedbacks[]
 
   // Timestamps
   createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -166,8 +166,9 @@ model criteria {
   reasoning      String?  @map("reasoning") @db.Text // optional explanation of the criterion
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  rubric rubric @relation(fields: [rubricId], references: [id])
+  rubric           rubric             @relation(fields: [rubricId], references: [id])
   evaluationRecord evaluationRecord[] @relation(map: "criteria_evaluation_records")
+
   @@unique([id, rubricId], map: "unique_criteria_per_set")
 }
 
@@ -218,6 +219,7 @@ model evaluationRecord {
 
   evaluationSession evaluationSession @relation(fields: [evaluatorId, rubricId, evaluatorType], references: [evaluatorId, rubricId, evaluatorType], map: "agent_evaluation_session_relation")
   criteria          criteria          @relation(fields: [criteriaId], references: [id], map: "agent_evaluation_record_criteria_relation")
+
   @@unique([evaluatorId, rubricId, criteriaId], map: "unique_agent_evaluation_record")
 }
 

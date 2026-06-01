@@ -3,7 +3,8 @@ import { Event } from "ts-event-target";
 import { CopilotInputEvent } from "../domain/entity/copilot-job.entity.ts";
 import { ExecutionJobRunnerV2 } from "./execution-job-v2.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
-import type { CopilotSessionAggregate } from "../domain/aggregate/copilot-session.aggregate.ts";
+import type { ICrdtSchemaLifecycle } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
+import { CopilotOutputEntity } from "../domain/entity/copilot-output.entity.ts";
 
 /**
  * SessionOrchestrator — encapsulates WebSocket event handling for a single
@@ -15,9 +16,12 @@ import type { CopilotSessionAggregate } from "../domain/aggregate/copilot-sessio
  */
 export class SessionOrchestrator {
   private static readonly SESSION_TIMEOUT_MS = 2 * 60 * 1000;
+  private aiResponse: string | undefined;
+  private editableText: string | undefined;
+  private tasks: unknown[] = [];
   constructor(
     private runner: ExecutionJobRunnerV2,
-    private session: CopilotSessionAggregate,
+    private crdtLifecycle: ICrdtSchemaLifecycle,
   ) {}
 
   /**
@@ -25,9 +29,9 @@ export class SessionOrchestrator {
    * with the CopilotJobEntity when editable text is received, or rejects
    * on error/timeout.
    */
-  async run(): Promise<void> {
+  async run(userInput: string): Promise<CopilotOutputEntity> {
     const { publish, listen } = this.runner.execute(
-      await this.session.crdtSchemaLifecycle.schemaGraph(),
+      await this.crdtLifecycle.schemaGraph(),
     );
     let rejectFunction: (error: unknown) => void;
 
@@ -35,16 +39,16 @@ export class SessionOrchestrator {
       rejectFunction(new Error("Session timeout"));
     }, SessionOrchestrator.SESSION_TIMEOUT_MS);
 
-    return new Promise((resolve, reject) => {
+    return new Promise<CopilotOutputEntity>((resolve, reject) => {
       rejectFunction = reject;
 
       listen("CopilotEditableTextMessage", (event) => {
-        this.session.setData({ editableText: event.data.content });
+        this.editableText = event.data.content;
       });
 
       listen("CopilotAiResponseMessage", (event) => {
-        this.session.setData({ aiResponse: event.data.content });
-        if (!this.session.getData("editableText")) {
+        this.aiResponse = event.data.content;
+        if (!this.editableText) {
           logger.warn(
             "Received AI response before editable text. This may indicate an issue with the backend job execution.",
           );
@@ -52,9 +56,7 @@ export class SessionOrchestrator {
       });
 
       listen("CopilotTaskMessage", (event) => {
-        this.session.setData({
-          tasks: [...(this.session.getData("tasks") ?? []), event.data],
-        });
+        this.tasks.push(event.data);
       });
 
       listen("CopilotTerminateMessage", () => {
@@ -64,10 +66,15 @@ export class SessionOrchestrator {
 
       listen("CopilotStateChangeMessage", (event) => {
         if (event.data.currentJobIsRunning === false) {
-          if (this.session.getData("aiResponse")) {
+          if (this.aiResponse && this.editableText) {
             clearTimeout(timer);
-            resolve();
-          } else if (this.session.getData("editableText")) {
+            resolve(
+              new CopilotOutputEntity({
+                aiResponse: this.aiResponse,
+                editableText: this.editableText,
+              }),
+            );
+          } else if (this.editableText) {
             publish(
               new CopilotInputEvent("HUMAN_OPERATION", {
                 humanOperationType: "CONTINUE",
@@ -112,11 +119,7 @@ export class SessionOrchestrator {
         if (!event.data.currentJobIsRunning) {
           publish(
             new CopilotInputEvent("HUMAN_INPUT", {
-              content: this.session
-                .getEntity("project")
-                .getEntity("copilotInput")
-                .getEntity("userInput")
-                .getData("content"),
+              content: userInput,
             }),
           );
         }

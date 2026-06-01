@@ -1,7 +1,6 @@
 import z from "zod";
 
 export const copilotOutputSchema = z.object({
-  editableText: z.string().nullable(),
+  editableText: z.string(),
   aiResponse: z.string(),
-  copilotSessionExId: z.string(),
 });

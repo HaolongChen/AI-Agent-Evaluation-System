@@ -1,6 +1,7 @@
 import type { CopilotInputAggregate } from "../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 import { generateProjectName } from "../../dataset/domain/service/generate-project-name.service.ts";
 import { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
+import { ProjectEntity } from "../domain/entity/project.entity.ts";
 import { ZionProjectEntity } from "../domain/entity/zion-project.entity.ts";
 import type { IProjectRepository } from "../domain/interface/project.interface.ts";
 import type { IZionProjectService } from "../domain/interface/zion-project.interface.ts";
@@ -15,22 +16,15 @@ export class CreateProjectUseCase {
 
   async execute(
     copilotInput: CopilotInputAggregate,
-    copilotServerId: string,
-  ): Promise<ProjectAggregate> {
+
+  ): Promise<ProjectEntity> {
     const zionProject = new ZionProjectEntity({
       projectName: generateProjectName(
         copilotInput.getEntity("goldenSet").getData("id"),
         copilotInput.getEntity("userInput").getData("id"),
       ),
     });
-    const projectEntity =
-      await this.repository.ZionProjectService.createZionProject(zionProject);
-    const projectAggregate = new ProjectAggregate(
-      copilotInput,
-      copilotServerId,
-      projectEntity,
-    );
-    await this.repository.projectRepository.save(projectAggregate);
-    return projectAggregate;
+    await this.repository.ZionProjectService.createZionProject( zionProject );
+    return new ProjectEntity(zionProject);
   }
 }

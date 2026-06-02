@@ -40,7 +40,6 @@ export class ExecuteCopilotUseCase {
   async executeV2() {
     try {
       const session = await this.createCopilotSession();
-      this.project.copilotSessionExId = session.sessionExId;
       const copilotOutputFactory = new CopilotOutputFactory(
         session.sessionExId,
       );

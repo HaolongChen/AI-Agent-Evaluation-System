@@ -11,13 +11,16 @@ export type UserInputRepositoryType = {
 };
 
 export const userInputDataMapper = (
-  data: UserInputRepositoryType,
+  data?: UserInputRepositoryType,
   entity?: UserInputEntity,
 ): UserInputEntity => {
-  return repositoryDateMapper(
-    data,
-    entity || new UserInputEntity(data, data.id),
-  );
+  const result = data
+    ? repositoryDateMapper(data, entity || new UserInputEntity(data, data.id))
+    : entity;
+  if (!result) {
+    throw new Error("Failed to map UserInput data: No data provided");
+  }
+  return result;
 };
 
 export class UserInputRepository implements IUserInputRepository {

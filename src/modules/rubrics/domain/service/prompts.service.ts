@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import dotenvExpand from "dotenv-expand";
 
 dotenvExpand.expand(dotenv.config());
-import type { SubAgent } from "@HaolongChen/deepagents";
+import type { SubAgent } from "deepagents";
 import { read_markdown_documentations } from "../../application/rubricsGenerator/tools/markdown-reader.ts";
 import { read_json_schema } from "../../application/rubricsGenerator/tools/schema-reader.ts";
 import fs from "node:fs/promises";

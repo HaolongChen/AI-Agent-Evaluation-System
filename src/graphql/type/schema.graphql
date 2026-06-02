@@ -68,8 +68,6 @@ type GoldenSet {
   updatedAt: String!
   # "Type of copilot being evaluated"
   # copilotType: CopilotType!
-  # "Name of the LLM model being evaluated (e.g., 'gpt-4o', 'gemini-pro')"
-  # modelName: String
 }
 
 type CopilotInputWithCopilotSessions {

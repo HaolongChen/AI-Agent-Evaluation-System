@@ -5,6 +5,7 @@ import { EventTarget } from "ts-event-target";
 import type { ICopilotSessionSetupFactory } from "../domain/interface/copilot-session-setup.interface.ts";
 import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 import type { IProjectRepository } from "../domain/interface/project.interface.ts";
+import { CopilotOutputFactory } from "../domain/service/copilot-output-factory.ts";
 
 export class ExecuteCopilotUseCase {
   private copilotEvent: EventTarget<CopilotEventType> = new EventTarget();
@@ -40,6 +41,9 @@ export class ExecuteCopilotUseCase {
     try {
       const session = await this.createCopilotSession();
       this.project.copilotSessionExId = session.sessionExId;
+      const copilotOutputFactory = new CopilotOutputFactory(
+        session.sessionExId,
+      );
       const orchestrator = new SessionOrchestrator(
         this.copilotEvent.addEventListener.bind(this.copilotEvent),
         session.delegateCopilotToolCall.bind(session),
@@ -52,6 +56,7 @@ export class ExecuteCopilotUseCase {
           ),
         session.sendHumanOperationMessage.bind(session),
         session.terminateSession.bind(session),
+        copilotOutputFactory,
       );
       const copilotOutputPromise = orchestrator.run();
       const unsubscribe = session.subscribeToSessionUpdates(

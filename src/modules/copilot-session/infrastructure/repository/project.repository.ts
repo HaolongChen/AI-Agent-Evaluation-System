@@ -11,6 +11,7 @@ import { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
 import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import { ProjectEntity } from "../../domain/entity/project.entity.ts";
 import { type IProjectRepository } from "../../domain/interface/project.interface.ts";
+import { CopilotOutputFactory } from "../../domain/service/copilot-output-factory.ts";
 
 export type ProjectRepositoryType = {
   id: string;
@@ -23,14 +24,16 @@ export type ProjectRepositoryType = {
   copilotInput?: CopilotInputRepositoryType;
   copilotSession: {
     id: string;
-    copilotOutput: {
-      id: string;
-      editableText: string;
-      tasks: unknown[];
-      aiResponse: string;
-      createdAt: Date;
-    } | null;
+    copilotOutput: CopilotOutputRepositoryType | null;
   } | null;
+};
+
+export type CopilotOutputRepositoryType = {
+  id: string;
+  editableText: string;
+  tasks: unknown[];
+  aiResponse: string;
+  createdAt: Date;
 };
 
 export type ProjectDataMapperParameters = {
@@ -41,10 +44,17 @@ export type ProjectDataMapperParameters = {
   aggregate?: ProjectAggregate;
 };
 
+/**
+ * State 1: copilot session and copilot output are absent
+ * State 2: copilot session is present but copilot output is absent
+ * State 3: both copilot session and copilot output are present
+ * The data mapper should be able to handle all three states when mapping from repository data to aggregate, and when mapping from aggregate to repository data
+ */
 export const projectDataMapper = (
   data: ProjectRepositoryType,
   entity?: ProjectDataMapperParameters,
 ): ProjectAggregate => {
+  // state 1 starts
   const copilotInput =
     entity?.aggregate?.getEntity("copilotInput") ??
     (data.copilotInput
@@ -64,23 +74,45 @@ export const projectDataMapper = (
       data.copilotServerId,
       new ProjectEntity(data, data.id),
     );
-  if (data.copilotSession?.id) {
-    projectAggregate.copilotSessionExId = data.copilotSession.id;
+  if (!data.copilotSession?.id) {
+    return repositoryDateMapper(data, projectAggregate);
   }
-  if (data.copilotSession?.copilotOutput) {
-    projectAggregate.setEntity(
-      "copilotOutput",
-      repositoryDateMapper(
-        data.copilotSession.copilotOutput,
-        projectAggregate.getEntity("copilotOutput") ??
-          new CopilotOutputEntity(
-            data.copilotSession.copilotOutput,
-            data.copilotSession.copilotOutput.id,
-          ),
-      ),
-    );
+  // state 1 ends, state 2 starts
+  projectAggregate.copilotSessionExId = data.copilotSession.id;
+  if (!data.copilotSession.copilotOutput) {
+    return repositoryDateMapper(data, projectAggregate);
   }
+  // state 2 ends, state 3 starts
+  projectAggregate.setEntity(
+    "copilotOutput",
+    copilotOutputDataMapper(
+      data.copilotSession.copilotOutput,
+      entity?.aggregate?.getEntity("copilotOutput") ??
+        new CopilotOutputFactory(data.copilotSession.id),
+    ),
+  );
+
   return repositoryDateMapper(data, projectAggregate);
+};
+
+export const copilotOutputDataMapper = (
+  data: CopilotOutputRepositoryType | null | undefined,
+  entity: CopilotOutputEntity | CopilotOutputFactory,
+): CopilotOutputEntity => {
+  const result = data
+    ? repositoryDateMapper(
+        data,
+        entity instanceof CopilotOutputEntity
+          ? entity
+          : entity.build(data, data.id),
+      )
+    : entity instanceof CopilotOutputEntity
+      ? entity
+      : undefined;
+  if (!result) {
+    throw new Error("Failed to map CopilotOutput data: No data provided");
+  }
+  return result;
 };
 
 export class ProjectRepository implements IProjectRepository {

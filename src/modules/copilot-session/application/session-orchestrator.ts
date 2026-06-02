@@ -7,6 +7,7 @@ import type {
   CopilotEventType,
 } from "../domain/entity/copilot-job.entity.ts";
 import type { TypeNameList } from "../domain/schema/copilot.schema.ts";
+import type { CopilotOutputFactory } from "../domain/service/copilot-output-factory.ts";
 
 /**
  * SessionOrchestrator — encapsulates WebSocket event handling for a single
@@ -32,6 +33,7 @@ export class SessionOrchestrator {
     private sendHumanMessage: () => void,
     private sendContinueOperation: () => void,
     private terminateSession: () => void,
+    private copilotOutputFactory: CopilotOutputFactory,
   ) {}
 
   /**
@@ -83,7 +85,7 @@ export class SessionOrchestrator {
           if (this.aiResponse && this.editableText) {
             clearTimeout(timer);
             resolve(
-              new CopilotOutputEntity({
+              this.copilotOutputFactory.build({
                 aiResponse: this.aiResponse,
                 editableText: this.editableText,
                 tasks: this.tasks,

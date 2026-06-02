@@ -1,4 +1,4 @@
-import type { SubAgent } from "@HaolongChen/deepagents";
+import type { SubAgent } from "deepagents";
 import { read_json_schema } from "../tools/schema-reader.ts";
 import {
   schemaLookupDescription,

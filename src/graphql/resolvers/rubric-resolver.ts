@@ -38,14 +38,13 @@ const toGraphqlRubric = (
 
 const toGraphqlCopilotOutput = (project: ProjectAggregate): CopilotOutput => {
   const copilotOutput = project.getEntity("copilotOutput");
-  if (!copilotOutput || !project.copilotSessionExId) {
+  if (!copilotOutput) {
     throw new Error("Copilot output or session ID not found");
   }
   return {
     ...copilotOutput.getData(),
     tasks:
       copilotOutput.getData("tasks").map((task) => JSON.stringify(task)) ?? [],
-    copilotSessionExId: project.copilotSessionExId,
     createdAt: copilotOutput.getData("createdAt")!.toISOString(),
     __typename: "CopilotOutput",
   };

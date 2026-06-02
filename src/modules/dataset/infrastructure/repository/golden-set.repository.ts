@@ -10,13 +10,19 @@ export type GoldenSetRepositoryType = {
 };
 
 export const goldenSetDataMapper = (
-  goldenSet: GoldenSetRepositoryType,
+  goldenSet?: GoldenSetRepositoryType,
   entity?: GoldenSetEntity,
 ): GoldenSetEntity => {
-  return repositoryDateMapper(
-    goldenSet,
-    entity || new GoldenSetEntity(goldenSet, goldenSet.id),
-  );
+  const result = goldenSet
+    ? repositoryDateMapper(
+        goldenSet,
+        entity || new GoldenSetEntity(goldenSet, goldenSet.id),
+      )
+    : entity;
+  if (!result) {
+    throw new Error("Failed to map GoldenSet data: No data provided");
+  }
+  return result;
 };
 
 export class GoldenSetRepository implements IGoldenSetRepository {

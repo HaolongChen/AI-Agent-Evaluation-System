@@ -1,4 +1,4 @@
-import type { SubAgent } from "@HaolongChen/deepagents";
+import type { SubAgent } from "deepagents";
 import { read_markdown_documentations } from "../tools/markdown-reader.ts";
 import {
   documentationsLookupDescription,

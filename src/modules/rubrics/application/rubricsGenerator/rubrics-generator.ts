@@ -1,4 +1,4 @@
-import { createDeepAgent, StateBackend } from "@HaolongChen/deepagents";
+import { createDeepAgent, StateBackend } from "deepagents";
 import * as z from "zod";
 import { HumanMessage, toolStrategy } from "langchain";
 import { MemorySaver } from "@langchain/langgraph";

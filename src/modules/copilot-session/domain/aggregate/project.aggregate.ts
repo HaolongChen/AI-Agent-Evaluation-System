@@ -1,29 +1,26 @@
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import { ProjectEntity } from "../entity/project.entity.ts";
-import { projectSchema } from "../schema/project.schema.ts";
+import { projectSchema, type ProjectEntityMetadata } from "../schema/project.schema.ts";
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
-import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
-import { CopilotOutputEntity } from "../entity/copilot-output.entity.ts";
+import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
 
 export class ProjectAggregate extends AggregateRoot<
   typeof projectSchema,
-  EntityMetadata,
+  ProjectEntityMetadata,
   {
     copilotInput: CopilotInputAggregate;
-    copilotOutput?: CopilotOutputEntity;
   }
 > {
   public copilotServerId: string;
-  public copilotSessionExId?: string;
-  constructor(data: ProjectAggregate, copilotServerId: string);
+  constructor(data: ProjectAggregate, copilotServer: CopilotServerEntity); // TODO: should configure network service here
   constructor(
     copilotInputAggregate: CopilotInputAggregate,
-    copilotServerId: string,
+    copilotServer: CopilotServerEntity,
     projectEntity: ProjectEntity,
   );
   constructor(
     argument1: ProjectAggregate | CopilotInputAggregate,
-    copilotServerId: string,
+    copilotServer: CopilotServerEntity,
     argument3?: ProjectEntity,
   ) {
     if (argument1 instanceof ProjectAggregate) {
@@ -33,6 +30,6 @@ export class ProjectAggregate extends AggregateRoot<
       super(argument3!, { copilotInput: argument1 });
       this.setEntity("copilotInput", argument1);
     }
-    this.copilotServerId = copilotServerId;
+    this.copilotServerId = copilotServer.getData("id");
   }
 }

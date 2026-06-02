@@ -20,10 +20,8 @@ export class ZionProjectService implements IZionProjectService {
       this.account.getOrganizationExId(),
       project,
     );
-    const projectEntity = new ProjectEntity({
-      projectExId: createdProject,
-      projectName: project.getData("projectName"),
-    });
+    project.setData( { "projectExId": createdProject } );
+    const projectEntity = new ProjectEntity(project);
     return projectEntity;
   }
   async deleteZionProject(project: ProjectEntity): Promise<void> {

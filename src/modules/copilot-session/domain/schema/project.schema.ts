@@ -4,6 +4,7 @@ import {
   ProjectContentCategory,
   ProjectSpaceType,
 } from "../../../../graphql/generated/types.ts";
+import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
 export const projectCreationRequiredSchema = z.object({
   projectName: z.string(),
   useNewType: z.boolean().default(true),
@@ -17,3 +18,7 @@ export const projectSchema = z.object({
   projectExId: z.string(),
   projectName: z.string(),
 });
+
+export type ProjectEntityMetadata = EntityMetadata & {
+  copilotSessionExId?: string;
+}

@@ -22,10 +22,7 @@ export type ProjectRepositoryType = {
   createdAt: Date;
   createdBy: string;
   copilotInput?: CopilotInputRepositoryType;
-  copilotSession: {
-    id: string;
-    copilotOutput: CopilotOutputRepositoryType | null;
-  } | null;
+  copilotOutput?: CopilotOutputRepositoryType | null;
 };
 
 export type CopilotOutputRepositoryType = {

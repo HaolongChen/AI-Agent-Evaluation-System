@@ -40,27 +40,6 @@ model goldenSet {
   // modelName   String                @default("undefined") @map("model_name") // e.g., 'gpt-4', 'claude-3-opus'
   userInputs copilotInput[]
   updatedAt  DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
-  // evaluationSessions evaluationSession[]
-
-  // @@unique([schemaId], map: "unique_golden_set") // add copilot type
-}
-
-model project {
-  id              String   @id @default(uuid())
-  copilotInputId  String   @map("copilot_input_id") // corresponds to the copilotInputId in the copilotInput table for traceability
-  copilotServerId String   @map("copilot_server_id") // corresponds to the copilotServerId in the copilotServer table for traceability
-  projectExId     String   @map("project_ex_id")
-  projectName     String   @map("project_name")
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  createdBy       String   @default("unknown") @map("created_by") // userId or "system" for system-generated projects
-
-  copilotInput   copilotInput    @relation("project_copilotInput", fields: [copilotInputId], references: [id])
-  copilotServer  copilotServer   @relation(fields: [copilotServerId], references: [id])
-  copilotSession copilotSession?
-
-  @@unique([projectExId], map: "unique_project_ex_id")
-  @@unique([projectName], map: "unique_project_name")
-  @@index([copilotInputId, copilotServerId], map: "idx_project_copilot_input_server_id")
 }
 
 model userInput {
@@ -96,58 +75,44 @@ model copilotServer {
   project     project[]
 }
 
-model copilotSession {
-  id        String  @id @default(uuid())
-  projectId String  @unique @map("project_id")
-  project   project @relation(fields: [projectId], references: [id])
+model project {
+  id              String   @id @default(uuid())
+  copilotInputId  String   @map("copilot_input_id") // corresponds to the copilotInputId in the copilotInput table for traceability
+  copilotServerId String   @map("copilot_server_id") // corresponds to the copilotServerId in the copilotServer table for traceability
+  projectExId     String   @map("project_ex_id")
+  projectName     String   @map("project_name")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy       String   @default("unknown") @map("created_by") // userId or "system" for system-generated projects
 
+  copilotInput  copilotInput   @relation("project_copilotInput", fields: [copilotInputId], references: [id])
+  copilotServer copilotServer  @relation(fields: [copilotServerId], references: [id])
   copilotOutput copilotOutput?
-  rubric        rubric[]       @relation("copilotSession_rubric")
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  @@unique([projectExId], map: "unique_project_ex_id")
+  @@unique([projectName], map: "unique_project_name")
+  @@index([copilotInputId, copilotServerId], map: "idx_project_copilot_input_server_id")
 }
 
 model copilotOutput {
-  id                 String         @id @default(uuid())
-  copilotSession     copilotSession @relation(fields: [copilotSessionExId], references: [id])
-  editableText       String         @map("output_content") // copilot output
-  aiResponse         String         @map("ai_response") // AI response
-  tasks              Json[]         @map("tasks") // array of tasks extracted from the copilot output, useful for evaluation agents to understand what the copilot is trying to do
-  copilotSessionExId String         @unique @map("copilot_session_id") // corresponds to the sessionId in LangGraph for traceability
-  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  id           String   @id @default(uuid())
+  copilotSessionExId String @unique
+  project      project  @relation(fields: [projectId], references: [id])
+  editableText String   @map("output_content") // copilot output
+  aiResponse   String   @map("ai_response") // AI response
+  tasks        Json[]   @map("tasks") // array of tasks extracted from the copilot output, useful for evaluation agents to understand what the copilot is trying to do
+  projectId    String   @unique
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  // Performance Metrics
-  // totalLatencyMs    Int?     @map("total_latency_ms")
-  // roundtripCount    Int?     @map("roundtrip_count")
-  // inputTokens       Int?     @map("input_tokens")
-  // outputTokens      Int?     @map("output_tokens")
-  // totalTokens       Int?     @map("total_tokens") // input_tokens + output_tokens + reasoning tokens
-  // contextPercentage Decimal? @map("context_percentage") @db.Decimal(5, 2) // % of max context window used
-
-  // rubrics rubric[] @relation("copilotOutput_rubric")
+  rubrics rubric[] @relation("copilotOutput_rubric")
 }
 
-// model copilotOutput_rubric {
-//   copilotOutputId String @map("copilot_output_id")
-//   rubricId        String @map("rubric_id")
-
-//   copilotOutput      copilotOutput       @relation(fields: [copilotOutputId], references: [id])
-//   rubric             rubric              @relation(fields: [rubricId], references: [id])
-//   evaluationSessions evaluationSession[]
-
-//   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-//   @@id([copilotOutputId, rubricId], map: "idx_copilot_output_rubric")
-// }
-
-// Adaptive Rubrics (AI-generated evaluation criterion - one criteria per row)
 model rubric {
   id String @id @default(uuid())
 
-  copilotSessionExId String           @map("copilot_session_ex_id")
-  copilotSession     copilotSession   @relation("copilotSession_rubric", fields: [copilotSessionExId], references: [id])
-  criterion          criteria[]
-  agentFeedbacks     agentFeedbacks[]
+  copilotOutputId String
+  copilotOutput   copilotOutput    @relation("copilotOutput_rubric", fields: [copilotOutputId], references: [id])
+  criterion       criteria[]
+  agentFeedbacks  agentFeedbacks[]
 
   // Timestamps
   createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)

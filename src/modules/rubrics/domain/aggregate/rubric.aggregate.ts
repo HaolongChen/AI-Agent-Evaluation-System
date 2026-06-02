@@ -1,7 +1,10 @@
 import type { z } from "zod";
 import { ProjectAggregate } from "../../../copilot-session/domain/aggregate/project.aggregate.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
-import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
+import type {
+  EntityMetadata,
+  OneOrMany,
+} from "../../../shared/domain/entity/entity.ts";
 import { CriteriaEntity, RubricEntity } from "../entity/rubric.entity.ts";
 import { criteriaSchema, type rubricSchema } from "../schema/rubric.schema.ts";
 import type { GoldenSetEntity } from "../../../dataset/domain/entity/golden-set.entity.ts";
@@ -64,18 +67,44 @@ export class RubricAggregate extends AggregateRoot<
   }
 
   addCriteria(data: z.infer<typeof criteriaSchema>, id?: string): void;
-  addCriteria(data: CriteriaEntity): void;
+  addCriteria(data: OneOrMany<CriteriaEntity>): void;
   addCriteria(
-    data: z.infer<typeof criteriaSchema> | CriteriaEntity,
+    data: z.infer<typeof criteriaSchema> | OneOrMany<CriteriaEntity>,
     id?: string,
   ): void {
-    if (data instanceof CriteriaEntity) {
-      if (!data.getData("isSaved")) {
+    if (data instanceof CriteriaEntity || Array.isArray(data)) {
+      const criterionArray = Array.isArray(data) ? data : [data];
+      if (!criterionArray.some((c) => c.getData("isSaved"))) {
         throw new Error("Only saved criteria can be added to the rubric.");
       }
-      this.getEntity("criterion").push(data);
+      this.validateIncomingCriterion(criterionArray);
     } else {
-      this.pushEntity("criterion", new CriteriaEntity(data, id));
+      this.validateIncomingCriterion(new CriteriaEntity(data, id));
+    }
+  }
+
+  private validateIncomingCriterion(
+    criterion: OneOrMany<CriteriaEntity>,
+  ): void {
+    // should sync before pushing to entity, otherwise the state of aggregate will be broken and hard to recover
+    const criterionArray = Array.isArray(criterion) ? criterion : [criterion];
+    for (const criteria of criterionArray) {
+      const existingCriteria = super
+        .getEntity("criterion")
+        .find((c) => c.getData("id") === criteria.getData("id"));
+      if (!existingCriteria) {
+        super.pushEntity("criterion", criteria);
+        continue;
+      }
+      if (!existingCriteria.getData("isSaved") && criteria.getData("isSaved")) {
+        throw new Error(
+          "Cannot update criterion from unsaved to saved. Please save the criterion first before adding it to the rubric.",
+        );
+      }
+      existingCriteria.setData({
+        ...criteria.getData(),
+        reasoning: criteria.getData("reasoning"),
+      });
     }
   }
 

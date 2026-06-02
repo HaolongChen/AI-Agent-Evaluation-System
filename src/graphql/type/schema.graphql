@@ -32,6 +32,11 @@ type Mutation {
 
   executeCopilot(context: CopilotExecutionInput!): CopilotOutput!
 
+  executeCopilotByGoldenSetAndCopilotServer(
+    goldenSetId: String!
+    copilotServerId: String!
+  ): [CopilotOutput]!
+
   submitHumanEvaluation(input: HumanEvaluationInput!): EvaluationSession!
 
   # createProject(projectName: String): GoldenSet!

@@ -19,6 +19,8 @@ import {
   type QueryGetGoldenSetByIdArgs as QueryGetGoldenSetByIdArguments,
   type QueryGetUserInputByIdArgs as QueryGetUserInputByIdArguments,
   type UserInput,
+  type CopilotInputWithCopilotSessions,
+  type CopilotSession,
 } from "../generated/resolvers-types.ts";
 import { GraphQLError } from "graphql";
 import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/copilot-session/infrastructure/project-manager.ts";
@@ -31,6 +33,9 @@ import type { GoldenSetEntity } from "../../modules/dataset/domain/entity/golden
 import type { UserInputEntity } from "../../modules/dataset/domain/entity/user-input.entity.ts";
 import type { CopilotInputAggregate } from "../../modules/dataset/domain/aggregate/copilot-input.aggregate.ts";
 import { createZionInjectionBundle } from "../../DI/zion.ts";
+import { GetCopilotSessionUseCase } from "../../modules/copilot-session/application/get-copilot-session.ts";
+import { toGraphqlCopilotOutput } from "./rubric-resolver.ts";
+import type { CopilotOutputEntity } from "../../modules/copilot-session/domain/entity/copilot-output.entity.ts";
 
 // const copilotTypeMapper = {
 //   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -61,6 +66,30 @@ export const userInputDataMapper = (
   };
 };
 
+export const copilotSessionDataMapper = (
+  data: CopilotOutputEntity,
+): CopilotSession => {
+  return {
+    copilotOutput: toGraphqlCopilotOutput(data),
+    id: data.getData("copilotSessionExId"),
+    rubrics: [],
+    __typename: "CopilotSession",
+  };
+};
+
+export const copilotInputWithSessionDataMapper = (data: {
+  copilotInput: ReturnType<CopilotInputAggregate["getAllData"]>;
+  copilotOutputs: CopilotOutputEntity[];
+}): CopilotInputWithCopilotSessions => {
+  return {
+    copilotInput: copilotInputDataMapper(data.copilotInput),
+    copilotSessions: data.copilotOutputs.map((output) =>
+      copilotSessionDataMapper(output),
+    ),
+    __typename: "CopilotInputWithCopilotSessions",
+  };
+};
+
 export const copilotInputDataMapper = (
   data: ReturnType<CopilotInputAggregate["getAllData"]>,
 ): CopilotInput => {
@@ -78,15 +107,29 @@ export const goldenSetResolver = {
     getCopilotInput: async (
       _: unknown,
       arguments_: QueryGetCopilotInputArguments,
-    ): Promise<CopilotInput[]> => {
+    ): Promise<CopilotInputWithCopilotSessions[]> => {
       const getCopilotInputByFiltersUseCase =
         new GetCopilotInputByFiltersUseCase({
           copilotInputRepository: repository.copilotInputRepository,
         });
       const copilotInputs =
         await getCopilotInputByFiltersUseCase.execute(arguments_);
-      return copilotInputs.map((copilotInput) => {
-        return copilotInputDataMapper(copilotInput.getAllData());
+      const copilotSessionUseCase = new GetCopilotSessionUseCase({
+        projectRepository: repository.projectRepository,
+      });
+      const copilotSessions = await Promise.all(
+        copilotInputs.map(async (input) => {
+          return {
+            input: input,
+            output: await copilotSessionUseCase.execute(input),
+          };
+        }),
+      );
+      return copilotSessions.map((value) => {
+        return copilotInputWithSessionDataMapper({
+          copilotInput: value.input.getAllData(),
+          copilotOutputs: value.output,
+        });
       });
     },
 

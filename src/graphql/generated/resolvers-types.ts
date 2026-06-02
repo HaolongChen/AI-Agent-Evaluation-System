@@ -183,6 +183,7 @@ export type Mutation = {
   createGoldenSetWithSchemaId: GoldenSet;
   createUserInput: UserInput;
   executeCopilot: CopilotOutput;
+  executeCopilotByGoldenSetAndCopilotServer: Array<Maybe<CopilotOutput>>;
   generateRubric: Array<Maybe<Rubric>>;
   linkGoldenSetToUserInput: Array<Maybe<CopilotInput>>;
   runCrdtTest: Maybe<Scalars["String"]["output"]>;
@@ -203,6 +204,11 @@ export type MutationCreateUserInputArgs = {
 
 export type MutationExecuteCopilotArgs = {
   context: CopilotExecutionInput;
+};
+
+export type MutationExecuteCopilotByGoldenSetAndCopilotServerArgs = {
+  copilotServerId: Scalars["String"]["input"];
+  goldenSetId: Scalars["String"]["input"];
 };
 
 export type MutationGenerateRubricArgs = {
@@ -635,6 +641,15 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationExecuteCopilotArgs, "context">
+  >;
+  executeCopilotByGoldenSetAndCopilotServer: Resolver<
+    Array<Maybe<ResolversTypes["CopilotOutput"]>>,
+    ParentType,
+    ContextType,
+    RequireFields<
+      MutationExecuteCopilotByGoldenSetAndCopilotServerArgs,
+      "copilotServerId" | "goldenSetId"
+    >
   >;
   generateRubric: Resolver<
     Array<Maybe<ResolversTypes["Rubric"]>>,

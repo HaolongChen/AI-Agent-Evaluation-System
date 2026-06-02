@@ -57,6 +57,7 @@ export const projectDataMapper = (
   // state 1 starts
   const copilotInput =
     entity?.aggregate?.getEntity("copilotInput") ??
+    entity?.copilotInput?.aggregate ??
     (data.copilotInput
       ? copilotInputDataMapper(
           data.copilotInput,

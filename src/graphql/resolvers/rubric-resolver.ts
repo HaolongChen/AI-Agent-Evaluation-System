@@ -6,6 +6,7 @@ import type { RubricAggregate } from "../../modules/rubrics/domain/aggregate/rub
 import type {
   CopilotOutput,
   MutationExecuteCopilotArgs as MutationExecuteCopilotArguments,
+  MutationExecuteCopilotByGoldenSetAndCopilotServerArgs as MutationExecuteCopilotByGoldenSetAndCopilotServerArguments,
   MutationGenerateRubricArgs as MutationGenerateRubricArguments,
   QueryGetRubricByIdArgs as QueryGetRubricByIdArguments,
   Rubric,
@@ -14,11 +15,11 @@ import { CreateProjectUseCase } from "../../modules/copilot-session/application/
 import { GetCopilotInputByFiltersUseCase } from "../../modules/dataset/application/copilot-input.ts";
 import { GetCopilotServerUseCase } from "../../modules/dataset/application/copilot-server.ts";
 import { createZionInjectionBundle } from "../../DI/zion.ts";
-import type { ProjectAggregate } from "../../modules/copilot-session/domain/aggregate/project.aggregate.ts";
 import { CopilotExecutionLifecycle } from "../../modules/copilot-session/application/copilot-execution-lifecycle.ts";
 import { DeleteZionProjectUseCase } from "../../modules/copilot-session/application/delete-zion-project.ts";
+import type { CopilotOutputEntity } from "../../modules/copilot-session/domain/entity/copilot-output.entity.ts";
 
-const toGraphqlRubric = (
+export const toGraphqlRubric = (
   rubric: ReturnType<RubricAggregate["getAllData"]>,
 ): Rubric => {
   return {
@@ -36,15 +37,11 @@ const toGraphqlRubric = (
   };
 };
 
-const toGraphqlCopilotOutput = (project: ProjectAggregate): CopilotOutput => {
-  const copilotOutput = project.getEntity("copilotOutput");
-  if (!copilotOutput) {
-    throw new Error("Copilot output or session ID not found");
-  }
+export const toGraphqlCopilotOutput = (
+  copilotOutput: CopilotOutputEntity,
+): CopilotOutput => {
   return {
     ...copilotOutput.getData(),
-    tasks:
-      copilotOutput.getData("tasks").map((task) => JSON.stringify(task)) ?? [],
     createdAt: copilotOutput.getData("createdAt")!.toISOString(),
     __typename: "CopilotOutput",
   };
@@ -88,6 +85,46 @@ export const rubricResolver = {
   },
 
   Mutation: {
+    executeCopilotByGoldenSetAndCopilotServer: async (
+      _: unknown,
+      arguments_: MutationExecuteCopilotByGoldenSetAndCopilotServerArguments,
+    ): Promise<CopilotOutput[]> => {
+      const zionInjection = await createZionInjectionBundle();
+      const copilotInputUseCase = new GetCopilotInputByFiltersUseCase({
+        copilotInputRepository: repository.copilotInputRepository,
+      });
+      const copilotInputs = await copilotInputUseCase.execute({
+        goldenSetId: arguments_.goldenSetId,
+      });
+      const copilotServerUseCase = new GetCopilotServerUseCase(
+        repository.copilotServerRepository,
+        zionInjection.account,
+      );
+      const copilotServer = await copilotServerUseCase.execute();
+      const copilotExecutionLifecycleUseCase = new CopilotExecutionLifecycle(
+        new CreateProjectUseCase({
+          projectRepository: repository.projectRepository,
+          ZionProjectService: zionInjection.zionProjectService,
+        }),
+        new ExecuteCopilotUseCase({
+          copilotSessionSetupFactory: zionInjection.copilotSessionSetupFactory,
+          projectRepository: repository.projectRepository,
+        }),
+        new DeleteZionProjectUseCase(zionInjection.zionProjectService),
+      );
+      const projects = await Promise.all(
+        copilotInputs.map(async (copilotInput) =>
+          copilotExecutionLifecycleUseCase.execute(
+            copilotInput,
+            copilotServer.getData("id"),
+          ),
+        ),
+      );
+      return projects.map((project) =>
+        toGraphqlCopilotOutput(project.getEntity("copilotOutput")!),
+      );
+    },
+
     executeCopilot: async (
       _: unknown,
       arguments_: MutationExecuteCopilotArguments,
@@ -119,7 +156,7 @@ export const rubricResolver = {
         copilotInput,
         copilotServer.getData("id"),
       );
-      return toGraphqlCopilotOutput(project);
+      return toGraphqlCopilotOutput(project.getEntity("copilotOutput")!);
     },
     generateRubric: async (
       _: unknown,

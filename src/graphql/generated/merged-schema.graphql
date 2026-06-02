@@ -3982,6 +3982,10 @@ type Mutation {
   endAllComputingPowerKitsInProject(projectExId: String!): Boolean!
   endSession(sessionExId: String!): Boolean!
   executeCopilot(context: CopilotExecutionInput!): CopilotOutput!
+  executeCopilotByGoldenSetAndCopilotServer(
+    copilotServerId: String!
+    goldenSetId: String!
+  ): [CopilotOutput]!
   executeOverdueMigrationTasks: Boolean!
   exitOrganization(organizationExId: String!): Boolean!
   expeditedWechatMiniAppRegister(

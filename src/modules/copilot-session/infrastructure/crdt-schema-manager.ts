@@ -26,6 +26,7 @@ import type {
   ICrdtSchemaLifecycle,
   ICrdtSchemaLifecycleFactory,
 } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
+import type { ProjectEntity } from "../domain/entity/project.entity.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -233,9 +234,9 @@ export class TypeSystemStoreFactory implements ICrdtSchemaLifecycleFactory {
     private gqlClient: IGQLClient,
     private dangerousGQLClient: IGQLClient,
   ) {}
-  create(projectExId: string): ICrdtSchemaLifecycle {
+  create(projectEntity: ProjectEntity): ICrdtSchemaLifecycle {
     return new TypeSystemStore(
-      projectExId,
+      projectEntity.getData("projectExId"),
       this.dangerousGQLClient,
       this.gqlClient,
     );

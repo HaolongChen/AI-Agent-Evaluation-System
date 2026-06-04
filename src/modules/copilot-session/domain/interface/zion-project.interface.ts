@@ -5,7 +5,7 @@ export interface IZionProjectService<
   T extends ZionProjectEntity = ZionProjectEntity,
   P extends ProjectEntity = ProjectEntity,
 > {
-  createZionProject(project: T): Promise<P>;
+  createZionProject(project: T): Promise<T>;
 
   deleteZionProject(project: P): Promise<void>;
 }

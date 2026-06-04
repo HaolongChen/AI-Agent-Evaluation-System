@@ -1,6 +1,6 @@
-import type { AccountService } from "../../account/domain/service/account.service.ts";
+import type { AccountService } from "../../account/domain/service/online-account.service.ts";
 import type { ICopilotServerRepository } from "../domain/interface/copilot-server.interface.ts";
-import { AcquireCopilotServer } from "../domain/service/acquire-copilot-server.ts";
+import { AcquireCopilotServer } from "../domain/service/copilot-server-client.ts";
 
 export class GetCopilotServerUseCase {
   private acquireCopilotServer: AcquireCopilotServer;

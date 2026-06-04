@@ -25,6 +25,4 @@ export interface ICopilotNetworkService {
   ): () => void;
 
   terminateSession(): Promise<void>;
-
-  // runCopilotToolCalls(toolCalls: unknown[]): CopilotApiResultJs;
 }

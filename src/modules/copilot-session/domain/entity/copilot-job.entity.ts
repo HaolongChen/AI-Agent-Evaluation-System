@@ -30,9 +30,5 @@ export type CopilotInputEventsList = {
   [K in keyof CopilotInputMessage]: CopilotInputEvent<K>;
 };
 
-export type CopilotInputEventType = [
-  CopilotInputEventsList[keyof CopilotInputEventsList],
-  Event<"unsubscribe">,
-];
 
 export type CopilotEventType = [CopilotEventsList[keyof CopilotEventsList]];

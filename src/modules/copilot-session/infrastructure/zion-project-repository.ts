@@ -13,7 +13,7 @@ export class ZionProjectService implements IZionProjectService {
     private gqlClient: IGQLClient,
     private wsClient: IWebSocketClient,
   ) {}
-  async createZionProject(project: ZionProjectEntity): Promise<ProjectEntity> {
+  async createZionProject(project: ZionProjectEntity): Promise<ZionProjectEntity> {
     const createdProject = await createZionProject(
       this.gqlClient,
       this.wsClient,
@@ -21,8 +21,7 @@ export class ZionProjectService implements IZionProjectService {
       project,
     );
     project.setData( { "projectExId": createdProject } );
-    const projectEntity = new ProjectEntity(project);
-    return projectEntity;
+    return project;
   }
   async deleteZionProject(project: ProjectEntity): Promise<void> {
     const projectExId = project.getData("projectExId");

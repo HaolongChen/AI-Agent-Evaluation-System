@@ -289,8 +289,10 @@ export class CopilotNetworkService implements ICopilotNetworkService {
     private gqlClient: IGQLClient,
     private wsClient: IWebSocketClient,
     public sessionExId: string,
-    private schemaGraph: OpaqueSchemaGraph,
   ) {}
+
+  private schemaGraph: OpaqueSchemaGraph | undefined;
+
   delegateCopilotToolCall(
     event: CopilotEvent<"CopilotToolCallBatchMessage">,
   ): CopilotApiResultJs {
@@ -324,7 +326,7 @@ export class CopilotNetworkService implements ICopilotNetworkService {
     const locale = Locale.ZH;
     return ZTypeCopilotApi.toolCalls(
       ZTypeCoreApi.genZTypeApiContext(
-        this.schemaGraph,
+        this.schemaGraph!,
         product,
         clientType,
         "WEB",

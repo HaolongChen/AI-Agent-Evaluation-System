@@ -17,55 +17,37 @@ import {
 } from "./copilot-network.ts";
 import type { IWebSocketClient } from "../../shared/domain/interface/websocket-client.interface.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
-import type { ICrdtSchemaLifecycleFactory } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
-import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-system.ts";
-
-export class CopilotSessionSetupFactory {
-  constructor(
-    private gqlClient: IGQLClient,
-    private wsClient: IWebSocketClient,
-    private crdtSchemaLifecycleFactory: ICrdtSchemaLifecycleFactory,
-  ) {}
-
-  build(projectExId: string): ICopilotSessionSetup {
-    return new CopilotSessionSetup(
-      projectExId,
-      this.gqlClient,
-      this.wsClient,
-      this.crdtSchemaLifecycleFactory.create(projectExId).schemaGraph(),
-    );
-  }
-}
+import type { ProjectEntity } from "../domain/entity/project.entity.ts";
+import type { ICrdtSchemaLifecycle } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
 
 export class CopilotSessionSetup implements ICopilotSessionSetup {
   constructor(
-    private projectExId: string,
     private gqlClient: IGQLClient,
     private wsClient: IWebSocketClient,
-    private schemaGraph: Promise<OpaqueSchemaGraph>,
+    private crdtSchemaLifecycleFactory: ICrdtSchemaLifecycle,
   ) {}
 
-  async createNewSession(): Promise<ICopilotNetworkService> {
+  async createNewSession(project: ProjectEntity): Promise<ICopilotNetworkService> {
     const result = await this.gqlClient.gqlRequest<
       CreateCopilotSessionMutation,
       CreateCopilotSessionMutationVariables
     >(CREATE_COPILOT_SESSION, {
-      projectExId: this.projectExId,
+      projectExId: project.getData("projectExId"),
       sessionType: "COPILOT",
     });
     return new CopilotNetworkService(
       this.gqlClient,
       this.wsClient,
       result.createCopilotSession,
-      await this.schemaGraph,
+      await this.crdtSchemaLifecycleFactory(project).schemaGraph(),
     );
   }
-  private async getLatestSession(): Promise<ICopilotNetworkService> {
+  private async getLatestSession(project: ProjectEntity): Promise<ICopilotNetworkService> {
     const latestSessionResult = await this.gqlClient.gqlRequest<
       GetLatestSessionMutation,
       GetLatestSessionMutationVariables
     >(GET_LATEST_SESSION, {
-      projectExId: this.projectExId,
+      projectExId: project.getData("projectExId"),
       sessionType: "COPILOT",
     });
     return latestSessionResult.latestSession
@@ -73,16 +55,16 @@ export class CopilotSessionSetup implements ICopilotSessionSetup {
           this.gqlClient,
           this.wsClient,
           latestSessionResult.latestSession,
-          await this.schemaGraph,
+          await this.crdtSchemaLifecycleFactory.create(project).schemaGraph(),
         )
-      : this.createNewSession();
+      : this.createNewSession(project);
   }
-  private async getSubscriptionCount(): Promise<number> {
+  private async getSubscriptionCount(project: ProjectEntity): Promise<number> {
     const copilotSubscriptionCount = await this.gqlClient.gqlRequest<
       GetCopilotSubscriptionCountQuery,
       GetCopilotSubscriptionCountQueryVariables
     >(GET_COPILOT_SUBSCRIPTION_COUNT, {
-      projectExId: this.projectExId,
+      projectExId: project.getData("projectExId"),
       sessionType: "COPILOT",
     });
     const count = z.coerce

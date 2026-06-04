@@ -1,4 +1,4 @@
-import type { AccountService } from "../../account/domain/service/account.service.ts";
+import type { AccountService } from "../../account/domain/service/online-account.service.ts";
 import { UserInputEntity } from "../domain/entity/user-input.entity.ts";
 import type { IUserInputRepository } from "../domain/interface/user-input.interface.ts";
 

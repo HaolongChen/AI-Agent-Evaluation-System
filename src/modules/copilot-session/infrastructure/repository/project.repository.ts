@@ -2,16 +2,6 @@ import { prisma } from "../../../../config/prisma.ts";
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
 import {
-  copilotInputDataMapper,
-  type CopilotInputDataMapperParameter,
-  type CopilotInputRepositoryType,
-} from "../../../dataset/infrastructure/repository/copilot-input.repository.ts";
-import {
-  copilotServerDataMapper,
-  type CopilotServerRepositoryType,
-} from "../../../dataset/infrastructure/repository/copilot-server.repository.ts";
-import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
-import {
   ProjectAfterSession,
   ProjectAggregate,
   type ProjectBeforeCopilotSession,
@@ -19,8 +9,8 @@ import {
 import { ProjectEntity } from "../../domain/entity/project.entity.ts";
 import { type IProjectRepository } from "../../domain/interface/project-repository.interface.ts";
 import {
-  copilotOutputDataMapper,
-  projectEntityDataMapper,
+  projectWithCopilotSessionDataMapper,
+  rawProjectDataMapper,
 } from "./project.dto.ts";
 
 export type ProjectRepositoryType = {
@@ -48,8 +38,27 @@ export type ProjectDataMapperParameters = {
 };
 
 export class ProjectRepository implements IProjectRepository {
-  saveCopilotOutput(data: ProjectAfterSession): Promise<void> {
-    throw new Error("Method not implemented.");
+  async saveCopilotOutput(data: ProjectAfterSession): Promise<void> {
+    const output = await prisma.project.update({
+      where: { id: data.getData("id") },
+      data: {
+        copilotOutput: {
+          upsert: {
+            where: { copilotSessionExId: data.getData("projectExId") },
+            update: {
+              ...data.getEntity("copilotOutput").getData(),
+            },
+            create: {
+              ...data.getEntity("copilotOutput").getData(),
+            },
+          },
+        },
+      },
+      include: {
+        copilotOutput: true,
+      },
+    });
+    projectWithCopilotSessionDataMapper(output, data);
   }
   async getByCopilotServer(
     copilotServer: CopilotServerEntity,
@@ -62,7 +71,11 @@ export class ProjectRepository implements IProjectRepository {
         copilotOutput: true,
       },
     });
-    return projects.map((project) => projectDataMapper(project));
+    return projects.map((project) => {
+      return project.copilotOutput
+        ? projectWithCopilotSessionDataMapper(project)
+        : rawProjectDataMapper(project);
+    });
   }
   async getByCopilotInput(
     copilotInput: CopilotInputAggregate,
@@ -76,7 +89,7 @@ export class ProjectRepository implements IProjectRepository {
       },
     });
     return projects.map((project) =>
-      projectDataMapper(project, { copilotInput: { aggregate: copilotInput } }),
+      projectWithCopilotSessionDataMapper(project),
     );
   }
   async deleteById(id: string): Promise<void> {
@@ -96,7 +109,7 @@ export class ProjectRepository implements IProjectRepository {
       },
       create: { ...data.getData() },
     });
-    projectDataMapper(project, { aggregate: data });
+    rawProjectDataMapper(project, data);
   }
 
   async findById(id: string): Promise<ProjectAggregate> {
@@ -109,6 +122,6 @@ export class ProjectRepository implements IProjectRepository {
     if (!project) {
       throw new Error(`Project with ID ${id} not found`);
     }
-    return projectDataMapper(project);
+    return rawProjectDataMapper(project);
   }
 }

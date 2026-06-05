@@ -5,7 +5,6 @@ import {
   type CopilotExecutionLogs,
   type ProjectAggregateMetadata,
 } from "../schema/project.schema.ts";
-import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
 import type {
   Entity,
   EntityMetadata,

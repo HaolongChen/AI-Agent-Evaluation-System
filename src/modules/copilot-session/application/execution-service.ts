@@ -3,9 +3,16 @@ import { logger } from "../../shared/infrastructure/logger.ts";
 import type { CopilotEventType } from "../domain/entity/copilot-job.entity.ts";
 import { EventTarget } from "ts-event-target";
 import type { ICopilotSessionSetupFactory } from "../domain/interface/copilot-session-setup.interface.ts";
-import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
+import type {
+  ProjectAggregate,
+  ProjectBeforeCopilotSession,
+} from "../domain/aggregate/project.aggregate.ts";
 import type { IProjectRepository } from "../domain/interface/project-repository.interface.ts";
 import { CopilotOutputFactory } from "../domain/service/copilot-output-factory.ts";
+import type { IProjectService } from "../domain/interface/project-service.interface.ts";
+import { projectSessionBridge } from "../domain/service/project-session-bridge.ts";
+import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
+import type { CopilotExecutionService } from "../domain/service/copilot-execution.service.ts";
 
 export class ExecuteCopilotUseCase {
   private copilotEvent: EventTarget<CopilotEventType> = new EventTarget();
@@ -71,5 +78,45 @@ export class ExecuteCopilotUseCase {
       // this.account.clearWsClient();
       throw error;
     }
+  }
+}
+
+export class CreateCopilotSessionUseCase {
+  constructor(private projectService: IProjectService) {}
+
+  async execute(
+    project: ProjectBeforeCopilotSession,
+    schemaId: string,
+    userInput: string,
+  ) {
+    const sessionExId = await this.projectService.createCopilotSession(project);
+    project.setData({ copilotSessionExId: sessionExId });
+    const projectWithSession = projectSessionBridge(
+      project,
+      schemaId,
+      userInput,
+    );
+    return this.projectService.getCopilotNetworkService(projectWithSession);
+  }
+}
+
+export class CopilotExecutionUseCase {
+  constructor(private copilotNetworkService: ICopilotNetworkService) {}
+
+  subscribe(copilotExecution: CopilotExecutionService): () => void {
+    return this.copilotNetworkService.subscribeToSessionUpdates(
+      copilotExecution.publisher,
+    );
+  }
+
+  listenersRegistration(copilotExecution: CopilotExecutionService) {
+    copilotExecution.register("CopilotToolCallBatchMessage", (event) => {
+      this.copilotNetworkService.delegateCopilotToolCalls(event);
+    });
+
+    copilotExecution.register("CopilotStateChangeMessage", (event) => {
+      if (event.data.currentJobIsRunning === false) {
+      }
+    });
   }
 }

@@ -1,12 +1,10 @@
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import {
   ProjectAfterSession,
-  ProjectAggregate,
   ProjectBeforeCopilotSession,
 } from "../../domain/aggregate/project.aggregate.ts";
 import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import { ProjectEntity } from "../../domain/entity/project.entity.ts";
-import type { CopilotOutputRepositoryType } from "./project.repository.ts";
 
 export type RawProjectRepositoryType = {
   id: string;
@@ -67,17 +65,20 @@ export const rawProjectDataMapper = (
 
 export const projectWithCopilotSessionDataMapper = (
   data: RawProjectRepositoryType & {
-    copilotOutput: CopilotOutputRepositoryType;
+    copilotOutput: CopilotOutputRepositoryType | null;
   },
   aggregate?: ProjectAfterSession,
-): ProjectAfterSession => {
+): ProjectAfterSession | ProjectBeforeCopilotSession => {
   if (aggregate) {
     copilotOutputDataMapper(
-      data.copilotOutput,
+      data.copilotOutput!,
       aggregate.getEntity("copilotOutput"),
     );
   }
   const project = rawProjectDataMapper(data);
+  if (!data.copilotOutput) {
+    return project;
+  }
   const copilotOutput = copilotOutputDataMapper(data.copilotOutput);
   return new ProjectAfterSession(project, data, { copilotOutput });
 };

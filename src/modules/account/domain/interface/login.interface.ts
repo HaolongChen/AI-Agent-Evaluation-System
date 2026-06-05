@@ -3,8 +3,12 @@ import type { IGQLClient } from "../../../shared/domain/interface/graphql-client
 import { accountSchema, type AccountInfo } from "../schema/account.schema.ts";
 
 export interface ILoginService {
-  login(data: z.infer<typeof accountSchema>, gqlClient: IGQLClient
+  login(
+    data: z.infer<typeof accountSchema>,
+    gqlClient: IGQLClient,
   ): Promise<AccountInfo>;
-  login(data: z.infer<typeof accountSchema>, gqlClient: IGQLClient
+  login(
+    data: z.infer<typeof accountSchema>,
+    gqlClient: IGQLClient,
   ): Promise<AccountInfo>;
 }

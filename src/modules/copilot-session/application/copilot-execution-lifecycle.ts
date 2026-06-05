@@ -12,12 +12,18 @@ export class CopilotExecutionLifecycle {
     private deleteZionProjectUseCase: DeleteZionProjectUseCase,
   ) {}
 
-  async execute(copilotInput: CopilotInputAggregate, copilotServer: CopilotServerEntity) {
+  async execute(
+    copilotInput: CopilotInputAggregate,
+    copilotServer: CopilotServerEntity,
+  ) {
     try {
-      const projectEntity = await this.createProjectUseCase.execute(
+      const projectEntity =
+        await this.createProjectUseCase.execute(copilotInput);
+      const projectAggregate = new ProjectAggregate(
         copilotInput,
+        copilotServer,
+        projectEntity,
       );
-      const projectAggregate = new ProjectAggregate(copilotInput, copilotServer, projectEntity);
       this.executeCopilotUseCase.setProject(projectAggregate);
       await this.executeCopilotUseCase.executeV2();
       await this.deleteZionProjectUseCase.execute(projectAggregate);

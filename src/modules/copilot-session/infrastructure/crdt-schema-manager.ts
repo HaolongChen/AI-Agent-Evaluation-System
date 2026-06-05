@@ -22,11 +22,7 @@ import type {
 } from "../../../graphql/generated/types.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
-import type {
-  ICrdtSchemaLifecycle,
-  ICrdtSchemaLifecycleFactory,
-} from "../domain/interface/crdt-schema-lifecycle.interface.ts";
-import type { ProjectEntity } from "../domain/entity/project.entity.ts";
+import type { ICrdtSchemaLifecycle } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -228,20 +224,6 @@ export type SupportedCustomModelDescriptor =
 // ---------------------------------------------------------------------------
 // TypeSystemStore
 // ---------------------------------------------------------------------------
-
-export class TypeSystemStoreFactory implements ICrdtSchemaLifecycleFactory {
-  constructor(
-    private gqlClient: IGQLClient,
-    private dangerousGQLClient: IGQLClient,
-  ) {}
-  create(projectEntity: ProjectEntity): ICrdtSchemaLifecycle {
-    return new TypeSystemStore(
-      projectEntity.getData("projectExId"),
-      this.dangerousGQLClient,
-      this.gqlClient,
-    );
-  }
-}
 
 export class TypeSystemStore implements ICrdtSchemaLifecycle {
   private currSchemaGraph: OpaqueSchemaGraph | null = null;

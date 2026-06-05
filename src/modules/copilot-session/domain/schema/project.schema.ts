@@ -21,4 +21,4 @@ export const projectSchema = z.object({
 
 export type ProjectEntityMetadata = EntityMetadata & {
   copilotSessionExId?: string;
-}
+};

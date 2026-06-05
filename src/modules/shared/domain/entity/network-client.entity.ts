@@ -18,8 +18,7 @@ type NetworkState = "LATEST" | "OUTDATED";
 export class NetworkClientEntity extends Entity<
   typeof networkClientSchema,
   NetworkClientHeaders & EntityMetadata
-  >
-{
+> {
   private gqlState: NetworkState = "OUTDATED";
   private wsState: NetworkState = "OUTDATED";
   private getHeaderKeyBundle<T extends keyof NetworkClientHeaders>(
@@ -42,7 +41,10 @@ export class NetworkClientEntity extends Entity<
     this.setHeader("X-Zed-Version", "2.0.7");
   }
 
-  public setHeader<T extends keyof NetworkClientHeaders>(key: T, value: string) {
+  public setHeader<T extends keyof NetworkClientHeaders>(
+    key: T,
+    value: string,
+  ) {
     const headerKeyBundle = this.getHeaderKeyBundle(key);
     Object.values(headerKeyBundle).map((realKey) =>
       this.setData({ [realKey]: value } as Record<
@@ -53,28 +55,24 @@ export class NetworkClientEntity extends Entity<
     this.gqlState = this.wsState = "OUTDATED";
   }
 
-  public setGraphQLUrl ( url: string )
-  {
-    if(url === this.getData("gqlUrl")) {
+  public setGraphQLUrl(url: string) {
+    if (url === this.getData("gqlUrl")) {
       return;
     }
-    this.setData( { "gqlUrl": url } );
+    this.setData({ gqlUrl: url });
     this.gqlState = "OUTDATED";
   }
 
-  public setWebSocketUrl ( url: string )
-  {
-    if(url === this.getData("wsUrl")) {
+  public setWebSocketUrl(url: string) {
+    if (url === this.getData("wsUrl")) {
       return;
     }
-    this.setData( { "wsUrl": url } );
+    this.setData({ wsUrl: url });
     this.wsState = "OUTDATED";
   }
 
-  public getUrlAndHeaderForGraphQL ()
-  {
-    if ( this.gqlState === "LATEST" )
-    {
+  public getUrlAndHeaderForGraphQL() {
+    if (this.gqlState === "LATEST") {
       return null;
     }
     const result = {} as {
@@ -91,13 +89,11 @@ export class NetworkClientEntity extends Entity<
       result[key] = key === "Authorization" ? `Bearer ${value}` : value || "";
     }
     this.gqlState = "LATEST";
-    return {headers: result, url: this.getData("gqlUrl")};
+    return { headers: result, url: this.getData("gqlUrl") };
   }
 
-  public getUrlAndHeaderForWebSocket ()
-  {
-    if ( this.wsState === "LATEST" )
-    {
+  public getUrlAndHeaderForWebSocket() {
+    if (this.wsState === "LATEST") {
       return null;
     }
     const result = {} as {
@@ -114,6 +110,6 @@ export class NetworkClientEntity extends Entity<
       result[key] = value || "";
     }
     this.wsState = "LATEST";
-    return {headers: result, url: this.getData("wsUrl")};
+    return { headers: result, url: this.getData("wsUrl") };
   }
 }

@@ -7,7 +7,6 @@ import type {
   GetLatestSessionMutation,
   GetLatestSessionMutationVariables,
 } from "../../../graphql/generated/types.ts";
-import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
 import type { ICopilotSessionSetup } from "../domain/interface/copilot-session-setup.interface.ts";
 import {
   CopilotNetworkService,
@@ -15,20 +14,17 @@ import {
   GET_COPILOT_SUBSCRIPTION_COUNT,
   GET_LATEST_SESSION,
 } from "./copilot-network.ts";
-import type { IWebSocketClient } from "../../shared/domain/interface/websocket-client.interface.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
 import type { ProjectEntity } from "../domain/entity/project.entity.ts";
-import type { ICrdtSchemaLifecycle } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
+import type { OnlineAccount } from "../../account/domain/service/online-account.service.ts";
 
 export class CopilotSessionSetup implements ICopilotSessionSetup {
-  constructor(
-    private gqlClient: IGQLClient,
-    private wsClient: IWebSocketClient,
-    private crdtSchemaLifecycleFactory: ICrdtSchemaLifecycle,
-  ) {}
+  constructor(private account: OnlineAccount) {}
 
-  async createNewSession(project: ProjectEntity): Promise<ICopilotNetworkService> {
-    const result = await this.gqlClient.gqlRequest<
+  async createNewSession(
+    project: ProjectEntity,
+  ): Promise<ICopilotNetworkService> {
+    const result = await this.account.gqlClient.gqlRequest<
       CreateCopilotSessionMutation,
       CreateCopilotSessionMutationVariables
     >(CREATE_COPILOT_SESSION, {
@@ -36,14 +32,15 @@ export class CopilotSessionSetup implements ICopilotSessionSetup {
       sessionType: "COPILOT",
     });
     return new CopilotNetworkService(
-      this.gqlClient,
-      this.wsClient,
+      this.account.gqlClient,
+      this.account.wsClient,
       result.createCopilotSession,
-      await this.crdtSchemaLifecycleFactory(project).schemaGraph(),
     );
   }
-  private async getLatestSession(project: ProjectEntity): Promise<ICopilotNetworkService> {
-    const latestSessionResult = await this.gqlClient.gqlRequest<
+  private async getLatestSession(
+    project: ProjectEntity,
+  ): Promise<ICopilotNetworkService> {
+    const latestSessionResult = await this.account.gqlClient.gqlRequest<
       GetLatestSessionMutation,
       GetLatestSessionMutationVariables
     >(GET_LATEST_SESSION, {
@@ -52,15 +49,14 @@ export class CopilotSessionSetup implements ICopilotSessionSetup {
     });
     return latestSessionResult.latestSession
       ? new CopilotNetworkService(
-          this.gqlClient,
-          this.wsClient,
+          this.account.gqlClient,
+          this.account.wsClient,
           latestSessionResult.latestSession,
-          await this.crdtSchemaLifecycleFactory.create(project).schemaGraph(),
         )
       : this.createNewSession(project);
   }
   private async getSubscriptionCount(project: ProjectEntity): Promise<number> {
-    const copilotSubscriptionCount = await this.gqlClient.gqlRequest<
+    const copilotSubscriptionCount = await this.account.gqlClient.gqlRequest<
       GetCopilotSubscriptionCountQuery,
       GetCopilotSubscriptionCountQueryVariables
     >(GET_COPILOT_SUBSCRIPTION_COUNT, {

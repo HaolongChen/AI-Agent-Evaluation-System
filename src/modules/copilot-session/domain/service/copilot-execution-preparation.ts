@@ -5,26 +5,32 @@ import { ProjectEntity } from "../entity/project.entity.ts";
 import { ZionProjectEntity } from "../entity/zion-project.entity.ts";
 import type { IZionProjectService } from "../interface/zion-project.interface.ts";
 
-export class CopilotExecutionPreparationService
-{
-  constructor ( private zionProjectService: IZionProjectService ) {}
+export class CopilotExecutionPreparationService {
+  constructor(private zionProjectService: IZionProjectService) {}
 
-  zionProjectToProject ( zionProject: ZionProjectEntity ): ProjectEntity
-  {
-    const projectExId = zionProject.getData( "projectExId" );
-    if ( !projectExId )    {
-      throw new Error( "projectExId is required in ZionProjectEntity to transform to ProjectEntity" );
+  zionProjectToProject(zionProject: ZionProjectEntity): ProjectEntity {
+    const projectExId = zionProject.getData("projectExId");
+    if (!projectExId) {
+      throw new Error(
+        "projectExId is required in ZionProjectEntity to transform to ProjectEntity",
+      );
     }
-    return new ProjectEntity( {...zionProject.getData(), projectExId} );
+    return new ProjectEntity({ ...zionProject.getData(), projectExId });
   }
 
-  async createZionProject ( copilotInput: CopilotInputAggregate, copilotServer: CopilotServerEntity, projectNameServiceFactory: ProjectNameServiceFactory = new ProjectNameServiceFactory() ): Promise<ProjectEntity>
-  {
-    const projectNameService = projectNameServiceFactory.initializeByCopilotInput(copilotInput);
-    const zionProject = new ZionProjectEntity( { projectName: projectNameService.generateProjectName() } );
-    const project = this.zionProjectToProject(await this.zionProjectService.createZionProject( zionProject ));
+  async createZionProject(
+    copilotInput: CopilotInputAggregate,
+    copilotServer: CopilotServerEntity,
+    projectNameServiceFactory: ProjectNameServiceFactory = new ProjectNameServiceFactory(),
+  ): Promise<ProjectEntity> {
+    const projectNameService =
+      projectNameServiceFactory.initializeByCopilotInput(copilotInput);
+    const zionProject = new ZionProjectEntity({
+      projectName: projectNameService.generateProjectName(),
+    });
+    const project = this.zionProjectToProject(
+      await this.zionProjectService.createZionProject(zionProject),
+    );
     return project;
   }
-
-
 }

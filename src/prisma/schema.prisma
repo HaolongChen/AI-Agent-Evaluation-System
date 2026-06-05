@@ -94,14 +94,14 @@ model project {
 }
 
 model copilotOutput {
-  id           String   @id @default(uuid())
-  copilotSessionExId String @unique
-  project      project  @relation(fields: [projectId], references: [id])
-  editableText String   @map("output_content") // copilot output
-  aiResponse   String   @map("ai_response") // AI response
-  tasks        Json[]   @map("tasks") // array of tasks extracted from the copilot output, useful for evaluation agents to understand what the copilot is trying to do
-  projectId    String   @unique
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id                 String   @id @default(uuid())
+  copilotSessionExId String   @unique
+  project            project  @relation(fields: [projectId], references: [id])
+  editableText       String   @map("output_content") // copilot output
+  aiResponse         String   @map("ai_response") // AI response
+  tasks              Json[]   @map("tasks") // array of tasks extracted from the copilot output, useful for evaluation agents to understand what the copilot is trying to do
+  projectId          String   @unique
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   rubrics rubric[] @relation("copilotOutput_rubric")
 }

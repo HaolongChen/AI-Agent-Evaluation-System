@@ -30,5 +30,4 @@ export type CopilotInputEventsList = {
   [K in keyof CopilotInputMessage]: CopilotInputEvent<K>;
 };
 
-
 export type CopilotEventType = [CopilotEventsList[keyof CopilotEventsList]];

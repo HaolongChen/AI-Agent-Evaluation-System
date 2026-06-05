@@ -14,17 +14,14 @@ export class CreateProjectUseCase {
     },
   ) {}
 
-  async execute(
-    copilotInput: CopilotInputAggregate,
-
-  ): Promise<ProjectEntity> {
+  async execute(copilotInput: CopilotInputAggregate): Promise<ProjectEntity> {
     const zionProject = new ZionProjectEntity({
       projectName: generateProjectName(
         copilotInput.getEntity("goldenSet").getData("id"),
         copilotInput.getEntity("userInput").getData("id"),
       ),
     });
-    await this.repository.ZionProjectService.createZionProject( zionProject );
+    await this.repository.ZionProjectService.createZionProject(zionProject);
     return new ProjectEntity(zionProject);
   }
 }

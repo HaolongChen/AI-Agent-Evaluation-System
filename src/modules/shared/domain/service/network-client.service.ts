@@ -8,7 +8,7 @@ export class NetworkClientService {
   private _webSocketClient: IWebSocketClient;
   constructor(
     private networkService: INetworkClient,
-    public networkServer: NetworkClientEntity,
+    private networkServer: NetworkClientEntity,
   ) {
     const gqlInfo = this.networkServer.getUrlAndHeaderForGraphQL();
     const wsInfo = this.networkServer.getUrlAndHeaderForWebSocket();

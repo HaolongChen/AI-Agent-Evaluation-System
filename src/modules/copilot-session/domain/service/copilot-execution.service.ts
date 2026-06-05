@@ -6,7 +6,9 @@ import type { TypeNameList } from "../schema/copilot.schema.ts";
 
 export class CopilotExecutionService {
   private copilotEvent: EventTarget<CopilotEventType> = new EventTarget();
-  constructor(private copilotNetworkService: ICopilotNetworkService) {}
+  constructor(private copilotNetworkService: ICopilotNetworkService) {
+    this.copilotEvent.addEventListener("");
+  }
   protected executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
 
   register<T extends keyof TypeNameList>(

@@ -3,7 +3,7 @@ import { generateProjectName } from "../../dataset/domain/service/generate-proje
 import { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 import { ProjectEntity } from "../domain/entity/project.entity.ts";
 import { ZionProjectEntity } from "../domain/entity/zion-project.entity.ts";
-import type { IProjectRepository } from "../domain/interface/project.interface.ts";
+import type { IProjectRepository } from "../domain/interface/project-repository.interface.ts";
 import type { IZionProjectService } from "../domain/interface/zion-project.interface.ts";
 
 export class CreateProjectUseCase {

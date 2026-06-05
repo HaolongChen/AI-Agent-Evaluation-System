@@ -9,22 +9,13 @@ export class AccountEntity extends Entity<
   typeof accountSchema,
   { accountInfo?: AccountInfo } & EntityMetadata
 > {
-  private isLoggedIn: boolean = false;
-  constructor(entity: AccountEntity);
-  constructor(data: z.infer<typeof accountSchema>, id?: string);
-  constructor(
-    argument1: AccountEntity | z.infer<typeof accountSchema>,
-    argument2?: string,
-  ) {
-    if (argument1 instanceof AccountEntity) {
-      super(argument1);
-      this.isLoggedIn = argument1.isLoggedIn;
-    } else {
-      super(argument1, accountSchema, { id: argument2 });
-    }
+  public isLoggedIn: boolean = false;
+
+  constructor(data: z.infer<typeof accountSchema>, id?: string) {
+    super(data, accountSchema, { id });
   }
 
-  protected setAccountInfo(accountInfo: AccountInfo) {
+  setAccountInfo(accountInfo: AccountInfo) {
     this.setData({ accountInfo: accountInfo });
     this.isLoggedIn = true;
   }
@@ -37,7 +28,7 @@ export class AccountEntity extends Entity<
     return accountInfo;
   }
 
-  protected getLoginParameters(): z.infer<typeof accountSchema> {
+  getLoginParameters(): z.infer<typeof accountSchema> {
     return {
       phoneNumber: this.getData("phoneNumber"),
       password: this.getData("password"),
@@ -68,7 +59,7 @@ export class AccountEntity extends Entity<
     return token;
   }
 
-  protected clearToken() {
+  clearToken() {
     this.setAccountInfo({} as AccountInfo);
     this.isLoggedIn = false;
   }

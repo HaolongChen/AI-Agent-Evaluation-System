@@ -4,7 +4,7 @@ import type { CopilotEventType } from "../domain/entity/copilot-job.entity.ts";
 import { EventTarget } from "ts-event-target";
 import type { ICopilotSessionSetupFactory } from "../domain/interface/copilot-session-setup.interface.ts";
 import type { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
-import type { IProjectRepository } from "../domain/interface/project.interface.ts";
+import type { IProjectRepository } from "../domain/interface/project-repository.interface.ts";
 import { CopilotOutputFactory } from "../domain/service/copilot-output-factory.ts";
 
 export class ExecuteCopilotUseCase {

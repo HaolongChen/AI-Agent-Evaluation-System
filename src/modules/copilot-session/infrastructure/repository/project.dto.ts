@@ -1,8 +1,8 @@
 import { repositoryDateMapper } from "../../../shared/infrastructure/repository.ts";
 import {
+  ProjectAfterSession,
   ProjectAggregate,
-  type ProjectAfterSession,
-  type ProjectBeforeCopilotSession,
+  ProjectBeforeCopilotSession,
 } from "../../domain/aggregate/project.aggregate.ts";
 import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import { ProjectEntity } from "../../domain/entity/project.entity.ts";
@@ -16,6 +16,15 @@ export type RawProjectRepositoryType = {
   projectName: string;
   createdAt: Date;
   createdBy: string;
+};
+
+export type CopilotOutputRepositoryType = {
+  id: string;
+  editableText: string;
+  copilotSessionExId: string;
+  tasks: unknown[];
+  aiResponse: string;
+  createdAt: Date;
 };
 
 export const projectEntityDataMapper = (
@@ -41,12 +50,18 @@ export const copilotOutputDataMapper = (
 
 export const rawProjectDataMapper = (
   data: RawProjectRepositoryType,
-  aggregate?: ProjectAggregate,
-): ProjectAggregate => {
-  return new ProjectAggregate(
-    projectEntityDataMapper(data, aggregate),
+  aggregate?: ProjectBeforeCopilotSession,
+): ProjectBeforeCopilotSession => {
+  if (aggregate) {
+    return repositoryDateMapper(data, aggregate);
+  }
+  return repositoryDateMapper(
     data,
-    {},
+    new ProjectBeforeCopilotSession(
+      data.copilotInputId,
+      data.copilotServerId,
+      projectEntityDataMapper(data),
+    ),
   );
 };
 
@@ -62,4 +77,7 @@ export const projectWithCopilotSessionDataMapper = (
       aggregate.getEntity("copilotOutput"),
     );
   }
+  const project = rawProjectDataMapper(data);
+  const copilotOutput = copilotOutputDataMapper(data.copilotOutput);
+  return new ProjectAfterSession(project, data, { copilotOutput });
 };

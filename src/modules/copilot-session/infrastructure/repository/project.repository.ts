@@ -14,11 +14,14 @@ import { repositoryDateMapper } from "../../../shared/infrastructure/repository.
 import {
   ProjectAfterSession,
   ProjectAggregate,
-  ProjectWithCopilotSession,
+  type ProjectBeforeCopilotSession,
 } from "../../domain/aggregate/project.aggregate.ts";
-import { CopilotOutputEntity } from "../../domain/entity/copilot-output.entity.ts";
 import { ProjectEntity } from "../../domain/entity/project.entity.ts";
-import { type IProjectRepository } from "../../domain/interface/project.interface.ts";
+import { type IProjectRepository } from "../../domain/interface/project-repository.interface.ts";
+import {
+  copilotOutputDataMapper,
+  projectEntityDataMapper,
+} from "./project.dto.ts";
 
 export type ProjectRepositoryType = {
   id: string;
@@ -28,8 +31,6 @@ export type ProjectRepositoryType = {
   projectName: string;
   createdAt: Date;
   createdBy: string;
-  copilotServer?: CopilotServerRepositoryType;
-  copilotInput?: CopilotInputRepositoryType;
   copilotOutput: CopilotOutputRepositoryType;
 };
 
@@ -43,73 +44,13 @@ export type CopilotOutputRepositoryType = {
 };
 
 export type ProjectDataMapperParameters = {
-  copilotInput?: {
-    aggregate?: CopilotInputAggregate;
-    entity?: CopilotInputDataMapperParameter;
-  };
-  copilotServer?: CopilotServerEntity;
   aggregate?: ProjectAggregate;
 };
 
-/**
- * State 1: copilot session and copilot output are absent
- * State 2: copilot session is present but copilot output is absent
- * State 3: both copilot session and copilot output are present
- * The data mapper should be able to handle all three states when mapping from repository data to aggregate, and when mapping from aggregate to repository data
- */
-export const rawProjectDataMapper = (
-  data: {
-    id: string;
-    copilotInputId: string;
-    copilotServerId: string;
-    projectExId: string;
-    projectName: string;
-    createdAt: Date;
-    createdBy: string;
-    copilotServer?: CopilotServerRepositoryType;
-    copilotInput?: CopilotInputRepositoryType;
-  },
-  entity?: {
-    copilotInput?: {
-      aggregate?: CopilotInputAggregate;
-      entity?: CopilotInputDataMapperParameter;
-    };
-    copilotServer?: CopilotServerEntity;
-  },
-): ProjectAggregate => {
-  // state 1 starts
-  const copilotInput =
-    entity?.copilotInput?.aggregate ??
-    (data.copilotInput
-      ? copilotInputDataMapper(
-          data.copilotInput,
-          entity?.copilotInput?.entity,
-          entity?.copilotInput?.aggregate,
-        )
-      : undefined);
-  const copilotServer = data.copilotServer
-    ? copilotServerDataMapper(data.copilotServer, entity?.copilotServer)
-    : undefined;
-  if (!copilotInput || !copilotServer) {
-    throw new Error("Missing required data for CopilotSessionAggregate");
-  }
-  return new ProjectAggregate(
-    copilotInput,
-    copilotServer,
-    projectEntityDataMapper(data),
-  );
-};
-
-export const projectDataMapper = (
-  data: ProjectRepositoryType,
-  entity?: ProjectDataMapperParameters,
-): ProjectAfterSession => {
-  const project = projectEntityDataMapper(data, entity?.aggregate);
-  const copilotOutput = copilotOutputDataMapper(data.copilotOutput);
-  return new ProjectAfterSession(project, copilotOutput);
-};
-
 export class ProjectRepository implements IProjectRepository {
+  saveCopilotOutput(data: ProjectAfterSession): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
   async getByCopilotServer(
     copilotServer: CopilotServerEntity,
   ): Promise<Array<ProjectEntity>> {
@@ -118,12 +59,7 @@ export class ProjectRepository implements IProjectRepository {
         copilotServerId: copilotServer.getData("id"),
       },
       include: {
-        copilotInput: { include: { goldenSet: true, userInput: true } },
-        copilotSession: {
-          include: {
-            copilotOutput: true,
-          },
-        },
+        copilotOutput: true,
       },
     });
     return projects.map((project) => projectDataMapper(project));
@@ -136,12 +72,7 @@ export class ProjectRepository implements IProjectRepository {
         copilotInputId: copilotInput.getData("id"),
       },
       include: {
-        copilotServer: true,
-        copilotSession: {
-          include: {
-            copilotOutput: true,
-          },
-        },
+        copilotOutput: true,
       },
     });
     return projects.map((project) =>
@@ -151,74 +82,19 @@ export class ProjectRepository implements IProjectRepository {
   async deleteById(id: string): Promise<void> {
     await prisma.project.delete({ where: { id } });
   }
-  async save(data: ProjectAggregate): Promise<void> {
-    const sessionId = data.copilotSessionExId;
-    const output = data.getEntity("copilotOutput");
+  async save(data: ProjectBeforeCopilotSession): Promise<void> {
     const project = await prisma.project.upsert({
-      where: { id: data.getData("id") },
-      include: {
-        copilotSession: {
-          include: { copilotOutput: true },
-        },
+      where: {
+        id: data.getData("id"),
+        copilotInputId: data.getData("copilotInputId"),
+        copilotServerId: data.getData("copilotServerId"),
       },
+
       update: {
-        ...(sessionId
-          ? {
-              copilotSession: {
-                upsert: {
-                  where: { id: sessionId },
-                  update: {
-                    ...(output
-                      ? {
-                          copilotOutput: {
-                            upsert: {
-                              where: { copilotSessionExId: sessionId },
-                              update: { ...output.getData() },
-                              create: { ...output.getData() },
-                            },
-                          },
-                        }
-                      : {}),
-                  },
-                  create: {
-                    ...(output
-                      ? {
-                          copilotOutput: {
-                            create: {
-                              ...output.getData(),
-                            },
-                          },
-                        }
-                      : {}),
-                  },
-                },
-              },
-            }
-          : {}),
+        projectExId: data.getData("projectExId"),
+        projectName: data.getData("projectName"),
       },
-      create: {
-        ...data.getData(),
-        copilotInputId: data.getEntity("copilotInput").getData("id"),
-        copilotServerId: data.copilotServerId,
-        ...(sessionId
-          ? {
-              copilotSession: {
-                create: {
-                  id: sessionId,
-                  ...(output
-                    ? {
-                        copilotOutput: {
-                          create: {
-                            ...output.getData(),
-                          },
-                        },
-                      }
-                    : {}),
-                },
-              },
-            }
-          : {}),
-      },
+      create: { ...data.getData() },
     });
     projectDataMapper(project, { aggregate: data });
   }
@@ -227,17 +103,7 @@ export class ProjectRepository implements IProjectRepository {
     const project = await prisma.project.findUnique({
       where: { id },
       include: {
-        copilotInput: {
-          include: {
-            goldenSet: true,
-            userInput: true,
-          },
-        },
-        copilotSession: {
-          include: {
-            copilotOutput: true,
-          },
-        },
+        copilotOutput: true,
       },
     });
     if (!project) {

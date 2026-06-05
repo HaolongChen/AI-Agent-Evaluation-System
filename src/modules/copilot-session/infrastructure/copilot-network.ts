@@ -13,10 +13,6 @@ import {
   CopilotEvent,
   type CopilotEventsList,
 } from "../domain/entity/copilot-job.entity.ts";
-import {
-  inputMessageTypeList,
-  type CopilotInputMessage,
-} from "../domain/schema/copilot.schema.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import {
   ClientType,
@@ -27,6 +23,10 @@ import {
   type CopilotApiResultJs,
   type OpaqueSchemaGraph,
 } from "../../shared/domain/interface/type-system.ts";
+import {
+  type CopilotInputMessage,
+  inputMessageTypeList,
+} from "../domain/schema/project.schema.ts";
 
 export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
   query GetCopilotSubscriptionCount(

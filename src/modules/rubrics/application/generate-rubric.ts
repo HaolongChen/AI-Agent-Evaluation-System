@@ -12,7 +12,7 @@ import {
   type Feedbacks,
 } from "../domain/service/feedback.service.js";
 import { randomUUID } from "node:crypto";
-import type { IProjectRepository } from "../../copilot-session/domain/interface/project.interface.ts";
+import type { IProjectRepository } from "../../copilot-session/domain/interface/project-repository.interface.ts";
 
 export class GenerateRubricUseCase {
   constructor(

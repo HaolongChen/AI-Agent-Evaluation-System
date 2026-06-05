@@ -1,39 +1,22 @@
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import { ProjectEntity } from "../entity/project.entity.ts";
-import { projectSchema } from "../schema/project.schema.ts";
-import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
+import {
+  projectSchema,
+  type CopilotExecutionLogs,
+  type ProjectAggregateMetadata,
+} from "../schema/project.schema.ts";
 import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
-import type { z } from "zod";
-import { copilotOutputSchema } from "../schema/copilot-output.schema.ts";
 import type {
   Entity,
   EntityMetadata,
   OneOrMany,
 } from "../../../shared/domain/entity/entity.ts";
-import type { GoldenSetEntity } from "../../../dataset/domain/entity/golden-set.entity.ts";
-import type { UserInputEntity } from "../../../dataset/domain/entity/user-input.entity.ts";
 import { CopilotOutputEntity } from "../entity/copilot-output.entity.ts";
 
-export type CopilotExecutionLogs = {
-  [K in keyof Omit<
-    z.infer<typeof copilotOutputSchema>,
-    "copilotSessionExId"
-  >]: z.infer<typeof copilotOutputSchema>[K] extends string
-    ? z.infer<typeof copilotOutputSchema>[K] | undefined
-    : z.infer<typeof copilotOutputSchema>[K];
-};
 export type ProjectToSessionDetails = {
   copilotSessionExId: string;
-  copilotServerData: ReturnType<CopilotServerEntity["getData"]>;
-  copilotInputData: {
-    goldenSetData: ReturnType<GoldenSetEntity["getData"]>;
-    userInputData: ReturnType<UserInputEntity["getData"]>;
-  };
-};
-
-export type ProjectAggregateMetadata = EntityMetadata & {
-  copilotInputId: string;
-  copilotServerId: string;
+  schemaId: string;
+  userInput: string;
 };
 
 export class ProjectAggregate<
@@ -61,32 +44,19 @@ export class ProjectAggregate<
 export class ProjectBeforeCopilotSession extends ProjectAggregate<
   ProjectAggregateMetadata & { copilotSessionExId?: string }
 > {
-  private copilotInputData: {
-    goldenSetData: ReturnType<GoldenSetEntity["getData"]>;
-    userInputData: ReturnType<UserInputEntity["getData"]>;
-  };
-
-  get userInput(): string {
-    return this.copilotInputData.userInputData.content;
-  }
-
   constructor(
-    copilotInputAggregate: CopilotInputAggregate,
-    copilotServer: CopilotServerEntity,
+    copilotInputId: string,
+    copilotServerId: string,
     projectEntity: ProjectEntity,
   ) {
     super(
       projectEntity,
       {
-        copilotInputId: copilotInputAggregate.getData("id"),
-        copilotServerId: copilotServer.getData("id"),
+        copilotInputId,
+        copilotServerId,
       },
       {},
     );
-    this.copilotInputData = {
-      goldenSetData: copilotInputAggregate.getEntity("goldenSet").getData(),
-      userInputData: copilotInputAggregate.getEntity("userInput").getData(),
-    };
   }
 }
 
@@ -101,7 +71,7 @@ export class ProjectWithCopilotSession extends AggregateRoot<
     );
     super(project, {});
   }
-  protected executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
+  public executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
 
   setAiResponse(aiResponse: string) {
     if (this.executionLogs.aiResponse) {
@@ -127,18 +97,6 @@ export class ProjectWithCopilotSession extends AggregateRoot<
     } else {
       this.executionLogs.tasks = [task];
     }
-  }
-  buildCopilotOutput(): CopilotOutputEntity {
-    const { aiResponse, editableText, tasks } = this.executionLogs;
-    if (!aiResponse || !editableText) {
-      throw new Error("Missing execution logs to build CopilotOutputEntity.");
-    }
-    return new CopilotOutputEntity({
-      aiResponse,
-      editableText,
-      tasks,
-      copilotSessionExId: super.getData("copilotSessionExId"),
-    });
   }
 }
 

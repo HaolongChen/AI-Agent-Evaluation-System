@@ -1,31 +1,101 @@
-import type { OnlineAccount } from "../../account/domain/service/online-account.service.ts";
+import { z } from "zod";
+import type {
+  CreateCopilotSessionMutation,
+  CreateCopilotSessionMutationVariables,
+  GetCopilotSubscriptionCountQuery,
+  GetLatestSessionMutation,
+  GetLatestSessionMutationVariables,
+  GetCopilotSubscriptionCountQueryVariables,
+} from "../../../graphql/generated/types.ts";
 import type { ProjectBeforeCopilotSession } from "../domain/aggregate/project.aggregate.ts";
-import type { ProjectEntity } from "../domain/entity/project.entity.ts";
+import { ProjectEntity } from "../domain/entity/project.entity.ts";
+import type { ZionProjectEntity } from "../domain/entity/zion-project.entity.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
-import type { ICopilotSessionSetup } from "../domain/interface/copilot-session-setup.interface.ts";
 import type { ICrdtSchemaLifecycle } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
 import type { IProjectService } from "../domain/interface/project-service.interface.ts";
-import { CopilotNetworkService } from "./copilot-network.ts";
+import {
+  CopilotNetworkService,
+  CREATE_COPILOT_SESSION,
+  GET_COPILOT_SUBSCRIPTION_COUNT,
+  GET_LATEST_SESSION,
+} from "./copilot-network.ts";
 import { TypeSystemStore } from "./crdt-schema-manager.ts";
-import { deleteProjectInZion } from "./project-manager.ts";
+import { createZionProject, deleteProjectInZion } from "./project-manager.ts";
+import type { NetworkAccount } from "../../account/domain/service/account.service.ts";
 
 export class ProjectService implements IProjectService {
   constructor(
-    private myAccount: OnlineAccount,
-    private dangerousAccount: OnlineAccount,
-    private copilotSessionSetup: ICopilotSessionSetup,
+    private myAccount: NetworkAccount,
+    private dangerousAccount: NetworkAccount,
   ) {}
+
+  private async createNewSession(project: ProjectEntity): Promise<string> {
+    const result = await this.myAccount.gqlClient.gqlRequest<
+      CreateCopilotSessionMutation,
+      CreateCopilotSessionMutationVariables
+    >(CREATE_COPILOT_SESSION, {
+      projectExId: project.getData("projectExId"),
+      sessionType: "COPILOT",
+    });
+    return result.createCopilotSession;
+  }
+  private async getLatestSession(
+    project: ProjectEntity,
+  ): Promise<string | null> {
+    const latestSessionResult = await this.myAccount.gqlClient.gqlRequest<
+      GetLatestSessionMutation,
+      GetLatestSessionMutationVariables
+    >(GET_LATEST_SESSION, {
+      projectExId: project.getData("projectExId"),
+      sessionType: "COPILOT",
+    });
+    return latestSessionResult.latestSession;
+  }
+  private async getSubscriptionCount(project: ProjectEntity): Promise<number> {
+    const copilotSubscriptionCount = await this.myAccount.gqlClient.gqlRequest<
+      GetCopilotSubscriptionCountQuery,
+      GetCopilotSubscriptionCountQueryVariables
+    >(GET_COPILOT_SUBSCRIPTION_COUNT, {
+      projectExId: project.getData("projectExId"),
+      sessionType: "COPILOT",
+    });
+    const count = z.coerce
+      .number()
+      .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
+    if (!count.success) {
+      throw new Error(count.error.message);
+    }
+    return count.data;
+  }
+
+  async createProjectInZion(
+    project: ZionProjectEntity,
+  ): Promise<ProjectEntity> {
+    const createdProject = await createZionProject(
+      this.myAccount.gqlClient,
+      this.myAccount.wsClient,
+      this.myAccount.account.getOrganizationExId(),
+      project,
+    );
+    return new ProjectEntity(
+      {
+        ...project.getData(),
+        projectExId: createdProject,
+      },
+      {},
+    );
+  }
 
   async createCopilotSession(
     project: ProjectBeforeCopilotSession,
+    userInput: string,
   ): Promise<ICopilotNetworkService> {
-    const sessionExId =
-      await this.copilotSessionSetup.createNewSession(project);
+    const sessionExId = await this.createNewSession(project);
     return new CopilotNetworkService(
       this.myAccount.gqlClient,
       this.myAccount.wsClient,
       sessionExId,
-      project.userInput,
+      userInput,
       await this.getCrdtSchemaLifecycle(project).schemaGraph(),
     );
   }

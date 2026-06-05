@@ -6,7 +6,7 @@ import { RubricRepository } from "../modules/rubrics/infrastructure/repository/r
 import { CopilotInputRepository } from "../modules/dataset/infrastructure/repository/copilot-input.repository.ts";
 import type { ICopilotInputRepository } from "../modules/dataset/domain/interface/copilot-input.interface.ts";
 import type { IGoldenSetRepository } from "../modules/dataset/domain/interface/golden-set.interface.ts";
-import type { IProjectRepository } from "../modules/copilot-session/domain/interface/project.interface.ts";
+import type { IProjectRepository } from "../modules/copilot-session/domain/interface/project-repository.interface.ts";
 import type { IUserInputRepository } from "../modules/dataset/domain/interface/user-input.interface.ts";
 import { GoldenSetRepository } from "../modules/dataset/infrastructure/repository/golden-set.repository.ts";
 import { ProjectRepository } from "../modules/copilot-session/infrastructure/repository/project.repository.ts";

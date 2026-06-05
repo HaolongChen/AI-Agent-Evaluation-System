@@ -1,36 +1,42 @@
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
+import { type CopilotServerClient } from "../../../dataset/domain/service/copilot-server-client.ts";
 import { ProjectNameServiceFactory } from "../../../dataset/domain/service/generate-project-name.service.ts";
-import { ProjectEntity } from "../entity/project.entity.ts";
+import { ProjectBeforeCopilotSession } from "../aggregate/project.aggregate.ts";
 import { ZionProjectEntity } from "../entity/zion-project.entity.ts";
+import type { ICopilotNetworkService } from "../interface/copilot-network.interface.ts";
+import type { IProjectService } from "../interface/project-service.interface.ts";
 import type { IZionProjectService } from "../interface/zion-project.interface.ts";
 
-export class CopilotExecutionPreparationService {
-  constructor(private zionProjectService: IZionProjectService) {}
+export class CopilotSessionSetupService {
+  constructor(
+    private zionProjectService: IZionProjectService,
+    private projectService: IProjectService,
+    private projectNameServiceFactory: ProjectNameServiceFactory,
+    private copilotServerClient: CopilotServerClient,
+  ) {}
 
-  zionProjectToProject(zionProject: ZionProjectEntity): ProjectEntity {
-    const projectExId = zionProject.getData("projectExId");
-    if (!projectExId) {
-      throw new Error(
-        "projectExId is required in ZionProjectEntity to transform to ProjectEntity",
-      );
-    }
-    return new ProjectEntity({ ...zionProject.getData(), projectExId });
-  }
-
-  async createZionProject(
+  async execute(
     copilotInput: CopilotInputAggregate,
     copilotServer: CopilotServerEntity,
-    projectNameServiceFactory: ProjectNameServiceFactory = new ProjectNameServiceFactory(),
-  ): Promise<ProjectEntity> {
+  ): Promise<ICopilotNetworkService> {
+    this.setupCopilotServer(copilotServer);
     const projectNameService =
-      projectNameServiceFactory.initializeByCopilotInput(copilotInput);
+      this.projectNameServiceFactory.initializeByCopilotInput(copilotInput);
     const zionProject = new ZionProjectEntity({
       projectName: projectNameService.generateProjectName(),
     });
-    const project = this.zionProjectToProject(
-      await this.zionProjectService.createZionProject(zionProject),
+    const projectEntity =
+      await this.zionProjectService.createZionProject(zionProject);
+    const projectBeforeSession = new ProjectBeforeCopilotSession(
+      copilotInput,
+      copilotServer,
+      projectEntity,
     );
-    return project;
+    return this.projectService.createCopilotSession(projectBeforeSession);
+  }
+
+  private setupCopilotServer(copilotServerData: CopilotServerEntity) {
+    this.copilotServerClient.acquire(copilotServerData);
   }
 }

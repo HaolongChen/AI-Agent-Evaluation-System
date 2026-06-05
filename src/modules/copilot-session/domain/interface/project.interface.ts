@@ -2,13 +2,14 @@ import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/co
 import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
 import type { IRepository } from "../../../shared/domain/interface/repository.interface.ts";
 import type { ProjectAggregate } from "../aggregate/project.aggregate.ts";
+import type { ProjectEntity } from "../entity/project.entity.ts";
 
 export interface IProjectRepository extends IRepository<ProjectAggregate> {
   getByCopilotInput(
     copilotInput: CopilotInputAggregate,
-  ): Promise<Array<ProjectAggregate>>;
+  ): Promise<Array<ProjectEntity>>;
   getByCopilotServer(
     copilotServer: CopilotServerEntity,
-  ): Promise<Array<ProjectAggregate>>;
+  ): Promise<Array<ProjectEntity>>;
   deleteById(id: string): Promise<void>;
 }

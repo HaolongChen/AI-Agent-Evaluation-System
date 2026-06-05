@@ -14,3 +14,11 @@ export class CopilotServerClient {
     this.networkClient.setWebSocketUrl(copilotServer.getData("wsEndpoint"));
   }
 }
+
+export const adoptCopilotServer = (
+  networkClient: NetworkClientEntity,
+  copilotServer: CopilotServerEntity,
+) => {
+  networkClient.setGraphQLUrl(copilotServer.getData("gqlEndpoint"));
+  networkClient.setWebSocketUrl(copilotServer.getData("wsEndpoint"));
+};

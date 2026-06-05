@@ -1,6 +1,7 @@
 import type { ProjectEntity } from "../entity/project.entity.ts";
-import type { ICopilotNetworkService } from "./copilot-network.interface.ts";
 
 export interface ICopilotSessionSetup {
-  createNewSession(project: ProjectEntity): Promise<ICopilotNetworkService>;
+  createNewSession(project: ProjectEntity): Promise<string>;
+
+  getLatestSession(project: ProjectEntity): Promise<string | null>;
 }

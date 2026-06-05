@@ -1,5 +1,4 @@
 import {
-  type CopilotInputMessage,
   type CopilotMessageContentMap,
   type TypeNameList,
 } from "../schema/copilot.schema.ts";
@@ -13,21 +12,6 @@ export class CopilotEvent<T extends keyof TypeNameList> extends Event<T> {
     super(type);
   }
 }
-
-export class CopilotInputEvent<
-  T extends keyof CopilotInputMessage,
-> extends Event<T> {
-  constructor(
-    type: T,
-    readonly data: CopilotInputMessage[T],
-  ) {
-    super(type);
-  }
-}
-
 export type CopilotEventsList = { [K in keyof TypeNameList]: CopilotEvent<K> };
-export type CopilotInputEventsList = {
-  [K in keyof CopilotInputMessage]: CopilotInputEvent<K>;
-};
 
 export type CopilotEventType = [CopilotEventsList[keyof CopilotEventsList]];

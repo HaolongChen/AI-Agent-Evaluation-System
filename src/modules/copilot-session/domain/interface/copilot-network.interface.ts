@@ -3,20 +3,14 @@ import type {
   CopilotEvent,
   CopilotEventsList,
 } from "../entity/copilot-job.entity.ts";
-import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
+// import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
 
 export interface ICopilotNetworkService {
-  sessionExId: string;
-  sendMessageToSession<T extends keyof CopilotInputMessage>(
-    type: T,
-    message: CopilotInputMessage[T],
-  ): Promise<void>;
-
-  delegateCopilotToolCall(
+  delegateCopilotToolCalls(
     event: CopilotEvent<"CopilotToolCallBatchMessage">,
   ): CopilotApiResultJs;
 
-  sendHumanMessage(content: string): Promise<void>;
+  sendHumanMessage(): Promise<void>;
 
   sendHumanOperationMessage(): Promise<void>;
 

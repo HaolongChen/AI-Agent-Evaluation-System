@@ -1,3 +1,4 @@
+import type { NetworkClientEntity } from "../../../shared/domain/entity/network-client.entity.ts";
 import type { NetworkClientService } from "../../../shared/domain/service/network-client.service.ts";
 import { AccountEntity } from "../entity/account.entity.ts";
 import type { ILoginService } from "../interface/login.interface.ts";
@@ -11,6 +12,10 @@ export class OnlineAccount extends AccountEntity {
     private loginService: ILoginService,
   ) {
     super(account);
+  }
+
+  get networkClient(): NetworkClientEntity {
+    return this.networkService.networkServer;
   }
 
   async login() {

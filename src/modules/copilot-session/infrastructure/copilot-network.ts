@@ -288,24 +288,29 @@ export class CopilotNetworkService implements ICopilotNetworkService {
   constructor(
     private gqlClient: IGQLClient,
     private wsClient: IWebSocketClient,
-    public sessionExId: string,
+    private sessionExId: string,
+    private userInput: string,
+    private schemaGraph: OpaqueSchemaGraph,
   ) {}
+  sendHumanMessage(): Promise<void> {
+    return this.sendMessageToSession("HUMAN_INPUT", {
+      content: this.userInput,
+    });
+  }
 
-  private schemaGraph: OpaqueSchemaGraph | undefined;
-
-  delegateCopilotToolCall(
+  delegateCopilotToolCalls(
     event: CopilotEvent<"CopilotToolCallBatchMessage">,
   ): CopilotApiResultJs {
-    const result = this.runCopilotToolCalls(event.data.toolCalls);
+    const result = this.runCopilotToolCalls(
+      event.data.toolCalls,
+      this.schemaGraph,
+    );
     this.sendMessageToSession("TOOL_CALL_BATCH_RESPONSE", {
       toolCallBatchId: event.data.toolCallBatchId,
       responseByToolCallId: JSON.parse(result.data ?? "{}"),
       schemaDiff: result.schemaDiff,
     });
     return result;
-  }
-  async sendHumanMessage(content: string): Promise<void> {
-    return this.sendMessageToSession("HUMAN_INPUT", { content });
   }
 
   async sendHumanOperationMessage(): Promise<void> {
@@ -320,13 +325,14 @@ export class CopilotNetworkService implements ICopilotNetworkService {
 
   private runCopilotToolCalls(
     toolCalls: CopilotToolCallBatchMessageFragment_toolCalls[],
+    schemaGraph: OpaqueSchemaGraph,
   ): CopilotApiResultJs {
     const product = Product.ZION;
     const clientType = ClientType.WEB;
     const locale = Locale.ZH;
     return ZTypeCopilotApi.toolCalls(
       ZTypeCoreApi.genZTypeApiContext(
-        this.schemaGraph!,
+        schemaGraph,
         product,
         clientType,
         "WEB",
@@ -344,7 +350,7 @@ export class CopilotNetworkService implements ICopilotNetworkService {
     );
   }
 
-  async sendMessageToSession<T extends keyof CopilotInputMessage>(
+  private async sendMessageToSession<T extends keyof CopilotInputMessage>(
     type: T,
     message: CopilotInputMessage[T],
   ): Promise<void> {

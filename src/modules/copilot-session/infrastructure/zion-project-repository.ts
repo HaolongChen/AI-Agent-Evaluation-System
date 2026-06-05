@@ -14,11 +14,13 @@ export class ZionProjectService implements IZionProjectService {
       this.myAccount.getOrganizationExId(),
       project,
     );
-    project.setData({ projectExId: createdProject });
-    return new ProjectEntity({
-      ...project.getData(),
-      projectExId: createdProject,
-    });
+    return new ProjectEntity(
+      {
+        ...project.getData(),
+        projectExId: createdProject,
+      },
+      {},
+    );
   }
   async deleteZionProject(project: ProjectEntity): Promise<void> {
     const projectExId = project.getData("projectExId");

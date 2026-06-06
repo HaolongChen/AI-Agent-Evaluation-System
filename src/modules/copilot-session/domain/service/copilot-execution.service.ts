@@ -27,10 +27,15 @@ export class CopilotExecutionService {
   register<T extends keyof TypeNameList>(
     type: T,
     callback: (event: Extract<CopilotEventType[number], { type: T }>) => void,
+    once: boolean = false,
   ) {
-    this.copilotEvent.addEventListener(type, (event) => {
-      callback(event);
-    });
+    this.copilotEvent.addEventListener(
+      type,
+      (event) => {
+        callback(event);
+      },
+      { once },
+    );
   }
 
   get publisher(): (event: CopilotEventsList[keyof CopilotEventsList]) => void {

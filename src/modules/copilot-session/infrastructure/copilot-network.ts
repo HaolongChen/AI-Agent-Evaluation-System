@@ -298,6 +298,10 @@ export class CopilotNetworkService implements ICopilotNetworkService {
     });
   }
 
+  stopSession(): Promise<void> {
+    return this.sendMessageToSession("STOP", {});
+  }
+
   delegateCopilotToolCalls(
     event: CopilotEvent<"CopilotToolCallBatchMessage">,
   ): CopilotApiResultJs {

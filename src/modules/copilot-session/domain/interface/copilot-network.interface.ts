@@ -19,4 +19,6 @@ export interface ICopilotNetworkService {
   ): () => void;
 
   terminateSession(): Promise<void>;
+
+  stopSession(): Promise<void>;
 }

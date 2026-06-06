@@ -10,20 +10,20 @@ export class CreateProjectUseCase {
     private repository: {
       projectRepository: IProjectRepository;
     },
-    private projectService: IProjectService,
     private projectNameGenerationFactory: ProjectNameServiceFactory,
   ) {}
 
   async execute(
     copilotInput: CopilotInputAggregate,
     copilotServerId: string,
+    projectService: IProjectService,
   ): Promise<ProjectBeforeCopilotSession> {
     const projectNameGenerator =
       this.projectNameGenerationFactory.initializeByCopilotInput(copilotInput);
     const zionProject = new ZionProjectEntity({
       projectName: projectNameGenerator.generateProjectName(),
     });
-    const project = await this.projectService.createProjectInZion(zionProject);
+    const project = await projectService.createProjectInZion(zionProject);
     const projectAggregate = new ProjectBeforeCopilotSession(
       copilotInput.getData("id"),
       copilotServerId,

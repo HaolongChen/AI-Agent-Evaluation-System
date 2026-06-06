@@ -7,10 +7,6 @@ import type {
   GetLatestSessionMutationVariables,
   GetCopilotSubscriptionCountQueryVariables,
 } from "../../../graphql/generated/types.ts";
-import type {
-  ProjectBeforeCopilotSession,
-  ProjectWithCopilotSession,
-} from "../domain/aggregate/project.aggregate.ts";
 import { ProjectEntity } from "../domain/entity/project.entity.ts";
 import type { ZionProjectEntity } from "../domain/entity/zion-project.entity.ts";
 import type { ICrdtSchemaLifecycle } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
@@ -25,21 +21,24 @@ import { TypeSystemStore } from "./crdt-schema-manager.ts";
 import { createZionProject, deleteProjectInZion } from "./project-manager.ts";
 import type { NetworkAccount } from "../../account/domain/service/account.service.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
+import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-system.ts";
 
 export class ProjectService implements IProjectService {
   constructor(
     private myAccount: NetworkAccount,
     private dangerousAccount: NetworkAccount,
   ) {}
-  async getCopilotNetworkService(
-    projectWithSession: ProjectWithCopilotSession,
-  ): Promise<ICopilotNetworkService> {
+  getCopilotNetworkService(
+    copilotSessionExId: string,
+    userInput: string,
+    schemaGraph: OpaqueSchemaGraph,
+  ): ICopilotNetworkService {
     return new CopilotNetworkService(
       this.myAccount.gqlClient,
       this.myAccount.wsClient,
-      projectWithSession.getData("copilotSessionExId"),
-      projectWithSession.getData("userInput"),
-      await this.getCrdtSchemaLifecycle(projectWithSession).schemaGraph(),
+      copilotSessionExId,
+      userInput,
+      schemaGraph,
     );
   }
 
@@ -100,9 +99,7 @@ export class ProjectService implements IProjectService {
     );
   }
 
-  async createCopilotSession(
-    project: ProjectBeforeCopilotSession,
-  ): Promise<string> {
+  async createCopilotSession(project: ProjectEntity): Promise<string> {
     return this.createNewSession(project);
   }
   async deleteProjectInZion(project: ProjectEntity): Promise<void> {

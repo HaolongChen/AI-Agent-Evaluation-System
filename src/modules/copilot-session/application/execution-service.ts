@@ -1,85 +1,8 @@
-import { SessionOrchestrator } from "./session-orchestrator.ts";
-import { logger } from "../../shared/infrastructure/logger.ts";
-import type { CopilotEventType } from "../domain/entity/copilot-job.entity.ts";
-import { EventTarget } from "ts-event-target";
-import type { ICopilotSessionSetupFactory } from "../domain/interface/copilot-session-setup.interface.ts";
-import type {
-  ProjectAggregate,
-  ProjectBeforeCopilotSession,
-} from "../domain/aggregate/project.aggregate.ts";
-import type { IProjectRepository } from "../domain/interface/project-repository.interface.ts";
-import { CopilotOutputFactory } from "../domain/service/copilot-output-factory.ts";
+import type { ProjectBeforeCopilotSession } from "../domain/aggregate/project.aggregate.ts";
 import type { IProjectService } from "../domain/interface/project-service.interface.ts";
 import { projectSessionBridge } from "../domain/service/project-session-bridge.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
 import type { CopilotExecutionService } from "../domain/service/copilot-execution.service.ts";
-
-export class ExecuteCopilotUseCase {
-  private copilotEvent: EventTarget<CopilotEventType> = new EventTarget();
-  private _project: ProjectAggregate | undefined;
-  constructor(
-    private repository: {
-      projectRepository: IProjectRepository;
-      copilotSessionSetupFactory: ICopilotSessionSetupFactory;
-    },
-    project?: ProjectAggregate,
-  ) {
-    this._project = project;
-  }
-
-  setProject(project: ProjectAggregate) {
-    this._project = project;
-  }
-
-  get project(): ProjectAggregate {
-    if (!this._project) {
-      throw new Error("Project not set for ExecuteCopilotUseCase");
-    }
-    return this._project;
-  }
-
-  private createCopilotSession = async () => {
-    return this.repository.copilotSessionSetupFactory
-      .build(this.project.getData("projectExId"))
-      .createNewSession();
-  };
-
-  async executeV2() {
-    try {
-      const session = await this.createCopilotSession();
-      const copilotOutputFactory = new CopilotOutputFactory(
-        session.sessionExId,
-      );
-      const orchestrator = new SessionOrchestrator(
-        this.copilotEvent.addEventListener.bind(this.copilotEvent),
-        session.delegateCopilotToolCall.bind(session),
-        () =>
-          session.sendHumanMessage(
-            this.project
-              .getEntity("copilotInput")
-              .getEntity("userInput")
-              .getData("content"),
-          ),
-        session.sendHumanOperationMessage.bind(session),
-        session.terminateSession.bind(session),
-        copilotOutputFactory,
-      );
-      const copilotOutputPromise = orchestrator.run();
-      const unsubscribe = session.subscribeToSessionUpdates(
-        this.copilotEvent.dispatchEvent.bind(this.copilotEvent),
-      );
-      const copilotOutput = await copilotOutputPromise;
-      unsubscribe();
-      this.project.setEntity("copilotOutput", copilotOutput);
-      await this.repository.projectRepository.save(this.project);
-      return this.project;
-    } catch (error) {
-      logger.error("Error setting up copilot execution environment:", error);
-      // this.account.clearWsClient();
-      throw error;
-    }
-  }
-}
 
 export class CreateCopilotSessionUseCase {
   constructor(private projectService: IProjectService) {}
@@ -101,21 +24,66 @@ export class CreateCopilotSessionUseCase {
 }
 
 export class CopilotExecutionUseCase {
-  constructor(private copilotNetworkService: ICopilotNetworkService) {}
+  private operationList: Array<() => void> = [];
+  private readonly TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
 
-  subscribe(copilotExecution: CopilotExecutionService): () => void {
-    return this.copilotNetworkService.subscribeToSessionUpdates(
-      copilotExecution.publisher,
-    );
+  private timer: NodeJS.Timeout | undefined;
+
+  constructor(
+    private copilotNetworkService: ICopilotNetworkService,
+    private resolve: () => void,
+    private reject: (error: unknown) => void,
+  ) {
+    this.operationList = [
+      this.copilotNetworkService.sendHumanOperationMessage.bind(
+        this.copilotNetworkService,
+      ),
+      () => {
+        this.copilotNetworkService.stopSession();
+        clearTimeout(this.timer!);
+        this.resolve();
+        this.unsubscribe?.();
+      },
+    ];
+    Promise.withResolvers();
   }
 
-  listenersRegistration(copilotExecution: CopilotExecutionService) {
+  private unsubscribe: undefined | (() => void);
+
+  subscribe(copilotExecution: CopilotExecutionService): () => void {
+    this.listenersRegistration(copilotExecution);
+    this.timer = setTimeout(() => {
+      this.reject(new Error("Session timeout"));
+    }, this.TIMEOUT_MS);
+    this.unsubscribe = this.copilotNetworkService.subscribeToSessionUpdates(
+      copilotExecution.publisher,
+    );
+    return this.unsubscribe;
+  }
+
+  private listenersRegistration(copilotExecution: CopilotExecutionService) {
     copilotExecution.register("CopilotToolCallBatchMessage", (event) => {
       this.copilotNetworkService.delegateCopilotToolCalls(event);
     });
 
     copilotExecution.register("CopilotStateChangeMessage", (event) => {
       if (event.data.currentJobIsRunning === false) {
+        const operation = this.operationList.shift();
+        if (!operation) {
+          this.reject(
+            new Error(
+              "No more operations to perform, but session is still active.",
+            ),
+          );
+          return;
+        }
+        operation();
+      }
+    });
+
+    copilotExecution.register("CopilotInitialStateMessage", (event) => {
+      if (!event.data.currentJobIsRunning && !event.data.terminated) {
+        this.copilotNetworkService.sendHumanMessage();
       }
     });
   }

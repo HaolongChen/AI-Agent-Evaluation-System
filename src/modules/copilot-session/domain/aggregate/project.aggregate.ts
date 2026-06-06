@@ -11,14 +11,13 @@ import type {
   OneOrMany,
 } from "../../../shared/domain/entity/entity.ts";
 import { CopilotOutputEntity } from "../entity/copilot-output.entity.ts";
+import { copilotOutputSchema } from "../schema/copilot-output.schema.ts";
 
 export type ProjectToSessionDetails = {
   copilotSessionExId: string;
-  schemaId: string;
-  userInput: string;
 };
 
-export class ProjectAggregate<
+export class BaseProjectAggregate<
   E extends ProjectAggregateMetadata = ProjectAggregateMetadata,
   T extends Record<string, OneOrMany<Entity>> = Record<
     string,
@@ -40,7 +39,7 @@ export class ProjectAggregate<
 }
 
 // responsible for copilot execution
-export class ProjectBeforeCopilotSession extends ProjectAggregate<
+export class ProjectAggregate extends BaseProjectAggregate<
   ProjectAggregateMetadata & { copilotSessionExId?: string }
 > {
   constructor(
@@ -59,18 +58,10 @@ export class ProjectBeforeCopilotSession extends ProjectAggregate<
   }
 }
 
-export class ProjectWithCopilotSession extends AggregateRoot<
-  typeof projectSchema,
-  ProjectToSessionDetails & EntityMetadata
-> {
-  constructor(rawProject: ProjectEntity, metadata: ProjectToSessionDetails) {
-    const project = new ProjectEntity<ProjectToSessionDetails & EntityMetadata>(
-      rawProject.getData(),
-      { ...rawProject.getData(), ...metadata },
-    );
-    super(project, {});
-  }
-  public executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
+export class CopilotExecutionLogManager {
+  constructor(private copilotSessionExId: string) {}
+
+  private executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
 
   setAiResponse(aiResponse: string) {
     if (this.executionLogs.aiResponse) {
@@ -97,11 +88,42 @@ export class ProjectWithCopilotSession extends AggregateRoot<
       this.executionLogs.tasks = [task];
     }
   }
+
+  produceCopilotOutputEntity() {
+    const { aiResponse, editableText, tasks } = this.executionLogs;
+    if (!aiResponse || !editableText) {
+      throw new Error("Missing execution logs to build CopilotOutputEntity.");
+    }
+    return new CopilotOutputEntity(
+      {
+        aiResponse,
+        editableText,
+        tasks,
+        copilotSessionExId: this.copilotSessionExId,
+      },
+      {},
+    );
+  }
 }
 
-export class ProjectAfterSession extends ProjectAggregate<
+export class ProjectAfterSession extends BaseProjectAggregate<
   ProjectAggregateMetadata,
   {
     copilotOutput: CopilotOutputEntity;
   }
 > {}
+
+export class CopilotOutputAggregate extends AggregateRoot<
+  typeof copilotOutputSchema,
+  { projectId: string } & EntityMetadata
+> {
+  constructor(copilotOutputEntity: CopilotOutputEntity, projectId: string) {
+    const newEntity = new CopilotOutputEntity<
+      EntityMetadata & { projectId: string }
+    >(copilotOutputEntity.getData(), {
+      ...copilotOutputEntity.getData(),
+      projectId,
+    });
+    super(newEntity, {});
+  }
+}

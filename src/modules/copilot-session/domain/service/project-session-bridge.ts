@@ -3,11 +3,7 @@ import {
   type ProjectBeforeCopilotSession,
 } from "../aggregate/project.aggregate.ts";
 
-export const projectSessionBridge = (
-  project: ProjectBeforeCopilotSession,
-  schemaId: string,
-  userInput: string,
-) => {
+export const projectSessionBridge = (project: ProjectBeforeCopilotSession) => {
   const copilotSessionExId = project.getData("copilotSessionExId");
   if (!copilotSessionExId) {
     throw new Error(

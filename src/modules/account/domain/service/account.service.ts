@@ -1,6 +1,6 @@
-import type { NetworkClientEntity } from "../../../shared/domain/entity/network-client.entity.ts";
-import type { IGQLClient } from "../../../shared/domain/interface/graphql-client.interface.ts";
-import type { IWebSocketClient } from "../../../shared/domain/interface/websocket-client.interface.ts";
+import type { NetworkClientEntity } from "../entity/network-client.entity.ts";
+import type { IGQLClient } from "../interface/graphql-client.interface.ts";
+import type { IWebSocketClient } from "../interface/websocket-client.interface.ts";
 import { AccountEntity } from "../entity/account.entity.ts";
 import type { AccountInfo } from "../schema/account.schema.ts";
 

@@ -10,8 +10,8 @@ import {
   type HeaderKeyFrom,
   type NetworkClientHeaders,
 } from "../schema/network-client.schema.ts";
-import { Entity, type EntityMetadata } from "./entity.ts";
-import { logger } from "../../infrastructure/logger.ts";
+import { Entity, type EntityMetadata } from "../../../shared/domain/entity/entity.ts";
+import { logger } from "../../../shared/infrastructure/logger.ts";
 
 type NetworkState = "LATEST" | "OUTDATED";
 

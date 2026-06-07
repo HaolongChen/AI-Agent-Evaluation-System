@@ -3,21 +3,38 @@ import {
   Entity,
   type EntityMetadata,
 } from "../../../shared/domain/entity/entity.ts";
-import { accountSchema, type AccountInfo } from "../schema/account.schema.js";
+import { accountSchema, unauthorizedAccountSchema, type AccountInfo } from "../schema/account.schema.js";
 
-export class AccountEntity extends Entity<
-  typeof accountSchema,
-  { accountInfo?: AccountInfo } & EntityMetadata
+export class UnauthorizedAccountEntity<T extends keyof typeof unauthorizedAccountSchema> extends Entity<typeof unauthorizedAccountSchema[ T ]>
+{
+  constructor(data: z.infer<typeof unauthorizedAccountSchema[ T ]>, id?: string) {
+    super(data, T ], { id });
+  }
+}
+
+export class UnauthorizedPhoneAccount extends Entity<
+  typeof accountSchema
 > {
-  public isLoggedIn: boolean = false;
-
   constructor(data: z.infer<typeof accountSchema>, id?: string) {
     super(data, accountSchema, { id });
   }
 
-  setAccountInfo(accountInfo: AccountInfo) {
-    this.setData({ accountInfo: accountInfo });
-    this.isLoggedIn = true;
+  login ( accountInfo: AccountInfo ): AccountEntity
+  {
+    return new AccountEntity(this.getData(), { id: this.getData("id"), accountInfo });
+  }
+}
+
+export class UnauthorizedUsernameAccount extends Entity<
+
+export class AccountEntity extends Entity<
+  typeof accountSchema,
+  { accountInfo: AccountInfo } & EntityMetadata
+> {
+  public isLoggedIn: boolean = false;
+
+  constructor(data: z.infer<typeof accountSchema>, metadata: {id: string, accountInfo: AccountInfo}) {
+    super(data, accountSchema, { ...metadata });
   }
 
   private getAccountInfo(): AccountInfo {
@@ -36,7 +53,7 @@ export class AccountEntity extends Entity<
   }
 
   getOrganizationExId(): string {
-    const id = this.getAccountInfo().account.currentOrganization.exId;
+    const id = this.getAccountInfo().organizationExId
     if (!id) {
       throw new Error("Organization ExId is not available");
     }
@@ -44,7 +61,7 @@ export class AccountEntity extends Entity<
   }
 
   getUsername(): string {
-    const username = this.getAccountInfo().account.username;
+    const username = this.getAccountInfo().username;
     if (!username) {
       throw new Error("Username is not available");
     }
@@ -57,10 +74,5 @@ export class AccountEntity extends Entity<
       throw new Error("Access token is not available");
     }
     return token;
-  }
-
-  clearToken() {
-    this.setAccountInfo({} as AccountInfo);
-    this.isLoggedIn = false;
   }
 }

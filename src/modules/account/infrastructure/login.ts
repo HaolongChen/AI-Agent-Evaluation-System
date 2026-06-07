@@ -11,7 +11,7 @@ import type {
   accountSchema,
 } from "../domain/schema/account.schema.ts";
 import type { ILoginService } from "../domain/interface/login.interface.ts";
-import type { IGQLClient } from "../../shared/domain/interface/graphql-client.interface.ts";
+import type { IGQLClient } from "../domain/interface/graphql-client.interface.ts";
 import type { z } from "zod";
 
 // ---------------------------------------------------------------------------

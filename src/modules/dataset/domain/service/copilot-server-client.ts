@@ -1,4 +1,4 @@
-import type { NetworkClientEntity } from "../../../shared/domain/entity/network-client.entity.ts";
+import type { NetworkClientEntity } from "../../../account/domain/entity/network-client.entity.ts";
 import type { CopilotServerEntity } from "../entity/copilot-server.entity.ts";
 
 export class CopilotServerClient {

@@ -1,6 +1,6 @@
-import type { NetworkClientEntity } from "../../shared/domain/entity/network-client.entity.ts";
-import type { INetworkClient } from "../../shared/domain/interface/network.interface.ts";
-import { NetworkClientService } from "../../shared/domain/service/network-client.service.ts";
+import type { NetworkClientEntity } from "../domain/entity/network-client.entity.ts";
+import type { INetworkClient } from "../domain/interface/network.interface.ts";
+import { NetworkClientService } from "../domain/service/network-client.service.ts";
 import type { AccountEntity } from "../domain/entity/account.entity.ts";
 import type { ILoginService } from "../domain/interface/login.interface.ts";
 import { NetworkAccount } from "../domain/service/account.service.ts";

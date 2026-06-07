@@ -5,6 +5,7 @@ import {
   type OneOrMany,
 } from "../entity/entity.js";
 import { logger } from "../../infrastructure/logger.ts";
+import type { IDomainEvent } from "../event/domain-event.interface.ts";
 
 export class AggregateRoot<
   T extends z.ZodObject,
@@ -13,11 +14,30 @@ export class AggregateRoot<
     string,
     OneOrMany<Entity>
   >,
-> extends Entity<T, M> {
+  > extends Entity<T, M>
+{
+
+  private _events: IDomainEvent[] = [];
+
   private _entities: E;
   constructor(entity: Entity<T, M>, aggregatedEntities: E) {
     super(entity);
     this._entities = aggregatedEntities;
+  }
+
+  protected addEvent<Event extends IDomainEvent>(event: Event): void {
+    this._events.push(event);
+  }
+
+  get events (): IDomainEvent[]
+  {
+    const events = [...this._events];
+    this.clearEvents();
+    return events;
+  }
+
+  clearEvents(): void {
+    this._events = [];
   }
 
   getEntity(): typeof this._entities;

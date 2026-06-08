@@ -1,110 +1,111 @@
 import { gql } from "graphql-tag";
 import type {
-  LoginMutation,
-  LoginMutationVariables,
-  LoginWithPhoneNumberMutation,
-  LoginWithPhoneNumberMutationVariables,
+	LoginMutation,
+	LoginMutationVariables,
+	LoginWithPhoneNumberMutation,
+	LoginWithPhoneNumberMutationVariables,
 } from "../../../graphql/generated/types.ts";
-import { logger } from "../../shared/infrastructure/logger.ts";
-import type {
-  AccountInfo,
-  accountSchema,
-} from "../domain/schema/account.schema.ts";
+import type { AccountInfo } from "../domain/schema/account.schema.ts";
 import type { ILoginService } from "../domain/interface/login.interface.ts";
 import type { IGQLClient } from "../domain/interface/graphql-client.interface.ts";
-import type { z } from "zod";
+import { AccountEntity } from "../domain/entity/account.entity.ts";
 
 // ---------------------------------------------------------------------------
 // Document
 // ---------------------------------------------------------------------------
 
 const ORGANIZATION_FRAGMENT = gql`
-  fragment organizationFragment on Organization {
-    exId
-    name
-  }
+	fragment organizationFragment on Organization {
+		exId
+		name
+	}
 `;
 
 const ACCOUNT_FRAGMENT = gql`
-  fragment accountInfoFragment on AccountInfo {
-    accessToken
-    account {
-      exId
-      username
-      currentOrganization {
-        ...organizationFragment
-      }
-    }
-  }
-  ${ORGANIZATION_FRAGMENT}
+	fragment accountInfoFragment on AccountInfo {
+		accessToken
+		account {
+			exId
+			username
+			currentOrganization {
+				...organizationFragment
+			}
+		}
+	}
+	${ORGANIZATION_FRAGMENT}
 `;
 
 const LOGIN_MUTATION = gql`
-  mutation LoginWithPhoneNumber($phoneNumber: String!, $password: String!) {
-    loginWithPhoneNumber(phoneNumber: $phoneNumber, password: $password) {
-      ...accountInfoFragment
-    }
-  }
-  ${ACCOUNT_FRAGMENT}
+	mutation LoginWithPhoneNumber($phoneNumber: String!, $password: String!) {
+		loginWithPhoneNumber(phoneNumber: $phoneNumber, password: $password) {
+			...accountInfoFragment
+		}
+	}
+	${ACCOUNT_FRAGMENT}
 `;
 
 const LOGIN_WITH_PASSWORD_MUTATION = gql`
-  mutation Login($username: String!, $password: String!) {
-    login(username: $username, password: $password) {
-      ...accountInfoFragment
-    }
-  }
-  ${ACCOUNT_FRAGMENT}
+	mutation Login($username: String!, $password: String!) {
+		login(username: $username, password: $password) {
+			...accountInfoFragment
+		}
+	}
+	${ACCOUNT_FRAGMENT}
 `;
 
 // ---------------------------------------------------------------------------
 // Login function
 // ---------------------------------------------------------------------------
 
+const accountInfoMapper = (
+	data:
+		| LoginWithPhoneNumberMutation["loginWithPhoneNumber"]
+		| LoginMutation["login"],
+): AccountInfo => {
+	return {
+		accessToken: data!.accessToken!,
+		...data!.account!,
+		organizationExId: data!.account!.currentOrganization.exId,
+		organizationName: data!.account!.currentOrganization.name!,
+	};
+};
+
 export class LoginService implements ILoginService {
-  private async loginWithPhoneNumber(
-    data: z.infer<typeof accountSchema>,
-    gqlClient: IGQLClient,
-  ): Promise<AccountInfo> {
-    const info = await gqlClient.gqlRequest<
-      LoginWithPhoneNumberMutation,
-      LoginWithPhoneNumberMutationVariables
-    >(LOGIN_MUTATION, data);
-    return info.loginWithPhoneNumber as AccountInfo;
-  }
+	async loginWithPhoneNumber(
+		phoneNumber: string,
+		password: string,
+		gqlClient: IGQLClient,
+	): Promise<AccountEntity> {
+		const info = await gqlClient.gqlRequest<
+			LoginWithPhoneNumberMutation,
+			LoginWithPhoneNumberMutationVariables
+		>(LOGIN_MUTATION, {
+			phoneNumber,
+			password,
+		});
+		return AccountEntity.createWithPhoneNumber(
+			phoneNumber,
+			password,
+			accountInfoMapper(info.loginWithPhoneNumber!),
+		);
+	}
 
-  private async loginWithUsername(
-    data: z.infer<typeof accountSchema>,
-    gqlClient: IGQLClient,
-  ): Promise<AccountInfo> {
-    const info = await gqlClient.gqlRequest<
-      LoginMutation,
-      LoginMutationVariables
-    >(LOGIN_WITH_PASSWORD_MUTATION, {
-      username: data.phoneNumber,
-      password: data.password,
-    });
-    return info.login as AccountInfo;
-  }
-
-  login = async (
-    data: z.infer<typeof accountSchema>,
-    gqlClient: IGQLClient,
-  ): Promise<AccountInfo> => {
-    try {
-      const accountInfo =
-        data.phoneNumber.startsWith("+") || /^\d+$/.test(data.phoneNumber)
-          ? await this.loginWithPhoneNumber(data, gqlClient)
-          : await this.loginWithUsername(data, gqlClient);
-
-      if (!accountInfo.accessToken) {
-        throw new Error("Login failed: No access token received");
-      }
-
-      return accountInfo;
-    } catch (error) {
-      logger.error("Error during login:", error);
-      throw new Error("Failed to login", { cause: error });
-    }
-  };
+	async loginWithUsername(
+		username: string,
+		password: string,
+		gqlClient: IGQLClient,
+	): Promise<AccountEntity> {
+		const info = await gqlClient.gqlRequest<
+			LoginMutation,
+			LoginMutationVariables
+		>(LOGIN_WITH_PASSWORD_MUTATION, {
+			username,
+			password,
+		});
+		return AccountEntity.createWithUsername(
+			username,
+			password,
+			accountInfoMapper(info.login!),
+		);
+	}
 }

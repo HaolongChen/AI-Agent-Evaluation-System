@@ -1,14 +1,12 @@
 import z from "zod";
 
-const unauthorizedPhoneAccountSchema = z.object({
-  phoneNumber: z.string(),
+export const unauthorizedAccountSchema = z.object( {
+  type: z.enum( [ "phone", "username" ] ),
+  value: z.string(),
   password: z.string(),
-} );
+} )
 
-const unauthorizedUsernameAccountSchema = z.object({
-  username: z.string(),
-  password: z.string(),
-} );
+export type AccountInfo = z.infer<typeof accountInfoSchema>;
 
 const accountInfoSchema = z.object( {
   accessToken: z.string(),
@@ -18,12 +16,4 @@ const accountInfoSchema = z.object( {
   organizationName: z.string(),
 } );
 
-export const unauthorizedAccountSchema = {
-  withPhoneNumber: unauthorizedPhoneAccountSchema,
-  withUsername: unauthorizedUsernameAccountSchema,
-} as const;
-
-export const accountSchema = {
-  withPhoneNumber: unauthorizedPhoneAccountSchema.extend( accountInfoSchema.shape ),
-  withUsername: unauthorizedUsernameAccountSchema.extend( accountInfoSchema.shape ),
-} as const;
+export const accountSchema = accountInfoSchema.extend(unauthorizedAccountSchema.shape);

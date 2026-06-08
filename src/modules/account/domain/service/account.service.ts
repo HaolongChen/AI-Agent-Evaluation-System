@@ -1,8 +1,24 @@
 import type { NetworkClientEntity } from "../entity/network-client.entity.ts";
 import type { IGQLClient } from "../interface/graphql-client.interface.ts";
 import type { IWebSocketClient } from "../interface/websocket-client.interface.ts";
-import { AccountEntity } from "../entity/account.entity.ts";
+import { AccountEntity, UnauthorizedAccount } from "../entity/account.entity.ts";
 import type { AccountInfo } from "../schema/account.schema.ts";
+import type { ILoginService } from "../interface/login.interface.ts";
+
+export class NewAccountService
+{
+  constructor ( private loginService: ILoginService, private gqlClient: IGQLClient ) {}
+
+  async loginWithPhoneNumber ( phoneNumber: string, password: string ): Promise<AccountEntity>
+  {
+    return this.loginService.loginWithPhoneNumber( phoneNumber, password, this.gqlClient );
+  }
+
+  async loginWithUsername ( username: string, password: string ): Promise<AccountEntity>
+  {
+    return this.loginService.loginWithUsername( username, password, this.gqlClient );
+  }
+}
 
 export class NetworkAccount {
   private readonly TTL_MS = 3_600_000; // 1 hour

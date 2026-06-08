@@ -1,116 +1,86 @@
 import { z } from "zod";
 import type {
-  CreateCopilotSessionMutation,
-  CreateCopilotSessionMutationVariables,
-  GetCopilotSubscriptionCountQuery,
-  GetLatestSessionMutation,
-  GetLatestSessionMutationVariables,
-  GetCopilotSubscriptionCountQueryVariables,
+	GetCopilotSubscriptionCountQuery,
+	GetLatestSessionMutation,
+	GetLatestSessionMutationVariables,
+	GetCopilotSubscriptionCountQueryVariables,
+	DeleteProjectMutation,
+	DeleteProjectMutationVariables,
 } from "../../../graphql/generated/types.ts";
 import { ProjectEntity } from "../domain/entity/project.entity.ts";
 import type { ZionProjectEntity } from "../domain/entity/zion-project.entity.ts";
-import type { ICrdtSchemaLifecycle } from "../domain/interface/crdt-schema-lifecycle.interface.ts";
-import type { IProjectService } from "../domain/interface/project-service.interface.ts";
+import type { IZionProjectService } from "../domain/interface/project-service.interface.ts";
 import {
-  CopilotNetworkService,
-  CREATE_COPILOT_SESSION,
-  GET_COPILOT_SUBSCRIPTION_COUNT,
-  GET_LATEST_SESSION,
+	GET_COPILOT_SUBSCRIPTION_COUNT,
+	GET_LATEST_SESSION,
 } from "./copilot-network.ts";
-import { TypeSystemStore } from "./crdt-schema-manager.ts";
-import { createZionProject, deleteProjectInZion } from "./project-manager.ts";
-import type { NetworkAccount } from "../../account/domain/service/account.service.ts";
-import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
-import type { OpaqueSchemaGraph } from "../../shared/domain/interface/type-system.ts";
+import { createZionProject, GQL_DELETE_PROJECT } from "./project-manager.ts";
+import type { IGQLClient } from "../../account/domain/interface/graphql-client.interface.ts";
+import type { IWebSocketClient } from "../../account/domain/interface/websocket-client.interface.ts";
 
-export class ProjectService implements IProjectService {
-  constructor(
-    private myAccount: NetworkAccount,
-    private dangerousAccount: NetworkAccount,
-  ) {}
-  getCopilotNetworkService(
-    copilotSessionExId: string,
-    userInput: string,
-    schemaGraph: OpaqueSchemaGraph,
-  ): ICopilotNetworkService {
-    return new CopilotNetworkService(
-      this.myAccount.gqlClient,
-      this.myAccount.wsClient,
-      copilotSessionExId,
-      userInput,
-      schemaGraph,
-    );
-  }
+export class ProjectService implements IZionProjectService {
 
-  private async createNewSession(project: ProjectEntity): Promise<string> {
-    const result = await this.myAccount.gqlClient.gqlRequest<
-      CreateCopilotSessionMutation,
-      CreateCopilotSessionMutationVariables
-    >(CREATE_COPILOT_SESSION, {
-      projectExId: project.getData("projectExId"),
-      sessionType: "COPILOT",
-    });
-    return result.createCopilotSession;
-  }
-  private async getLatestSession(
-    project: ProjectEntity,
-  ): Promise<string | null> {
-    const latestSessionResult = await this.myAccount.gqlClient.gqlRequest<
-      GetLatestSessionMutation,
-      GetLatestSessionMutationVariables
-    >(GET_LATEST_SESSION, {
-      projectExId: project.getData("projectExId"),
-      sessionType: "COPILOT",
-    });
-    return latestSessionResult.latestSession;
-  }
-  private async getSubscriptionCount(project: ProjectEntity): Promise<number> {
-    const copilotSubscriptionCount = await this.myAccount.gqlClient.gqlRequest<
-      GetCopilotSubscriptionCountQuery,
-      GetCopilotSubscriptionCountQueryVariables
-    >(GET_COPILOT_SUBSCRIPTION_COUNT, {
-      projectExId: project.getData("projectExId"),
-      sessionType: "COPILOT",
-    });
-    const count = z.coerce
-      .number()
-      .safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
-    if (!count.success) {
-      throw new Error(count.error.message);
-    }
-    return count.data;
-  }
 
-  async createProjectInZion(
-    project: ZionProjectEntity,
-  ): Promise<ProjectEntity> {
-    const createdProject = await createZionProject(
-      this.myAccount.gqlClient,
-      this.myAccount.wsClient,
-      this.myAccount.account.getOrganizationExId(),
-      project,
-    );
-    return new ProjectEntity(
-      {
-        ...project.getData(),
-        projectExId: createdProject,
-      },
-      {},
-    );
-  }
+	private async getLatestSession(
+		project: ProjectEntity,
+		gqlClient: IGQLClient,
+	): Promise<string | null> {
+		const latestSessionResult = await gqlClient.gqlRequest<
+			GetLatestSessionMutation,
+			GetLatestSessionMutationVariables
+		>(GET_LATEST_SESSION, {
+			projectExId: project.getData("projectExId"),
+			sessionType: "COPILOT",
+		});
+		return latestSessionResult.latestSession;
+	}
+	private async getSubscriptionCount(
+		project: ProjectEntity,
+		gqlClient: IGQLClient,
+	): Promise<number> {
+		const copilotSubscriptionCount = await gqlClient.gqlRequest<
+			GetCopilotSubscriptionCountQuery,
+			GetCopilotSubscriptionCountQueryVariables
+		>(GET_COPILOT_SUBSCRIPTION_COUNT, {
+			projectExId: project.getData("projectExId"),
+			sessionType: "COPILOT",
+		});
+		const count = z.coerce
+			.number()
+			.safeParse(copilotSubscriptionCount.copilotSubscriptionCount);
+		if (!count.success) {
+			throw new Error(count.error.message);
+		}
+		return count.data;
+	}
 
-  async createCopilotSession(project: ProjectEntity): Promise<string> {
-    return this.createNewSession(project);
-  }
-  async deleteProjectInZion(project: ProjectEntity): Promise<void> {
-    const projectExId = project.getData("projectExId");
-    await deleteProjectInZion(this.myAccount.gqlClient, projectExId);
-  }
-  getCrdtSchemaLifecycle(projectEntity: ProjectEntity): ICrdtSchemaLifecycle {
-    return new TypeSystemStore(
-      projectEntity.getData("projectExId"),
-      this.myAccount.gqlClient,
-      this.dangerousAccount.gqlClient,
-    );
-  }
+	async createProjectInZion(
+		project: ZionProjectEntity,
+		gqlClient: IGQLClient,
+    wsClient: IWebSocketClient,
+    organizationExId: string,
+	): Promise<string> {
+		return createZionProject(
+			gqlClient,
+			wsClient,
+      organizationExId,
+			project,
+		);
+	}
+	async deleteProjectInZion(
+		project: ProjectEntity,
+		gqlClient: IGQLClient,
+	): Promise<void> {
+		const isDeleted = await gqlClient.gqlRequest<
+			DeleteProjectMutation,
+			DeleteProjectMutationVariables
+		>(GQL_DELETE_PROJECT, {
+			projectExId: project.getData("projectExId"),
+		});
+		if (!isDeleted.deleteProject) {
+			throw new Error(
+				`Failed to delete project with exId ${project.getData("projectExId")}`,
+			);
+		}
+	}
 }

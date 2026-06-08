@@ -232,24 +232,3 @@ export const createZionProject = async (
   const projectExId = await createProjectSubscription(taskId, wsClient);
   return projectExId;
 };
-
-export const deleteProjectInZion = async (
-  gqlClient: IGQLClient,
-  projectExId: string,
-): Promise<void> => {
-  logger.info("Deleting project", {
-    projectExId,
-  });
-  const isDeleted = await gqlClient.gqlRequest<
-    DeleteProjectMutation,
-    DeleteProjectMutationVariables
-  >(GQL_DELETE_PROJECT, {
-    projectExId,
-  });
-  if (!isDeleted.deleteProject) {
-    throw new Error(`Failed to delete project with exId ${projectExId}`);
-  }
-  logger.info("Project deleted", {
-    projectExId,
-  });
-};

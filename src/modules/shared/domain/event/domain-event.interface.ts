@@ -1,4 +1,4 @@
 export interface IDomainEvent {
-  name: string;
-  createdAt: Date;
+  readonly name: string;
+  readonly createdAt: Date;
 }

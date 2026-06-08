@@ -1,24 +1,31 @@
-import type { CopilotApiResultJs } from "../../../shared/domain/interface/type-system.ts";
+import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
+import type { IWebSocketClient } from "../../../account/domain/interface/websocket-client.interface.ts";
+import type { CopilotApiResultJs, OpaqueSchemaGraph } from "../../../shared/domain/interface/type-system.ts";
 import type {
-  CopilotEvent,
-  CopilotEventsList,
+	CopilotEventsList,
 } from "../entity/copilot-job.entity.ts";
-// import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
+import type { CopilotInputMessage } from "../schema/project.schema.ts";
 
-export interface ICopilotNetworkService {
-  delegateCopilotToolCalls(
-    event: CopilotEvent<"CopilotToolCallBatchMessage">,
-  ): CopilotApiResultJs;
+export interface ICopilotNetworkService
+{
+  runCopilotToolCalls ( toolCalls: {
+    name: string;
+    args: unknown;
+    toolCallId: string;
+  }[], schemaGraph: OpaqueSchemaGraph ): CopilotApiResultJs;
 
-  sendHumanMessage(): Promise<void>;
+  subscribeToSessionUpdates (
+    sessionExId: string,
+    wsClient: IWebSocketClient,
+		publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
+	): () => void;
 
-  sendHumanOperationMessage(): Promise<void>;
+	sendMessageToSession<T extends keyof CopilotInputMessage>(
+		sessionExId: string,
+		gqlClient: IGQLClient,
+		type: T,
+		message: CopilotInputMessage[T],
+  ): Promise<void>;
 
-  subscribeToSessionUpdates(
-    publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
-  ): () => void;
-
-  terminateSession(): Promise<void>;
-
-  stopSession(): Promise<void>;
+  createCopilotSession(projectExId: string, gqlClient: IGQLClient): Promise<string>;
 }

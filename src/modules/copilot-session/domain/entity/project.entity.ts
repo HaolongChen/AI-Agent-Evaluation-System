@@ -9,7 +9,7 @@ export class ProjectEntity<
   T extends EntityMetadata = EntityMetadata,
 > extends Entity<typeof projectSchema, T> {
   constructor(
-    data: z.infer<typeof projectSchema>,
+    data: z.input<typeof projectSchema>,
     metadata: Omit<T, keyof EntityMetadata>,
     id?: string,
   ) {

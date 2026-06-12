@@ -1,15 +1,26 @@
 import type { z } from "zod";
 import { crdtSchemaSchema } from "../schema/crdt-schema.schema.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
-import { Entity } from "../../../shared/domain/entity/entity.ts";
-import type { ProjectEntity } from "../entity/project.entity.ts";
+import {
+  Entity,
+  type EntityMetadata,
+} from "../../../shared/domain/entity/entity.ts";
+import type { ProjectAggregate } from "./project.aggregate.ts";
 
 export class CrdtSchemaAggregate extends AggregateRoot<
-  typeof crdtSchemaSchema
+  typeof crdtSchemaSchema,
+  EntityMetadata & { copilotInputId: string; copilotServerId: string }
 > {
-  constructor(data: z.input<typeof crdtSchemaSchema>, project: ProjectEntity) {
+  constructor(
+    data: z.input<typeof crdtSchemaSchema>,
+    project: ProjectAggregate,
+  ) {
     super(
-      new Entity(data, crdtSchemaSchema, { id: project.getData("id") }),
+      new Entity(data, crdtSchemaSchema, {
+        id: project.getData("id"),
+        copilotInputId: project.getData("copilotInputId"),
+        copilotServerId: project.getData("copilotServerId"),
+      }),
       {},
     );
   }

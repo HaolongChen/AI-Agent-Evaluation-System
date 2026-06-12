@@ -44,7 +44,7 @@ export class CopilotExecutionAggregate extends AggregateRoot<
   },
   { crdtSchema: CrdtSchemaAggregate }
 > {
-  private executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
+  public executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
 
   constructor(
     crdtSchema: CrdtSchemaAggregate,

@@ -168,8 +168,8 @@ export type copilotOutputGroupByArgs<
 export type CopilotOutputGroupByOutputType = {
   id: string;
   copilotSessionExId: string;
-  editableText: string;
-  aiResponse: string;
+  editableText: string | null;
+  aiResponse: string | null;
   tasks: runtime.JsonValue[];
   projectId: string;
   createdAt: Date;
@@ -198,8 +198,8 @@ export type copilotOutputWhereInput = {
   NOT?: Prisma.copilotOutputWhereInput | Prisma.copilotOutputWhereInput[];
   id?: Prisma.StringFilter<"copilotOutput"> | string;
   copilotSessionExId?: Prisma.StringFilter<"copilotOutput"> | string;
-  editableText?: Prisma.StringFilter<"copilotOutput"> | string;
-  aiResponse?: Prisma.StringFilter<"copilotOutput"> | string;
+  editableText?: Prisma.StringNullableFilter<"copilotOutput"> | string | null;
+  aiResponse?: Prisma.StringNullableFilter<"copilotOutput"> | string | null;
   tasks?: Prisma.JsonNullableListFilter<"copilotOutput">;
   projectId?: Prisma.StringFilter<"copilotOutput"> | string;
   createdAt?: Prisma.DateTimeFilter<"copilotOutput"> | Date | string;
@@ -213,8 +213,8 @@ export type copilotOutputWhereInput = {
 export type copilotOutputOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
   copilotSessionExId?: Prisma.SortOrder;
-  editableText?: Prisma.SortOrder;
-  aiResponse?: Prisma.SortOrder;
+  editableText?: Prisma.SortOrderInput | Prisma.SortOrder;
+  aiResponse?: Prisma.SortOrderInput | Prisma.SortOrder;
   tasks?: Prisma.SortOrder;
   projectId?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -230,8 +230,8 @@ export type copilotOutputWhereUniqueInput = Prisma.AtLeast<
     AND?: Prisma.copilotOutputWhereInput | Prisma.copilotOutputWhereInput[];
     OR?: Prisma.copilotOutputWhereInput[];
     NOT?: Prisma.copilotOutputWhereInput | Prisma.copilotOutputWhereInput[];
-    editableText?: Prisma.StringFilter<"copilotOutput"> | string;
-    aiResponse?: Prisma.StringFilter<"copilotOutput"> | string;
+    editableText?: Prisma.StringNullableFilter<"copilotOutput"> | string | null;
+    aiResponse?: Prisma.StringNullableFilter<"copilotOutput"> | string | null;
     tasks?: Prisma.JsonNullableListFilter<"copilotOutput">;
     createdAt?: Prisma.DateTimeFilter<"copilotOutput"> | Date | string;
     project?: Prisma.XOR<
@@ -246,8 +246,8 @@ export type copilotOutputWhereUniqueInput = Prisma.AtLeast<
 export type copilotOutputOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
   copilotSessionExId?: Prisma.SortOrder;
-  editableText?: Prisma.SortOrder;
-  aiResponse?: Prisma.SortOrder;
+  editableText?: Prisma.SortOrderInput | Prisma.SortOrder;
+  aiResponse?: Prisma.SortOrderInput | Prisma.SortOrder;
   tasks?: Prisma.SortOrder;
   projectId?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -268,8 +268,14 @@ export type copilotOutputScalarWhereWithAggregatesInput = {
   copilotSessionExId?:
     | Prisma.StringWithAggregatesFilter<"copilotOutput">
     | string;
-  editableText?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string;
-  aiResponse?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string;
+  editableText?:
+    | Prisma.StringNullableWithAggregatesFilter<"copilotOutput">
+    | string
+    | null;
+  aiResponse?:
+    | Prisma.StringNullableWithAggregatesFilter<"copilotOutput">
+    | string
+    | null;
   tasks?: Prisma.JsonNullableListFilter<"copilotOutput">;
   projectId?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string;
   createdAt?:
@@ -281,8 +287,8 @@ export type copilotOutputScalarWhereWithAggregatesInput = {
 export type copilotOutputCreateInput = {
   id?: string;
   copilotSessionExId: string;
-  editableText: string;
-  aiResponse: string;
+  editableText?: string | null;
+  aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   createdAt?: Date | string;
   project: Prisma.projectCreateNestedOneWithoutCopilotOutputInput;
@@ -292,8 +298,8 @@ export type copilotOutputCreateInput = {
 export type copilotOutputUncheckedCreateInput = {
   id?: string;
   copilotSessionExId: string;
-  editableText: string;
-  aiResponse: string;
+  editableText?: string | null;
+  aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   projectId: string;
   createdAt?: Date | string;
@@ -303,8 +309,11 @@ export type copilotOutputUncheckedCreateInput = {
 export type copilotOutputUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
-  editableText?: Prisma.StringFieldUpdateOperationsInput | string;
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string;
+  editableText?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   project?: Prisma.projectUpdateOneRequiredWithoutCopilotOutputNestedInput;
@@ -314,8 +323,11 @@ export type copilotOutputUpdateInput = {
 export type copilotOutputUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
-  editableText?: Prisma.StringFieldUpdateOperationsInput | string;
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string;
+  editableText?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   projectId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -325,8 +337,8 @@ export type copilotOutputUncheckedUpdateInput = {
 export type copilotOutputCreateManyInput = {
   id?: string;
   copilotSessionExId: string;
-  editableText: string;
-  aiResponse: string;
+  editableText?: string | null;
+  aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   projectId: string;
   createdAt?: Date | string;
@@ -335,8 +347,11 @@ export type copilotOutputCreateManyInput = {
 export type copilotOutputUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
-  editableText?: Prisma.StringFieldUpdateOperationsInput | string;
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string;
+  editableText?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -344,8 +359,11 @@ export type copilotOutputUpdateManyMutationInput = {
 export type copilotOutputUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
-  editableText?: Prisma.StringFieldUpdateOperationsInput | string;
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string;
+  editableText?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   projectId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -513,8 +531,8 @@ export type copilotOutputUpdateOneRequiredWithoutRubricsNestedInput = {
 export type copilotOutputCreateWithoutProjectInput = {
   id?: string;
   copilotSessionExId: string;
-  editableText: string;
-  aiResponse: string;
+  editableText?: string | null;
+  aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   createdAt?: Date | string;
   rubrics?: Prisma.rubricCreateNestedManyWithoutCopilotOutputInput;
@@ -523,8 +541,8 @@ export type copilotOutputCreateWithoutProjectInput = {
 export type copilotOutputUncheckedCreateWithoutProjectInput = {
   id?: string;
   copilotSessionExId: string;
-  editableText: string;
-  aiResponse: string;
+  editableText?: string | null;
+  aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   createdAt?: Date | string;
   rubrics?: Prisma.rubricUncheckedCreateNestedManyWithoutCopilotOutputInput;
@@ -561,8 +579,11 @@ export type copilotOutputUpdateToOneWithWhereWithoutProjectInput = {
 export type copilotOutputUpdateWithoutProjectInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
-  editableText?: Prisma.StringFieldUpdateOperationsInput | string;
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string;
+  editableText?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   rubrics?: Prisma.rubricUpdateManyWithoutCopilotOutputNestedInput;
@@ -571,8 +592,11 @@ export type copilotOutputUpdateWithoutProjectInput = {
 export type copilotOutputUncheckedUpdateWithoutProjectInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
-  editableText?: Prisma.StringFieldUpdateOperationsInput | string;
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string;
+  editableText?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   rubrics?: Prisma.rubricUncheckedUpdateManyWithoutCopilotOutputNestedInput;
@@ -581,8 +605,8 @@ export type copilotOutputUncheckedUpdateWithoutProjectInput = {
 export type copilotOutputCreateWithoutRubricsInput = {
   id?: string;
   copilotSessionExId: string;
-  editableText: string;
-  aiResponse: string;
+  editableText?: string | null;
+  aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   createdAt?: Date | string;
   project: Prisma.projectCreateNestedOneWithoutCopilotOutputInput;
@@ -591,8 +615,8 @@ export type copilotOutputCreateWithoutRubricsInput = {
 export type copilotOutputUncheckedCreateWithoutRubricsInput = {
   id?: string;
   copilotSessionExId: string;
-  editableText: string;
-  aiResponse: string;
+  editableText?: string | null;
+  aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   projectId: string;
   createdAt?: Date | string;
@@ -629,8 +653,11 @@ export type copilotOutputUpdateToOneWithWhereWithoutRubricsInput = {
 export type copilotOutputUpdateWithoutRubricsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
-  editableText?: Prisma.StringFieldUpdateOperationsInput | string;
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string;
+  editableText?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   project?: Prisma.projectUpdateOneRequiredWithoutCopilotOutputNestedInput;
@@ -639,8 +666,11 @@ export type copilotOutputUpdateWithoutRubricsInput = {
 export type copilotOutputUncheckedUpdateWithoutRubricsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
-  editableText?: Prisma.StringFieldUpdateOperationsInput | string;
-  aiResponse?: Prisma.StringFieldUpdateOperationsInput | string;
+  editableText?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   projectId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -794,8 +824,8 @@ export type $copilotOutputPayload<
     {
       id: string;
       copilotSessionExId: string;
-      editableText: string;
-      aiResponse: string;
+      editableText: string | null;
+      aiResponse: string | null;
       tasks: runtime.JsonValue[];
       projectId: string;
       createdAt: Date;

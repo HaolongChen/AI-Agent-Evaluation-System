@@ -4,8 +4,8 @@ import { CopilotExecutionAggregate } from "../aggregate/copilot-execution.aggreg
 import type { Account } from "../../../account/domain/aggregate/account.aggregate.ts";
 import type { INetworkService } from "../../../account/domain/interface/network-service.interface.ts";
 import type { CopilotInputMessage } from "../schema/project.schema.ts";
-import type { CrdtSchemaAggregate } from "../aggregate/crdt-schema.aggregate.ts";
 import type { CrdtSchemaHandler } from "./crdt-schema-handler.ts";
+import type { ProjectAggregate } from "../aggregate/project.aggregate.ts";
 
 export class CopilotExecutionService {
   constructor(
@@ -15,10 +15,14 @@ export class CopilotExecutionService {
   ) {}
 
   async createSession(
-    crdtSchema: CrdtSchemaAggregate,
+    project: ProjectAggregate,
     copilotInput: CopilotInputAggregate,
     account: Account,
-  ) {
+  ): Promise<CopilotExecutionAggregate> {
+    const crdtSchema = await this.crdtSchemaHandler.rehydrate(
+      project,
+      this.networkService.gqlClient(account.getEntity("networkClient")),
+    );
     const copilotSessionExId = await this.copilotNetwork.createCopilotSession(
       crdtSchema.getData("projectExId"),
       this.networkService.gqlClient(account.getEntity("networkClient")),
@@ -53,13 +57,14 @@ export class CopilotExecutionService {
   ) {
     return async (
       toolCalls: { name: string; args: unknown; toolCallId: string }[],
-    ) =>
-      this.copilotNetwork.runCopilotToolCalls(
+    ) => {
+      return this.copilotNetwork.runCopilotToolCalls(
         toolCalls,
         await this.crdtSchemaHandler.getSchemaGraph(
           copilotExecution.getEntity("crdtSchema"),
           this.networkService.gqlClient(account.getEntity("networkClient")),
         ),
       );
+    };
   }
 }

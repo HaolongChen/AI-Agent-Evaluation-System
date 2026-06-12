@@ -10,14 +10,15 @@ import type { CrdtSchemaHandler } from "./crdt-schema-handler.ts";
 export class ProjectService {
   constructor(
     private readonly zionProjectService: IZionProjectService,
-    private readonly crdtSchemaHandler: CrdtSchemaHandler,
     private readonly networkService: INetworkService,
+    private readonly crdtSchemaHandler: CrdtSchemaHandler,
     private readonly projectNameFactory: ProjectNameServiceFactory,
   ) {}
 
   async rehydrateZionProject(
     copilotInput: CopilotInputAggregate,
     account: Account,
+    dangerousAccount: Account,
   ): Promise<ProjectEntity> {
     const projectNameService =
       this.projectNameFactory.initializeByCopilotInput(copilotInput);
@@ -28,6 +29,13 @@ export class ProjectService {
       this.networkService.gqlClient(account.getEntity("networkClient")),
       this.networkService.wsClient(account.getEntity("networkClient")),
       account.getData("organizationExId"),
+    );
+    await this.crdtSchemaHandler.importSchema(
+      copilotInput.getEntity("goldenSet").getData("schemaId"),
+      projectExId,
+      this.networkService.gqlClient(
+        dangerousAccount.getEntity("networkClient"),
+      ),
     );
     const project = new ProjectEntity(
       { projectExId, projectName: projectNameService.generateProjectName() },

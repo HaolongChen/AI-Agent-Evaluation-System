@@ -1,11 +1,7 @@
 import { prisma } from "../../../../config/prisma.ts";
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
-import {
-  ProjectAfterSession,
-  ProjectAggregate,
-  type ProjectBeforeCopilotSession,
-} from "../../domain/aggregate/project.aggregate.ts";
+import { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
 import { ProjectEntity } from "../../domain/entity/project.entity.ts";
 import { type IProjectRepository } from "../../domain/interface/project-repository.interface.ts";
 import {
@@ -38,28 +34,6 @@ export type ProjectDataMapperParameters = {
 };
 
 export class ProjectRepository implements IProjectRepository {
-  async saveCopilotOutput(data: ProjectAfterSession): Promise<void> {
-    const output = await prisma.project.update({
-      where: { id: data.getData("id") },
-      data: {
-        copilotOutput: {
-          upsert: {
-            where: { copilotSessionExId: data.getData("projectExId") },
-            update: {
-              ...data.getEntity("copilotOutput").getData(),
-            },
-            create: {
-              ...data.getEntity("copilotOutput").getData(),
-            },
-          },
-        },
-      },
-      include: {
-        copilotOutput: true,
-      },
-    });
-    projectWithCopilotSessionDataMapper(output, data);
-  }
   async getByCopilotServer(
     copilotServer: CopilotServerEntity,
   ): Promise<Array<ProjectEntity>> {
@@ -95,7 +69,7 @@ export class ProjectRepository implements IProjectRepository {
   async deleteById(id: string): Promise<void> {
     await prisma.project.delete({ where: { id } });
   }
-  async save(data: ProjectBeforeCopilotSession): Promise<void> {
+  async save(data: ProjectAggregate): Promise<void> {
     const project = await prisma.project.upsert({
       where: {
         id: data.getData("id"),

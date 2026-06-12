@@ -14,9 +14,7 @@ export class AggregateRoot<
     string,
     OneOrMany<Entity>
   >,
-  > extends Entity<T, M>
-{
-
+> extends Entity<T, M> {
   private _events: IDomainEvent[] = [];
 
   private _entities: E;
@@ -29,8 +27,7 @@ export class AggregateRoot<
     this._events.push(event);
   }
 
-  get events (): IDomainEvent[]
-  {
+  get events(): IDomainEvent[] {
     const events = [...this._events];
     this.clearEvents();
     return events;

@@ -6,15 +6,15 @@ import type { ZionProjectEntity } from "../entity/zion-project.entity.ts";
 import type { ICopilotNetworkService } from "./copilot-network.interface.ts";
 
 export interface IZionProjectService {
-	createProjectInZion(
-		zionProject: ZionProjectEntity,
+  createProjectInZion(
+    zionProject: ZionProjectEntity,
     gqlClient: IGQLClient,
     wsClient: IWebSocketClient,
     organizationExId: string,
-	): Promise<string>;
+  ): Promise<string>;
 
-	deleteProjectInZion(
-		projectEntity: ProjectEntity,
-		gqlClient: IGQLClient,
-	): Promise<void>;
+  deleteProjectInZion(
+    projectEntity: ProjectEntity,
+    gqlClient: IGQLClient,
+  ): Promise<void>;
 }

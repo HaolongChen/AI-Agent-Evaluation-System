@@ -1,387 +1,387 @@
 import { gql } from "graphql-tag";
 import type {
-    CreateCopilotSessionMutation,
-	CreateCopilotSessionMutationVariables,
-	OnCopilotSessionUpdatesSubscription,
-	OnCopilotSessionUpdatesSubscriptionVariables,
-	SendMessageToSessionMutation,
-	SendMessageToSessionMutationVariables,
+  CreateCopilotSessionMutation,
+  CreateCopilotSessionMutationVariables,
+  OnCopilotSessionUpdatesSubscription,
+  OnCopilotSessionUpdatesSubscriptionVariables,
+  SendMessageToSessionMutation,
+  SendMessageToSessionMutationVariables,
 } from "../../../graphql/generated/types.ts";
 import type { IGQLClient } from "../../account/domain/interface/graphql-client.interface.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
 import type { IWebSocketClient } from "../../account/domain/interface/websocket-client.interface.ts";
 import {
-	CopilotEvent,
-	type CopilotEventsList,
+  CopilotEvent,
+  type CopilotEventsList,
 } from "../domain/entity/copilot-job.entity.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import {
-	ClientType,
-	Locale,
-	Product,
-	ZTypeCopilotApi,
-	ZTypeCoreApi,
-	type CopilotApiResultJs,
-	type OpaqueSchemaGraph,
+  ClientType,
+  Locale,
+  Product,
+  ZTypeCopilotApi,
+  ZTypeCoreApi,
+  type CopilotApiResultJs,
+  type OpaqueSchemaGraph,
 } from "../../shared/domain/interface/type-system.ts";
 import {
-	type CopilotInputMessage,
-	inputMessageTypeList,
+  type CopilotInputMessage,
+  inputMessageTypeList,
 } from "../domain/schema/project.schema.ts";
 
 export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
-	query GetCopilotSubscriptionCount(
-		$projectExId: String!
-		$sessionType: CopilotSessionType!
-	) {
-		copilotSubscriptionCount(
-			projectExId: $projectExId
-			sessionType: $sessionType
-		)
-	}
+  query GetCopilotSubscriptionCount(
+    $projectExId: String!
+    $sessionType: CopilotSessionType!
+  ) {
+    copilotSubscriptionCount(
+      projectExId: $projectExId
+      sessionType: $sessionType
+    )
+  }
 `;
 
 export const CREATE_COPILOT_SESSION = gql`
-	mutation CreateCopilotSession(
-		$projectExId: String!
-		$sessionType: CopilotSessionType!
-	) {
-		createCopilotSession(projectExId: $projectExId, sessionType: $sessionType)
-	}
+  mutation CreateCopilotSession(
+    $projectExId: String!
+    $sessionType: CopilotSessionType!
+  ) {
+    createCopilotSession(projectExId: $projectExId, sessionType: $sessionType)
+  }
 `;
 
 export const GET_LATEST_SESSION = gql`
-	mutation GetLatestSession(
-		$projectExId: String!
-		$sessionType: CopilotSessionType!
-	) {
-		latestSession(projectExId: $projectExId, sessionType: $sessionType)
-	}
+  mutation GetLatestSession(
+    $projectExId: String!
+    $sessionType: CopilotSessionType!
+  ) {
+    latestSession(projectExId: $projectExId, sessionType: $sessionType)
+  }
 `;
 
 export const SEND_MESSAGE_TO_SESSION = gql`
-	mutation SendMessageToSession(
-		$sessionExId: String!
-		$argsInput: MessageArgsInputInput!
-	) {
-		sendMessageToSession(sessionExId: $sessionExId, argsInput: $argsInput)
-	}
+  mutation SendMessageToSession(
+    $sessionExId: String!
+    $argsInput: MessageArgsInputInput!
+  ) {
+    sendMessageToSession(sessionExId: $sessionExId, argsInput: $argsInput)
+  }
 `;
 
 export const COPILOT_AI_RESPONSE_MESSAGE_FRAGMENT = gql`
-	fragment CopilotAIResponseMessage on CopilotAiResponseMessage {
-		__typename
-		content
-		allowEvaluation
-		messageType
-	}
+  fragment CopilotAIResponseMessage on CopilotAiResponseMessage {
+    __typename
+    content
+    allowEvaluation
+    messageType
+  }
 `;
 
 export const COPILOT_ERROR_MESSAGE_FRAGMENT = gql`
-	fragment CopilotErrorMessage on CopilotErrorMessage {
-		__typename
-		content
-		messageType
-	}
+  fragment CopilotErrorMessage on CopilotErrorMessage {
+    __typename
+    content
+    messageType
+  }
 `;
 
 export const COPILOT_EDITABLE_TEXT_MESSAGE_FRAGMENT = gql`
-	fragment CopilotEditableTextMessage on CopilotEditableTextMessage {
-		__typename
-		content
-		allowEvaluation
-		title
-		messageType
-	}
+  fragment CopilotEditableTextMessage on CopilotEditableTextMessage {
+    __typename
+    content
+    allowEvaluation
+    title
+    messageType
+  }
 `;
 
 export const COPILOT_FEEDBACK_MESSAGE_FRAGMENT = gql`
-	fragment CopilotFeedbackMessage on CopilotFeedbackMessage {
-		__typename
-		feedbackCategory
-		evaluatedMessageExId
-		optionalContent
-		messageType
-	}
+  fragment CopilotFeedbackMessage on CopilotFeedbackMessage {
+    __typename
+    feedbackCategory
+    evaluatedMessageExId
+    optionalContent
+    messageType
+  }
 `;
 
 export const COPILOT_HUMAN_INPUT_MESSAGE_FRAGMENT = gql`
-	fragment CopilotHumanInputMessage on CopilotHumanInputMessage {
-		__typename
-		content
-		messageType
-		context {
-			__typename
-			tableNames
-		}
-	}
+  fragment CopilotHumanInputMessage on CopilotHumanInputMessage {
+    __typename
+    content
+    messageType
+    context {
+      __typename
+      tableNames
+    }
+  }
 `;
 
 export const COPILOT_HUMAN_OPERATION_MESSAGE_FRAGMENT = gql`
-	fragment CopilotHumanOperationMessage on CopilotHumanOperationMessage {
-		__typename
-		optionalContent
-		humanOperationType
-		messageType
-	}
+  fragment CopilotHumanOperationMessage on CopilotHumanOperationMessage {
+    __typename
+    optionalContent
+    humanOperationType
+    messageType
+  }
 `;
 
 export const COPILOT_STATE_CHANGE_MESSAGE_FRAGMENT = gql`
-	fragment CopilotStateChangeMessage on CopilotStateChangeMessage {
-		__typename
-		currentJobIsRunning
-		messageType
-	}
+  fragment CopilotStateChangeMessage on CopilotStateChangeMessage {
+    __typename
+    currentJobIsRunning
+    messageType
+  }
 `;
 
 export const COPILOT_STOP_MESSAGE_FRAGMENT = gql`
-	fragment CopilotStopMessage on CopilotStopMessage {
-		__typename
-		reason
-		messageType
-	}
+  fragment CopilotStopMessage on CopilotStopMessage {
+    __typename
+    reason
+    messageType
+  }
 `;
 
 export const COPILOT_SYSTEM_STATUS_MESSAGE_FRAGMENT = gql`
-	fragment CopilotSystemStatusMessage on CopilotSystemStatusMessage {
-		__typename
-		content
-		messageType
-	}
+  fragment CopilotSystemStatusMessage on CopilotSystemStatusMessage {
+    __typename
+    content
+    messageType
+  }
 `;
 
 export const COPILOT_TASK_MESSAGE_FRAGMENT = gql`
-	fragment CopilotTaskMessage on CopilotTaskMessage {
-		__typename
-		taskId
-		name
-		description
-		diff
-		isDiffReverted
-		messageType
-	}
+  fragment CopilotTaskMessage on CopilotTaskMessage {
+    __typename
+    taskId
+    name
+    description
+    diff
+    isDiffReverted
+    messageType
+  }
 `;
 
 export const COPILOT_TASK_REVERT_SUCCESS_MESSAGE_FRAGMENT = gql`
-	fragment CopilotTaskRevertSuccessMessage on CopilotTaskRevertSuccessMessage {
-		__typename
-		taskIds
-		messageType
-	}
+  fragment CopilotTaskRevertSuccessMessage on CopilotTaskRevertSuccessMessage {
+    __typename
+    taskIds
+    messageType
+  }
 `;
 
 export const COPILOT_TERMINATE_MESSAGE_FRAGMENT = gql`
-	fragment CopilotTerminateMessage on CopilotTerminateMessage {
-		__typename
-		reason
-		messageType
-	}
+  fragment CopilotTerminateMessage on CopilotTerminateMessage {
+    __typename
+    reason
+    messageType
+  }
 `;
 
 export const COPILOT_TOOL_CALL_BATCH_EXEC_ERROR_MESSAGE_FRAGMENT = gql`
-	fragment CopilotToolCallBatchExecErrorMessage on CopilotToolCallBatchExecErrorMessage {
-		__typename
-		toolCallBatchId
-		messageType
-		error
-		context {
-			__typename
-			toolCalls
-			result
-			schemaExId
-			lastPatchExId
-		}
-	}
+  fragment CopilotToolCallBatchExecErrorMessage on CopilotToolCallBatchExecErrorMessage {
+    __typename
+    toolCallBatchId
+    messageType
+    error
+    context {
+      __typename
+      toolCalls
+      result
+      schemaExId
+      lastPatchExId
+    }
+  }
 `;
 
 export const COPILOT_TOOL_CALL_BATCH_MESSAGE_FRAGMENT = gql`
-	fragment CopilotToolCallBatchMessage on CopilotToolCallBatchMessage {
-		__typename
-		toolCallBatchId
-		messageType
-		toolCalls {
-			__typename
-			id
-			name
-			args
-		}
-	}
+  fragment CopilotToolCallBatchMessage on CopilotToolCallBatchMessage {
+    __typename
+    toolCallBatchId
+    messageType
+    toolCalls {
+      __typename
+      id
+      name
+      args
+    }
+  }
 `;
 
 export const COPILOT_TOOL_CALL_BATCH_RESPONSE_MESSAGE_FRAGMENT = gql`
-	fragment CopilotToolCallBatchResponseMessage on CopilotToolCallBatchResponseMessage {
-		__typename
-		toolCallBatchId
-		responseByToolCallId
-		messageType
-		schemaDiff
-	}
+  fragment CopilotToolCallBatchResponseMessage on CopilotToolCallBatchResponseMessage {
+    __typename
+    toolCallBatchId
+    responseByToolCallId
+    messageType
+    schemaDiff
+  }
 `;
 export const COPILOT_MESSAGE_CONTENT_FRAGMENT = gql`
-	fragment CopilotMessageContent on CopilotContentMessage {
-		__typename
-		messageType
-		...CopilotAIResponseMessage
-		...CopilotErrorMessage
-		...CopilotEditableTextMessage
-		...CopilotFeedbackMessage
-		...CopilotHumanInputMessage
-		...CopilotHumanOperationMessage
-		...CopilotStateChangeMessage
-		...CopilotStopMessage
-		...CopilotSystemStatusMessage
-		...CopilotTaskMessage
-		...CopilotTaskRevertSuccessMessage
-		...CopilotTerminateMessage
-		...CopilotToolCallBatchExecErrorMessage
-		...CopilotToolCallBatchMessage
-		...CopilotToolCallBatchResponseMessage
-	}
-	${COPILOT_AI_RESPONSE_MESSAGE_FRAGMENT}
-	${COPILOT_ERROR_MESSAGE_FRAGMENT}
-	${COPILOT_EDITABLE_TEXT_MESSAGE_FRAGMENT}
-	${COPILOT_FEEDBACK_MESSAGE_FRAGMENT}
-	${COPILOT_HUMAN_INPUT_MESSAGE_FRAGMENT}
-	${COPILOT_HUMAN_OPERATION_MESSAGE_FRAGMENT}
-	${COPILOT_STATE_CHANGE_MESSAGE_FRAGMENT}
-	${COPILOT_STOP_MESSAGE_FRAGMENT}
-	${COPILOT_SYSTEM_STATUS_MESSAGE_FRAGMENT}
-	${COPILOT_TASK_MESSAGE_FRAGMENT}
-	${COPILOT_TASK_REVERT_SUCCESS_MESSAGE_FRAGMENT}
-	${COPILOT_TERMINATE_MESSAGE_FRAGMENT}
-	${COPILOT_TOOL_CALL_BATCH_EXEC_ERROR_MESSAGE_FRAGMENT}
-	${COPILOT_TOOL_CALL_BATCH_MESSAGE_FRAGMENT}
-	${COPILOT_TOOL_CALL_BATCH_RESPONSE_MESSAGE_FRAGMENT}
+  fragment CopilotMessageContent on CopilotContentMessage {
+    __typename
+    messageType
+    ...CopilotAIResponseMessage
+    ...CopilotErrorMessage
+    ...CopilotEditableTextMessage
+    ...CopilotFeedbackMessage
+    ...CopilotHumanInputMessage
+    ...CopilotHumanOperationMessage
+    ...CopilotStateChangeMessage
+    ...CopilotStopMessage
+    ...CopilotSystemStatusMessage
+    ...CopilotTaskMessage
+    ...CopilotTaskRevertSuccessMessage
+    ...CopilotTerminateMessage
+    ...CopilotToolCallBatchExecErrorMessage
+    ...CopilotToolCallBatchMessage
+    ...CopilotToolCallBatchResponseMessage
+  }
+  ${COPILOT_AI_RESPONSE_MESSAGE_FRAGMENT}
+  ${COPILOT_ERROR_MESSAGE_FRAGMENT}
+  ${COPILOT_EDITABLE_TEXT_MESSAGE_FRAGMENT}
+  ${COPILOT_FEEDBACK_MESSAGE_FRAGMENT}
+  ${COPILOT_HUMAN_INPUT_MESSAGE_FRAGMENT}
+  ${COPILOT_HUMAN_OPERATION_MESSAGE_FRAGMENT}
+  ${COPILOT_STATE_CHANGE_MESSAGE_FRAGMENT}
+  ${COPILOT_STOP_MESSAGE_FRAGMENT}
+  ${COPILOT_SYSTEM_STATUS_MESSAGE_FRAGMENT}
+  ${COPILOT_TASK_MESSAGE_FRAGMENT}
+  ${COPILOT_TASK_REVERT_SUCCESS_MESSAGE_FRAGMENT}
+  ${COPILOT_TERMINATE_MESSAGE_FRAGMENT}
+  ${COPILOT_TOOL_CALL_BATCH_EXEC_ERROR_MESSAGE_FRAGMENT}
+  ${COPILOT_TOOL_CALL_BATCH_MESSAGE_FRAGMENT}
+  ${COPILOT_TOOL_CALL_BATCH_RESPONSE_MESSAGE_FRAGMENT}
 `;
 export const COPILOT_INITIAL_STATE_MESSAGE_FRAGMENT = gql`
-	fragment CopilotInitialStateMessage on CopilotInitialStateMessage {
-		__typename
-		currentJobIsRunning
-		terminated
-		messageType
-		copilotMessages {
-			exId
-			type
-			createdAt
-		}
-	}
+  fragment CopilotInitialStateMessage on CopilotInitialStateMessage {
+    __typename
+    currentJobIsRunning
+    terminated
+    messageType
+    copilotMessages {
+      exId
+      type
+      createdAt
+    }
+  }
 `;
 export const ON_COPILOT_SESSION_UPDATES = gql`
-	subscription OnCopilotSessionUpdates($sessionExId: String!) {
-		onCopilotSessionUpdate(sessionExId: $sessionExId) {
-			__typename
-			exId
-			createdAt
-			type
-			content {
-				__typename
-				messageType
-				...CopilotMessageContent
-				...CopilotInitialStateMessage
-			}
-		}
-	}
-	${COPILOT_MESSAGE_CONTENT_FRAGMENT}
-	${COPILOT_INITIAL_STATE_MESSAGE_FRAGMENT}
+  subscription OnCopilotSessionUpdates($sessionExId: String!) {
+    onCopilotSessionUpdate(sessionExId: $sessionExId) {
+      __typename
+      exId
+      createdAt
+      type
+      content {
+        __typename
+        messageType
+        ...CopilotMessageContent
+        ...CopilotInitialStateMessage
+      }
+    }
+  }
+  ${COPILOT_MESSAGE_CONTENT_FRAGMENT}
+  ${COPILOT_INITIAL_STATE_MESSAGE_FRAGMENT}
 `;
 
 export class CopilotNetworkService implements ICopilotNetworkService {
-	constructor() {}
+  constructor() {}
 
-	async createCopilotSession (
-		projectExId: string,
-		gqlClient: IGQLClient,
-	): Promise<string> {
-		const result = await gqlClient.gqlRequest<
-			CreateCopilotSessionMutation,
-			CreateCopilotSessionMutationVariables
-		>(CREATE_COPILOT_SESSION, {
-			projectExId: projectExId,
-			sessionType: "COPILOT",
-		});
-		return result.createCopilotSession;
-	}
+  async createCopilotSession(
+    projectExId: string,
+    gqlClient: IGQLClient,
+  ): Promise<string> {
+    const result = await gqlClient.gqlRequest<
+      CreateCopilotSessionMutation,
+      CreateCopilotSessionMutationVariables
+    >(CREATE_COPILOT_SESSION, {
+      projectExId,
+      sessionType: "COPILOT",
+    });
+    return result.createCopilotSession;
+  }
 
-	runCopilotToolCalls(
-		toolCalls: {
-			name: string;
-			args: unknown;
-			toolCallId: string;
-		}[],
-		schemaGraph: OpaqueSchemaGraph,
-	): CopilotApiResultJs {
-		const product = Product.ZION;
-		const clientType = ClientType.WEB;
-		const locale = Locale.ZH;
-		return ZTypeCopilotApi.toolCalls(
-			ZTypeCoreApi.genZTypeApiContext(
-				schemaGraph,
-				product,
-				clientType,
-				"WEB",
-				locale,
-				// eslint-disable-next-line unicorn/no-null
-				null,
-			),
-			toolCalls,
-		);
-	}
+  runCopilotToolCalls(
+    toolCalls: {
+      name: string;
+      args: unknown;
+      toolCallId: string;
+    }[],
+    schemaGraph: unknown,
+  ): CopilotApiResultJs {
+    const product = Product.ZION;
+    const clientType = ClientType.WEB;
+    const locale = Locale.ZH;
+    return ZTypeCopilotApi.toolCalls(
+      ZTypeCoreApi.genZTypeApiContext(
+        schemaGraph as OpaqueSchemaGraph,
+        product,
+        clientType,
+        "WEB",
+        locale,
+        // eslint-disable-next-line unicorn/no-null
+        null,
+      ),
+      toolCalls,
+    );
+  }
 
-	async sendMessageToSession<T extends keyof CopilotInputMessage>(
-		sessionExId: string,
-		gqlClient: IGQLClient,
-		type: T,
-		message: CopilotInputMessage[T],
-	): Promise<void> {
-		const response = await gqlClient.gqlRequest<
-			SendMessageToSessionMutation,
-			SendMessageToSessionMutationVariables
-		>(SEND_MESSAGE_TO_SESSION, {
-			sessionExId,
-			argsInput: {
-				copilotArgs: {
-					[inputMessageTypeList[type]]: message,
-					copilotMessageType: type,
-				},
-			},
-		});
-		if (!response.sendMessageToSession) {
-			throw new Error("Failed to send message to session");
-		}
-	}
-	subscribeToSessionUpdates(
-		sessionExId: string,
-		wsClient: IWebSocketClient,
-		publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
-	): () => void {
-		return wsClient.subscribe<
-			OnCopilotSessionUpdatesSubscription,
-			OnCopilotSessionUpdatesSubscriptionVariables
-		>(
-			ON_COPILOT_SESSION_UPDATES,
-			{
-				next: (data) => {
-					const content = data?.onCopilotSessionUpdate?.content;
+  async sendMessageToSession<T extends keyof CopilotInputMessage>(
+    sessionExId: string,
+    gqlClient: IGQLClient,
+    type: T,
+    message: CopilotInputMessage[T],
+  ): Promise<void> {
+    const response = await gqlClient.gqlRequest<
+      SendMessageToSessionMutation,
+      SendMessageToSessionMutationVariables
+    >(SEND_MESSAGE_TO_SESSION, {
+      sessionExId,
+      argsInput: {
+        copilotArgs: {
+          [inputMessageTypeList[type]]: message,
+          copilotMessageType: type,
+        },
+      },
+    });
+    if (!response.sendMessageToSession) {
+      throw new Error("Failed to send message to session");
+    }
+  }
+  subscribeToSessionUpdates(
+    sessionExId: string,
+    wsClient: IWebSocketClient,
+    publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
+  ): () => void {
+    return wsClient.subscribe<
+      OnCopilotSessionUpdatesSubscription,
+      OnCopilotSessionUpdatesSubscriptionVariables
+    >(
+      ON_COPILOT_SESSION_UPDATES,
+      {
+        next: (data) => {
+          const content = data?.onCopilotSessionUpdate?.content;
 
-					if (!content) {
-						throw new Error("Received subscription update without content");
-					}
+          if (!content) {
+            throw new Error("Received subscription update without content");
+          }
 
-					logger.info("Received subscription update:", content);
-					const event = new CopilotEvent(
-						content.__typename,
-						content,
-					) as CopilotEventsList[keyof CopilotEventsList];
-					publish(event);
-				},
-				error: (error) => {
-					logger.error("Subscription error:", error);
-				},
-				complete: () => {
-					logger.info("Subscription completed");
-				},
-			},
-			{ sessionExId },
-		);
-	}
+          logger.info("Received subscription update:", content);
+          const event = new CopilotEvent(
+            content.__typename,
+            content,
+          ) as CopilotEventsList[keyof CopilotEventsList];
+          publish(event);
+        },
+        error: (error) => {
+          logger.error("Subscription error:", error);
+        },
+        complete: () => {
+          logger.info("Subscription completed");
+        },
+      },
+      { sessionExId },
+    );
+  }
 }

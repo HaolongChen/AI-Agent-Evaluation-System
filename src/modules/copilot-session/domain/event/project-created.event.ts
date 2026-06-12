@@ -3,12 +3,11 @@ import type { IDomainEvent } from "../../../shared/domain/event/domain-event.int
 import { projectSchema } from "../schema/project.schema.ts";
 
 export class ProjectCreatedEvent implements IDomainEvent {
-	readonly name = "zionProject.created";
-	readonly createdAt: Date = new Date();
+  readonly name = "zionProject.created";
+  readonly createdAt: Date = new Date();
 
-	constructor(
-		public readonly project: z.infer<typeof projectSchema>,
-		public readonly copilotInputId: string,
-		public copilotServerId: string,
-	) {}
+  constructor(
+    public readonly project: z.infer<typeof projectSchema>,
+    public readonly schemaId: string,
+  ) {}
 }

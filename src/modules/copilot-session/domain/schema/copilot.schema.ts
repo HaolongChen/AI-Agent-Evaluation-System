@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { type OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content } from "../../../../graphql/generated/types.ts";
 
 export type CopilotMessageContent =
@@ -33,3 +34,8 @@ export type TypeNameList = {
     ? K
     : never;
 };
+
+export const copilotExecutionSchema = z.object({
+  copilotSessionExId: z.string(),
+  projectId: z.string(),
+});

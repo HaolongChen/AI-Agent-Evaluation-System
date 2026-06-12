@@ -5,22 +5,22 @@ import type { NetworkClientEntity } from "../entity/network-client.entity.ts";
 import type { accountSchema } from "../schema/account.schema.ts";
 
 export class Account extends AggregateRoot<
-	typeof accountSchema,
-	EntityMetadata,
-	{ networkClient: NetworkClientEntity }
+  typeof accountSchema,
+  EntityMetadata,
+  { networkClient: NetworkClientEntity }
 > {
-	constructor(account: AccountEntity, networkClient: NetworkClientEntity) {
-		super(account, { networkClient });
-		this.getEntity("networkClient").setHeader(
-			"Authorization",
-			account.getData("accessToken"),
-		);
-	}
+  constructor(account: AccountEntity, networkClient: NetworkClientEntity) {
+    super(account, { networkClient });
+    this.getEntity("networkClient").setHeader(
+      "Authorization",
+      account.getData("accessToken"),
+    );
+  }
 
-	get loginParameters() {
-		return {
-			username: this.getData("username"),
-			password: this.getData("password"),
-		};
-	}
+  get loginParameters() {
+    return {
+      username: this.getData("username"),
+      password: this.getData("password"),
+    };
+  }
 }

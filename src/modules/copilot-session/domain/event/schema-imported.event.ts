@@ -6,6 +6,6 @@ export class SchemaImportedEvent implements IDomainEvent {
 
   constructor(
     public readonly schemaId: string,
-    public readonly projectExId: string,
+    public readonly projectId: string,
   ) {}
 }

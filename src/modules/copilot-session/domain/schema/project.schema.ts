@@ -25,7 +25,6 @@ export const projectCreationRequiredSchema = z.object({
 });
 
 export const projectSchema = z.object({
-  projectExId: z.string(),
   projectName: z.string(),
 });
 

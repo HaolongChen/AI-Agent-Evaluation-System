@@ -15,4 +15,11 @@ export class ProjectEntity<
   ) {
     super(data, projectSchema, { ...metadata, id });
   }
+
+  clone<M>(metadata: M): ProjectEntity<T & M> {
+    return new ProjectEntity<T & M>(
+      this.getData(),
+      { ...this.getData(), ...metadata }
+    );
+  }
 }

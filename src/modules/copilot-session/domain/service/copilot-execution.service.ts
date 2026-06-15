@@ -1,11 +1,13 @@
 import type { ICopilotNetworkService } from "../interface/copilot-network.interface.ts";
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 import { CopilotExecutionAggregate } from "../aggregate/copilot-execution.aggregate.ts";
-import type { Account } from "../../../account/domain/aggregate/account.aggregate.ts";
+import { Account } from "../../../account/domain/aggregate/account.aggregate.ts";
 import type { INetworkService } from "../../../account/domain/interface/network-service.interface.ts";
 import type { CopilotInputMessage } from "../schema/project.schema.ts";
 import type { CrdtSchemaHandler } from "./crdt-schema-handler.ts";
 import type { ProjectAggregate } from "../aggregate/project.aggregate.ts";
+import type { AccountEntity } from "../../../account/domain/entity/account.entity.ts";
+import { NetworkClientEntity } from "../../../account/domain/entity/network-client.entity.ts";
 
 export class CopilotExecutionService {
   constructor(
@@ -14,7 +16,13 @@ export class CopilotExecutionService {
     private readonly crdtSchemaHandler: CrdtSchemaHandler,
   ) {}
 
-  async createSession(
+  configureCopilotNetwork ( account: AccountEntity, copilotExecutionAggregate: CopilotExecutionAggregate ): Account
+  {
+    const networkClient = new NetworkClientEntity( { wsUrl: copilotExecutionAggregate.getData( "wsUrl" ), gqlUrl: copilotExecutionAggregate.getData( "gqlUrl" ) } );
+    return new Account( account, networkClient );
+  }
+
+  async start(
     project: ProjectAggregate,
     copilotInput: CopilotInputAggregate,
     account: Account,
@@ -35,7 +43,7 @@ export class CopilotExecutionService {
     );
   }
 
-  messageSenderConfiguration(
+  sender(
     copilotExecution: CopilotExecutionAggregate,
     account: Account,
   ) {
@@ -51,7 +59,7 @@ export class CopilotExecutionService {
       );
   }
 
-  toolCallHandlerConfiguration(
+  toolCallHandler(
     copilotExecution: CopilotExecutionAggregate,
     account: Account,
   ) {

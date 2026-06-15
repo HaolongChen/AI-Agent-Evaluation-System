@@ -15,30 +15,29 @@ export class ProjectService {
     private readonly projectNameFactory: ProjectNameServiceFactory,
   ) {}
 
-  async rehydrateZionProject(
-    copilotInput: CopilotInputAggregate,
+  async rehydrateZionProject (
+    schemaId: string,
+    projectName: string,
     account: Account,
     dangerousAccount: Account,
   ): Promise<ProjectEntity> {
-    const projectNameService =
-      this.projectNameFactory.initializeByCopilotInput(copilotInput);
     const projectExId = await this.zionProjectService.createProjectInZion(
       new ZionProjectEntity({
-        projectName: projectNameService.generateProjectName(),
+        projectName
       }),
       this.networkService.gqlClient(account.getEntity("networkClient")),
       this.networkService.wsClient(account.getEntity("networkClient")),
       account.getData("organizationExId"),
     );
     await this.crdtSchemaHandler.importSchema(
-      copilotInput.getEntity("goldenSet").getData("schemaId"),
+      schemaId,
       projectExId,
       this.networkService.gqlClient(
         dangerousAccount.getEntity("networkClient"),
       ),
     );
     const project = new ProjectEntity(
-      { projectExId, projectName: projectNameService.generateProjectName() },
+      { projectExId, projectName },
       {},
     );
     return project;

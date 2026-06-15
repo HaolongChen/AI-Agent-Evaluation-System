@@ -4,5 +4,5 @@ export class CopilotSessionCreatedEvent implements IDomainEvent {
   readonly name = "copilot.session.created";
   readonly createdAt = new Date();
 
-  constructor(public readonly copilotSessionExId: string) {}
+  constructor ( public readonly copilotSessionExId: string, public readonly copilotSessionId: string, public readonly projectId: string) {}
 }

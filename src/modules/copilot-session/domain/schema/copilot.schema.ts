@@ -36,6 +36,6 @@ export type TypeNameList = {
 };
 
 export const copilotExecutionSchema = z.object({
-  copilotSessionExId: z.string(),
-  projectId: z.string(),
+  copilotInputId: z.string(),
+  copilotServerId: z.string(),
 });

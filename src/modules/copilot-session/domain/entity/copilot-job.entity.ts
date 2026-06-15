@@ -1,10 +1,9 @@
 import {
+    type CopilotInputMessage,
   type CopilotMessageContentMap,
   type TypeNameList,
 } from "../schema/copilot.schema.ts";
 import { Event } from "ts-event-target";
-import type { CopilotInputMessage } from "../schema/project.schema.ts";
-
 export class CopilotEvent<T extends keyof TypeNameList> extends Event<T> {
   constructor(
     type: T,

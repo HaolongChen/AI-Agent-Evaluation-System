@@ -1,7 +1,18 @@
-import type { IRepository } from "../../../shared/domain/interface/repository.interface.ts";
-import type { CopilotExecutionAggregate } from "../aggregate/copilot-execution.aggregate.ts";
+export interface ICopilotRepository {
+	save(
+		id: string,
+    data?: { editableText: string } | { aiResponse: string },
+    task?: unknown,
+	): Promise<void>;
 
-export interface ICopilotRepository
-{
-  save(entity: CopilotExecutionAggregate): Promise<void>;
+	linkProject(
+		projectId: string,
+		copilotInputId: string,
+		copilotServerId: string,
+	): Promise<void>;
+	linkCopilotSession(
+		copilotSessionExId: string,
+		projectId: string,
+		id: string,
+	): Promise<void>;
 }

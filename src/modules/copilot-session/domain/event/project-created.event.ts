@@ -6,8 +6,8 @@ export class ProjectCreatedEvent implements IDomainEvent {
 
 	constructor(
 		public readonly project: {
-			name: string;
-			exId: string;
+			projectName: string;
+			projectExId: string;
 			id: string;
 		}) {}
 }

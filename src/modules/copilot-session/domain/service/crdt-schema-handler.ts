@@ -10,9 +10,14 @@ export class CrdtSchemaHandler {
     return fromUint8Array(new Uint8Array(schema as ArrayBufferLike));
   };
 
-  async getSchemaGraph(crdtSchema: CrdtSchemaAggregate, gqlClient: IGQLClient) {
+  private getSchemaIdFromUrl = ( url: string ): string =>
+  {
+    return new URL( url ).pathname.split( "/" )[ 2 ];
+  }
+
+  async getSchemaGraph(schemaId: string, gqlClient: IGQLClient) {
     const arrayBuffer = await this.crdtSchemaService.getSchemaModelById(
-      crdtSchema.schemaId,
+      schemaId,
     );
     return this.crdtSchemaService.getSchemaGraph(
       this.schemaTransformer(arrayBuffer),
@@ -35,28 +40,19 @@ export class CrdtSchemaHandler {
     );
   }
 
-  async rehydrate(
+  async getSchemaId(
     project: ProjectEntity,
     gqlClient: IGQLClient,
-  ): Promise<CrdtSchemaAggregate> {
+  ): Promise<string> {
     const data = await this.crdtSchemaService.fetchAppDetailByExId(
       project.getData("projectExId"),
       gqlClient,
     );
-    if (!data.latestSchema?.crdtModelUrl) {
-      throw new Error(
-        `No CRDT schema found for projectExId: ${project.getData("projectExId")}`,
-      );
+    const url = data.latestSchema?.crdtModelUrl;
+    if ( !url )
+    {
+      throw new Error( "No schema linked to this project" );
     }
-    return new CrdtSchemaAggregate(
-      {
-        ...data,
-        crdtModelUrl: data.latestSchema?.crdtModelUrl,
-        type: data.type || "SINGLE_CLIENT",
-        category: data.category || "OTHERS",
-        projectSpace: data.projectSpace?.projectSpaceType || "PERSONAL",
-      },
-      project,
-    );
+    return this.getSchemaIdFromUrl( url );
   }
 }

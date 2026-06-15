@@ -1,53 +1,41 @@
 import { prisma } from "../../../../config/prisma.ts";
-import type { CopilotExecutionAggregate } from "../../domain/aggregate/copilot-execution.aggregate.ts";
 import type { ICopilotRepository } from "../../domain/interface/copilot-repository.interface.ts";
 
 export class CopilotRepository implements ICopilotRepository {
-	private async saveProject(
+	async save(
+		id: string,
+		data?: { editableText: string } | { aiResponse: string },
+		task?: unknown,
+	): Promise<void> {
+		await prisma.copilotOutput.update({
+			where: { id },
+			data: {
+				...data,
+				tasks: {
+					push: task as object,
+				},
+			},
+		});
+	}
+	async linkProject(
 		projectId: string,
 		copilotInputId: string,
 		copilotServerId: string,
-	) {
+	): Promise<void> {
 		await prisma.project.update({
 			where: { id: projectId },
 			data: { copilotInputId, copilotServerId },
 		});
 	}
-	private async saveCopilotSession(
+	async linkCopilotSession(
 		copilotSessionExId: string,
 		projectId: string,
 		id: string,
-	) {
-		await prisma.project.update({
-			where: { id: projectId },
-			data: {
-				copilotOutput: {
-					create: {
-						copilotSessionExId,
-						projectId,
-						id,
-					},
-				},
-			},
-		});
-	}
-	async save(entity: CopilotExecutionAggregate): Promise<void> {
+	): Promise<void> {
 		await prisma.copilotOutput.upsert({
-			where: {
-				projectId: entity.getData("projectId"),
-			},
-			update: {
-				...entity.executionLogs,
-				copilotSessionExId: entity.getData("copilotSessionExId"),
-			},
-			create: {
-				...entity.executionLogs,
-				projectId: entity.getData("projectId"),
-				copilotSessionExId: entity.getData("copilotSessionExId"),
-			},
+			where: { id },
+			update: { copilotSessionExId, projectId },
+			create: { id, projectId, copilotSessionExId },
 		});
-	}
-	async findById(id: string): Promise<CopilotExecutionAggregate> {
-		throw new Error("Method not implemented.");
 	}
 }

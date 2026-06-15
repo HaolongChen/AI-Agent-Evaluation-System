@@ -8,8 +8,7 @@ import {
 } from "../../../shared/domain/entity/entity.ts";
 import { ProjectLinkedEvent } from "../event/project-created.event.ts";
 import { SchemaImportedEvent } from "../event/schema-imported.event.ts";
-import { copilotExecutionSchema } from "../schema/copilot.schema.ts";
-import type { CopilotExecutionLogs } from "../schema/project.schema.ts";
+import { copilotExecutionSchema, type CopilotExecutionLogs } from "../schema/copilot.schema.ts";
 
 export class CopilotExecutionAggregate extends AggregateRoot<
 	typeof copilotExecutionSchema,

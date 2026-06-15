@@ -1,13 +1,13 @@
-import { projectSchema } from "../schema/crdt-schema.schema.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import { ZionProject } from "../entity/zion-project.entity.ts";
 import { Entity } from "../../../shared/domain/entity/entity.ts";
 import { ProjectCreatedEvent } from "../event/project-created.event.ts";
+import { projectSchema } from "../schema/project.schema.ts";
 
 export class ProjectAggregate extends AggregateRoot<typeof projectSchema> {
 	constructor(
 		projectExId: string,
-		project: { projectName: string; id: string },
+		project: { projectName: string; id: string } | ZionProject,
 	) {
 		if (project instanceof ZionProject) {
 			super(
@@ -19,11 +19,7 @@ export class ProjectAggregate extends AggregateRoot<typeof projectSchema> {
 				{},
 			);
 			this.addEvent(
-				new ProjectCreatedEvent({
-					name: this.getData("projectName"),
-					exId: projectExId,
-					id: this.getData("id"),
-				}),
+				new ProjectCreatedEvent({ ...this.getData(), projectExId }),
 			);
 		} else {
 			super(

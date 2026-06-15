@@ -1,18 +1,18 @@
 export interface ICopilotRepository {
-	save(
-		id: string,
+  save(
+    id: string,
     data?: { editableText: string } | { aiResponse: string },
     task?: unknown,
-	): Promise<void>;
+  ): Promise<void>;
 
-	linkProject(
-		projectId: string,
-		copilotInputId: string,
-		copilotServerId: string,
-	): Promise<void>;
-	linkCopilotSession(
-		copilotSessionExId: string,
-		projectId: string,
-		id: string,
-	): Promise<void>;
+  linkProject(
+    projectId: string,
+    copilotInputId: string,
+    copilotServerId: string,
+  ): Promise<void>;
+  linkCopilotSession(
+    copilotSessionExId: string,
+    projectId: string,
+    id: string,
+  ): Promise<void>;
 }

@@ -15,7 +15,7 @@ export class ProjectService {
     private readonly projectNameFactory: ProjectNameServiceFactory,
   ) {}
 
-  async rehydrateZionProject (
+  async rehydrateZionProject(
     schemaId: string,
     projectName: string,
     account: Account,
@@ -23,7 +23,7 @@ export class ProjectService {
   ): Promise<ProjectEntity> {
     const projectExId = await this.zionProjectService.createProjectInZion(
       new ZionProject({
-        projectName
+        projectName,
       }),
       this.networkService.gqlClient(account.getEntity("networkClient")),
       this.networkService.wsClient(account.getEntity("networkClient")),
@@ -36,10 +36,7 @@ export class ProjectService {
         dangerousAccount.getEntity("networkClient"),
       ),
     );
-    const project = new ProjectEntity(
-      { projectExId, projectName },
-      {},
-    );
+    const project = new ProjectEntity({ projectExId, projectName }, {});
     return project;
   }
 

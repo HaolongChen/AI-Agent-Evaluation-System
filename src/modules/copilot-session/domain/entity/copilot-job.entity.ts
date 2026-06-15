@@ -1,5 +1,5 @@
 import {
-    type CopilotInputMessage,
+  type CopilotInputMessage,
   type CopilotMessageContentMap,
   type TypeNameList,
 } from "../schema/copilot.schema.ts";

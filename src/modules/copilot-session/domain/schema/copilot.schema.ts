@@ -1,5 +1,16 @@
 import { z } from "zod";
-import { CopilotMessageType, type CopilotFeedbackMessageInput, type CopilotHumanInputMessageInput, type CopilotHumanOperationMessageInput, type CopilotStopMessageInput, type CopilotTaskRevertSuccessMessageInput, type CopilotTerminateMessageInput, type CopilotToolCallBatchExecErrorMessageInput, type CopilotToolCallBatchResponseMessageInput, type OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content } from "../../../../graphql/generated/types.ts";
+import {
+  CopilotMessageType,
+  type CopilotFeedbackMessageInput,
+  type CopilotHumanInputMessageInput,
+  type CopilotHumanOperationMessageInput,
+  type CopilotStopMessageInput,
+  type CopilotTaskRevertSuccessMessageInput,
+  type CopilotTerminateMessageInput,
+  type CopilotToolCallBatchExecErrorMessageInput,
+  type CopilotToolCallBatchResponseMessageInput,
+  type OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content,
+} from "../../../../graphql/generated/types.ts";
 import type { copilotOutputSchema } from "./copilot-output.schema.ts";
 
 export type CopilotMessageContent =
@@ -41,35 +52,33 @@ export const copilotExecutionSchema = z.object({
   copilotServerId: z.string(),
 });
 
-
-
 export type CopilotExecutionLogs = {
-	[K in keyof Omit<
-		z.infer<typeof copilotOutputSchema>,
-		"copilotSessionExId"
-	>]: z.infer<typeof copilotOutputSchema>[K] extends string ?
-		z.infer<typeof copilotOutputSchema>[K] | undefined
-	:	z.infer<typeof copilotOutputSchema>[K];
+  [K in keyof Omit<
+    z.infer<typeof copilotOutputSchema>,
+    "copilotSessionExId"
+  >]: z.infer<typeof copilotOutputSchema>[K] extends string
+    ? z.infer<typeof copilotOutputSchema>[K] | undefined
+    : z.infer<typeof copilotOutputSchema>[K];
 };
 
 export type CopilotInputMessage = {
-	[CopilotMessageType.Feedback]: CopilotFeedbackMessageInput;
-	[CopilotMessageType.HumanInput]: CopilotHumanInputMessageInput;
-	[CopilotMessageType.HumanOperation]: CopilotHumanOperationMessageInput;
-	[CopilotMessageType.Stop]: CopilotStopMessageInput;
-	[CopilotMessageType.ToolCallBatchResponse]: CopilotToolCallBatchResponseMessageInput;
-	[CopilotMessageType.ToolCallBatchExecError]: CopilotToolCallBatchExecErrorMessageInput;
-	[CopilotMessageType.Terminate]: CopilotTerminateMessageInput;
-	[CopilotMessageType.TaskRevertSuccess]: CopilotTaskRevertSuccessMessageInput;
+  [CopilotMessageType.Feedback]: CopilotFeedbackMessageInput;
+  [CopilotMessageType.HumanInput]: CopilotHumanInputMessageInput;
+  [CopilotMessageType.HumanOperation]: CopilotHumanOperationMessageInput;
+  [CopilotMessageType.Stop]: CopilotStopMessageInput;
+  [CopilotMessageType.ToolCallBatchResponse]: CopilotToolCallBatchResponseMessageInput;
+  [CopilotMessageType.ToolCallBatchExecError]: CopilotToolCallBatchExecErrorMessageInput;
+  [CopilotMessageType.Terminate]: CopilotTerminateMessageInput;
+  [CopilotMessageType.TaskRevertSuccess]: CopilotTaskRevertSuccessMessageInput;
 };
 
 export const inputMessageTypeList: Record<keyof CopilotInputMessage, string> = {
-	[CopilotMessageType.Feedback]: "feedbackMessage",
-	[CopilotMessageType.HumanInput]: "humanInputMessage",
-	[CopilotMessageType.HumanOperation]: "humanOperationMessage",
-	[CopilotMessageType.Stop]: "stopMessage",
-	[CopilotMessageType.ToolCallBatchResponse]: "toolCallBatchResponseMessage",
-	[CopilotMessageType.ToolCallBatchExecError]: "toolCallBatchExecErrorMessage",
-	[CopilotMessageType.Terminate]: "terminateMessage",
-	[CopilotMessageType.TaskRevertSuccess]: "taskRevertSuccessMessage",
+  [CopilotMessageType.Feedback]: "feedbackMessage",
+  [CopilotMessageType.HumanInput]: "humanInputMessage",
+  [CopilotMessageType.HumanOperation]: "humanOperationMessage",
+  [CopilotMessageType.Stop]: "stopMessage",
+  [CopilotMessageType.ToolCallBatchResponse]: "toolCallBatchResponseMessage",
+  [CopilotMessageType.ToolCallBatchExecError]: "toolCallBatchExecErrorMessage",
+  [CopilotMessageType.Terminate]: "terminateMessage",
+  [CopilotMessageType.TaskRevertSuccess]: "taskRevertSuccessMessage",
 } as const;

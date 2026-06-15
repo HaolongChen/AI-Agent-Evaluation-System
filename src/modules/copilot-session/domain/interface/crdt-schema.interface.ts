@@ -4,16 +4,19 @@ import type { NetworkClientEntity } from "../../../account/domain/entity/network
 export interface ICrdtSchemaService {
   getSchemaModelById(schemaId: string): Promise<unknown>;
 
-  getSchemaGraph(crdtModel: string, networkClient: NetworkClientEntity): Promise<unknown>;
+  getSchemaGraph(
+    crdtModel: string,
+    networkClient: NetworkClientEntity,
+  ): Promise<unknown>;
 
   importSchema(
     crdtModel: string,
     projectExId: string,
-    dangerousNetworkClient: NetworkClientEntity
+    dangerousNetworkClient: NetworkClientEntity,
   ): Promise<void>;
 
   fetchAppDetailByExId(
     projectExId: string,
-    networkClient: NetworkClientEntity
+    networkClient: NetworkClientEntity,
   ): Promise<FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project>;
 }

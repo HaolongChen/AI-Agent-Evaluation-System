@@ -10,15 +10,13 @@ export class CrdtSchemaHandler {
     return fromUint8Array(new Uint8Array(schema as ArrayBufferLike));
   };
 
-  private getSchemaIdFromUrl = ( url: string ): string =>
-  {
-    return new URL( url ).pathname.split( "/" )[ 2 ];
-  }
+  private getSchemaIdFromUrl = (url: string): string => {
+    return new URL(url).pathname.split("/")[2];
+  };
 
   async getSchemaGraph(schemaId: string, gqlClient: IGQLClient) {
-    const arrayBuffer = await this.crdtSchemaService.getSchemaModelById(
-      schemaId,
-    );
+    const arrayBuffer =
+      await this.crdtSchemaService.getSchemaModelById(schemaId);
     return this.crdtSchemaService.getSchemaGraph(
       this.schemaTransformer(arrayBuffer),
       gqlClient,
@@ -49,10 +47,9 @@ export class CrdtSchemaHandler {
       gqlClient,
     );
     const url = data.latestSchema?.crdtModelUrl;
-    if ( !url )
-    {
-      throw new Error( "No schema linked to this project" );
+    if (!url) {
+      throw new Error("No schema linked to this project");
     }
-    return this.getSchemaIdFromUrl( url );
+    return this.getSchemaIdFromUrl(url);
   }
 }

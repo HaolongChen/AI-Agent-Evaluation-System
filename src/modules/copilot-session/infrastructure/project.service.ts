@@ -15,14 +15,12 @@ import {
 } from "./copilot-network.ts";
 import { createZionProject, GQL_DELETE_PROJECT } from "./project-manager.ts";
 import type { IGQLClient } from "../../account/domain/interface/graphql-client.interface.ts";
-import type { Account } from "../../account/domain/aggregate/account.aggregate.ts";
 import type { INetworkService } from "../../account/domain/interface/network-service.interface.ts";
-import type { NetworkClientEntity } from "../../account/domain/entity/network-client.entity.ts";
+import type { NetworkClient } from "../../account/domain/entity/network-client.entity.ts";
+import type { Account } from "../../account/domain/entity/account.entity.ts";
 
-export class ZionProjectService implements IZionProjectService
-{
-
-  constructor ( private readonly networkService: INetworkService ) {}
+export class ZionProjectService implements IZionProjectService {
+  constructor(private readonly networkService: INetworkService) {}
 
   private async getLatestSession(
     projectExId: string,
@@ -59,17 +57,17 @@ export class ZionProjectService implements IZionProjectService
 
   async createProjectInZion(
     project: ZionProject,
-    account: Account
-  ): Promise<string>
-  {
-    const gqlClient = this.networkService.gqlClient(account.getEntity("networkClient"));
-    const wsClient = this.networkService.wsClient(account.getEntity("networkClient"));
+    account: Account,
+    networkClient: NetworkClient,
+  ): Promise<string> {
+    const gqlClient = this.networkService.gqlClient(networkClient);
+    const wsClient = this.networkService.wsClient(networkClient);
     const organizationExId = account.getData("organizationExId");
     return createZionProject(gqlClient, wsClient, organizationExId, project);
   }
   async deleteProjectInZion(
     projectExId: string,
-    networkClient: NetworkClientEntity
+    networkClient: NetworkClient,
   ): Promise<void> {
     const gqlClient = this.networkService.gqlClient(networkClient);
     const isDeleted = await gqlClient.gqlRequest<
@@ -79,9 +77,7 @@ export class ZionProjectService implements IZionProjectService
       projectExId,
     });
     if (!isDeleted.deleteProject) {
-      throw new Error(
-        `Failed to delete project with exId ${projectExId}`,
-      );
+      throw new Error(`Failed to delete project with exId ${projectExId}`);
     }
   }
 }

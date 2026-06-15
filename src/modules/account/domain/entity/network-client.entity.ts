@@ -15,7 +15,7 @@ import {
 } from "../../../shared/domain/entity/entity.ts";
 import { logger } from "../../../shared/infrastructure/logger.ts";
 
-export class NetworkClientEntity extends Entity<
+export class NetworkClient extends Entity<
   typeof networkClientSchema,
   NetworkClientHeaders & EntityMetadata
 > {
@@ -40,7 +40,7 @@ export class NetworkClientEntity extends Entity<
   }
 
   static createDefault() {
-    return new NetworkClientEntity({});
+    return new NetworkClient({});
   }
 
   public setHeader<T extends keyof NetworkClientHeaders>(

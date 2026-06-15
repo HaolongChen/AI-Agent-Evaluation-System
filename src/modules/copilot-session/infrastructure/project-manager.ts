@@ -4,8 +4,6 @@ import type {
   CheckProjectNameDuplicateQueryVariables,
   CreateProjectInOrganizationAsyncMutation,
   CreateProjectInOrganizationAsyncMutationVariables,
-  DeleteProjectMutation,
-  DeleteProjectMutationVariables,
   FeaturesQuery,
   FeaturesQueryVariables,
   OnProjectCreationStatusChangedSubscription,
@@ -15,7 +13,7 @@ import type {
   ProjectSpaceType,
 } from "../../../graphql/generated/types.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
-import type { ZionProjectEntity } from "../domain/entity/zion-project.entity.ts";
+import type { ZionProject } from "../domain/entity/zion-project.entity.ts";
 import type { IWebSocketClient } from "../../account/domain/interface/websocket-client.interface.ts";
 import type { IGQLClient } from "../../account/domain/interface/graphql-client.interface.ts";
 export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
@@ -223,10 +221,10 @@ export const createZionProject = async (
   gqlClient: IGQLClient,
   wsClient: IWebSocketClient,
   organizationExId: string,
-  zionProjectEntity: ZionProjectEntity,
+  ZionProject: ZionProject,
 ) => {
   const taskId = await createProjectWithTaskIdReturned(gqlClient, {
-    ...zionProjectEntity.getData(),
+    ...ZionProject.getData(),
     organizationExId,
   });
   const projectExId = await createProjectSubscription(taskId, wsClient);

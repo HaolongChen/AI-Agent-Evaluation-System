@@ -1,8 +1,12 @@
 import type { IDomainEvent } from "../../../shared/domain/event/domain-event.interface.ts";
 
 export class CopilotSessionCreatedEvent implements IDomainEvent {
-  readonly name = "copilot.session.created";
-  readonly createdAt = new Date();
+	readonly name = "copilot.session.created";
+	readonly createdAt = new Date();
 
-  constructor ( public readonly copilotSessionExId: string, public readonly copilotSessionId: string, public readonly projectId: string) {}
+	constructor(
+		public readonly copilotSessionExId: string,
+		public readonly copilotSessionId: string,
+		public readonly projectId: string,
+	) {}
 }

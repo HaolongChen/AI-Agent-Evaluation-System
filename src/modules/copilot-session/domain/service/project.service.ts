@@ -3,7 +3,7 @@ import type { INetworkService } from "../../../account/domain/interface/network-
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 import type { ProjectNameServiceFactory } from "../../../dataset/domain/service/generate-project-name.service.ts";
 import { ProjectEntity } from "../entity/project.entity.ts";
-import { ZionProjectEntity } from "../entity/zion-project.entity.ts";
+import { ZionProject } from "../entity/zion-project.entity.ts";
 import type { IZionProjectService } from "../interface/project-service.interface.ts";
 import type { CrdtSchemaHandler } from "./crdt-schema-handler.ts";
 
@@ -22,7 +22,7 @@ export class ProjectService {
     dangerousAccount: Account,
   ): Promise<ProjectEntity> {
     const projectExId = await this.zionProjectService.createProjectInZion(
-      new ZionProjectEntity({
+      new ZionProject({
         projectName
       }),
       this.networkService.gqlClient(account.getEntity("networkClient")),

@@ -15,7 +15,7 @@ import {
 } from "../../../../graphql/generated/types.ts";
 import type { EntityMetadata } from "../../../shared/domain/entity/entity.ts";
 import type { copilotOutputSchema } from "./copilot-output.schema.ts";
-export const projectCreationRequiredSchema = z.object({
+export const zionProjectSchema = z.object({
   projectName: z.string(),
   useNewType: z.boolean().default(true),
   useRefactoredComponent: z.boolean().default(true),
@@ -24,13 +24,6 @@ export const projectCreationRequiredSchema = z.object({
   platform: z.enum(Platform).default("WEB"),
 });
 
-export const projectSchema = z.object({
-  projectName: z.string(),
-});
-
-export type ProjectEntityMetadata = EntityMetadata & {
-  copilotSessionExId?: string;
-};
 
 export type CopilotExecutionLogs = {
   [K in keyof Omit<

@@ -9,6 +9,17 @@ export class ProjectCreatedEvent implements IDomainEvent {
 			name: string;
 			exId: string;
 			id: string;
-		},
+		}) {}
+}
+
+export class ProjectLinkedEvent implements IDomainEvent
+{
+	readonly name = "zionProject.linked";
+	readonly createdAt: Date = new Date();
+
+	constructor(
+		public readonly projectId: string,
+		public readonly copilotInputId: string,
+		public readonly copilotServerId: string,
 	) {}
 }

@@ -1,6 +1,6 @@
 import { fromUint8Array } from "js-base64";
 import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
-import { CrdtSchemaAggregate } from "../aggregate/crdt-schema.aggregate.ts";
+import { CrdtSchemaAggregate } from "../aggregate/project.aggregate.ts";
 import type { ICrdtSchemaService } from "../interface/crdt-schema.interface.ts";
 import type { ProjectEntity } from "../entity/project.entity.ts";
 export class CrdtSchemaHandler {

@@ -1,14 +1,14 @@
 import type { z } from "zod";
 import { Entity } from "../../../shared/domain/entity/entity.ts";
-import { projectCreationRequiredSchema } from "../schema/project.schema.ts";
+import { zionProjectSchema } from "../schema/project.schema.ts";
 
-export class ZionProjectEntity extends Entity<
-  typeof projectCreationRequiredSchema
+export class ZionProject extends Entity<
+  typeof zionProjectSchema
 > {
   constructor(
-    data: z.input<typeof projectCreationRequiredSchema>,
+    data: z.input<typeof zionProjectSchema>,
     id?: string,
   ) {
-    super(data, projectCreationRequiredSchema, { id });
+    super(data, zionProjectSchema, { id });
   }
 }

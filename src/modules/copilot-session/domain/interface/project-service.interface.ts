@@ -1,18 +1,15 @@
-import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
-import type { IWebSocketClient } from "../../../account/domain/interface/websocket-client.interface.ts";
-import type { ProjectEntity } from "../entity/project.entity.ts";
-import type { ZionProjectEntity } from "../entity/zion-project.entity.ts";
+import type { Account } from "../../../account/domain/aggregate/account.aggregate.ts";
+import type { NetworkClientEntity } from "../../../account/domain/entity/network-client.entity.ts";
+import type { ZionProject } from "../entity/zion-project.entity.ts";
 
 export interface IZionProjectService {
   createProjectInZion(
-    zionProject: ZionProjectEntity,
-    gqlClient: IGQLClient,
-    wsClient: IWebSocketClient,
-    organizationExId: string,
+    zionProject: ZionProject,
+    account: Account
   ): Promise<string>;
 
   deleteProjectInZion(
-    projectEntity: ProjectEntity,
-    gqlClient: IGQLClient,
+    projectExId: string,
+    networkClient: NetworkClientEntity
   ): Promise<void>;
 }

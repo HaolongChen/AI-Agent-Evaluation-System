@@ -6,7 +6,7 @@ import {
 	Entity,
 	type EntityMetadata,
 } from "../../../shared/domain/entity/entity.ts";
-import type { ProjectEntity } from "../entity/project.entity.ts";
+import { ProjectLinkedEvent } from "../event/project-created.event.ts";
 import { SchemaImportedEvent } from "../event/schema-imported.event.ts";
 import { copilotExecutionSchema } from "../schema/copilot.schema.ts";
 import type { CopilotExecutionLogs } from "../schema/project.schema.ts";
@@ -54,9 +54,15 @@ export class CopilotExecutionAggregate extends AggregateRoot<
 		super(entity, { owner });
 	}
 
-	linkProject(project: ProjectEntity) {
-		const projectId = project.getData("id");
-		this.setData({ projectId: projectId });
+	linkProject(projectId: string) {
+		this.setData({ projectId });
+		this.addEvent(
+			new ProjectLinkedEvent(
+				projectId,
+				this.getData("copilotInputId"),
+				this.getData("copilotServerId"),
+			),
+		);
 		this.addEvent(new SchemaImportedEvent(this.getData("schemaId"), projectId));
 	}
 }

@@ -13,6 +13,7 @@ import {
 	CopilotSessionCreatedEvent,
 } from "../event/copilot-session-created.ts";
 import { ProjectCreatedEvent } from "../event/project-created.event.ts";
+import type { CopilotExecutionLogType } from "../schema/copilot-output.schema.ts";
 import {
 	copilotExecutionSchema,
 	type CopilotExecutionLogs,
@@ -24,17 +25,20 @@ export class CopilotExecutionAggregate extends AggregateRoot<
 		projectId?: string;
 		copilotSessionExId?: string;
 	},
-	{ copilotInput: CopilotInputAggregate; networkClient: NetworkClient }
+	{ copilotInput: CopilotInputAggregate; projectNetwork: NetworkClient; copilotNetwork: NetworkClient }
 > {
 	public executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
 
 	constructor(
 		copilotInput: CopilotInputAggregate,
-		copilotServer: CopilotServerEntity,
-		networkClient: NetworkClient,
-	) {
-		networkClient.setGraphQLUrl(copilotServer.getData("gqlEndpoint"));
-		networkClient.setWebSocketUrl(copilotServer.getData("wsEndpoint"));
+    copilotServer: CopilotServerEntity,
+    projectNetwork: NetworkClient,
+    copilotNetwork: NetworkClient,
+  )
+  {
+
+		copilotNetwork.setGraphQLUrl(copilotServer.getData("gqlEndpoint"));
+		copilotNetwork.setWebSocketUrl(copilotServer.getData("wsEndpoint"));
 		const entity = new Entity<
 			typeof copilotExecutionSchema,
 			EntityMetadata & { projectId?: string }
@@ -46,44 +50,56 @@ export class CopilotExecutionAggregate extends AggregateRoot<
 			copilotExecutionSchema,
 			{},
 		);
-		super(entity, { copilotInput, networkClient });
+		super(entity, { copilotInput, projectNetwork, copilotNetwork });
 	}
 
 	private getSchemaId(): string {
 		return this.getEntity("copilotInput")
 			.getEntity("goldenSet")
 			.getData("schemaId");
-	}
+  }
 
-	start(project: ZionProject, account: Account, projectNetwork: NetworkClient) {
+  private getUserInput (): string
+  {
+    return this.getEntity("copilotInput").getEntity("userInput").getData("content");
+  }
+
+	start(project: ZionProject, account: Account) {
 		const projectId = project.getData("id");
 		this.setData({ projectId });
 		project.setData({ schemaId: this.getSchemaId() });
-		this.addEvent(new ProjectCreatedEvent(project, account, projectNetwork));
+		this.addEvent(new ProjectCreatedEvent(project, account, this.getEntity("projectNetwork")));
 	}
 
-	resume(projectExId: string, projectId?: string, copilotSessionExId?: string) {
-		const projectIdToUse = projectId || this.getData("projectId");
+	resume(projectExId: string) {
+		const projectIdToUse = this.getData("projectId");
 		if (!projectIdToUse) {
 			throw new Error("Project ID is required to start copilot execution.");
 		}
-		const copilotSessionExIdToUse =
-			copilotSessionExId || this.getData("copilotSessionExId");
+		const copilotSessionExIdToUse = this.getData("copilotSessionExId");
 		if (copilotSessionExIdToUse) {
+			const executionLog: CopilotExecutionLogType = {
+				copilotSessionExId: copilotSessionExIdToUse,
+				projectExId,
+				userInput: this.getUserInput(),
+				...this.executionLogs,
+			};
 			this.addEvent(
 				new CopilotExecutionStarted(
-					copilotSessionExIdToUse,
-					projectExId,
-					this.getEntity("networkClient"),
+					executionLog,
+					this.getEntity("copilotNetwork"),
+          this.getEntity("projectNetwork"),
 				),
 			);
 		} else {
 			this.addEvent(
 				new CopilotSessionCreatedEvent(
 					this.getData("id"),
-					projectIdToUse,
+          projectIdToUse,
+          this.getUserInput(),
 					projectExId,
-					this.getEntity("networkClient"),
+					this.getEntity("copilotNetwork"),
+          this.getEntity("projectNetwork"),
 				),
 			);
 		}

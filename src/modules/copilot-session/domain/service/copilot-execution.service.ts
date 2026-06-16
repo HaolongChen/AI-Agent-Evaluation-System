@@ -14,12 +14,14 @@ export class CopilotExecutionService {
 		copilotServer: CopilotServerEntity,
 		account: Account,
 	): CopilotExecutionAggregate {
-		const networkClient =
-			this.networkAccount.getDefaultNetworkClientForAccount(account);
+		const projectNetwork =
+      this.networkAccount.getDefaultNetworkClientForAccount( account );
+    const copilotNetwork = this.networkAccount.getDefaultNetworkClientForAccount( account );
 		return new CopilotExecutionAggregate(
 			copilotInput,
-			copilotServer,
-			networkClient,
+      copilotServer,
+      projectNetwork,
+      copilotNetwork,
 		);
   }
 

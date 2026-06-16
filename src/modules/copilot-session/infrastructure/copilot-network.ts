@@ -12,15 +12,6 @@ import {
 } from "../domain/entity/copilot-job.entity.ts";
 import { logger } from "../../shared/infrastructure/logger.ts";
 import {
-	ClientType,
-	Locale,
-	Product,
-	ZTypeCopilotApi,
-	ZTypeCoreApi,
-	type CopilotApiResultJs,
-	type OpaqueSchemaGraph,
-} from "../../shared/domain/interface/type-system.ts";
-import {
 	inputMessageTypeList,
 	type CopilotInputMessage,
 } from "../domain/schema/copilot.schema.ts";
@@ -285,31 +276,6 @@ export const ON_COPILOT_SESSION_UPDATES = gql`
 
 export class CopilotNetworkService implements ICopilotNetworkService {
 	constructor(private readonly networkService: INetworkService) {}
-
-	runCopilotToolCalls(
-		toolCalls: {
-			name: string;
-			args: unknown;
-			toolCallId: string;
-		}[],
-		schemaGraph: unknown,
-	): CopilotApiResultJs {
-		const product = Product.ZION;
-		const clientType = ClientType.WEB;
-		const locale = Locale.ZH;
-		return ZTypeCopilotApi.toolCalls(
-			ZTypeCoreApi.genZTypeApiContext(
-				schemaGraph as OpaqueSchemaGraph,
-				product,
-				clientType,
-				"WEB",
-				locale,
-				// eslint-disable-next-line unicorn/no-null
-				null,
-			),
-			toolCalls,
-		);
-	}
 
 	async sendMessageToSession<T extends keyof CopilotInputMessage>(
     sessionExId: string,

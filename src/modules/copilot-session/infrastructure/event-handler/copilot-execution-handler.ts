@@ -1,8 +1,8 @@
 import { prisma } from "../../../../config/prisma.ts";
 import type { IDomainEventBus } from "../../../shared/domain/event/domain-event.bus.ts";
 import {
+	CopilotExecutionStarted,
 	CopilotSessionCreatedEvent,
-	type CopilotSessionStartedEvent,
 } from "../../domain/event/copilot-session-created.ts";
 import type { ICopilotNetworkService } from "../../domain/interface/copilot-network.interface.ts";
 import type { ICopilotRepository } from "../../domain/interface/copilot-repository.interface.ts";
@@ -15,7 +15,7 @@ export class CopilotExecutionHandler {
 		private readonly copilotRepository: ICopilotRepository,
 		private readonly eventBus: IDomainEventBus,
 	) {}
-	async onCopilotSessionStarted(event: CopilotSessionStartedEvent) {
+	async onCopilotSessionCreated(event: CopilotSessionCreatedEvent) {
 		const copilotSessionExId = await this.projectService.createCopilotSession(
 			event.projectExId,
 			event.networkClient,
@@ -26,17 +26,20 @@ export class CopilotExecutionHandler {
 			create: { ...event, copilotSessionExId },
 		});
 		await this.eventBus.publish(
-			new CopilotSessionCreatedEvent(
-				copilotSessionExId,
-				event.projectExId,
+			new CopilotExecutionStarted(
+				{
+					copilotSessionExId,
+					projectExId: event.projectExId,
+					userInput: event.userInput,
+					tasks: [],
+				},
 				event.networkClient,
 			),
-    );
+		);
   }
 
-  async onCopilotSessionCreated ( event: CopilotSessionCreatedEvent )
+  async onCopilotExecutionStarted ( event: CopilotExecutionStarted )
   {
-    const unsubscribe = this.copilotNetwork.subscribeToSessionUpdates( event.copilotSessionExId, event.networkClient, () => {} );
     
   }
 }

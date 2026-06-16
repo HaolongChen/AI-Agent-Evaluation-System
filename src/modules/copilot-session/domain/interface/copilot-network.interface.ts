@@ -1,17 +1,8 @@
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
-import type { CopilotApiResultJs } from "../../../shared/domain/interface/type-system.ts";
 import type { CopilotEventsList } from "../entity/copilot-job.entity.ts";
 import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
 
 export interface ICopilotNetworkService {
-	runCopilotToolCalls(
-		toolCalls: {
-			name: string;
-			args: unknown;
-			toolCallId: string;
-		}[],
-		schemaGraph: unknown,
-	): CopilotApiResultJs;
 
 	subscribeToSessionUpdates(
 		sessionExId: string,

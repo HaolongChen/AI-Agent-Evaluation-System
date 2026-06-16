@@ -4,8 +4,8 @@ export const copilotOutputSchema = z.object({
 	copilotSessionExId: z.string(),
 	userInput: z.string(),
 	projectExId: z.string(),
-	editableText: z.string(),
-	aiResponse: z.string(),
+	editableText: z.string().optional(),
+	aiResponse: z.string().optional(),
 	tasks: z.any().array(),
 });
 

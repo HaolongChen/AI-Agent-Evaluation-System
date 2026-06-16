@@ -60,7 +60,7 @@ export const copilotExecutionSchema = z.object({
 export type CopilotExecutionLogs = {
 	[K in keyof Omit<
 		z.infer<typeof copilotOutputSchema>,
-		"copilotSessionExId"
+		"copilotSessionExId" | "projectExId" | "userInput"
 	>]: z.infer<typeof copilotOutputSchema>[K] extends string ?
 		z.infer<typeof copilotOutputSchema>[K] | undefined
 	:	z.infer<typeof copilotOutputSchema>[K];

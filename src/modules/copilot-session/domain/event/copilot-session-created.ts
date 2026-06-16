@@ -1,5 +1,6 @@
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import type { IDomainEvent } from "../../../shared/domain/event/domain-event.interface.ts";
+import type { CopilotExecutionLogType } from "../schema/copilot-output.schema.ts";
 
 export class CopilotSessionCreatedEvent implements IDomainEvent {
   readonly name = "copilot.session.started";
@@ -9,7 +10,9 @@ export class CopilotSessionCreatedEvent implements IDomainEvent {
     public readonly copilotExecutionId: string,
     public readonly projectId: string,
     public readonly projectExId: string,
-    public readonly networkClient: NetworkClient,
+    public readonly userInput: string,
+    public readonly copilotNetwork: NetworkClient,
+    public readonly projectNetwork: NetworkClient,
   ) {}
 }
 
@@ -18,8 +21,8 @@ export class CopilotExecutionStarted implements IDomainEvent {
   readonly createdAt = new Date();
 
   constructor (
-    public readonly copilotSessionExId: string,
-    public readonly projectExId: string,
-    public readonly networkClient: NetworkClient,
+    public readonly executionLog: CopilotExecutionLogType,
+    public readonly copilotNetwork: NetworkClient,
+    public readonly projectNetwork: NetworkClient,
   ) {}
 }

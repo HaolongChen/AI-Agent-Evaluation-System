@@ -1,48 +1,21 @@
-import type { NetworkAccount } from "../../account/domain/service/account.service.ts";
-import type { CopilotInputAggregate } from "../../dataset/domain/aggregate/copilot-input.aggregate.ts";
-import type { CopilotServerEntity } from "../../dataset/domain/entity/copilot-server.entity.ts";
-import { adoptCopilotServer } from "../../dataset/domain/service/copilot-server-client.ts";
-import type { ProjectBeforeCopilotSession } from "../domain/aggregate/project.aggregate.ts";
-import type { IProjectService } from "../domain/interface/project-service.interface.ts";
-import type {
-  CreateProjectUseCase,
-  ImportSchemaToProjectByIdUseCase,
-} from "./create-project.ts";
+import type { Account } from "../../account/domain/entity/account.entity.ts";
+import type { NetworkClient } from "../../account/domain/entity/network-client.entity.ts";
+import type { GetCopilotInputByFiltersUseCase } from "../../dataset/application/copilot-input.ts";
+import type { IProjectManager } from "../domain/interface/project-manager.interface.ts";
+import type { IZionProjectService } from "../domain/interface/project-service.interface.ts";
 
-export class ProjectManager {
-  constructor(
-    private networkAccount: NetworkAccount,
-    private projectCreationService: CreateProjectUseCase,
-    private projectService: IProjectService,
-  ) {}
-  adoptCopilotServer(copilotServerEntity: CopilotServerEntity): string {
-    adoptCopilotServer(
-      this.networkAccount.networkClientEntity,
-      copilotServerEntity,
-    );
-    return copilotServerEntity.getData("id");
-  }
-
-  createCopilotSession(
-    project: ProjectBeforeCopilotSession,
-    userInput: string,
+export class CopilotProject
+{
+  constructor (
+    private readonly projectManager: IProjectManager,
+    private readonly projectService: IZionProjectService,
+    private readonly copilotInputService: GetCopilotInputByFiltersUseCase
   ) {}
 
-  async execute(
-    copilotInput: CopilotInputAggregate,
-    copilotServer: CopilotServerEntity,
-  ): Promise<ProjectBeforeCopilotSession> {
-    const copilotServerId = this.adoptCopilotServer(copilotServer);
-    const projectAggregate = await this.projectCreationService.execute(
-      copilotInput,
-      copilotServerId,
-      this.projectService,
-    );
-    const crdtSchemaLifecycle =
-      this.projectService.getCrdtSchemaLifecycle(projectAggregate);
-    await crdtSchemaLifecycle.importSchemaManual(
-      copilotInput.getEntity("goldenSet").getData("schemaId"),
-    );
-    return projectAggregate;
+  async create ( copilotInputId: string, projectId: string, account: Account, networkClient: NetworkClient )
+  {
+    const copilotInput = await this.copilotInputService.execute( copilotInputId );
+    const zionProject = this.projectManager.buildZionProject( copilotInput, projectId );
+    return this.projectService.createProjectInZion( zionProject, account, networkClient );
   }
 }

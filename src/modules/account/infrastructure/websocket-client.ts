@@ -7,8 +7,8 @@ import type {
   SubscriptionHandlers,
 } from "../domain/interface/websocket-client.interface.ts";
 import type { DocumentNode } from "graphql/language/ast.js";
-import { logger } from "./logger.ts";
 import type { ExecutionResult } from "graphql";
+import { logger } from "../../shared/infrastructure/logger.ts";
 
 export class WebSocketClient implements IWebSocketClient {
   private client: SubscriptionClient;

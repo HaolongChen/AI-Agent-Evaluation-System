@@ -15,7 +15,7 @@ export class CopilotProject
   async create ( copilotInputId: string, projectId: string, account: Account, networkClient: NetworkClient )
   {
     const copilotInput = await this.copilotInputService.execute( copilotInputId );
-    const zionProject = this.projectManager.buildZionProject( copilotInput, projectId );
+    const zionProject = this.projectManager.create( copilotInput, projectId );
     return this.projectService.createProjectInZion( zionProject, account, networkClient );
   }
 }

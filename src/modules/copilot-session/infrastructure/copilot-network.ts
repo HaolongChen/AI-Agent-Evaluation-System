@@ -5,9 +5,7 @@ import type {
 	SendMessageToSessionMutation,
 	SendMessageToSessionMutationVariables,
 } from "../../../graphql/generated/types.ts";
-import type { IGQLClient } from "../../account/domain/interface/graphql-client.interface.ts";
 import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
-import type { IWebSocketClient } from "../../account/domain/interface/websocket-client.interface.ts";
 import {
 	CopilotEvent,
 	type CopilotEventsList,
@@ -26,6 +24,8 @@ import {
 	inputMessageTypeList,
 	type CopilotInputMessage,
 } from "../domain/schema/copilot.schema.ts";
+import type { INetworkService } from "../../account/domain/interface/network-service.interface.ts";
+import type { NetworkClient } from "../../account/domain/entity/network-client.entity.ts";
 
 export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
 	query GetCopilotSubscriptionCount(
@@ -284,7 +284,7 @@ export const ON_COPILOT_SESSION_UPDATES = gql`
 `;
 
 export class CopilotNetworkService implements ICopilotNetworkService {
-	constructor() {}
+	constructor(private readonly networkService: INetworkService) {}
 
 	runCopilotToolCalls(
 		toolCalls: {
@@ -312,12 +312,14 @@ export class CopilotNetworkService implements ICopilotNetworkService {
 	}
 
 	async sendMessageToSession<T extends keyof CopilotInputMessage>(
-		sessionExId: string,
-		gqlClient: IGQLClient,
+    sessionExId: string,
+    networkClient: NetworkClient,
 		type: T,
 		message: CopilotInputMessage[T],
-	): Promise<void> {
-		const response = await gqlClient.gqlRequest<
+  ): Promise<void>
+  {
+    const gqlClient = this.networkService.gqlClient(networkClient);
+    const response = await gqlClient.gqlRequest<
 			SendMessageToSessionMutation,
 			SendMessageToSessionMutationVariables
 		>(SEND_MESSAGE_TO_SESSION, {
@@ -334,10 +336,12 @@ export class CopilotNetworkService implements ICopilotNetworkService {
 		}
 	}
 	subscribeToSessionUpdates(
-		sessionExId: string,
-		wsClient: IWebSocketClient,
+    sessionExId: string,
+    networkClient: NetworkClient,
 		publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
-	): () => void {
+  ): () => void
+  {
+    const wsClient = this.networkService.wsClient(networkClient);
 		return wsClient.subscribe<
 			OnCopilotSessionUpdatesSubscription,
 			OnCopilotSessionUpdatesSubscriptionVariables

@@ -1,5 +1,4 @@
-import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
-import type { IWebSocketClient } from "../../../account/domain/interface/websocket-client.interface.ts";
+import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import type { CopilotApiResultJs } from "../../../shared/domain/interface/type-system.ts";
 import type { CopilotEventsList } from "../entity/copilot-job.entity.ts";
 import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
@@ -16,13 +15,13 @@ export interface ICopilotNetworkService {
 
 	subscribeToSessionUpdates(
 		sessionExId: string,
-		wsClient: IWebSocketClient,
+		networkClient: NetworkClient,
 		publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
 	): () => void;
 
 	sendMessageToSession<T extends keyof CopilotInputMessage>(
 		sessionExId: string,
-		gqlClient: IGQLClient,
+		networkClient: NetworkClient,
 		type: T,
 		message: CopilotInputMessage[T],
 	): Promise<void>;

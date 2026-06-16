@@ -1,18 +1,9 @@
+import type { CopilotExecutionAggregate } from "../aggregate/copilot-execution.aggregate.ts";
+
 export interface ICopilotRepository {
-  save(
-    id: string,
-    data?: { editableText: string } | { aiResponse: string },
-    task?: unknown,
+  save(copilotExecution: CopilotExecutionAggregate
   ): Promise<void>;
 
-  linkProject(
-    projectId: string,
-    copilotInputId: string,
-    copilotServerId: string,
-  ): Promise<void>;
-  linkCopilotSession(
-    copilotSessionExId: string,
-    projectId: string,
-    id: string,
-  ): Promise<void>;
+  getProjectExId ( projectId: string ): Promise<string>;
+
 }

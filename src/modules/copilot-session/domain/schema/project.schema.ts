@@ -10,10 +10,12 @@ export const zionProjectSchema = z.object({
   useRefactoredComponent: z.boolean().default(true),
   projectSpaceType: z.enum(ProjectSpaceType).default("PERSONAL"),
   category: z.enum(ProjectContentCategory).default("OTHERS"),
-  platform: z.enum(Platform).default("WEB"),
+  platform: z.enum( Platform ).default( "WEB" ),
+  schemaId: z.string().optional(),
 });
 
-export const projectSchema = z.object({
-  projectExId: z.string(),
+export const projectSchema = z.object( {
+  copilotInputId: z.string(),
+  copilotServerId: z.string(),
   projectName: z.string(),
 });

@@ -1,25 +1,15 @@
+import type { Account } from "../../../account/domain/entity/account.entity.ts";
+import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import type { IDomainEvent } from "../../../shared/domain/event/domain-event.interface.ts";
+import type { ZionProject } from "../entity/zion-project.entity.ts";
 
 export class ProjectCreatedEvent implements IDomainEvent {
-  readonly name = "zionProject.created";
-  readonly createdAt: Date = new Date();
+	readonly name = "zionProject.created";
+	readonly createdAt: Date = new Date();
 
-  constructor(
-    public readonly project: {
-      projectName: string;
-      projectExId: string;
-      id: string;
-    },
-  ) {}
-}
-
-export class ProjectLinkedEvent implements IDomainEvent {
-  readonly name = "zionProject.linked";
-  readonly createdAt: Date = new Date();
-
-  constructor(
-    public readonly projectId: string,
-    public readonly copilotInputId: string,
-    public readonly copilotServerId: string,
-  ) {}
+	constructor(
+		public readonly zionProject: ZionProject,
+		public readonly account: Account,
+		public readonly projectNetwork: NetworkClient,
+	) {}
 }

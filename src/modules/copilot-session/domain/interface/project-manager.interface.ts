@@ -1,7 +1,6 @@
-import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
-import type { ZionProject } from "../entity/zion-project.entity.ts";
+import type { CopilotExecutionAggregate } from "../aggregate/copilot-execution.aggregate.ts";
 
-export interface IProjectManager
-{
-  buildZionProject ( copilotInput: CopilotInputAggregate, projectId: string ): ZionProject;
+export interface IProjectManager {
+	createProject(copilotExecution: CopilotExecutionAggregate
+	): void;
 }

@@ -77,15 +77,15 @@ model copilotServer {
 
 model project {
   id              String   @id @default(uuid())
-  copilotInputId  String?  @map("copilot_input_id") // corresponds to the copilotInputId in the copilotInput table for traceability
-  copilotServerId String?  @map("copilot_server_id") // corresponds to the copilotServerId in the copilotServer table for traceability
-  projectExId     String   @map("project_ex_id")
+  copilotInputId  String  @map("copilot_input_id") // corresponds to the copilotInputId in the copilotInput table for traceability
+  copilotServerId String  @map("copilot_server_id") // corresponds to the copilotServerId in the copilotServer table for traceability
+  projectExId     String?   @map("project_ex_id")
   projectName     String   @map("project_name")
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy       String   @default("unknown") @map("created_by") // userId or "system" for system-generated projects
 
-  copilotInput  copilotInput?  @relation("project_copilotInput", fields: [copilotInputId], references: [id])
-  copilotServer copilotServer? @relation(fields: [copilotServerId], references: [id])
+  copilotInput  copilotInput  @relation("project_copilotInput", fields: [copilotInputId], references: [id])
+  copilotServer copilotServer @relation(fields: [copilotServerId], references: [id])
   copilotOutput copilotOutput?
 
   @@unique([projectExId], map: "unique_project_ex_id")

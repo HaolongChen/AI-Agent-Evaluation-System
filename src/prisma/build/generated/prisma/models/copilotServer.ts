@@ -190,7 +190,7 @@ export type copilotServerWhereInput = {
   wsEndpoint?: Prisma.StringFilter<"copilotServer"> | string
   gqlEndpoint?: Prisma.StringFilter<"copilotServer"> | string
   createdAt?: Prisma.DateTimeFilter<"copilotServer"> | Date | string
-  project?: Prisma.ProjectListRelationFilter
+  copilotOutput?: Prisma.CopilotOutputListRelationFilter
 }
 
 export type copilotServerOrderByWithRelationInput = {
@@ -200,7 +200,7 @@ export type copilotServerOrderByWithRelationInput = {
   wsEndpoint?: Prisma.SortOrder
   gqlEndpoint?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
-  project?: Prisma.projectOrderByRelationAggregateInput
+  copilotOutput?: Prisma.copilotOutputOrderByRelationAggregateInput
 }
 
 export type copilotServerWhereUniqueInput = Prisma.AtLeast<{
@@ -213,7 +213,7 @@ export type copilotServerWhereUniqueInput = Prisma.AtLeast<{
   wsEndpoint?: Prisma.StringFilter<"copilotServer"> | string
   gqlEndpoint?: Prisma.StringFilter<"copilotServer"> | string
   createdAt?: Prisma.DateTimeFilter<"copilotServer"> | Date | string
-  project?: Prisma.ProjectListRelationFilter
+  copilotOutput?: Prisma.CopilotOutputListRelationFilter
 }, "id">
 
 export type copilotServerOrderByWithAggregationInput = {
@@ -247,7 +247,7 @@ export type copilotServerCreateInput = {
   wsEndpoint: string
   gqlEndpoint: string
   createdAt?: Date | string
-  project?: Prisma.projectCreateNestedManyWithoutCopilotServerInput
+  copilotOutput?: Prisma.copilotOutputCreateNestedManyWithoutCopilotServerInput
 }
 
 export type copilotServerUncheckedCreateInput = {
@@ -257,7 +257,7 @@ export type copilotServerUncheckedCreateInput = {
   wsEndpoint: string
   gqlEndpoint: string
   createdAt?: Date | string
-  project?: Prisma.projectUncheckedCreateNestedManyWithoutCopilotServerInput
+  copilotOutput?: Prisma.copilotOutputUncheckedCreateNestedManyWithoutCopilotServerInput
 }
 
 export type copilotServerUpdateInput = {
@@ -267,7 +267,7 @@ export type copilotServerUpdateInput = {
   wsEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   gqlEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  project?: Prisma.projectUpdateManyWithoutCopilotServerNestedInput
+  copilotOutput?: Prisma.copilotOutputUpdateManyWithoutCopilotServerNestedInput
 }
 
 export type copilotServerUncheckedUpdateInput = {
@@ -277,7 +277,7 @@ export type copilotServerUncheckedUpdateInput = {
   wsEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   gqlEndpoint?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  project?: Prisma.projectUncheckedUpdateManyWithoutCopilotServerNestedInput
+  copilotOutput?: Prisma.copilotOutputUncheckedUpdateManyWithoutCopilotServerNestedInput
 }
 
 export type copilotServerCreateManyInput = {
@@ -343,21 +343,21 @@ export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }
 
-export type copilotServerCreateNestedOneWithoutProjectInput = {
-  create?: Prisma.XOR<Prisma.copilotServerCreateWithoutProjectInput, Prisma.copilotServerUncheckedCreateWithoutProjectInput>
-  connectOrCreate?: Prisma.copilotServerCreateOrConnectWithoutProjectInput
+export type copilotServerCreateNestedOneWithoutCopilotOutputInput = {
+  create?: Prisma.XOR<Prisma.copilotServerCreateWithoutCopilotOutputInput, Prisma.copilotServerUncheckedCreateWithoutCopilotOutputInput>
+  connectOrCreate?: Prisma.copilotServerCreateOrConnectWithoutCopilotOutputInput
   connect?: Prisma.copilotServerWhereUniqueInput
 }
 
-export type copilotServerUpdateOneRequiredWithoutProjectNestedInput = {
-  create?: Prisma.XOR<Prisma.copilotServerCreateWithoutProjectInput, Prisma.copilotServerUncheckedCreateWithoutProjectInput>
-  connectOrCreate?: Prisma.copilotServerCreateOrConnectWithoutProjectInput
-  upsert?: Prisma.copilotServerUpsertWithoutProjectInput
+export type copilotServerUpdateOneRequiredWithoutCopilotOutputNestedInput = {
+  create?: Prisma.XOR<Prisma.copilotServerCreateWithoutCopilotOutputInput, Prisma.copilotServerUncheckedCreateWithoutCopilotOutputInput>
+  connectOrCreate?: Prisma.copilotServerCreateOrConnectWithoutCopilotOutputInput
+  upsert?: Prisma.copilotServerUpsertWithoutCopilotOutputInput
   connect?: Prisma.copilotServerWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.copilotServerUpdateToOneWithWhereWithoutProjectInput, Prisma.copilotServerUpdateWithoutProjectInput>, Prisma.copilotServerUncheckedUpdateWithoutProjectInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.copilotServerUpdateToOneWithWhereWithoutCopilotOutputInput, Prisma.copilotServerUpdateWithoutCopilotOutputInput>, Prisma.copilotServerUncheckedUpdateWithoutCopilotOutputInput>
 }
 
-export type copilotServerCreateWithoutProjectInput = {
+export type copilotServerCreateWithoutCopilotOutputInput = {
   id?: string
   name: string
   description?: string | null
@@ -366,7 +366,7 @@ export type copilotServerCreateWithoutProjectInput = {
   createdAt?: Date | string
 }
 
-export type copilotServerUncheckedCreateWithoutProjectInput = {
+export type copilotServerUncheckedCreateWithoutCopilotOutputInput = {
   id?: string
   name: string
   description?: string | null
@@ -375,23 +375,23 @@ export type copilotServerUncheckedCreateWithoutProjectInput = {
   createdAt?: Date | string
 }
 
-export type copilotServerCreateOrConnectWithoutProjectInput = {
+export type copilotServerCreateOrConnectWithoutCopilotOutputInput = {
   where: Prisma.copilotServerWhereUniqueInput
-  create: Prisma.XOR<Prisma.copilotServerCreateWithoutProjectInput, Prisma.copilotServerUncheckedCreateWithoutProjectInput>
+  create: Prisma.XOR<Prisma.copilotServerCreateWithoutCopilotOutputInput, Prisma.copilotServerUncheckedCreateWithoutCopilotOutputInput>
 }
 
-export type copilotServerUpsertWithoutProjectInput = {
-  update: Prisma.XOR<Prisma.copilotServerUpdateWithoutProjectInput, Prisma.copilotServerUncheckedUpdateWithoutProjectInput>
-  create: Prisma.XOR<Prisma.copilotServerCreateWithoutProjectInput, Prisma.copilotServerUncheckedCreateWithoutProjectInput>
+export type copilotServerUpsertWithoutCopilotOutputInput = {
+  update: Prisma.XOR<Prisma.copilotServerUpdateWithoutCopilotOutputInput, Prisma.copilotServerUncheckedUpdateWithoutCopilotOutputInput>
+  create: Prisma.XOR<Prisma.copilotServerCreateWithoutCopilotOutputInput, Prisma.copilotServerUncheckedCreateWithoutCopilotOutputInput>
   where?: Prisma.copilotServerWhereInput
 }
 
-export type copilotServerUpdateToOneWithWhereWithoutProjectInput = {
+export type copilotServerUpdateToOneWithWhereWithoutCopilotOutputInput = {
   where?: Prisma.copilotServerWhereInput
-  data: Prisma.XOR<Prisma.copilotServerUpdateWithoutProjectInput, Prisma.copilotServerUncheckedUpdateWithoutProjectInput>
+  data: Prisma.XOR<Prisma.copilotServerUpdateWithoutCopilotOutputInput, Prisma.copilotServerUncheckedUpdateWithoutCopilotOutputInput>
 }
 
-export type copilotServerUpdateWithoutProjectInput = {
+export type copilotServerUpdateWithoutCopilotOutputInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -400,7 +400,7 @@ export type copilotServerUpdateWithoutProjectInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type copilotServerUncheckedUpdateWithoutProjectInput = {
+export type copilotServerUncheckedUpdateWithoutCopilotOutputInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -415,11 +415,11 @@ export type copilotServerUncheckedUpdateWithoutProjectInput = {
  */
 
 export type CopilotServerCountOutputType = {
-  project: number
+  copilotOutput: number
 }
 
 export type CopilotServerCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  project?: boolean | CopilotServerCountOutputTypeCountProjectArgs
+  copilotOutput?: boolean | CopilotServerCountOutputTypeCountCopilotOutputArgs
 }
 
 /**
@@ -435,8 +435,8 @@ export type CopilotServerCountOutputTypeDefaultArgs<ExtArgs extends runtime.Type
 /**
  * CopilotServerCountOutputType without action
  */
-export type CopilotServerCountOutputTypeCountProjectArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.projectWhereInput
+export type CopilotServerCountOutputTypeCountCopilotOutputArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.copilotOutputWhereInput
 }
 
 
@@ -447,7 +447,7 @@ export type copilotServerSelect<ExtArgs extends runtime.Types.Extensions.Interna
   wsEndpoint?: boolean
   gqlEndpoint?: boolean
   createdAt?: boolean
-  project?: boolean | Prisma.copilotServer$projectArgs<ExtArgs>
+  copilotOutput?: boolean | Prisma.copilotServer$copilotOutputArgs<ExtArgs>
   _count?: boolean | Prisma.CopilotServerCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["copilotServer"]>
 
@@ -480,7 +480,7 @@ export type copilotServerSelectScalar = {
 
 export type copilotServerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "wsEndpoint" | "gqlEndpoint" | "createdAt", ExtArgs["result"]["copilotServer"]>
 export type copilotServerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  project?: boolean | Prisma.copilotServer$projectArgs<ExtArgs>
+  copilotOutput?: boolean | Prisma.copilotServer$copilotOutputArgs<ExtArgs>
   _count?: boolean | Prisma.CopilotServerCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type copilotServerIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -489,7 +489,7 @@ export type copilotServerIncludeUpdateManyAndReturn<ExtArgs extends runtime.Type
 export type $copilotServerPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "copilotServer"
   objects: {
-    project: Prisma.$projectPayload<ExtArgs>[]
+    copilotOutput: Prisma.$copilotOutputPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -892,7 +892,7 @@ readonly fields: copilotServerFieldRefs;
  */
 export interface Prisma__copilotServerClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  project<T extends Prisma.copilotServer$projectArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.copilotServer$projectArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$projectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  copilotOutput<T extends Prisma.copilotServer$copilotOutputArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.copilotServer$copilotOutputArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$copilotOutputPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1321,27 +1321,27 @@ export type copilotServerDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
 }
 
 /**
- * copilotServer.project
+ * copilotServer.copilotOutput
  */
-export type copilotServer$projectArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type copilotServer$copilotOutputArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the project
+   * Select specific fields to fetch from the copilotOutput
    */
-  select?: Prisma.projectSelect<ExtArgs> | null
+  select?: Prisma.copilotOutputSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the project
+   * Omit specific fields from the copilotOutput
    */
-  omit?: Prisma.projectOmit<ExtArgs> | null
+  omit?: Prisma.copilotOutputOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.projectInclude<ExtArgs> | null
-  where?: Prisma.projectWhereInput
-  orderBy?: Prisma.projectOrderByWithRelationInput | Prisma.projectOrderByWithRelationInput[]
-  cursor?: Prisma.projectWhereUniqueInput
+  include?: Prisma.copilotOutputInclude<ExtArgs> | null
+  where?: Prisma.copilotOutputWhereInput
+  orderBy?: Prisma.copilotOutputOrderByWithRelationInput | Prisma.copilotOutputOrderByWithRelationInput[]
+  cursor?: Prisma.copilotOutputWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.ProjectScalarFieldEnum | Prisma.ProjectScalarFieldEnum[]
+  distinct?: Prisma.CopilotOutputScalarFieldEnum | Prisma.CopilotOutputScalarFieldEnum[]
 }
 
 /**

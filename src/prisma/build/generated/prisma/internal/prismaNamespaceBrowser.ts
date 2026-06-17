@@ -124,7 +124,6 @@ export type CopilotServerScalarFieldEnum = (typeof CopilotServerScalarFieldEnum)
 export const ProjectScalarFieldEnum = {
   id: 'id',
   copilotInputId: 'copilotInputId',
-  copilotServerId: 'copilotServerId',
   projectExId: 'projectExId',
   projectName: 'projectName',
   createdAt: 'createdAt',
@@ -136,6 +135,7 @@ export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeo
 
 export const CopilotOutputScalarFieldEnum = {
   id: 'id',
+  copilotServerId: 'copilotServerId',
   copilotSessionExId: 'copilotSessionExId',
   editableText: 'editableText',
   aiResponse: 'aiResponse',

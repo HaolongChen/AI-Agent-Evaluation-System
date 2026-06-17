@@ -52,9 +52,14 @@ export type TypeNameList = {
 	:	never;
 };
 
-export const copilotExecutionSchema = z.object({
-	copilotInputId: z.string(),
+export const copilotExecutionSchema = z.object( {
+	projectId: z.string().optional(),
 	copilotServerId: z.string(),
+	status: z.enum([
+		"pending",
+		"running",
+		"completed",
+	]).default("pending"),
 });
 
 export type CopilotExecutionLogs = {

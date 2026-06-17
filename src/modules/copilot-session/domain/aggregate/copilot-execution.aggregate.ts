@@ -18,57 +18,82 @@ import {
 	copilotExecutionSchema,
 	type CopilotExecutionLogs,
 } from "../schema/copilot.schema.ts";
+import type { ProjectAggregate } from "./project.aggregate.ts";
 
 export class CopilotExecutionAggregate extends AggregateRoot<
 	typeof copilotExecutionSchema,
 	EntityMetadata & {
-		projectId?: string;
 		copilotSessionExId?: string;
 	},
-	{ copilotInput: CopilotInputAggregate; projectNetwork: NetworkClient; copilotNetwork: NetworkClient }
-> {
+	{
+		project?: ProjectAggregate;
+		networkClient: NetworkClient;
+	}
+	>
+{
+
+	private updateStatus ()
+	{
+		if ( !this.getData( "projectId" ) )
+		{
+			this.setData( { status: "pending" } );
+		}
+		else if ( !this.getData( "copilotSessionExId" ) )
+		{
+			this.setData( { status: "projectCreated" } );
+		}
+	}
 	public executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
 
-	constructor(
-		copilotInput: CopilotInputAggregate,
-    copilotServer: CopilotServerEntity,
-    projectNetwork: NetworkClient,
-    copilotNetwork: NetworkClient,
-  )
-  {
-
-		copilotNetwork.setGraphQLUrl(copilotServer.getData("gqlEndpoint"));
-		copilotNetwork.setWebSocketUrl(copilotServer.getData("wsEndpoint"));
+	constructor (
+		copilotServer: CopilotServerEntity,
+		networkClient: NetworkClient,
+	)
+	{
+		networkClient.setWebSocketUrl( copilotServer.getData( "wsEndpoint" ) );
+		networkClient.setGraphQLUrl(copilotServer.getData("gqlEndpoint"));
 		const entity = new Entity<
 			typeof copilotExecutionSchema,
-			EntityMetadata & { projectId?: string }
+			EntityMetadata & { copilotSessionExId?: string }
 		>(
 			{
-				copilotInputId: copilotInput.getData("id"),
 				copilotServerId: copilotServer.getData("id"),
 			},
 			copilotExecutionSchema,
 			{},
 		);
-		super(entity, { copilotInput, projectNetwork, copilotNetwork });
+		super(entity, { networkClient });
+	}
+
+	setupEnvironment ( project: ProjectAggregate, copilotSessionExId: string )
+	{
+		this.setData( { projectId: project.getData( "id" ), copilotSessionExId } );
+		this.setEntity( "project", project );
 	}
 
 	private getSchemaId(): string {
 		return this.getEntity("copilotInput")
 			.getEntity("goldenSet")
 			.getData("schemaId");
-  }
+	}
 
-  private getUserInput (): string
-  {
-    return this.getEntity("copilotInput").getEntity("userInput").getData("content");
-  }
+	private getUserInput(): string {
+		return this.getEntity("project")!.getEntity("copilotInput")
+			.getEntity("userInput")
+			.getData("content");
+	}
 
 	start(project: ZionProject, account: Account) {
 		const projectId = project.getData("id");
 		this.setData({ projectId });
 		project.setData({ schemaId: this.getSchemaId() });
-		this.addEvent(new ProjectCreatedEvent(project, account, this.getEntity("projectNetwork")));
+		this.addEvent(
+			new ProjectCreatedEvent(
+				project,
+				account,
+				this.getEntity("networkClient"),
+			),
+		);
 	}
 
 	resume(projectExId: string) {
@@ -87,19 +112,19 @@ export class CopilotExecutionAggregate extends AggregateRoot<
 			this.addEvent(
 				new CopilotExecutionStarted(
 					executionLog,
-					this.getEntity("copilotNetwork"),
-          this.getEntity("projectNetwork"),
+					this.getEntity("networkClient"),
+					this.getEntity("projectNetwork"),
 				),
 			);
 		} else {
 			this.addEvent(
 				new CopilotSessionCreatedEvent(
 					this.getData("id"),
-          projectIdToUse,
-          this.getUserInput(),
+					projectIdToUse,
+					this.getUserInput(),
 					projectExId,
 					this.getEntity("copilotNetwork"),
-          this.getEntity("projectNetwork"),
+					this.getEntity("projectNetwork"),
 				),
 			);
 		}

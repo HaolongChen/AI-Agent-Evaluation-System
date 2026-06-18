@@ -3,7 +3,7 @@ import type { CopilotExecutionLogType } from "../schema/copilot-execution-log.sc
 export class CopilotExecutionLog {
   constructor(public readonly data: CopilotExecutionLogType) {}
 
-  extend(newData: Partial<CopilotExecutionLogType>): CopilotExecutionLog {
+  log(newData: Partial<CopilotExecutionLogType>): CopilotExecutionLog {
     if (!this.data.editableText && newData.aiResponse)
       throw new Error("incorrect order");
     return new CopilotExecutionLog({

@@ -6,7 +6,7 @@ import {
   ZTypeCoreApi,
   type CopilotApiResultJs,
   type OpaqueSchemaGraph,
-} from "../../shared/domain/interface/type-system.ts";
+} from "../../../shared/domain/interface/type-system.ts";
 
 export const runCopilotToolCalls = (
   toolCalls: {
@@ -29,9 +29,6 @@ export const runCopilotToolCalls = (
       // eslint-disable-next-line unicorn/no-null
       null,
     ),
-    toolCalls.map((toolCall) => ({
-      ...toolCall,
-      id: toolCall.id,
-    })),
+    toolCalls,
   );
 };

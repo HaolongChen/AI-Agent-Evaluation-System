@@ -4,7 +4,7 @@ import type { CopilotEvent } from "../domain/entity/copilot-job.entity.ts";
 import { CopilotResponseMessageBuiltEvent } from "../domain/event/copilot-response-message-built.ts";
 import type { IZionProjectService } from "../domain/interface/project-service.interface.ts";
 import type { CopilotExecutionService } from "../domain/service/copilot-execution.service.ts";
-import { runCopilotToolCalls } from "./copilot-tool-call-handler.ts";
+import { runCopilotToolCalls } from "../infrastructure/copilot/copilot-tool-call-handler.ts";
 
 export class CopilotMessageHandler {
   constructor(

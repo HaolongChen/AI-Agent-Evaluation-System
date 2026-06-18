@@ -6,16 +6,12 @@ import {
 type CopilotMessageContent =
   OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content;
 
-type CopilotMessageContentMap<E extends string | undefined = undefined> = {
-  readonly [T in CopilotMessageContent as T["__typename"]]: E extends string
-    ? Omit<
-        {
-          [K in keyof T]: T[K];
-        },
-        E
-      >
-    : { [K in keyof T]: T[K] };
-};
+export type CopilotMessageContentMap<E extends string | undefined = undefined> =
+  {
+    readonly [T in CopilotMessageContent as T["__typename"]]: {
+      [K in Exclude<keyof T, E>]: T[K];
+    };
+  };
 
 export const typeNameList = [
   "CopilotAiResponseMessage",

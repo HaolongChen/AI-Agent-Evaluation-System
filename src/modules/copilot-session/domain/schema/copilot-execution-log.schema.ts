@@ -1,7 +1,7 @@
 export type CopilotExecutionLogType = {
   editableText?: string;
   aiResponse?: string;
-  tasks: [];
+  tasks: unknown[];
 };
 
 type ResponsePolicyEnum = {

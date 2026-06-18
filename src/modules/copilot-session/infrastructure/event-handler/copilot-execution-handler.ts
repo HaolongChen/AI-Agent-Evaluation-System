@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/no-null */
 import type { IDomainEventBus } from "../../../shared/domain/event/domain-event.bus.ts";
 import { CopilotSessionCreatedEvent } from "../../domain/event/copilot-session-created.ts";
 import type { ICopilotNetworkService } from "../interface/copilot-network.interface.ts";
@@ -84,6 +85,39 @@ class CopilotMessageHandler {
         },
       );
       return this.publishMessageSentEvent(response);
+    }
+    if (coreInfo.type === "stateChange") {
+      if (!coreInfo.significance) {
+        return;
+      }
+      switch (this.executionLog.messageForwardPolicy) {
+        case "HumanInputMessage": {
+          return this.publishMessageSentEvent(
+            new CopilotInputEvent("CopilotHumanInputMessage", {
+              content: this.project.getEntity("copilotInput").userInput,
+              context: null,
+            }),
+          );
+        }
+        case "OperationMessage": {
+          return this.publishMessageSentEvent(
+            new CopilotInputEvent("CopilotHumanOperationMessage", {
+              humanOperationType: "CONTINUE",
+              optionalContent: null,
+            }),
+          );
+        }
+        case "TerminateMessage": {
+          return this.publishMessageSentEvent(
+            new CopilotInputEvent("CopilotTerminateMessage", {
+              reason: "Copilot execution log indicates termination.",
+            }),
+          );
+        }
+        default: {
+          return;
+        }
+      }
     }
   };
 }

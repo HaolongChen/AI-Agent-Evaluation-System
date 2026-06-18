@@ -1,6 +1,7 @@
 import z from "zod";
 import { Entity } from "../../../shared/domain/entity/entity.ts";
 import { accountSchema } from "../schema/account.schema.ts";
+import type { NetworkClient } from "./network-client.entity.ts";
 
 export class Account extends Entity<typeof accountSchema> {
   constructor(data: z.infer<typeof accountSchema>, id?: string) {
@@ -11,5 +12,9 @@ export class Account extends Entity<typeof accountSchema> {
       username: this.getData("username"),
       password: this.getData("password"),
     };
+  }
+
+  acquireNetwork(network: NetworkClient) {
+    network.setHeader("Authorization", this.getData("accessToken"));
   }
 }

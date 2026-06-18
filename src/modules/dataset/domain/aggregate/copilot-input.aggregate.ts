@@ -34,10 +34,17 @@ export class CopilotInputAggregate extends AggregateRoot<
     }
   }
 
-  get projectName (): string
-  {
-    const goldenSetId = this.getEntity( "goldenSet" ).getData( "id" );
-    const userInputId = this.getEntity( "userInput" ).getData( "id" );
-    return `temp-project-${goldenSetId[ 0 ]}-${userInputId[ 0 ]}-${Date.now()}`;
+  get projectName(): string {
+    const goldenSetId = this.getEntity("goldenSet").getData("id");
+    const userInputId = this.getEntity("userInput").getData("id");
+    return `temp-project-${goldenSetId[0]}-${userInputId[0]}-${Date.now()}`;
+  }
+
+  get schemaId(): string {
+    return this.getEntity("goldenSet").getData("schemaId");
+  }
+
+  get userInput(): string {
+    return this.getEntity("userInput").getData("content");
   }
 }

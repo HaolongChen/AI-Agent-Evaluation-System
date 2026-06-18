@@ -1,7 +1,6 @@
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 
 export interface ICrdtSchemaService {
-
   getSchemaGraph(
     schemaId: string,
     networkClient: NetworkClient,

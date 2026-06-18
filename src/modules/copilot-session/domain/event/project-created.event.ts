@@ -4,12 +4,12 @@ import type { IDomainEvent } from "../../../shared/domain/event/domain-event.int
 import type { ZionProject } from "../entity/zion-project.entity.ts";
 
 export class ProjectCreatedEvent implements IDomainEvent {
-	readonly name = "zionProject.created";
-	readonly createdAt: Date = new Date();
+  readonly name = "zionProject.created";
+  readonly createdAt: Date = new Date();
 
-	constructor(
-		public readonly zionProject: ZionProject,
-		public readonly account: Account,
-		public readonly projectNetwork: NetworkClient,
-	) {}
+  constructor(
+    public readonly zionProject: ZionProject,
+    public readonly account: Account,
+    public readonly projectNetwork: NetworkClient,
+  ) {}
 }

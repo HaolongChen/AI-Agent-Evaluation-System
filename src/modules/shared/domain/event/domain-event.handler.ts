@@ -1,5 +1,5 @@
 import type { IDomainEvent } from "./domain-event.interface.ts";
 
 export type DomainEventHandler<Event extends IDomainEvent> = (
-	event: Event,
+  event: Event,
 ) => Promise<void> | void;

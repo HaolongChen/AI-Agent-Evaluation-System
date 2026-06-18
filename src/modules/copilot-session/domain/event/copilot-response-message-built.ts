@@ -2,10 +2,10 @@ import type { IDomainEvent } from "../../../shared/domain/event/domain-event.int
 import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
 
 export class CopilotResponseMessageBuiltEvent<
-	MessageType extends keyof CopilotInputMessage,
+  MessageType extends keyof CopilotInputMessage,
 > implements IDomainEvent {
-	readonly name = "copilot.execution.responseMessageBuilt";
-	readonly createdAt = new Date();
+  readonly name = "copilot.execution.responseMessageBuilt";
+  readonly createdAt = new Date();
 
-	constructor(public readonly data: CopilotInputMessage[MessageType]) {}
+  constructor(public readonly data: CopilotInputMessage[MessageType]) {}
 }

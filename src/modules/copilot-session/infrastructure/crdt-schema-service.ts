@@ -217,114 +217,117 @@ type SupportedCustomModelDescriptor =
   | null;
 
 export class CrdtSchemaService implements ICrdtSchemaService {
-	private async getCrdtModelBySchema(schemaId: string): Promise<string> {
-		return fromUint8Array(
-			new Uint8Array((await getSchemaModelById(schemaId)) as ArrayBufferLike),
-		);
-	}
-	private withEnabledFeatures = <T>(function_: () => T): T => {
-		return ZTypeCoreApi.withEnabledFeatures<T>([], function_);
-	};
+  private async getCrdtModelBySchema(schemaId: string): Promise<string> {
+    return fromUint8Array(
+      new Uint8Array((await getSchemaModelById(schemaId)) as ArrayBufferLike),
+    );
+  }
+  private withEnabledFeatures = <T>(function_: () => T): T => {
+    return ZTypeCoreApi.withEnabledFeatures<T>([], function_);
+  };
 
-	constructor(private readonly networkService: INetworkService) {}
+  constructor(private readonly networkService: INetworkService) {}
 
-	private async getAFCustomCodeTemplates(
-		gqlClient: IGQLClient,
-	): Promise<AfCustomCodeTemplates> {
-		try {
-			const data = await gqlClient.gqlRequest<AfCustomCodeTemplatesQuery>(
-				AF_CUSTOM_CODE_TEMPLATES_QUERY,
-			);
-			if (!data.visibleAfCustomCodeTemplates) {
-				throw new Error("No data returned for visibleAfCustomCodeTemplates");
-			}
-			return data.visibleAfCustomCodeTemplates.filter((item) => item !== null);
-		} catch (error) {
-			logger.error("Error fetching AF custom code templates:", error);
-			throw error;
-		}
-	}
-
-	private async getSupportedCustomModelDescriptor(
-		gqlClient: IGQLClient,
-	): Promise<SupportedCustomModelDescriptor> {
-		try {
-			const { supportedCustomModelDescriptor } =
-				await gqlClient.gqlRequest<SupportedCustomModelDescriptorQuery>(
-					SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
-				);
-
-			return supportedCustomModelDescriptor;
-		} catch (error) {
-			logger.error("Error fetching supported custom model descriptor:", error);
-			throw error;
-		}
-	}
-
-	async getSchemaGraph(
-		schemaId: string,
-		networkClient: NetworkClient,
-  ): Promise<unknown>
-  {
-    const crdtModel = await this.getCrdtModelBySchema( schemaId );
-		const gqlClient = this.networkService.gqlClient(networkClient);
-		const data = await this.getSupportedCustomModelDescriptor(gqlClient);
-		const codeTemplates = await this.getAFCustomCodeTemplates(gqlClient);
-		return this.withEnabledFeatures(() =>
-			ZTypeCoreApi.resolveZSchemaToSchemaGraph(
-				ZTypeCoreApi.parseZSchemaFromJsObject({
-					...Crdt.initModel(crdtModel).view(),
-				}),
-				genExtraContext(data, codeTemplates),
-			),
-		);
-	}
-	async importSchema(
-		schemaId: string,
-		projectExId: string,
-		networkClient: NetworkClient,
-  ): Promise<void>
-  {
-    const crdtModel = await this.getCrdtModelBySchema( schemaId );
-		const gqlClient = this.networkService.gqlClient(networkClient);
-		await gqlClient.gqlRequest<
-			ImportProjectSchemaManualMutation,
-			ImportProjectSchemaManualMutationVariables
-		>(IMPORT_PROJECT_SCHEMA_MANUAL, { crdtModel, projectExId });
-	}
-
-	private getProjectDetails(
-		data: FetchAppDetailByExIdQuery["fetchAppDetailByExId"],
-	): FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project {
-		return data?.__typename === "Project" ? data : data!.project;
-	}
-
-	private getSchemaIdFromUrl = (url: string): string => {
-		return new URL(url).pathname.split("/")[2];
-	};
-
-	private async fetchAppDetailByExId(
-		projectExId: string,
-		networkClient: NetworkClient,
-	): Promise<FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project> {
-		const gqlClient = this.networkService.gqlClient(networkClient);
-		const data = await gqlClient.gqlRequest<
-			FetchAppDetailByExIdQuery,
-			FetchAppDetailByExIdQueryVariables
-		>(FETCH_APP_DETAIL_QUERY, {
-			projectExId: projectExId,
-		});
-		if (!data || !data.fetchAppDetailByExId) {
-			throw new Error(
-				`No data returned for fetchAppDetailByExId with projectExId: ${projectExId}`,
-			);
-		}
-		return this.getProjectDetails(data.fetchAppDetailByExId);
+  private async getAFCustomCodeTemplates(
+    gqlClient: IGQLClient,
+  ): Promise<AfCustomCodeTemplates> {
+    try {
+      const data = await gqlClient.gqlRequest<AfCustomCodeTemplatesQuery>(
+        AF_CUSTOM_CODE_TEMPLATES_QUERY,
+      );
+      if (!data.visibleAfCustomCodeTemplates) {
+        throw new Error("No data returned for visibleAfCustomCodeTemplates");
+      }
+      return data.visibleAfCustomCodeTemplates.filter((item) => item !== null);
+    } catch (error) {
+      logger.error("Error fetching AF custom code templates:", error);
+      throw error;
+    }
   }
 
-  async getSchemaIdByProjectExId ( projectExId: string, networkClient: NetworkClient ): Promise<string>
-  {
-    const appDetail = await this.fetchAppDetailByExId( projectExId, networkClient );
+  private async getSupportedCustomModelDescriptor(
+    gqlClient: IGQLClient,
+  ): Promise<SupportedCustomModelDescriptor> {
+    try {
+      const { supportedCustomModelDescriptor } =
+        await gqlClient.gqlRequest<SupportedCustomModelDescriptorQuery>(
+          SUPPORTED_CUSTOM_MODEL_DESCRIPTOR_QUERY,
+        );
+
+      return supportedCustomModelDescriptor;
+    } catch (error) {
+      logger.error("Error fetching supported custom model descriptor:", error);
+      throw error;
+    }
+  }
+
+  async getSchemaGraph(
+    schemaId: string,
+    networkClient: NetworkClient,
+  ): Promise<unknown> {
+    const crdtModel = await this.getCrdtModelBySchema(schemaId);
+    const gqlClient = this.networkService.gqlClient(networkClient);
+    const data = await this.getSupportedCustomModelDescriptor(gqlClient);
+    const codeTemplates = await this.getAFCustomCodeTemplates(gqlClient);
+    return this.withEnabledFeatures(() =>
+      ZTypeCoreApi.resolveZSchemaToSchemaGraph(
+        ZTypeCoreApi.parseZSchemaFromJsObject({
+          ...Crdt.initModel(crdtModel).view(),
+        }),
+        genExtraContext(data, codeTemplates),
+      ),
+    );
+  }
+  async importSchema(
+    schemaId: string,
+    projectExId: string,
+    networkClient: NetworkClient,
+  ): Promise<void> {
+    const crdtModel = await this.getCrdtModelBySchema(schemaId);
+    const gqlClient = this.networkService.gqlClient(networkClient);
+    await gqlClient.gqlRequest<
+      ImportProjectSchemaManualMutation,
+      ImportProjectSchemaManualMutationVariables
+    >(IMPORT_PROJECT_SCHEMA_MANUAL, { crdtModel, projectExId });
+  }
+
+  private getProjectDetails(
+    data: FetchAppDetailByExIdQuery["fetchAppDetailByExId"],
+  ): FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project {
+    return data?.__typename === "Project" ? data : data!.project;
+  }
+
+  private getSchemaIdFromUrl = (url: string): string => {
+    return new URL(url).pathname.split("/")[2];
+  };
+
+  private async fetchAppDetailByExId(
+    projectExId: string,
+    networkClient: NetworkClient,
+  ): Promise<FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project> {
+    const gqlClient = this.networkService.gqlClient(networkClient);
+    const data = await gqlClient.gqlRequest<
+      FetchAppDetailByExIdQuery,
+      FetchAppDetailByExIdQueryVariables
+    >(FETCH_APP_DETAIL_QUERY, {
+      projectExId: projectExId,
+    });
+    if (!data || !data.fetchAppDetailByExId) {
+      throw new Error(
+        `No data returned for fetchAppDetailByExId with projectExId: ${projectExId}`,
+      );
+    }
+    return this.getProjectDetails(data.fetchAppDetailByExId);
+  }
+
+  async getSchemaIdByProjectExId(
+    projectExId: string,
+    networkClient: NetworkClient,
+  ): Promise<string> {
+    const appDetail = await this.fetchAppDetailByExId(
+      projectExId,
+      networkClient,
+    );
     const url = appDetail.latestSchema?.crdtModelUrl;
     if (!url) {
       throw new Error("No schema linked to this project");

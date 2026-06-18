@@ -1,48 +1,67 @@
 import type { z } from "zod";
 import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
+import { Entity } from "../../../shared/domain/entity/entity.ts";
 import {
-	Entity,
-	type EntityMetadata,
-} from "../../../shared/domain/entity/entity.ts";
-import {
-	projectConfigSchema,
-	projectSchema,
+  projectConfigSchema,
+  projectSchema,
+  type ProjectMetadata,
 } from "../schema/project.schema.ts";
 import { ZionProject } from "../entity/zion-project.entity.ts";
-import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
+import { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
+import { ProjectCreatedEvent } from "../event/project-created.event.ts";
+import type { Account } from "../../../account/domain/entity/account.entity.ts";
 
 export class ProjectAggregate extends AggregateRoot<
-	typeof projectSchema,
-	EntityMetadata & { projectExId?: string },
-	{ copilotInput: CopilotInputAggregate, network: NetworkClient }
+  typeof projectSchema,
+  ProjectMetadata,
+  { copilotInput: CopilotInputAggregate }
 > {
-	constructor(copilotInput: CopilotInputAggregate, network: NetworkClient, id?: string) {
-		super(
-			new Entity<
-				typeof projectSchema,
-				EntityMetadata & { projectExId?: string }
-			>({ copilotInputId: copilotInput.getData("id") }, projectSchema, {id}),
-			{ copilotInput, network },
-		);
-	}
-
-	configureZionProject(
-		config: z.input<typeof projectConfigSchema>,
-	): ZionProject {
-		return new ZionProject({
-			...config,
-			projectName: this.getEntity("copilotInput").projectName,
-			schemaId: this.getEntity("copilotInput")
-				.getEntity("goldenSet")
-				.getData("schemaId"),
-		});
+  public readonly network: NetworkClient = NetworkClient.createDefault();
+  constructor(
+    copilotInput: CopilotInputAggregate,
+    public readonly account: Account,
+    id?: string,
+  ) {
+    super(
+      new Entity<typeof projectSchema, ProjectMetadata>(
+        { copilotInputId: copilotInput.getData("id") },
+        projectSchema,
+        { id, state: { status: "pending" } },
+      ),
+      { copilotInput },
+    );
+    account.acquireNetwork(this.network);
   }
 
-  static complete ( projectExId: string, projectId: string, copilotInput: CopilotInputAggregate, network: NetworkClient ): ProjectAggregate
-  {
-    const projectAggregate = new ProjectAggregate( copilotInput, network, projectId );
-    projectAggregate.setData( { projectExId } );
+  get state() {
+    return this.getData("state");
+  }
+
+  createProject(config: z.input<typeof projectConfigSchema>, account: Account) {
+    this.setData({ state: { status: "creating" } });
+    const zionProject = new ZionProject({
+      ...config,
+      projectName: this.getEntity("copilotInput").projectName,
+      schemaId: this.getEntity("copilotInput")
+        .getEntity("goldenSet")
+        .getData("schemaId"),
+    });
+    this.addEvent(new ProjectCreatedEvent(zionProject, account, this.network));
+  }
+
+  static complete(
+    projectExId: string,
+    projectId: string,
+    copilotInput: CopilotInputAggregate,
+    account: Account,
+  ): ProjectAggregate {
+    const projectAggregate = new ProjectAggregate(
+      copilotInput,
+      account,
+      projectId,
+    );
+    projectAggregate.setData({ state: { status: "active", projectExId } });
     return projectAggregate;
   }
 }

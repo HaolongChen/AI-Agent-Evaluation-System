@@ -3,17 +3,16 @@ import type { CopilotEventsList } from "../entity/copilot-job.entity.ts";
 import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
 
 export interface ICopilotNetworkService {
+  subscribeToSessionUpdates(
+    sessionExId: string,
+    networkClient: NetworkClient,
+    publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
+  ): () => void;
 
-	subscribeToSessionUpdates(
-		sessionExId: string,
-		networkClient: NetworkClient,
-		publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
-	): () => void;
-
-	sendMessageToSession<T extends keyof CopilotInputMessage>(
-		sessionExId: string,
-		networkClient: NetworkClient,
-		type: T,
-		message: CopilotInputMessage[T],
-	): Promise<void>;
+  sendMessageToSession<T extends keyof CopilotInputMessage>(
+    sessionExId: string,
+    networkClient: NetworkClient,
+    type: T,
+    message: CopilotInputMessage[T],
+  ): Promise<void>;
 }

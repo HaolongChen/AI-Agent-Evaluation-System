@@ -1,15 +1,13 @@
-import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import {
   type CopilotInputMessage,
   type CopilotMessageContentMap,
   type TypeNameList,
-} from "../schema/copilot.schema.ts";
+} from "./copilot.schema.ts";
 import { Event } from "ts-event-target";
 export class CopilotEvent<T extends keyof TypeNameList> extends Event<T> {
   constructor(
     type: T,
     readonly data: CopilotMessageContentMap[T],
-    readonly projectNetwork: NetworkClient,
   ) {
     super(type);
   }

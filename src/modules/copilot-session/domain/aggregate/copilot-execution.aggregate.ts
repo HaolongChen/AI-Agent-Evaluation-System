@@ -5,7 +5,6 @@ import { Entity } from "../../../shared/domain/entity/entity.ts";
 import { CopilotSessionCreatedEvent } from "../event/copilot-session-created.ts";
 import {
   copilotExecutionSchema,
-  type CopilotExecutionLogs,
   type CopilotExecutionMetadata,
 } from "../schema/copilot.schema.ts";
 import type { ProjectAggregate } from "./project.aggregate.ts";
@@ -15,7 +14,6 @@ export class CopilotExecutionAggregate extends AggregateRoot<
   CopilotExecutionMetadata
 > {
   public readonly network: NetworkClient = NetworkClient.createDefault();
-  public executionLogs: CopilotExecutionLogs = {} as CopilotExecutionLogs;
 
   constructor(copilotServer: CopilotServerEntity) {
     const entity = new Entity<

@@ -180,7 +180,7 @@ export type copilotOutputGroupByArgs<
 export type CopilotOutputGroupByOutputType = {
   id: string;
   status: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId: string | null;
   editableText: string | null;
   aiResponse: string | null;
   tasks: runtime.JsonValue[];
@@ -214,7 +214,10 @@ export type copilotOutputWhereInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFilter<"copilotOutput">
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFilter<"copilotOutput"> | string;
+  copilotSessionExId?:
+    | Prisma.StringNullableFilter<"copilotOutput">
+    | string
+    | null;
   editableText?: Prisma.StringNullableFilter<"copilotOutput"> | string | null;
   aiResponse?: Prisma.StringNullableFilter<"copilotOutput"> | string | null;
   tasks?: Prisma.JsonNullableListFilter<"copilotOutput">;
@@ -235,7 +238,7 @@ export type copilotOutputWhereInput = {
 export type copilotOutputOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
-  copilotSessionExId?: Prisma.SortOrder;
+  copilotSessionExId?: Prisma.SortOrderInput | Prisma.SortOrder;
   editableText?: Prisma.SortOrderInput | Prisma.SortOrder;
   aiResponse?: Prisma.SortOrderInput | Prisma.SortOrder;
   tasks?: Prisma.SortOrder;
@@ -279,7 +282,7 @@ export type copilotOutputWhereUniqueInput = Prisma.AtLeast<
 export type copilotOutputOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
-  copilotSessionExId?: Prisma.SortOrder;
+  copilotSessionExId?: Prisma.SortOrderInput | Prisma.SortOrder;
   editableText?: Prisma.SortOrderInput | Prisma.SortOrder;
   aiResponse?: Prisma.SortOrderInput | Prisma.SortOrder;
   tasks?: Prisma.SortOrder;
@@ -304,8 +307,9 @@ export type copilotOutputScalarWhereWithAggregatesInput = {
     | Prisma.EnumCopilotExecutionStatusWithAggregatesFilter<"copilotOutput">
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?:
-    | Prisma.StringWithAggregatesFilter<"copilotOutput">
-    | string;
+    | Prisma.StringNullableWithAggregatesFilter<"copilotOutput">
+    | string
+    | null;
   editableText?:
     | Prisma.StringNullableWithAggregatesFilter<"copilotOutput">
     | string
@@ -329,7 +333,7 @@ export type copilotOutputScalarWhereWithAggregatesInput = {
 export type copilotOutputCreateInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -342,7 +346,7 @@ export type copilotOutputCreateInput = {
 export type copilotOutputUncheckedCreateInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -357,7 +361,10 @@ export type copilotOutputUpdateInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -375,7 +382,10 @@ export type copilotOutputUncheckedUpdateInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -391,7 +401,7 @@ export type copilotOutputUncheckedUpdateInput = {
 export type copilotOutputCreateManyInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -405,7 +415,10 @@ export type copilotOutputUpdateManyMutationInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -420,7 +433,10 @@ export type copilotOutputUncheckedUpdateManyInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -773,7 +789,7 @@ export type copilotOutputUpdateOneRequiredWithoutRubricsNestedInput = {
 export type copilotOutputCreateWithoutCopilotServerInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -785,7 +801,7 @@ export type copilotOutputCreateWithoutCopilotServerInput = {
 export type copilotOutputUncheckedCreateWithoutCopilotServerInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -849,7 +865,10 @@ export type copilotOutputScalarWhereInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFilter<"copilotOutput">
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFilter<"copilotOutput"> | string;
+  copilotSessionExId?:
+    | Prisma.StringNullableFilter<"copilotOutput">
+    | string
+    | null;
   editableText?: Prisma.StringNullableFilter<"copilotOutput"> | string | null;
   aiResponse?: Prisma.StringNullableFilter<"copilotOutput"> | string | null;
   tasks?: Prisma.JsonNullableListFilter<"copilotOutput">;
@@ -861,7 +880,7 @@ export type copilotOutputScalarWhereInput = {
 export type copilotOutputCreateWithoutProjectInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -873,7 +892,7 @@ export type copilotOutputCreateWithoutProjectInput = {
 export type copilotOutputUncheckedCreateWithoutProjectInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -928,7 +947,7 @@ export type copilotOutputUpdateManyWithWhereWithoutProjectInput = {
 export type copilotOutputCreateWithoutRubricsInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -940,7 +959,7 @@ export type copilotOutputCreateWithoutRubricsInput = {
 export type copilotOutputUncheckedCreateWithoutRubricsInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -982,7 +1001,10 @@ export type copilotOutputUpdateWithoutRubricsInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -999,7 +1021,10 @@ export type copilotOutputUncheckedUpdateWithoutRubricsInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1014,7 +1039,7 @@ export type copilotOutputUncheckedUpdateWithoutRubricsInput = {
 export type copilotOutputCreateManyCopilotServerInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -1027,7 +1052,10 @@ export type copilotOutputUpdateWithoutCopilotServerInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1044,7 +1072,10 @@ export type copilotOutputUncheckedUpdateWithoutCopilotServerInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1061,7 +1092,10 @@ export type copilotOutputUncheckedUpdateManyWithoutCopilotServerInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1075,7 +1109,7 @@ export type copilotOutputUncheckedUpdateManyWithoutCopilotServerInput = {
 export type copilotOutputCreateManyProjectInput = {
   id?: string;
   status?: $Enums.CopilotExecutionStatus;
-  copilotSessionExId: string;
+  copilotSessionExId?: string | null;
   editableText?: string | null;
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
@@ -1088,7 +1122,10 @@ export type copilotOutputUpdateWithoutProjectInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1105,7 +1142,10 @@ export type copilotOutputUncheckedUpdateWithoutProjectInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1122,7 +1162,10 @@ export type copilotOutputUncheckedUpdateManyWithoutProjectInput = {
   status?:
     | Prisma.EnumCopilotExecutionStatusFieldUpdateOperationsInput
     | $Enums.CopilotExecutionStatus;
-  copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
+  copilotSessionExId?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
   editableText?:
     | Prisma.NullableStringFieldUpdateOperationsInput
     | string
@@ -1298,7 +1341,7 @@ export type $copilotOutputPayload<
     {
       id: string;
       status: $Enums.CopilotExecutionStatus;
-      copilotSessionExId: string;
+      copilotSessionExId: string | null;
       editableText: string | null;
       aiResponse: string | null;
       tasks: runtime.JsonValue[];

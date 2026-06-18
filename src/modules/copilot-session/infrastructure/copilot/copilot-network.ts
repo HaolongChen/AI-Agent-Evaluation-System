@@ -4,19 +4,20 @@ import type {
   OnCopilotSessionUpdatesSubscriptionVariables,
   SendMessageToSessionMutation,
   SendMessageToSessionMutationVariables,
-} from "../../../graphql/generated/types.ts";
-import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
-import {
-  CopilotEvent,
-  type CopilotEventsList,
-} from "../domain/entity/copilot-job.entity.ts";
-import { logger } from "../../shared/infrastructure/logger.ts";
+} from "../../../../graphql/generated/types.ts";
+import type { ICopilotNetworkService } from "../interface/copilot-network.interface.ts";
+
+import type { INetworkService } from "../../../account/domain/interface/network-service.interface.ts";
+import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import {
   inputMessageTypeList,
   type CopilotInputMessage,
-} from "../domain/schema/copilot.schema.ts";
-import type { INetworkService } from "../../account/domain/interface/network-service.interface.ts";
-import type { NetworkClient } from "../../account/domain/entity/network-client.entity.ts";
+} from "./copilot.schema.ts";
+import {
+  CopilotEvent,
+  type CopilotEventsList,
+} from "./copilot-event.schema.ts";
+import { logger } from "../../../shared/infrastructure/logger.ts";
 
 export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
   query GetCopilotSubscriptionCount(

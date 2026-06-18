@@ -15,7 +15,7 @@ import {
   CREATE_COPILOT_SESSION,
   GET_COPILOT_SUBSCRIPTION_COUNT,
   GET_LATEST_SESSION,
-} from "./copilot-network.ts";
+} from "./copilot/copilot-network.ts";
 import { createZionProject, GQL_DELETE_PROJECT } from "./project-manager.ts";
 import type { IGQLClient } from "../../account/domain/interface/graphql-client.interface.ts";
 import type { INetworkService } from "../../account/domain/interface/network-service.interface.ts";

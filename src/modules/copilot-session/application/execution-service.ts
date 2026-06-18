@@ -1,7 +1,7 @@
 import type { ProjectBeforeCopilotSession } from "../domain/aggregate/project.aggregate.ts";
 import type { IProjectService } from "../domain/interface/project-service.interface.ts";
 import { projectSessionBridge } from "../domain/service/project-session-bridge.ts";
-import type { ICopilotNetworkService } from "../domain/interface/copilot-network.interface.ts";
+import type { ICopilotNetworkService } from "../infrastructure/interface/copilot-network.interface.ts";
 import type { CopilotExecutionService } from "../domain/service/copilot-execution.service.ts";
 
 export class CreateCopilotSessionUseCase {

@@ -1,6 +1,6 @@
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
-import type { CopilotEventsList } from "../entity/copilot-job.entity.ts";
-import type { CopilotInputMessage } from "../schema/copilot.schema.ts";
+import type { CopilotEventsList } from "../copilot/copilot-event.schema.ts";
+import type { CopilotInputMessage } from "../copilot/copilot.schema.ts";
 
 export interface ICopilotNetworkService {
   subscribeToSessionUpdates(

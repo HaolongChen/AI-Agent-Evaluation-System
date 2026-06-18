@@ -25,7 +25,10 @@ export class ProjectAggregate extends AggregateRoot<
   ) {
     super(
       new Entity<typeof projectSchema, ProjectMetadata>(
-        { copilotInputId: copilotInput.getData("id") },
+        {
+          copilotInputId: copilotInput.getData("id"),
+          projectName: copilotInput.projectName,
+        },
         projectSchema,
         { id, state: { status: "pending" } },
       ),

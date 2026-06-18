@@ -4,7 +4,7 @@ import {
   CopilotExecutionStarted,
   CopilotSessionCreatedEvent,
 } from "../../domain/event/copilot-session-created.ts";
-import type { ICopilotNetworkService } from "../../domain/interface/copilot-network.interface.ts";
+import type { ICopilotNetworkService } from "../interface/copilot-network.interface.ts";
 import type { ICopilotRepository } from "../../domain/interface/copilot-repository.interface.ts";
 import type { IZionProjectService } from "../../domain/interface/project-service.interface.ts";
 

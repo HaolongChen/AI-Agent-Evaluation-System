@@ -108,7 +108,7 @@ model project {
 model copilotOutput {
   id                 String                 @id @default(uuid())
   status             CopilotExecutionStatus @default(pending)
-  copilotSessionExId String                 @unique
+  copilotSessionExId String?                @unique
   editableText       String?                @map("output_content") // copilot output
   aiResponse         String?                @map("ai_response") // AI response
   tasks              Json[]                 @map("tasks") // array of tasks extracted from the copilot output, useful for evaluation agents to understand what the copilot is trying to do

@@ -5,6 +5,10 @@ export interface IDomainEventBus {
   publish<T extends IDomainEvent>(
     event: T,
   ): Promise<PromiseSettledResult<void>[]>;
+
+  publishAll<T extends IDomainEvent>(
+    events: T[],
+  ): Promise<PromiseSettledResult<void>[][]>;
   subscribe<T extends IDomainEvent>(
     eventName: T["name"],
     handler: DomainEventHandler<T>,
@@ -14,6 +18,12 @@ export interface IDomainEventBus {
 export class EventBus implements IDomainEventBus {
   private handlerMap: Map<string, DomainEventHandler<IDomainEvent>[]> =
     new Map();
+
+  async publishAll<T extends IDomainEvent>(
+    events: T[],
+  ): Promise<PromiseSettledResult<void>[][]> {
+    return Promise.all(events.map((event) => this.publish(event)));
+  }
 
   async publish<T extends IDomainEvent>(
     event: T,

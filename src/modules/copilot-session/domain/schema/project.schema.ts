@@ -22,11 +22,12 @@ export const zionProjectSchema = z
 
 export const projectSchema = z.object({
   copilotInputId: z.string(),
-  projectName: z.string().optional(),
+  projectName: z.string(),
 });
 
 type DiscriminatedProject =
-  | { status: "creating" | "pending" }
+  | { status: "pending" }
+  | { status: "creating" }
   | {
       status: "active" | "deleted" | "failed";
       projectExId: string;

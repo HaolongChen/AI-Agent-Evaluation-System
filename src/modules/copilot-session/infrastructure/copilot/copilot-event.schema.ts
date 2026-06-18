@@ -19,12 +19,11 @@ export type CopilotResponseEventsList = {
 
 export class CopilotInputEvent<
   T extends keyof CopilotInputMessage = keyof CopilotInputMessage,
-> extends Event<T> {
+>{
   constructor(
-    type: T,
+    private readonly type: T,
     private readonly data: CopilotInputMessage[T],
   ) {
-    super(type);
   }
 
   get message(): CopilotArgumentsInput {

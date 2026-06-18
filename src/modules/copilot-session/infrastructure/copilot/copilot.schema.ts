@@ -1,86 +1,93 @@
-import type { z } from "zod";
 import {
-  type CopilotFeedbackMessageInput,
-  type CopilotHumanInputMessageInput,
-  type CopilotHumanOperationMessageInput,
   CopilotMessageType,
-  type CopilotStopMessageInput,
-  type CopilotTaskRevertSuccessMessageInput,
-  type CopilotTerminateMessageInput,
-  type CopilotToolCallBatchExecErrorMessageInput,
-  type CopilotToolCallBatchResponseMessageInput,
   type OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content,
 } from "../../../../graphql/generated/types.ts";
-import type { CopilotExecutionLogType } from "../../domain/schema/copilot-execution-log.schema.ts";
-import type { copilotOutputSchema } from "../../domain/schema/copilot-output.schema.ts";
 
-export type CopilotMessageContent =
+type CopilotMessageContent =
   OnCopilotSessionUpdatesSubscription_onCopilotSessionUpdate_content;
 
-export type CopilotMessageContentMap = {
-  [T in CopilotMessageContent as T["__typename"]]: {
-    [K in Exclude<keyof T, "__typename" | "messageType">]: T[K];
-  };
+type CopilotMessageContentMap<E extends string | undefined = undefined> = {
+  readonly [T in CopilotMessageContent as T["__typename"]]: E extends string
+    ? Omit<
+        {
+          [K in keyof T]: T[K];
+        },
+        E
+      >
+    : { [K in keyof T]: T[K] };
 };
 
 export const typeNameList = [
   "CopilotAiResponseMessage",
   "CopilotEditableTextMessage",
   "CopilotErrorMessage",
+  "CopilotInitialStateMessage",
+  "CopilotStateChangeMessage",
+  "CopilotSystemStatusMessage",
+  "CopilotTaskMessage",
+  "CopilotToolCallBatchMessage",
+] as const;
+export const inputMessageTypeNameList = [
+  "CopilotTaskRevertSuccessMessage",
+  "CopilotTerminateMessage",
   "CopilotFeedbackMessage",
   "CopilotHumanInputMessage",
   "CopilotHumanOperationMessage",
-  "CopilotInitialStateMessage",
-  "CopilotStateChangeMessage",
   "CopilotStopMessage",
-  "CopilotSystemStatusMessage",
-  "CopilotTaskMessage",
-  "CopilotTaskRevertSuccessMessage",
-  "CopilotTerminateMessage",
-  "CopilotToolCallBatchExecErrorMessage",
-  "CopilotToolCallBatchMessage",
   "CopilotToolCallBatchResponseMessage",
+  "CopilotToolCallBatchExecErrorMessage",
 ] as const;
 
-export type TypeNameList = {
-  [K in (typeof typeNameList)[number]]: K extends CopilotMessageContent["__typename"]
-    ? K
-    : never;
+type TypeNameList<T extends readonly string[]> = {
+  [K in T[number]]: K extends CopilotMessageContent["__typename"] ? K : never;
 };
+export type CopilotResponseMessage = Pick<
+  CopilotMessageContentMap,
+  (typeof typeNameList)[number]
+>;
 
-export type CopilotExecutionLogs = {
-  [K in keyof Omit<
-    z.infer<typeof copilotOutputSchema>,
-    "copilotSessionExId" | "projectExId" | "userInput"
-  >]: z.infer<typeof copilotOutputSchema>[K] extends string
-    ? z.infer<typeof copilotOutputSchema>[K] | undefined
-    : z.infer<typeof copilotOutputSchema>[K];
-};
-
-type RawCopilotInputMessage = {
-  [CopilotMessageType.Feedback]: CopilotFeedbackMessageInput;
-  [CopilotMessageType.HumanInput]: CopilotHumanInputMessageInput;
-  [CopilotMessageType.HumanOperation]: CopilotHumanOperationMessageInput;
-  [CopilotMessageType.Stop]: CopilotStopMessageInput;
-  [CopilotMessageType.ToolCallBatchResponse]: CopilotToolCallBatchResponseMessageInput;
-  [CopilotMessageType.ToolCallBatchExecError]: CopilotToolCallBatchExecErrorMessageInput;
-  [CopilotMessageType.Terminate]: CopilotTerminateMessageInput;
-  [CopilotMessageType.TaskRevertSuccess]: CopilotTaskRevertSuccessMessageInput;
-};
-
-export type CopilotInputMessage = {
-  [K in keyof RawCopilotInputMessage]: RawCopilotInputMessage[K] & {
-    log: CopilotExecutionLogType;
-  };
-};
-
-export const inputMessageTypeList: Record<keyof CopilotInputMessage, string> = {
-  [CopilotMessageType.Feedback]: "feedbackMessage",
-  [CopilotMessageType.HumanInput]: "humanInputMessage",
-  [CopilotMessageType.HumanOperation]: "humanOperationMessage",
-  [CopilotMessageType.Stop]: "stopMessage",
-  [CopilotMessageType.ToolCallBatchResponse]: "toolCallBatchResponseMessage",
-  [CopilotMessageType.ToolCallBatchExecError]: "toolCallBatchExecErrorMessage",
-  [CopilotMessageType.Terminate]: "terminateMessage",
-  [CopilotMessageType.TaskRevertSuccess]: "taskRevertSuccessMessage",
+export const inputMessageList: Record<
+  keyof TypeNameList<typeof inputMessageTypeNameList>,
+  {
+    property: string;
+    type: CopilotMessageType;
+  }
+> = {
+  CopilotFeedbackMessage: {
+    property: "feedbackMessage",
+    type: CopilotMessageType.Feedback,
+  },
+  CopilotHumanInputMessage: {
+    property: "humanInputMessage",
+    type: CopilotMessageType.HumanInput,
+  },
+  CopilotHumanOperationMessage: {
+    property: "humanOperationMessage",
+    type: CopilotMessageType.HumanOperation,
+  },
+  CopilotStopMessage: {
+    property: "stopMessage",
+    type: CopilotMessageType.Stop,
+  },
+  CopilotToolCallBatchResponseMessage: {
+    property: "toolCallBatchResponseMessage",
+    type: CopilotMessageType.ToolCallBatchResponse,
+  },
+  CopilotToolCallBatchExecErrorMessage: {
+    property: "toolCallBatchExecErrorMessage",
+    type: CopilotMessageType.ToolCallBatchExecError,
+  },
+  CopilotTerminateMessage: {
+    property: "terminateMessage",
+    type: CopilotMessageType.Terminate,
+  },
+  CopilotTaskRevertSuccessMessage: {
+    property: "taskRevertSuccessMessage",
+    type: CopilotMessageType.TaskRevertSuccess,
+  },
 } as const;
+
+export type CopilotInputMessage = Pick<
+  CopilotMessageContentMap<"__typename" | "messageType">,
+  (typeof inputMessageTypeNameList)[number]
+>;

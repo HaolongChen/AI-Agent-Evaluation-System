@@ -10,14 +10,12 @@ import type { ICopilotNetworkService } from "../interface/copilot-network.interf
 import type { INetworkService } from "../../../account/domain/interface/network-service.interface.ts";
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import {
-  inputMessageTypeList,
+  inputMessageList,
+  typeNameList,
   type CopilotInputMessage,
 } from "./copilot.schema.ts";
-import {
-  CopilotEvent,
-  type CopilotEventsList,
-} from "./copilot-event.schema.ts";
 import { logger } from "../../../shared/infrastructure/logger.ts";
+import { CopilotResponseEvent } from "./copilot-event.schema.ts";
 
 export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
   query GetCopilotSubscriptionCount(
@@ -292,8 +290,8 @@ export class CopilotNetworkService implements ICopilotNetworkService {
       sessionExId,
       argsInput: {
         copilotArgs: {
-          [inputMessageTypeList[type]]: message,
-          copilotMessageType: type,
+          [inputMessageList[type].property]: message,
+          copilotMessageType: inputMessageList[type].type,
         },
       },
     });
@@ -304,7 +302,7 @@ export class CopilotNetworkService implements ICopilotNetworkService {
   subscribeToSessionUpdates(
     sessionExId: string,
     networkClient: NetworkClient,
-    publish: (event: CopilotEventsList[keyof CopilotEventsList]) => void,
+    publish: (event: CopilotResponseEvent) => void,
   ): () => void {
     const wsClient = this.networkService.wsClient(networkClient);
     return wsClient.subscribe<
@@ -321,11 +319,11 @@ export class CopilotNetworkService implements ICopilotNetworkService {
           }
 
           logger.info("Received subscription update:", content);
-          const event = new CopilotEvent(
-            content.__typename,
-            content,
-          ) as CopilotEventsList[keyof CopilotEventsList];
-          publish(event);
+          for (const typeName of typeNameList) {
+            if (content.__typename === typeName) {
+              return publish(new CopilotResponseEvent(content));
+            }
+          }
         },
         error: (error) => {
           logger.error("Subscription error:", error);

@@ -11,11 +11,11 @@ import type {
   Platform,
   ProjectContentCategory,
   ProjectSpaceType,
-} from "../../../graphql/generated/types.ts";
-import { logger } from "../../shared/infrastructure/logger.ts";
-import type { ZionProject } from "../domain/entity/zion-project.entity.ts";
-import type { IWebSocketClient } from "../../account/domain/interface/websocket-client.interface.ts";
-import type { IGQLClient } from "../../account/domain/interface/graphql-client.interface.ts";
+} from "../../../../graphql/generated/types.ts";
+import { logger } from "../../../shared/infrastructure/logger.ts";
+import type { ZionProject } from "../../domain/entity/zion-project.entity.ts";
+import type { IWebSocketClient } from "../../../account/domain/interface/websocket-client.interface.ts";
+import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
 export const GQL_CHECK_PROJECT_NAME_DUPLICATE = gql`
   query CheckProjectNameDuplicate($projectName: String!) {
     checkProjectNameDuplicate(projectName: $projectName)

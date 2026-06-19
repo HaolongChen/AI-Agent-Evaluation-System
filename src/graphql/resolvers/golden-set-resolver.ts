@@ -23,7 +23,7 @@ import {
   type CopilotSession,
 } from "../generated/resolvers-types.ts";
 import { GraphQLError } from "graphql";
-import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/copilot-session/infrastructure/project-manager.ts";
+import { GQL_FIX_ALIPAY_DATA_BINDING } from "../../modules/copilot-session/infrastructure/project/project-manager.ts";
 import type {
   FixAliPayDataBindingMutation,
   FixAliPayDataBindingMutationVariables,

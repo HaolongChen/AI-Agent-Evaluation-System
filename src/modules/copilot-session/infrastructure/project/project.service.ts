@@ -8,20 +8,20 @@ import type {
   DeleteProjectMutationVariables,
   CreateCopilotSessionMutation,
   CreateCopilotSessionMutationVariables,
-} from "../../../graphql/generated/types.ts";
-import type { ZionProject } from "../domain/entity/zion-project.entity.ts";
-import type { IZionProjectService } from "../domain/interface/project-service.interface.ts";
+} from "../../../../graphql/generated/types.ts";
+import type { ZionProject } from "../../domain/entity/zion-project.entity.ts";
+import type { IZionProjectService } from "../../domain/interface/project-service.interface.ts";
 import {
   CREATE_COPILOT_SESSION,
   GET_COPILOT_SUBSCRIPTION_COUNT,
   GET_LATEST_SESSION,
-} from "./copilot/copilot-network.ts";
+} from "../copilot/copilot-network.ts";
 import { createZionProject, GQL_DELETE_PROJECT } from "./project-manager.ts";
-import type { IGQLClient } from "../../account/domain/interface/graphql-client.interface.ts";
-import type { INetworkService } from "../../account/domain/interface/network-service.interface.ts";
-import type { NetworkClient } from "../../account/domain/entity/network-client.entity.ts";
-import type { Account } from "../../account/domain/entity/account.entity.ts";
-import type { ICrdtSchemaService } from "./interface/crdt-schema.interface.ts";
+import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
+import type { INetworkService } from "../../../account/domain/interface/network-service.interface.ts";
+import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
+import type { Account } from "../../../account/domain/entity/account.entity.ts";
+import type { ICrdtSchemaService } from "../interface/crdt-schema.interface.ts";
 
 export class ZionProjectService implements IZionProjectService {
   constructor(

@@ -2,7 +2,7 @@ import type { NetworkClient } from "../../../account/domain/entity/network-clien
 import type {
   CopilotInputEvent,
   CopilotResponseEvent,
-} from "../copilot/copilot-event.schema.ts";
+} from "../copilot/copilot-event.ts";
 
 export interface ICopilotNetworkService {
   subscribeToSessionUpdates(

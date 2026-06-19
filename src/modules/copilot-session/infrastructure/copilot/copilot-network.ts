@@ -13,7 +13,7 @@ import { logger } from "../../../shared/infrastructure/logger.ts";
 import {
   CopilotMessageEvent,
   type CopilotInputEvent,
-} from "./copilot-event.schema.ts";
+} from "./copilot-event.ts";
 
 export const GET_COPILOT_SUBSCRIPTION_COUNT = gql`
   query GetCopilotSubscriptionCount(

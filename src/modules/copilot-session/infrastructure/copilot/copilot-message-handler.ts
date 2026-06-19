@@ -1,13 +1,12 @@
 /* eslint-disable unicorn/no-null */
-import type { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
-import type { IZionProjectService } from "../../domain/interface/project-service.interface.ts";
+import type { CopilotApiResultJs } from "../../../shared/domain/interface/type-system.ts";
 import type { CopilotExecutionLogType } from "../../domain/schema/copilot-execution-log.schema.ts";
 import { CopilotExecutionLog } from "../../domain/value-object/copilot-execution-log.ts";
 import {
   CopilotInputEvent,
   type CopilotMessageEvent,
 } from "./copilot-event.ts";
-import { runCopilotToolCalls } from "./copilot-tool-call-handler.ts";
+import { type ToolCall } from "./copilot-tool-call-handler.ts";
 
 export class CopilotMessageHandler {
   private executionLog: CopilotExecutionLog = new CopilotExecutionLog(
@@ -15,21 +14,13 @@ export class CopilotMessageHandler {
   );
 
   constructor(
-    private readonly projectService: IZionProjectService,
-    private readonly project: ProjectAggregate,
+    private readonly humanInputMessageEvent: CopilotInputEvent,
+    private readonly runToolCall: (
+      toolCalls: ToolCall[],
+    ) => Promise<CopilotApiResultJs>,
     private readonly sendMessage: (event: CopilotInputEvent) => Promise<void>,
     private readonly saveLog: (log: CopilotExecutionLog) => Promise<void>,
-  ) {
-    if (project.state.status !== "active") {
-      throw new Error("Project must be active to handle copilot messages.");
-    }
-  }
-
-  private getProjectExId = () =>
-    this.project.state.status === "active"
-      ? this.project.state.projectExId
-      : undefined;
-
+  ) {}
   publish = async (event: CopilotMessageEvent) => {
     const coreInfo = event.coreInfo;
     if (!coreInfo) return;
@@ -38,11 +29,7 @@ export class CopilotMessageHandler {
       return this.saveLog(this.executionLog);
     }
     if (coreInfo.type === "toolCallBatch") {
-      const schemaGraph = await this.projectService.getSchemaGraph(
-        this.getProjectExId()!,
-        this.project.network,
-      );
-      const results = runCopilotToolCalls(coreInfo.toolCalls, schemaGraph);
+      const results = await this.runToolCall(coreInfo.toolCalls);
       const response = new CopilotInputEvent(
         "CopilotToolCallBatchResponseMessage",
         {
@@ -59,12 +46,7 @@ export class CopilotMessageHandler {
       }
       switch (this.executionLog.messageForwardPolicy) {
         case "HumanInputMessage": {
-          return this.sendMessage(
-            new CopilotInputEvent("CopilotHumanInputMessage", {
-              content: this.project.getEntity("copilotInput").userInput,
-              context: null,
-            }),
-          );
+          return this.sendMessage(this.humanInputMessageEvent);
         }
         case "OperationMessage": {
           return this.sendMessage(

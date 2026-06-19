@@ -1,14 +1,14 @@
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import type {
   CopilotInputEvent,
-  CopilotResponseEvent,
+  CopilotMessageEvent,
 } from "../copilot/copilot-event.ts";
 
 export interface ICopilotNetworkService {
   subscribeToSessionUpdates(
     sessionExId: string,
     networkClient: NetworkClient,
-    publish: (event: CopilotResponseEvent) => void,
+    publish: (event: CopilotMessageEvent) => void,
   ): () => void;
 
   sendMessageToSession(

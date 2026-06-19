@@ -2,7 +2,6 @@
 import type { IDomainEventBus } from "../../../shared/domain/event/domain-event.bus.ts";
 import { CopilotSessionCreatedEvent } from "../../domain/event/copilot-session-created.ts";
 import type { ICopilotNetworkService } from "../interface/copilot-network.interface.ts";
-import type { ICopilotRepository } from "../../domain/interface/copilot-repository.interface.ts";
 import type { IZionProjectService } from "../../domain/interface/project-service.interface.ts";
 import {
   CopilotInputEvent,
@@ -19,13 +18,93 @@ export class CopilotExecutionHandler {
   constructor(
     private readonly copilotNetwork: ICopilotNetworkService,
     private readonly projectService: IZionProjectService,
-    private readonly copilotRepository: ICopilotRepository,
+    private readonly copilotRepositoryService: ICopilotRepositoryService,
     private readonly eventBus: IDomainEventBus,
   ) {}
 
-  private buildCopilotMessageHandler(event: CopilotSessionCreatedEvent) {}
+  private onMessageSent = (
+    copilotSessionExId: string,
+    copilotNetwork: NetworkClient,
+    messageEventListener: (event: CopilotInputEvent) => Promise<void>,
+  ) => {
+    return async (event: CopilotInputEvent) => {
+      await this.copilotNetwork.sendMessageToSession(
+        copilotSessionExId,
+        copilotNetwork,
+        event,
+      );
+      return messageEventListener(event);
+    };
+  };
 
-  async onCopilotSessionCreated(event: CopilotSessionCreatedEvent) {}
+  private onExecutionLogUpdated = (copilotSessionExId: string) => {
+    return async (log: CopilotExecutionLog) => {
+      return this.copilotRepositoryService.saveLog(copilotSessionExId, log);
+    };
+  };
+
+  async onCopilotSessionCreated(event: CopilotSessionCreatedEvent) {
+    const copilotExecutionEventBus = new CopilotExecutionEventBus();
+    copilotExecutionEventBus.subscribeToMessageSentEvent(
+      this.onMessageSent(
+        event.copilotSessionExId,
+        event.copilotNetwork,
+        copilotExecutionEventBus.publishMessageSentEvent,
+      ),
+    );
+    copilotExecutionEventBus.subscribeToExecutionLogUpdatedEvent(
+      this.onExecutionLogUpdated(event.copilotSessionExId),
+    );
+    const handler = new CopilotMessageHandler(
+      this.projectService,
+      event.project,
+      copilotExecutionEventBus.publishMessageSentEvent,
+      copilotExecutionEventBus.publishExecutionLogUpdatedEvent,
+    );
+    const unsubscribe = this.copilotNetwork.subscribeToSessionUpdates(
+      event.copilotSessionExId,
+      event.copilotNetwork,
+      handler.publish,
+    );
+    copilotExecutionEventBus.subscribeToMessageSentEvent(
+      async (event: CopilotInputEvent) => {
+        if (event.message.copilotMessageType === "TERMINATE") {
+          unsubscribe();
+        }
+      },
+    );
+  }
+}
+
+class CopilotExecutionEventBus {
+  private handlers: {
+    messageSentEvent: ((event: CopilotInputEvent) => Promise<void>)[];
+    executionLogUpdatedEvent: ((log: CopilotExecutionLog) => Promise<void>)[];
+  } = { executionLogUpdatedEvent: [], messageSentEvent: [] };
+
+  subscribeToMessageSentEvent = (
+    handler: (event: CopilotInputEvent) => Promise<void>,
+  ) => {
+    this.handlers.messageSentEvent.push(handler);
+  };
+
+  subscribeToExecutionLogUpdatedEvent = (
+    handler: (log: CopilotExecutionLog) => Promise<void>,
+  ) => {
+    this.handlers.executionLogUpdatedEvent.push(handler);
+  };
+
+  publishMessageSentEvent = async (event: CopilotInputEvent) => {
+    await Promise.all(
+      this.handlers.messageSentEvent.map((handler) => handler(event)),
+    );
+  };
+
+  publishExecutionLogUpdatedEvent = async (log: CopilotExecutionLog) => {
+    await Promise.all(
+      this.handlers.executionLogUpdatedEvent.map((handler) => handler(log)),
+    );
+  };
 }
 
 class CopilotMessageHandler {
@@ -33,26 +112,15 @@ class CopilotMessageHandler {
     {} as CopilotExecutionLogType,
   );
 
-  private publishMessageSentEvent: (event: CopilotInputEvent) => Promise<void>;
-
   constructor(
-    private readonly copilotRepositoryService: ICopilotRepositoryService,
     private readonly projectService: IZionProjectService,
-    copilotNetworkService: ICopilotNetworkService["sendMessageToSession"],
-    private readonly copilotSessionExId: string,
-    private readonly network: NetworkClient,
     private readonly project: ProjectAggregate,
+    private readonly sendMessage: (event: CopilotInputEvent) => Promise<void>,
+    private readonly saveLog: (log: CopilotExecutionLog) => Promise<void>,
   ) {
     if (project.state.status !== "active") {
       throw new Error("Project must be active to handle copilot messages.");
     }
-    this.publishMessageSentEvent = async (event: CopilotInputEvent) => {
-      return copilotNetworkService(
-        this.copilotSessionExId,
-        this.network,
-        event,
-      );
-    };
   }
 
   private getProjectExId = () =>
@@ -65,10 +133,7 @@ class CopilotMessageHandler {
     if (!coreInfo) return;
     if (coreInfo.type === "record") {
       this.executionLog = this.executionLog.log(coreInfo.content);
-      return this.copilotRepositoryService.saveLog(
-        this.copilotSessionExId,
-        this.executionLog,
-      );
+      return this.saveLog(this.executionLog);
     }
     if (coreInfo.type === "toolCallBatch") {
       const schemaGraph = await this.projectService.getSchemaGraph(
@@ -84,7 +149,7 @@ class CopilotMessageHandler {
           responseByToolCallId: JSON.parse(results.data ?? "{}"),
         },
       );
-      return this.publishMessageSentEvent(response);
+      return this.sendMessage(response);
     }
     if (coreInfo.type === "stateChange") {
       if (!coreInfo.significance) {
@@ -92,7 +157,7 @@ class CopilotMessageHandler {
       }
       switch (this.executionLog.messageForwardPolicy) {
         case "HumanInputMessage": {
-          return this.publishMessageSentEvent(
+          return this.sendMessage(
             new CopilotInputEvent("CopilotHumanInputMessage", {
               content: this.project.getEntity("copilotInput").userInput,
               context: null,
@@ -100,7 +165,7 @@ class CopilotMessageHandler {
           );
         }
         case "OperationMessage": {
-          return this.publishMessageSentEvent(
+          return this.sendMessage(
             new CopilotInputEvent("CopilotHumanOperationMessage", {
               humanOperationType: "CONTINUE",
               optionalContent: null,
@@ -108,7 +173,7 @@ class CopilotMessageHandler {
           );
         }
         case "TerminateMessage": {
-          return this.publishMessageSentEvent(
+          return this.sendMessage(
             new CopilotInputEvent("CopilotTerminateMessage", {
               reason: "Copilot execution log indicates termination.",
             }),

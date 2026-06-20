@@ -13,12 +13,18 @@ export class GetCopilotSessionUseCase {
     },
   ) {}
 
+  private buildCopilotOutput ( project: ResumeProjectInfo ): CopilotOutputEntity
+  {
+    
+  }
+
   async execute(
     copilotInput: CopilotInputAggregate,
     copilotServer: CopilotServerEntity,
   ): Promise<ResumeProjectInfo[]> {
-    return this.repository.projectRepository.getAllProjectsOfCopilotInput(
+    return this.repository.projectRepository.getProjectsByCopilotInputAndCopilotServer(
       copilotInput.getData("id"),
+      copilotServer.getData("id")
     );
   }
 }

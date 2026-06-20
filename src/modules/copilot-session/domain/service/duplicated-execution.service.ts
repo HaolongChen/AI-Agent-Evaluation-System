@@ -1,7 +1,7 @@
 import type { ResumeProjectInfo } from "../interface/project-repository.interface.ts";
 
 export class DuplicatedExecutionService {
-  getDuplicatedProjects(
+  extractRequestedCopilotOutputFromProjects(
     projects: ResumeProjectInfo[],
     copilotServerId: string,
   ): ResumeProjectInfo[] {

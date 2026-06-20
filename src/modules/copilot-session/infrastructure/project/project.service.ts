@@ -22,12 +22,26 @@ import type { INetworkService } from "../../../account/domain/interface/network-
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import type { ICrdtSchemaService } from "../interface/crdt-schema.interface.ts";
+import type { CopilotExecutionAggregate } from "../../domain/aggregate/copilot-execution.aggregate.ts";
+import type { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
 
 export class ZionProjectService implements IZionProjectService {
   constructor(
     private readonly networkService: INetworkService,
     private readonly crdtSchemaService: ICrdtSchemaService,
   ) {}
+  async createSafeCopilotSession(
+    project: ProjectAggregate,
+    copilotExecutionAggregate: CopilotExecutionAggregate,
+  ): Promise<void> {
+    const projectExId =
+      copilotExecutionAggregate.verifyActivatedProject(project);
+    const copilotSessionExId = await this.createCopilotSession(
+      projectExId,
+      copilotExecutionAggregate.network,
+    );
+    copilotExecutionAggregate.start(copilotSessionExId);
+  }
   async importSchemaById(
     schemaId: string,
     projectExId: string,

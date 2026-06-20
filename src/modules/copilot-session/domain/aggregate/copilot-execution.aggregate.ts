@@ -14,6 +14,7 @@ export class CopilotExecutionAggregate extends AggregateRoot<
   CopilotExecutionMetadata
 > {
   public readonly network: NetworkClient = NetworkClient.createDefault();
+  private project: ProjectAggregate | undefined;
 
   constructor(copilotServer: CopilotServerEntity, projectId: string) {
     const entity = new Entity<
@@ -36,19 +37,27 @@ export class CopilotExecutionAggregate extends AggregateRoot<
     return this.getData("state");
   }
 
-  private verifyActivatedProject(project: ProjectAggregate): boolean {
+  verifyActivatedProject(project: ProjectAggregate): string {
     if (project.state.status !== "active") {
       throw new Error(
         "Project must be completed before setting up environment.",
       );
     }
-
-    return project.state.projectExId === this.getData("projectId");
+    if (project.getData("id") !== this.getData("projectId")) {
+      throw new Error(
+        "Project ID mismatch between CopilotExecutionAggregate and ProjectAggregate.",
+      );
+    }
+    this.project = project;
+    return project.state.projectExId;
   }
 
-  start(project: ProjectAggregate, copilotSessionExId: string) {
-    if (!this.verifyActivatedProject(project)) {
-      return;
+  start(copilotSessionExId: string) {
+    const project = this.project;
+    if (!project) {
+      throw new Error(
+        "Project must be set before starting CopilotExecutionAggregate.",
+      );
     }
     this.setData({
       state: { status: "running", copilotSessionExId },
@@ -57,5 +66,6 @@ export class CopilotExecutionAggregate extends AggregateRoot<
     this.addEvent(
       new CopilotSessionCreatedEvent(copilotSessionExId, this.network, project),
     );
+    this.project = undefined;
   }
 }

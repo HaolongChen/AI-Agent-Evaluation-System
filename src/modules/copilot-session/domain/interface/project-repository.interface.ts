@@ -15,4 +15,7 @@ export interface IProjectRepository extends IRepository<ProjectAggregate> {
   getExistingProjectsOfCopilotInput(
     copilotInputId: string,
   ): Promise<ResumeProjectInfo[]>;
+  getAllProjectsOfCopilotInput(
+    copilotInputId: string,
+  ): Promise<ResumeProjectInfo[]>;
 }

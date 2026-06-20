@@ -55,28 +55,25 @@ export class CopilotMessageHandler {
       if (!coreInfo.significance) {
         return;
       }
-      switch (this.executionLog.messageForwardPolicy) {
-        case "HumanInputMessage": {
-          return this.sendMessage(this.humanInputMessageEvent);
-        }
-        case "OperationMessage": {
-          return this.sendMessage(
-            new CopilotInputEvent("CopilotHumanOperationMessage", {
-              humanOperationType: "CONTINUE",
-              optionalContent: null,
-            }),
-          );
-        }
-        case "TerminateMessage": {
-          return this.sendMessage(
-            new CopilotInputEvent("CopilotTerminateMessage", {
-              reason: "Copilot execution log indicates termination.",
-            }),
-          );
-        }
-        default: {
-          return;
-        }
+      const currentPolicy = this.executionLog.messageForwardPolicy;
+
+      if (currentPolicy === "HumanInputMessage") {
+        return this.sendMessage(this.humanInputMessageEvent);
+      }
+      if (currentPolicy === "OperationMessage") {
+        return this.sendMessage(
+          new CopilotInputEvent("CopilotHumanOperationMessage", {
+            humanOperationType: "CONTINUE",
+            optionalContent: null,
+          }),
+        );
+      }
+      if (currentPolicy === "TerminateMessage") {
+        return this.sendMessage(
+          new CopilotInputEvent("CopilotTerminateMessage", {
+            reason: "Copilot execution log indicates termination.",
+          }),
+        );
       }
     }
   };

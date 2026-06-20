@@ -28,9 +28,14 @@ export const projectSchema = z.object({
 type DiscriminatedProject =
   | { status: "pending" }
   | { status: "creating" }
+  | { status: "deleted" }
   | {
-      status: "active" | "deleted" | "failed";
+      status: "active";
       projectExId: string;
+    }
+  | {
+      status: "failed";
+      projectExId?: string;
     };
 
 export type ProjectMetadata = EntityMetadata & { state: DiscriminatedProject };

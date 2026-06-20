@@ -12,6 +12,7 @@ import { NetworkClient } from "../../../account/domain/entity/network-client.ent
 import { ProjectCreatedEvent } from "../event/project-created.event.ts";
 import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import { ProjectActivatedEvent } from "../event/project-activated.event.ts";
+import { ProjectDeletedEvent } from "../event/project-deleted.event.ts";
 
 export class ProjectAggregate extends AggregateRoot<
   typeof projectSchema,
@@ -64,6 +65,14 @@ export class ProjectAggregate extends AggregateRoot<
         this.getEntity("copilotInput"),
       ),
     );
+  }
+
+  delete() {
+    if (this.state.status === "active") {
+      const projectExId = this.state.projectExId;
+      this.setData({ state: { status: "deleted" } });
+      this.addEvent(new ProjectDeletedEvent(projectExId, this.network));
+    }
   }
 
   static complete(

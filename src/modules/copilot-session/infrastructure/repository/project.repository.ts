@@ -1,4 +1,8 @@
 import { prisma } from "../../../../config/prisma.ts";
+import type {
+  CopilotExecutionStatus,
+  ProjectStatus,
+} from "../../../../prisma/build/generated/prisma/client.ts";
 import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import { copilotInputDataMapper } from "../../../dataset/infrastructure/repository/copilot-input.repository.ts";
 import type { IDomainEventBus } from "../../../shared/domain/event/domain-event.bus.ts";
@@ -36,15 +40,33 @@ export type ProjectDataMapperParameters = {
 export class ProjectRepository implements IProjectRepository {
   constructor(private readonly eventBus: IDomainEventBus) {}
 
-  async getExistingProjectsOfCopilotInput(
+  async getAllProjectsOfCopilotInput(
     copilotInputId: string,
   ): Promise<ResumeProjectInfo[]> {
+    return this.getProjectsByCopilotInputId(copilotInputId, undefined, [
+      "completed",
+      "failed",
+      "pending",
+      "running",
+    ]);
+  }
+
+  private async getProjectsByCopilotInputId(
+    copilotInputId: string,
+    projectStatus?: ProjectStatus[],
+    copilotStatus?: CopilotExecutionStatus[],
+  ): Promise<ResumeProjectInfo[]> {
     const projects = await prisma.project.findMany({
-      where: { copilotInputId, status: "active" },
+      where: {
+        copilotInputId,
+        ...(projectStatus ? { status: { in: projectStatus } } : {}),
+      },
       include: {
-        copilotOutputs: {
-          where: { status: "completed" },
-        },
+        copilotOutputs: copilotStatus
+          ? {
+              where: { status: { in: copilotStatus } },
+            }
+          : true,
       },
       orderBy: { copilotOutputs: { _count: "asc" } },
     });
@@ -65,6 +87,17 @@ export class ProjectRepository implements IProjectRepository {
           }),
       };
     });
+  }
+
+  async getExistingProjectsOfCopilotInput(
+    copilotInputId: string,
+  ): Promise<ResumeProjectInfo[]> {
+    const projects = await this.getProjectsByCopilotInputId(
+      copilotInputId,
+      ["active"],
+      ["running"],
+    );
+    return projects.filter((project) => project.copilotOutputs.length === 0);
   }
 
   async save(entity: ProjectAggregate): Promise<void> {

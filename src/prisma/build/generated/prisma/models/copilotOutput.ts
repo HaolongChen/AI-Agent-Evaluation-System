@@ -338,8 +338,8 @@ export type copilotOutputCreateInput = {
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   createdAt?: Date | string;
-  copilotServer: Prisma.copilotServerCreateNestedOneWithoutCopilotOutputInput;
-  project?: Prisma.projectCreateNestedOneWithoutCopilotOutputInput;
+  copilotServer: Prisma.copilotServerCreateNestedOneWithoutCopilotOutputsInput;
+  project?: Prisma.projectCreateNestedOneWithoutCopilotOutputsInput;
   rubrics?: Prisma.rubricCreateNestedManyWithoutCopilotOutputInput;
 };
 
@@ -372,8 +372,8 @@ export type copilotOutputUpdateInput = {
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  copilotServer?: Prisma.copilotServerUpdateOneRequiredWithoutCopilotOutputNestedInput;
-  project?: Prisma.projectUpdateOneWithoutCopilotOutputNestedInput;
+  copilotServer?: Prisma.copilotServerUpdateOneRequiredWithoutCopilotOutputsNestedInput;
+  project?: Prisma.projectUpdateOneWithoutCopilotOutputsNestedInput;
   rubrics?: Prisma.rubricUpdateManyWithoutCopilotOutputNestedInput;
 };
 
@@ -794,7 +794,7 @@ export type copilotOutputCreateWithoutCopilotServerInput = {
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   createdAt?: Date | string;
-  project?: Prisma.projectCreateNestedOneWithoutCopilotOutputInput;
+  project?: Prisma.projectCreateNestedOneWithoutCopilotOutputsInput;
   rubrics?: Prisma.rubricCreateNestedManyWithoutCopilotOutputInput;
 };
 
@@ -885,7 +885,7 @@ export type copilotOutputCreateWithoutProjectInput = {
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   createdAt?: Date | string;
-  copilotServer: Prisma.copilotServerCreateNestedOneWithoutCopilotOutputInput;
+  copilotServer: Prisma.copilotServerCreateNestedOneWithoutCopilotOutputsInput;
   rubrics?: Prisma.rubricCreateNestedManyWithoutCopilotOutputInput;
 };
 
@@ -952,8 +952,8 @@ export type copilotOutputCreateWithoutRubricsInput = {
   aiResponse?: string | null;
   tasks?: Prisma.copilotOutputCreatetasksInput | runtime.InputJsonValue[];
   createdAt?: Date | string;
-  copilotServer: Prisma.copilotServerCreateNestedOneWithoutCopilotOutputInput;
-  project?: Prisma.projectCreateNestedOneWithoutCopilotOutputInput;
+  copilotServer: Prisma.copilotServerCreateNestedOneWithoutCopilotOutputsInput;
+  project?: Prisma.projectCreateNestedOneWithoutCopilotOutputsInput;
 };
 
 export type copilotOutputUncheckedCreateWithoutRubricsInput = {
@@ -1012,8 +1012,8 @@ export type copilotOutputUpdateWithoutRubricsInput = {
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  copilotServer?: Prisma.copilotServerUpdateOneRequiredWithoutCopilotOutputNestedInput;
-  project?: Prisma.projectUpdateOneWithoutCopilotOutputNestedInput;
+  copilotServer?: Prisma.copilotServerUpdateOneRequiredWithoutCopilotOutputsNestedInput;
+  project?: Prisma.projectUpdateOneWithoutCopilotOutputsNestedInput;
 };
 
 export type copilotOutputUncheckedUpdateWithoutRubricsInput = {
@@ -1063,7 +1063,7 @@ export type copilotOutputUpdateWithoutCopilotServerInput = {
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  project?: Prisma.projectUpdateOneWithoutCopilotOutputNestedInput;
+  project?: Prisma.projectUpdateOneWithoutCopilotOutputsNestedInput;
   rubrics?: Prisma.rubricUpdateManyWithoutCopilotOutputNestedInput;
 };
 
@@ -1133,7 +1133,7 @@ export type copilotOutputUpdateWithoutProjectInput = {
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
-  copilotServer?: Prisma.copilotServerUpdateOneRequiredWithoutCopilotOutputNestedInput;
+  copilotServer?: Prisma.copilotServerUpdateOneRequiredWithoutCopilotOutputsNestedInput;
   rubrics?: Prisma.rubricUpdateManyWithoutCopilotOutputNestedInput;
 };
 

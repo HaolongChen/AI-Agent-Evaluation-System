@@ -11,6 +11,7 @@ import { ZionProject } from "../entity/zion-project.entity.ts";
 import { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import { ProjectCreatedEvent } from "../event/project-created.event.ts";
 import type { Account } from "../../../account/domain/entity/account.entity.ts";
+import { ProjectActivatedEvent } from "../event/project-activated.event.ts";
 
 export class ProjectAggregate extends AggregateRoot<
   typeof projectSchema,
@@ -41,7 +42,12 @@ export class ProjectAggregate extends AggregateRoot<
     return this.getData("state");
   }
 
-  createProject(config: z.input<typeof projectConfigSchema>, account: Account) {
+  activate(projectExId: string) {
+    this.setData({ state: { status: "active", projectExId } });
+    this.addEvent(new ProjectActivatedEvent(this));
+  }
+
+  createProject(config: z.input<typeof projectConfigSchema>) {
     this.setData({ state: { status: "creating" } });
     const zionProject = new ZionProject({
       ...config,
@@ -50,7 +56,14 @@ export class ProjectAggregate extends AggregateRoot<
         .getEntity("goldenSet")
         .getData("schemaId"),
     });
-    this.addEvent(new ProjectCreatedEvent(zionProject, account, this.network));
+    this.addEvent(
+      new ProjectCreatedEvent(
+        zionProject,
+        this.account,
+        this.network,
+        this.getEntity("copilotInput"),
+      ),
+    );
   }
 
   static complete(
@@ -64,7 +77,8 @@ export class ProjectAggregate extends AggregateRoot<
       account,
       projectId,
     );
-    projectAggregate.setData({ state: { status: "active", projectExId } });
+    projectAggregate.activate(projectExId);
+
     return projectAggregate;
   }
 }

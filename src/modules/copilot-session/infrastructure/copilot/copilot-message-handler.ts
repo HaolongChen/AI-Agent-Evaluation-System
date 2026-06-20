@@ -13,6 +13,21 @@ export class CopilotMessageHandler {
     {} as CopilotExecutionLogType,
   );
 
+  private toolCallResponseTransform(
+    results: CopilotApiResultJs,
+    toolCallBatchId: string,
+  ): {
+    responseByToolCallId: unknown;
+    toolCallBatchId: string;
+    schemaDiff: unknown;
+  } {
+    return {
+      schemaDiff: results.schemaDiff,
+      responseByToolCallId: JSON.parse(results.data ?? "{}"),
+      toolCallBatchId,
+    };
+  }
+
   constructor(
     private readonly humanInputMessageEvent: CopilotInputEvent,
     private readonly runToolCall: (
@@ -32,11 +47,7 @@ export class CopilotMessageHandler {
       const results = await this.runToolCall(coreInfo.toolCalls);
       const response = new CopilotInputEvent(
         "CopilotToolCallBatchResponseMessage",
-        {
-          toolCallBatchId: coreInfo.id,
-          schemaDiff: results.schemaDiff,
-          responseByToolCallId: JSON.parse(results.data ?? "{}"),
-        },
+        this.toolCallResponseTransform(results, coreInfo.id),
       );
       return this.sendMessage(response);
     }

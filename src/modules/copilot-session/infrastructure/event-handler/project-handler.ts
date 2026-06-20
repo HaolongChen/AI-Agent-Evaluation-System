@@ -1,14 +1,14 @@
-import { prisma } from "../../../../config/prisma.ts";
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
-import type { IDomainEventBus } from "../../../shared/domain/event/domain-event.bus.ts";
+import { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
 import type { ProjectCreatedEvent } from "../../domain/event/project-created.event.ts";
+import type { IProjectRepository } from "../../domain/interface/project-repository.interface.ts";
 import type { IZionProjectService } from "../../domain/interface/project-service.interface.ts";
 
 export class ProjectHandler {
   constructor(
     private readonly projectService: IZionProjectService,
     private readonly dangerousNetworkClient: NetworkClient,
-    private readonly eventBus: IDomainEventBus,
+    private readonly projectRepository: IProjectRepository,
   ) {}
   async onProjectCreated(event: ProjectCreatedEvent) {
     const projectExId = await this.projectService.createProjectInZion(
@@ -24,9 +24,12 @@ export class ProjectHandler {
         this.dangerousNetworkClient,
       );
     }
-    await prisma.project.update({
-      where: { id: event.zionProject.getData("id") },
-      data: { projectExId: projectExId },
-    });
+    const createdProject = ProjectAggregate.complete(
+      projectExId,
+      event.zionProject.getData("id"),
+      event.copilotInput,
+      event.account,
+    );
+    return this.projectRepository.save(createdProject);
   }
 }

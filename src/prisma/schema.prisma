@@ -80,13 +80,13 @@ model copilotInput {
 }
 
 model copilotServer {
-  id            String          @id @default(uuid())
-  name          String          @map("name") // e.g., 'aws-us-east-1', 'azure-westus2'
-  description   String?         @map("description")
-  wsEndpoint    String          @map("wsEndpoint") // e.g., 'https://zionbackend.functorz.work/api/subscription'
-  gqlEndpoint   String          @map("gqlEndpoint") // e.g., 'https://zionbackend.functorz.work/api/graphql'
-  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  copilotOutput copilotOutput[]
+  id             String          @id @default(uuid())
+  name           String          @map("name") // e.g., 'aws-us-east-1', 'azure-westus2'
+  description    String?         @map("description")
+  wsEndpoint     String          @map("wsEndpoint") // e.g., 'https://zionbackend.functorz.work/api/subscription'
+  gqlEndpoint    String          @map("gqlEndpoint") // e.g., 'https://zionbackend.functorz.work/api/graphql'
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  copilotOutputs copilotOutput[]
 }
 
 model project {
@@ -98,8 +98,8 @@ model project {
   createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy      String        @default("unknown") @map("created_by") // userId or "system" for system-generated projects
 
-  copilotInput  copilotInput    @relation("project_copilotInput", fields: [copilotInputId], references: [id])
-  copilotOutput copilotOutput[]
+  copilotInput   copilotInput    @relation("project_copilotInput", fields: [copilotInputId], references: [id])
+  copilotOutputs copilotOutput[]
 
   @@unique([projectName], map: "unique_project_name")
   @@index([copilotInputId], map: "idx_project_copilot_input_id")

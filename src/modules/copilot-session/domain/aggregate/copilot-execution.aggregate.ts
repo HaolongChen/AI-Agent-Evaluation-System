@@ -15,13 +15,14 @@ export class CopilotExecutionAggregate extends AggregateRoot<
 > {
   public readonly network: NetworkClient = NetworkClient.createDefault();
 
-  constructor(copilotServer: CopilotServerEntity) {
+  constructor(copilotServer: CopilotServerEntity, projectId: string) {
     const entity = new Entity<
       typeof copilotExecutionSchema,
       CopilotExecutionMetadata
     >(
       {
         copilotServerId: copilotServer.getData("id"),
+        projectId,
       },
       copilotExecutionSchema,
       { state: { status: "pending" } },
@@ -35,14 +36,21 @@ export class CopilotExecutionAggregate extends AggregateRoot<
     return this.getData("state");
   }
 
-  start(project: ProjectAggregate, copilotSessionExId: string) {
-    if (project.getData("state").status !== "active") {
+  private verifyActivatedProject(project: ProjectAggregate): boolean {
+    if (project.state.status !== "active") {
       throw new Error(
         "Project must be completed before setting up environment.",
       );
     }
+
+    return project.state.projectExId === this.getData("projectId");
+  }
+
+  start(project: ProjectAggregate, copilotSessionExId: string) {
+    if (!this.verifyActivatedProject(project)) {
+      return;
+    }
     this.setData({
-      projectId: project.getData("id"),
       state: { status: "running", copilotSessionExId },
     });
     project.account.acquireNetwork(this.network);

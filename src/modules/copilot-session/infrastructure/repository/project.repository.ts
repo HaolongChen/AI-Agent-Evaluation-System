@@ -3,7 +3,10 @@ import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import { copilotInputDataMapper } from "../../../dataset/infrastructure/repository/copilot-input.repository.ts";
 import type { IDomainEventBus } from "../../../shared/domain/event/domain-event.bus.ts";
 import { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
-import { type IProjectRepository } from "../../domain/interface/project-repository.interface.ts";
+import {
+  type IProjectRepository,
+  type ResumeProjectInfo,
+} from "../../domain/interface/project-repository.interface.ts";
 import type { IProjectRepositoryService } from "../interface/project-repository-service.interface.ts";
 
 export type ProjectRepositoryType = {
@@ -32,6 +35,37 @@ export type ProjectDataMapperParameters = {
 
 export class ProjectRepository implements IProjectRepository {
   constructor(private readonly eventBus: IDomainEventBus) {}
+
+  async getExistingProjectsOfCopilotInput(
+    copilotInputId: string,
+  ): Promise<ResumeProjectInfo[]> {
+    const projects = await prisma.project.findMany({
+      where: { copilotInputId, status: "active" },
+      include: {
+        copilotOutputs: {
+          where: { status: "completed" },
+        },
+      },
+      orderBy: { copilotOutputs: { _count: "asc" } },
+    });
+    return projects.map((project) => {
+      return {
+        projectExId: project.projectExId!,
+        id: project.id,
+        copilotOutputs: project.copilotOutputs
+          .filter(
+            (output) => !!(output.copilotServerId && output.copilotSessionExId),
+          )
+          .map((output) => {
+            return {
+              id: output.id,
+              copilotSessionExId: output.copilotSessionExId!,
+              copilotServerId: output.copilotServerId,
+            };
+          }),
+      };
+    });
+  }
 
   async save(entity: ProjectAggregate): Promise<void> {
     const { id, projectName, copilotInputId } = entity.getData();

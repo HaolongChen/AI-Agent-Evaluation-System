@@ -17,39 +17,39 @@ import type { IDomainEventBus } from "../modules/shared/domain/event/domain-even
 import { ProjectRepository } from "../modules/copilot-session/infrastructure/repository/project.repository.ts";
 import { CopilotRepository } from "../modules/copilot-session/infrastructure/repository/copilot.repository.ts";
 export const baseRepositoryBundle = {
-	goldenSetRepository: new GoldenSetRepository(),
-	userInputRepository: new UserInputRepository(),
-	rubricRepository: new RubricRepository(),
-	copilotInputRepository: new CopilotInputRepository(),
-	agentFeedbackRepository: new AgentFeedbackRepository(),
-	copilotServerRepository: new CopilotServerRepository(),
+  goldenSetRepository: new GoldenSetRepository(),
+  userInputRepository: new UserInputRepository(),
+  rubricRepository: new RubricRepository(),
+  copilotInputRepository: new CopilotInputRepository(),
+  agentFeedbackRepository: new AgentFeedbackRepository(),
+  copilotServerRepository: new CopilotServerRepository(),
 } as const;
 
 export type RepositoryInjectionType = {
-	goldenSetRepository: IGoldenSetRepository;
-	userInputRepository: IUserInputRepository;
-	projectRepository: IProjectRepository;
-	rubricRepository: IRubricRepository;
-	copilotRepository: ICopilotRepository;
-	copilotInputRepository: ICopilotInputRepository;
-	copilotServerRepository: ICopilotServerRepository;
-	agentFeedbackRepository: IRepository<AgentFeedbackEntity>;
+  goldenSetRepository: IGoldenSetRepository;
+  userInputRepository: IUserInputRepository;
+  projectRepository: IProjectRepository;
+  rubricRepository: IRubricRepository;
+  copilotRepository: ICopilotRepository;
+  copilotInputRepository: ICopilotInputRepository;
+  copilotServerRepository: ICopilotServerRepository;
+  agentFeedbackRepository: IRepository<AgentFeedbackEntity>;
 };
 
 const createCopilotSessionRepositoryBundle = (
-	eventBus: IDomainEventBus,
+  eventBus: IDomainEventBus,
 ): Pick<RepositoryInjectionType, "projectRepository" | "copilotRepository"> => {
-	return {
-		projectRepository: new ProjectRepository(eventBus),
-		copilotRepository: new CopilotRepository(eventBus),
-	};
+  return {
+    projectRepository: new ProjectRepository(eventBus),
+    copilotRepository: new CopilotRepository(eventBus),
+  };
 };
 
 export const createRepositoryBundle = (
-	eventBus: IDomainEventBus,
+  eventBus: IDomainEventBus,
 ): RepositoryInjectionType => {
-	return {
-		...baseRepositoryBundle,
-		...createCopilotSessionRepositoryBundle(eventBus),
-	};
+  return {
+    ...baseRepositoryBundle,
+    ...createCopilotSessionRepositoryBundle(eventBus),
+  };
 };

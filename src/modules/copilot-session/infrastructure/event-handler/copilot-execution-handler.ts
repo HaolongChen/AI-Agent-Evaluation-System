@@ -9,14 +9,22 @@ import type { NetworkClient } from "../../../account/domain/entity/network-clien
 import { CopilotMessageHandler } from "../copilot/copilot-message-handler.ts";
 import { CopilotExecutionEventBus } from "../copilot/copilot-execution-event-bus.ts";
 import type { CopilotToolCallHandler } from "../copilot/copilot-tool-call-handler.ts";
+import type { CopilotExecutionTaskCreatedEvent } from "../../domain/event/copilot-execution-task-created.event.ts";
+import type { ProjectCreatedEvent } from "../../domain/event/project-created.event.ts";
+import type {
+  DomainEventHandler,
+  IDomainEventConsumer,
+} from "../../../shared/domain/event/domain-event.handler.ts";
+import type { ICopilotRepository } from "../../domain/interface/copilot-repository.interface.ts";
 
-export class CopilotExecutionHandler {
+export class CopilotSessionCreatedEventConsumer implements IDomainEventConsumer<CopilotSessionCreatedEvent> {
   constructor(
     private readonly copilotNetwork: ICopilotNetworkService,
     private readonly projectService: IZionProjectService,
     private readonly copilotRepositoryService: ICopilotRepositoryService,
     private readonly copilotToolCallHandler: CopilotToolCallHandler,
   ) {}
+  isActive: boolean = true;
 
   private onMessageSent = (
     copilotSessionExId: string,
@@ -37,7 +45,7 @@ export class CopilotExecutionHandler {
     };
   };
 
-  async onCopilotSessionCreated(event: CopilotSessionCreatedEvent) {
+  handler = async (event: CopilotSessionCreatedEvent) => {
     const copilotExecutionEventBus = new CopilotExecutionEventBus();
     copilotExecutionEventBus.subscribeToMessageSentEvent(
       this.onMessageSent(event.copilotSessionExId, event.copilotNetwork),
@@ -73,38 +81,51 @@ export class CopilotExecutionHandler {
         }
       },
     );
-  }
+  };
 }
 
-export class CopilotExecutionPool implements ICopilotExecutionPool {
-	private pool: Map<string, CopilotExecutionAggregate> = new Map();
+export class CopilotExecutionTaskCreatedEventConsumer implements IDomainEventConsumer<CopilotExecutionTaskCreatedEvent> {
+  isActive: boolean = true;
+  constructor(
+    private readonly subscribe: (
+      eventConsumer: IDomainEventConsumer<ProjectCreatedEvent>,
+    ) => void,
+    private readonly projectService: IZionProjectService,
+    private readonly copilotNetwork: ICopilotNetworkService,
+    private readonly copilotRepository: ICopilotRepository,
+  ) {}
+  handler: IDomainEventConsumer<CopilotExecutionTaskCreatedEvent>["handler"] =
+    async (event: CopilotExecutionTaskCreatedEvent) => {
+      this.subscribe(
+        new ProjectCreatedEventConsumer(
+          event,
+          this.projectService,
+          this.copilotNetwork,
+          this.copilotRepository,
+        ),
+      );
+    };
+}
 
-	constructor(
-		private readonly projectService: IZionProjectService,
-		private readonly copilotRepository: ICopilotRepository,
-	) {}
-
-	register(copilotExecutionAggregate: CopilotExecutionAggregate) {
-		if (this.pool.has(copilotExecutionAggregate.getData("projectId"))) {
-			throw new Error(
-				"CopilotExecutionAggregate for this project already exists in the pool.",
-			);
-		}
-		this.pool.set(
-			copilotExecutionAggregate.getData("projectId"),
-			copilotExecutionAggregate,
-		);
-	}
-
-	async publish(project: ProjectAggregate) {
-		const copilotExecutionAggregate = this.pool.get(project.getData("id"));
-		if (copilotExecutionAggregate) {
-			this.pool.delete(project.getData("id"));
-			await this.projectService.createSafeCopilotSession(
-				project,
-				copilotExecutionAggregate,
-			);
-			return this.copilotRepository.save(copilotExecutionAggregate);
-		}
-	}
+export class ProjectCreatedEventConsumer implements IDomainEventConsumer<ProjectCreatedEvent> {
+  isActive: boolean = true;
+  constructor(
+    private readonly context: CopilotExecutionTaskCreatedEvent,
+    private readonly projectService: IZionProjectService,
+    private readonly copilotNetwork: ICopilotNetworkService,
+    private readonly copilotRepository: ICopilotRepository,
+  ) {}
+  handler: DomainEventHandler<ProjectCreatedEvent> = async (
+    event: ProjectCreatedEvent,
+  ) => {
+    if (this.context.projectId !== event.project.getData("id")) {
+      return;
+    }
+    await this.projectService.createSafeCopilotSession(
+      event.project,
+      this.context.copilotExecution,
+    );
+    await this.copilotRepository.save(this.context.copilotExecution);
+    this.isActive = false;
+  };
 }

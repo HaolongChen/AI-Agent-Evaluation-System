@@ -14,26 +14,26 @@ import { ZionProjectService } from "../modules/copilot-session/infrastructure/pr
 import { GetCopilotInputByFiltersUseCase } from "../modules/dataset/application/copilot-input.ts";
 import { GetCopilotServerUseCase } from "../modules/dataset/application/copilot-server.ts";
 import {
-	baseRepositoryBundle,
-	type RepositoryInjectionType,
+  baseRepositoryBundle,
+  type RepositoryInjectionType,
 } from "./repository.ts";
 
 export type DomainServiceBundle = {
-	networkService: INetworkService;
-	loginService: ILoginService;
+  networkService: INetworkService;
+  loginService: ILoginService;
 };
 
 export type InfrastructureServiceBundle = {
-	zionProjectService: IZionProjectService;
-	copilotNetworkService: ICopilotNetworkService;
-	crdtSchemaService: ICrdtSchemaService;
+  zionProjectService: IZionProjectService;
+  copilotNetworkService: ICopilotNetworkService;
+  crdtSchemaService: ICrdtSchemaService;
 };
 
 export type ApplicationServiceBundle = {
-	accountApplicationService: AccountApplicationService;
-	getCopilotServerUseCase: GetCopilotServerUseCase;
-	getCopilotInputByFiltersUseCase: GetCopilotInputByFiltersUseCase;
-	copilotExecutionUseCase: CopilotExecutionUseCase;
+  accountApplicationService: AccountApplicationService;
+  getCopilotServerUseCase: GetCopilotServerUseCase;
+  getCopilotInputByFiltersUseCase: GetCopilotInputByFiltersUseCase;
+  copilotExecutionUseCase: CopilotExecutionUseCase;
 };
 
 const networkService = new NetworkService();
@@ -41,41 +41,41 @@ const loginService = new LoginService();
 const crdtSchemaService = new CrdtSchemaService(networkService);
 const copilotNetworkService = new CopilotNetworkService(networkService);
 const zionProjectService = new ZionProjectService(
-	networkService,
-	crdtSchemaService,
+  networkService,
+  crdtSchemaService,
 );
 
 const domainServiceBundle: DomainServiceBundle = {
-	networkService,
-	loginService,
+  networkService,
+  loginService,
 };
 
 export const infrastructureServiceBundle: InfrastructureServiceBundle = {
-	zionProjectService,
-	copilotNetworkService,
-	crdtSchemaService,
+  zionProjectService,
+  copilotNetworkService,
+  crdtSchemaService,
 };
 
 export const createApplicationServiceBundle = (
-	repository: RepositoryInjectionType,
-	copilotExecutionPool: CopilotExecutionPool,
+  repository: RepositoryInjectionType,
+  copilotExecutionPool: CopilotExecutionPool,
 ): ApplicationServiceBundle => {
-	return {
-		accountApplicationService: new AccountApplicationService(
-			domainServiceBundle.networkService,
-			domainServiceBundle.loginService,
-		),
-		getCopilotServerUseCase: new GetCopilotServerUseCase(
-			baseRepositoryBundle.copilotServerRepository,
-		),
-		getCopilotInputByFiltersUseCase: new GetCopilotInputByFiltersUseCase({
-			copilotInputRepository: baseRepositoryBundle.copilotInputRepository,
-		}),
-		copilotExecutionUseCase: new CopilotExecutionUseCase(
-			infrastructureServiceBundle.zionProjectService,
-			repository.projectRepository,
-			repository.copilotRepository,
-			copilotExecutionPool.register.bind(copilotExecutionPool),
-		),
-	};
+  return {
+    accountApplicationService: new AccountApplicationService(
+      domainServiceBundle.networkService,
+      domainServiceBundle.loginService,
+    ),
+    getCopilotServerUseCase: new GetCopilotServerUseCase(
+      baseRepositoryBundle.copilotServerRepository,
+    ),
+    getCopilotInputByFiltersUseCase: new GetCopilotInputByFiltersUseCase({
+      copilotInputRepository: baseRepositoryBundle.copilotInputRepository,
+    }),
+    copilotExecutionUseCase: new CopilotExecutionUseCase(
+      infrastructureServiceBundle.zionProjectService,
+      repository.projectRepository,
+      repository.copilotRepository,
+      copilotExecutionPool.register.bind(copilotExecutionPool),
+    ),
+  };
 };

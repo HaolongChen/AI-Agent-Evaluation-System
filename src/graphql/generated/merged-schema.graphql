@@ -1772,6 +1772,7 @@ type CreateAppDetail {
   appName: String
   appType: AppType
   creationSourceDetail: AppCreationSourceDetail
+  useNewType: Boolean
 }
 
 input CreateAppFromClonedAppInputInput {
@@ -1786,6 +1787,7 @@ input CreateAppInputInput {
   appName: String!
   appType: AppType!
   source: AppCreationSourceInputInput!
+  useNewType: Boolean
 }
 
 input CreateClonedMultiClientProjectDetailInput {
@@ -1808,6 +1810,7 @@ type CreateProjectDetail {
   projectCreationSourceDetail: ProjectCreationSourceDetail
   projectName: String
   projectSpaceType: ProjectSpaceType
+  useNewType: Boolean
 }
 
 input CreateProjectDetailInput {
@@ -1815,6 +1818,7 @@ input CreateProjectDetailInput {
   organizationExId: String!
   projectName: String!
   projectSpaceType: ProjectSpaceType!
+  useNewType: Boolean
 }
 
 input CreateProjectFromClonedProjectInputInput {
@@ -1842,6 +1846,7 @@ input CreateProjectInputInput {
   projectName: String!
   projectSpaceType: ProjectSpaceType!
   source: ProjectCreationSourceInputInput!
+  useNewType: Boolean
 }
 
 type Criteria {
@@ -2203,6 +2208,12 @@ enum DevEnvironmentStatus {
   FINISHED
   INITIALIZED
   NOT_STARTED
+}
+
+input DiffPathComponentInput {
+  index: Int
+  key: String
+  resolution: PathResolution
 }
 
 enum DiscountType {
@@ -3284,6 +3295,8 @@ type MobileApp implements App {
   hasPublished: Boolean!
   isExpired: Boolean!
   isRenewable: Boolean!
+  lastAllPipelinePlatformStatus: [BuildTargetPipelineStatus!]!
+  lastCompletedPipelinePlatformStatus: [BuildTargetPipelineStatus!]!
   lastOpenedAt: OffsetDateTime
   latestDeployedServerSchema: Json
   latestSchema: CrdtSchema
@@ -3311,20 +3324,30 @@ enum MobileAppStatus {
 }
 
 type MobileConfig {
+  androidDisplayName: String
+  androidIconExId: String
   appIconExId: String
   ascKey: String
   authKeyFileExId: String
   bundleId: String
-  issueId: String
+  displayName: String
+  iosDisplayName: String
+  iosIconExId: String
+  issuerId: String
   teamId: String
 }
 
 input MobileConfigInput {
+  androidDisplayName: String
+  androidIconExId: String
   appIconExId: String
   ascKey: String
   authKeyFileExId: String
   bundleId: String
-  issueId: String
+  displayName: String
+  iosDisplayName: String
+  iosIconExId: String
+  issuerId: String
   teamId: String
 }
 
@@ -3463,6 +3486,12 @@ type Mutation {
   ): Boolean!
   alipayTransfer: Boolean!
   allocateComputingPowerForSuccessfulPayment(paymentId: Long!): Boolean!
+  analyzeDebuggerPayload(
+    imageBase64: String
+    payload: String!
+    productName: String
+    question: String
+  ): String!
   applyComputingPowerAddon(
     computingPowerAddonType: ComputingPowerAddonType!
     effectiveAt: OffsetDateTime!
@@ -4069,7 +4098,6 @@ type Mutation {
   ): Boolean!
   freeTeamSpaceInSpecifiedPlan: Boolean!
   genWechatMiniProgramQrcodeByAppId(appId: String!, pageId: String!): String
-  generateAllDeployedSchemaModel: Boolean!
   generateAndBindStripeAccountIfNotExistsAndGetOnboardingUrl: String!
   generateBetaWeappCreationAuthorizationQrcode(projectExId: String!): String
   generateCommissionDescription(commissionId: Long!): String
@@ -4082,7 +4110,6 @@ type Mutation {
     startAt: OffsetDateTime!
   ): PromoCode
   generateRubric(context: RubricGenerationInput!): [Rubric]!
-  generateSchemaModel(schemaId: Long!): Boolean!
   generateServerSchemaForAllDeployedSchema: Boolean!
   generateServerSchemaForNonDeletedSchema: Boolean!
   generateWechatScheme(
@@ -4263,6 +4290,7 @@ type Mutation {
   migrateCustomComponentMetadataToCodeComponent(
     customComponentId: Long!
   ): Boolean!
+  migrateFreeActiveProjectZTypeMigration: Boolean!
   migrateProjectObjectStorageAcl(deploymentEnvConfigId: Long!): Boolean!
   migrateProjectTableToHypertable(deploymentEnvConfigId: Long!): Boolean!
   migrateProjectToOtherZiroom(deploymentEnvConfigId: Long!): Boolean!
@@ -5191,6 +5219,12 @@ input NodeTemplateVariableInput {
   type: ColumnType
 }
 
+enum OAuth2AuthenticationMethod {
+  FORM
+  HEADER
+  QUERY
+}
+
 enum OAuth2AuthorizationGrantType {
   AUTHORIZATION_CODE
   CLIENT_CREDENTIALS
@@ -5245,6 +5279,7 @@ type OAuth2RegistrationConfig {
   loginUri: String!
   redirectUri: String!
   scope: [String]!
+  userInfoAuthenticationMethod: OAuth2AuthenticationMethod
 }
 
 type Oauth2RegisteredClient {
@@ -5339,6 +5374,10 @@ type Pair_CouponTemplate_Long {
 input ParentButtonInput {
   name: String
   subButtons: [MenuButtonInputInput]
+}
+
+enum PathResolution {
+  DEREFERENCE
 }
 
 type Payment {
@@ -6182,9 +6221,9 @@ enum PromotionType {
 
 input PromptOptimizerToolArgsInput {
   humanInputMessage: CopilotHumanInputMessageInput
-  initUserPromptSchemaPath: [SchemaPathItemInput]!
+  initUserPromptSchemaPath: [DiffPathComponentInput]!
   initUserPromptValueBindings: [Json]!
-  systemPromptSchemaPath: [SchemaPathItemInput]!
+  systemPromptSchemaPath: [DiffPathComponentInput]!
   systemPromptValueBindings: [Json]!
   toolCallBatchExecErrorMessage: CopilotToolCallBatchExecErrorMessageInput
   toolCallBatchResponseMessage: CopilotToolCallBatchResponseMessageInput
@@ -6300,6 +6339,7 @@ type PurchasedProjectPlanWithClonedSchemaDetail implements PurchasedProjectPlanD
   projectSpaceType: ProjectSpaceType
   quantity: Int!
   sourceSchemaId: Long!
+  useNewType: Boolean
 }
 
 type PurchasedProjectPlanWithTemplateDetailV2 implements PurchasedProjectPlanDetailInterface {
@@ -6322,6 +6362,7 @@ type PurchasedProjectPlanWithTemplateDetailV2 implements PurchasedProjectPlanDet
   quantity: Int!
   templateId: Long
   templateName: String
+  useNewType: Boolean
 }
 
 """
@@ -7122,11 +7163,6 @@ enum SchemaMigrationJobType {
   TRIGGER_INPUT_DB_CONCAT_TO_SINGLE
 }
 
-input SchemaPathItemInput {
-  index: Int
-  key: String
-}
-
 enum SchemaSynchronizedFeature {
   AIRWALLEX_PAYMENT_CONFIG
   ALIPAY_CONFIG
@@ -7193,7 +7229,7 @@ input SessionFilters {
 
 input SetDataBindingToolArgsInput {
   humanInputMessage: CopilotHumanInputMessageInput
-  schemaPath: [SchemaPathItemInput]!
+  schemaPath: [DiffPathComponentInput]!
   toolCallBatchExecErrorMessage: CopilotToolCallBatchExecErrorMessageInput
   toolCallBatchResponseMessage: CopilotToolCallBatchResponseMessageInput
 }

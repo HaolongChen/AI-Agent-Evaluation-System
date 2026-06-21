@@ -149,6 +149,12 @@ export type CopilotToolCallBatchResponseMessageInput = {
   toolCallBatchId: string;
 };
 
+export type DiffPathComponentInput = {
+  index?: number | undefined;
+  key?: string | undefined;
+  resolution?: PathResolution | undefined;
+};
+
 export const FeedbackCategory = {
   Bad: "BAD",
   Good: "GOOD",
@@ -183,6 +189,12 @@ export type MessageArgsInputInput = {
   setDataBindingToolArgs?: SetDataBindingToolArgsInput | undefined;
 };
 
+export const PathResolution = {
+  Dereference: "DEREFERENCE",
+} as const;
+
+export type PathResolution =
+  (typeof PathResolution)[keyof typeof PathResolution];
 export const Platform = {
   Mobile: "MOBILE",
   Web: "WEB",
@@ -232,9 +244,9 @@ export const ProjectType = {
 export type ProjectType = (typeof ProjectType)[keyof typeof ProjectType];
 export type PromptOptimizerToolArgsInput = {
   humanInputMessage?: CopilotHumanInputMessageInput | undefined;
-  initUserPromptSchemaPath: Array<SchemaPathItemInput | undefined>;
+  initUserPromptSchemaPath: Array<DiffPathComponentInput | undefined>;
   initUserPromptValueBindings: Array<unknown>;
-  systemPromptSchemaPath: Array<SchemaPathItemInput | undefined>;
+  systemPromptSchemaPath: Array<DiffPathComponentInput | undefined>;
   systemPromptValueBindings: Array<unknown>;
   toolCallBatchExecErrorMessage?:
     | CopilotToolCallBatchExecErrorMessageInput
@@ -244,14 +256,9 @@ export type PromptOptimizerToolArgsInput = {
     | undefined;
 };
 
-export type SchemaPathItemInput = {
-  index?: number | undefined;
-  key?: string | undefined;
-};
-
 export type SetDataBindingToolArgsInput = {
   humanInputMessage?: CopilotHumanInputMessageInput | undefined;
-  schemaPath: Array<SchemaPathItemInput | undefined>;
+  schemaPath: Array<DiffPathComponentInput | undefined>;
   toolCallBatchExecErrorMessage?:
     | CopilotToolCallBatchExecErrorMessageInput
     | undefined;

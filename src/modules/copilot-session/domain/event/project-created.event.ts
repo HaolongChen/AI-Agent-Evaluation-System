@@ -4,14 +4,15 @@ import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/co
 import type { IDomainEvent } from "../../../shared/domain/event/domain-event.interface.ts";
 import type { ZionProject } from "../entity/zion-project.entity.ts";
 
-export class ProjectCreatedForExecutionEvent implements IDomainEvent {
-  readonly name = "zionProject.created.for.execution";
+export class ProjectCreationTaskCreated implements IDomainEvent {
+  readonly name = "zionProject.creationTask.created";
   readonly createdAt: Date = new Date();
 
   constructor(
     public readonly zionProject: ZionProject,
     public readonly account: Account,
     public readonly projectNetwork: NetworkClient,
+    public readonly copilotInput: CopilotInputAggregate,
   ) {}
 }
 

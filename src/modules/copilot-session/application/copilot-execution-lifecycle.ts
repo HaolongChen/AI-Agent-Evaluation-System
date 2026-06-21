@@ -26,7 +26,7 @@ export class CopilotExecutionUseCase {
       return new CopilotExecutionAggregate(copilotServer, projectId);
     };
     const activeProjects =
-      await this.projectRepository.getExistingProjectsOfCopilotInput(
+      await this.projectRepository.getExistingIdleProjectsOfCopilotInput(
         copilotInput.getData("id"),
       );
     if (activeProjects.length > 0) {

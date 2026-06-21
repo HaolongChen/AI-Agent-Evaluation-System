@@ -9,30 +9,47 @@ import type { IGoldenSetRepository } from "../modules/dataset/domain/interface/g
 import type { IProjectRepository } from "../modules/copilot-session/domain/interface/project-repository.interface.ts";
 import type { IUserInputRepository } from "../modules/dataset/domain/interface/user-input.interface.ts";
 import { GoldenSetRepository } from "../modules/dataset/infrastructure/repository/golden-set.repository.ts";
-import { ProjectRepository } from "../modules/copilot-session/infrastructure/repository/project.repository.ts";
 import { UserInputRepository } from "../modules/dataset/infrastructure/repository/user-input.repository.ts";
 import type { ICopilotServerRepository } from "../modules/dataset/domain/interface/copilot-server.interface.ts";
 import { CopilotServerRepository } from "../modules/dataset/infrastructure/repository/copilot-server.repository.ts";
-export function createRepositoryBundle(): RepositoryInjectionType {
-  return {
-    goldenSetRepository: new GoldenSetRepository(),
-    userInputRepository: new UserInputRepository(),
-    projectRepository: new ProjectRepository(),
-    rubricRepository: new RubricRepository(),
-    copilotInputRepository: new CopilotInputRepository(),
-    agentFeedbackRepository: new AgentFeedbackRepository(),
-    copilotServerRepository: new CopilotServerRepository(),
-  };
-}
+import type { ICopilotRepository } from "../modules/copilot-session/domain/interface/copilot-repository.interface.ts";
+import type { IDomainEventBus } from "../modules/shared/domain/event/domain-event.bus.ts";
+import { ProjectRepository } from "../modules/copilot-session/infrastructure/repository/project.repository.ts";
+import { CopilotRepository } from "../modules/copilot-session/infrastructure/repository/copilot.repository.ts";
+export const baseRepositoryBundle = {
+	goldenSetRepository: new GoldenSetRepository(),
+	userInputRepository: new UserInputRepository(),
+	rubricRepository: new RubricRepository(),
+	copilotInputRepository: new CopilotInputRepository(),
+	agentFeedbackRepository: new AgentFeedbackRepository(),
+	copilotServerRepository: new CopilotServerRepository(),
+} as const;
 
 export type RepositoryInjectionType = {
-  goldenSetRepository: IGoldenSetRepository;
-  userInputRepository: IUserInputRepository;
-  projectRepository: IProjectRepository;
-  rubricRepository: IRubricRepository;
-  copilotInputRepository: ICopilotInputRepository;
-  copilotServerRepository: ICopilotServerRepository;
-  agentFeedbackRepository: IRepository<AgentFeedbackEntity>;
+	goldenSetRepository: IGoldenSetRepository;
+	userInputRepository: IUserInputRepository;
+	projectRepository: IProjectRepository;
+	rubricRepository: IRubricRepository;
+	copilotRepository: ICopilotRepository;
+	copilotInputRepository: ICopilotInputRepository;
+	copilotServerRepository: ICopilotServerRepository;
+	agentFeedbackRepository: IRepository<AgentFeedbackEntity>;
 };
 
-export const repository = createRepositoryBundle();
+const createCopilotSessionRepositoryBundle = (
+	eventBus: IDomainEventBus,
+): Pick<RepositoryInjectionType, "projectRepository" | "copilotRepository"> => {
+	return {
+		projectRepository: new ProjectRepository(eventBus),
+		copilotRepository: new CopilotRepository(eventBus),
+	};
+};
+
+export const createRepositoryBundle = (
+	eventBus: IDomainEventBus,
+): RepositoryInjectionType => {
+	return {
+		...baseRepositoryBundle,
+		...createCopilotSessionRepositoryBundle(eventBus),
+	};
+};

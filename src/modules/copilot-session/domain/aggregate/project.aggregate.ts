@@ -45,7 +45,6 @@ export class ProjectAggregate extends AggregateRoot<
 
   activate(projectExId: string) {
     this.setData({ state: { status: "active", projectExId } });
-    this.addEvent(new ProjectActivatedEvent(this));
   }
 
   createProject(config: z.input<typeof projectConfigSchema>) {
@@ -87,6 +86,7 @@ export class ProjectAggregate extends AggregateRoot<
       projectId,
     );
     projectAggregate.activate(projectExId);
+    projectAggregate.addEvent(new ProjectActivatedEvent(projectAggregate));
 
     return projectAggregate;
   }

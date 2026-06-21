@@ -14,7 +14,7 @@ export class CopilotExecutionAggregate extends AggregateRoot<
   CopilotExecutionMetadata
 > {
   public readonly network: NetworkClient = NetworkClient.createDefault();
-  private project: ProjectAggregate | undefined;
+  public project: ProjectAggregate | undefined;
 
   constructor(copilotServer: CopilotServerEntity, projectId: string) {
     const entity = new Entity<
@@ -35,6 +35,13 @@ export class CopilotExecutionAggregate extends AggregateRoot<
 
   get state() {
     return this.getData("state");
+  }
+
+  importProject(project: ProjectAggregate) {
+    if (project.getData("id") !== this.getData("projectId")) {
+      throw new Error("Project ID mismatch.");
+    }
+    this.project = project;
   }
 
   verifyActivatedProject(project: ProjectAggregate): string {
@@ -68,4 +75,6 @@ export class CopilotExecutionAggregate extends AggregateRoot<
     );
     this.project = undefined;
   }
+
+  reconcile;
 }

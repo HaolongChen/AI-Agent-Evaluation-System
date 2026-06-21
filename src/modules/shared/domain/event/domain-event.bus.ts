@@ -7,5 +7,9 @@ export interface IDomainEventBus<Name extends [...string[]]> {
   publishAll<T extends IDomainEvent<Name[number]>>(
     events: T[],
   ): Promise<void[]>;
-  subscribe(consumer: IDomainEventConsumer<IDomainEvent<Name[number]>>): void;
+  subscribe(
+    consumer: {
+      [Key in Name[number]]: IDomainEventConsumer<IDomainEvent<Key>>;
+    }[Name[number]],
+  ): void;
 }

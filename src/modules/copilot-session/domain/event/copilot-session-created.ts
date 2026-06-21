@@ -7,8 +7,10 @@ export class CopilotSessionCreatedEvent implements IDomainEvent {
   readonly createdAt = new Date();
 
   constructor(
-    public readonly copilotSessionExId: string,
-    public readonly copilotNetwork: NetworkClient,
-    public readonly project: ProjectAggregate,
+    readonly data: {
+      copilotSessionExId: string;
+      copilotNetwork: NetworkClient;
+      project: ProjectAggregate;
+    },
   ) {}
 }

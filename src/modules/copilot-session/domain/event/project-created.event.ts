@@ -10,10 +10,12 @@ export class ProjectCreationTaskCreated implements IDomainEvent {
   readonly createdAt: Date = new Date();
 
   constructor(
-    public readonly zionProject: ZionProject,
-    public readonly account: Account,
-    public readonly projectNetwork: NetworkClient,
-    public readonly copilotInput: CopilotInputAggregate,
+    readonly data: {
+      zionProject: ZionProject;
+      account: Account;
+      projectNetwork: NetworkClient;
+      copilotInput: CopilotInputAggregate;
+    },
   ) {}
 }
 
@@ -21,5 +23,5 @@ export class ProjectCreatedEvent implements IDomainEvent {
   readonly name = "zionProject.created";
   readonly createdAt: Date = new Date();
 
-  constructor(public readonly project: ProjectAggregate) {}
+  constructor(readonly data: { project: ProjectAggregate }) {}
 }

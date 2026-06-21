@@ -32,7 +32,12 @@ export class CopilotExecutionAggregate extends AggregateRoot<
     super(entity, {});
     this.network.setWebSocketUrl(copilotServer.getData("wsEndpoint"));
     this.network.setGraphQLUrl(copilotServer.getData("gqlEndpoint"));
-    this.addEvent(new CopilotExecutionTaskCreatedEvent(this, projectId));
+    this.addEvent(
+      new CopilotExecutionTaskCreatedEvent({
+        copilotExecution: this,
+        projectId,
+      }),
+    );
   }
 
   get state() {
@@ -48,7 +53,7 @@ export class CopilotExecutionAggregate extends AggregateRoot<
       projectId,
     );
     copilotExecution.addEvent(
-      new CopilotExecutionTaskCreatedEvent(copilotExecution, projectId),
+      new CopilotExecutionTaskCreatedEvent({ copilotExecution, projectId }),
     );
     return copilotExecution;
   }
@@ -87,7 +92,11 @@ export class CopilotExecutionAggregate extends AggregateRoot<
     });
     project.account.acquireNetwork(this.network);
     this.addEvent(
-      new CopilotSessionCreatedEvent(copilotSessionExId, this.network, project),
+      new CopilotSessionCreatedEvent({
+        copilotSessionExId,
+        copilotNetwork: this.network,
+        project,
+      }),
     );
     this.project = undefined;
   }

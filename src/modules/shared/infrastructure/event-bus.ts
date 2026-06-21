@@ -35,8 +35,10 @@ export class EventBus<T extends [...string[]]> implements IDomainEventBus<T> {
     }
     this.consumerMap.set(event.name, persistentConsumers);
   };
-  subscribe = <N extends T[number]> (
-    consumer: IDomainEventConsumer<IDomainEvent<N>>,
+  subscribe = (
+    consumer: {
+      [Key in T[number]]: IDomainEventConsumer<IDomainEvent<Key>>;
+    }[T[number]],
   ): void => {
     const oldConsumers = this.consumerMap.get(consumer.eventName) || [];
     this.consumerMap.set(consumer.eventName, [...oldConsumers, consumer]);

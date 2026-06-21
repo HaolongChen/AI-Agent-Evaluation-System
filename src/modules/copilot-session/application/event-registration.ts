@@ -13,15 +13,14 @@ export class CopilotSessionEventRegistrationService {
     private readonly projectCreatedEventConsumer: IDomainEventConsumer<ProjectCreatedEvent>,
     private readonly projectDeletedEventConsumer: IDomainEventConsumer<ProjectDeletedEvent>,
   ) {}
-  registerEventBus ()
-  {
-    const eventBus = new EventBus("copilot.executionTask.created", "copilot.session.started", "zionProject.created", "zionProject.deleted");
-    eventBus.subscribe(
-      this.copilotExecutionTaskCreatedEventConsumer,
-    );
-    eventBus.subscribe(
+  registerEventBus() {
+    const eventBus = new EventBus(
+      "copilot.executionTask.created",
       "copilot.session.started",
-      this.copilotSessionCreatedEventConsumer,
+      "zionProject.created",
+      "zionProject.deleted",
     );
+    eventBus.subscribe(this.copilotExecutionTaskCreatedEventConsumer);
+    eventBus.subscribe(this.copilotSessionCreatedEventConsumer);
   }
 }

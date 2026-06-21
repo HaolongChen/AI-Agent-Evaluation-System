@@ -59,12 +59,12 @@ export class ProjectAggregate extends AggregateRoot<
         .getData("schemaId"),
     });
     this.addEvent(
-      new ProjectCreationTaskCreated(
+      new ProjectCreationTaskCreated({
         zionProject,
-        this.account,
-        this.network,
-        this.getEntity("copilotInput"),
-      ),
+        account: this.account,
+        projectNetwork: this.network,
+        copilotInput: this.getEntity("copilotInput"),
+      }),
     );
   }
 
@@ -72,7 +72,9 @@ export class ProjectAggregate extends AggregateRoot<
     if (this.state.status === "active") {
       const projectExId = this.state.projectExId;
       this.setData({ state: { status: "deleted" } });
-      this.addEvent(new ProjectDeletedEvent(projectExId, this.network));
+      this.addEvent(
+        new ProjectDeletedEvent({ projectExId, network: this.network }),
+      );
     }
   }
 
@@ -88,7 +90,9 @@ export class ProjectAggregate extends AggregateRoot<
       projectId,
     );
     projectAggregate.activate(projectExId);
-    projectAggregate.addEvent(new ProjectCreatedEvent(projectAggregate));
+    projectAggregate.addEvent(
+      new ProjectCreatedEvent({ project: projectAggregate }),
+    );
 
     return projectAggregate;
   }

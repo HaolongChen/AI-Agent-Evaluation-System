@@ -6,7 +6,9 @@ export class CopilotExecutionTaskCreatedEvent implements IDomainEvent {
   readonly createdAt = new Date();
 
   constructor(
-    public readonly copilotExecution: CopilotExecutionAggregate,
-    public readonly projectId: string,
+    readonly data: {
+      copilotExecution: CopilotExecutionAggregate;
+      projectId: string;
+    },
   ) {}
 }

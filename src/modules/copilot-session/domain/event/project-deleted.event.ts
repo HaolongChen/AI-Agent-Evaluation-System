@@ -6,7 +6,9 @@ export class ProjectDeletedEvent implements IDomainEvent {
   readonly createdAt: Date = new Date();
 
   constructor(
-    public readonly projectExId: string,
-    public readonly network: NetworkClient,
+    readonly data: {
+      projectExId: string;
+      network: NetworkClient;
+    },
   ) {}
 }

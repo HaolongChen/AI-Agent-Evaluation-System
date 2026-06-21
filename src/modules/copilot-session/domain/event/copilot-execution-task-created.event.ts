@@ -2,7 +2,7 @@ import type { IDomainEvent } from "../../../shared/domain/event/domain-event.int
 import type { CopilotExecutionAggregate } from "../aggregate/copilot-execution.aggregate.ts";
 
 export class CopilotExecutionTaskCreatedEvent implements IDomainEvent {
-  readonly name = "copilot.execution.task.created";
+  readonly name = "copilot.executionTask.created";
   readonly createdAt = new Date();
 
   constructor(

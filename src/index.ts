@@ -11,7 +11,10 @@ import {
 } from "./DI/service.ts";
 import { NetworkClient } from "./modules/account/domain/entity/network-client.entity.ts";
 import { createRepositoryBundle } from "./DI/repository.ts";
-import { CopilotExecutionPool, EventBus } from "./config/event-bus.ts";
+import {
+  CopilotExecutionPool,
+  EventBus,
+} from "./modules/shared/infrastructure/event-bus.ts";
 
 const app = express();
 const server = new ApolloServer<GraphQLContext>({

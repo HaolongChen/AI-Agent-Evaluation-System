@@ -9,9 +9,11 @@ import {
 } from "../schema/project.schema.ts";
 import { ZionProject } from "../entity/zion-project.entity.ts";
 import { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
-import { ProjectCreatedEvent } from "../event/project-created.event.ts";
+import {
+  ProjectCreatedEvent,
+  ProjectCreationTaskCreated,
+} from "../event/project-created.event.ts";
 import type { Account } from "../../../account/domain/entity/account.entity.ts";
-import { ProjectActivatedEvent } from "../event/project-activated.event.ts";
 import { ProjectDeletedEvent } from "../event/project-deleted.event.ts";
 
 export class ProjectAggregate extends AggregateRoot<
@@ -57,7 +59,7 @@ export class ProjectAggregate extends AggregateRoot<
         .getData("schemaId"),
     });
     this.addEvent(
-      new ProjectCreatedEvent(
+      new ProjectCreationTaskCreated(
         zionProject,
         this.account,
         this.network,
@@ -86,7 +88,7 @@ export class ProjectAggregate extends AggregateRoot<
       projectId,
     );
     projectAggregate.activate(projectExId);
-    projectAggregate.addEvent(new ProjectActivatedEvent(projectAggregate));
+    projectAggregate.addEvent(new ProjectCreatedEvent(projectAggregate));
 
     return projectAggregate;
   }

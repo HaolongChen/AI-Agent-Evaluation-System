@@ -12,9 +12,6 @@ export class CopilotExecutionUseCase {
     private readonly projectService: IZionProjectService,
     private readonly projectRepository: IProjectRepository,
     private readonly copilotRepository: ICopilotRepository,
-    private readonly registerCopilotExecution: (
-      copilotExecution: CopilotExecutionAggregate,
-    ) => void,
   ) {}
 
   async execute(
@@ -22,9 +19,6 @@ export class CopilotExecutionUseCase {
     copilotServer: CopilotServerEntity,
     account: Account,
   ) {
-    const buildCopilotExecutionAggregate = (projectId: string) => {
-      return new CopilotExecutionAggregate(copilotServer, projectId);
-    };
     const activeProjects =
       await this.projectRepository.getExistingIdleProjectsOfCopilotInput(
         copilotInput.getData("id"),
@@ -37,7 +31,8 @@ export class CopilotExecutionUseCase {
         copilotInput,
         account,
       );
-      const copilotExecutionAggregate = buildCopilotExecutionAggregate(
+      const copilotExecutionAggregate = new CopilotExecutionAggregate(
+        copilotServer,
         activeProject.id,
       );
       await this.projectService.createSafeCopilotSession(
@@ -48,10 +43,12 @@ export class CopilotExecutionUseCase {
     } else {
       const projectAggregate = new ProjectAggregate(copilotInput, account);
       projectAggregate.createProject({});
-      const copilotExecutionAggregate = buildCopilotExecutionAggregate(
-        projectAggregate.getData("id"),
-      );
-      this.registerCopilotExecution(copilotExecutionAggregate);
+      const copilotExecutionAggregate =
+        CopilotExecutionAggregate.createExecutionTask(
+          copilotServer,
+          projectAggregate.getData("id"),
+        );
+      await this.copilotRepository.save(copilotExecutionAggregate);
       await this.projectRepository.save(projectAggregate);
     }
   }

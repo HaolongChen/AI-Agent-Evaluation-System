@@ -12,14 +12,3 @@ export class CopilotSessionCreatedEvent implements IDomainEvent {
     public readonly project: ProjectAggregate,
   ) {}
 }
-
-// export class CopilotExecutionStarted implements IDomainEvent {
-//   readonly name = "copilot.execution.started";
-//   readonly createdAt = new Date();
-
-//   constructor(
-//     public readonly executionLog: CopilotExecutionLogType,
-//     public readonly copilotNetwork: NetworkClient,
-//     public readonly projectNetwork: NetworkClient,
-//   ) {}
-// }

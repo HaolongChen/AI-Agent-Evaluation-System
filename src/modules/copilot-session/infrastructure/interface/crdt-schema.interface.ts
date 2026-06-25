@@ -1,19 +1,19 @@
-import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
+import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
 
 export interface ICrdtSchemaService {
   getSchemaGraph(
     schemaId: string,
-    networkClient: NetworkClient,
+    gqlClient: IGQLClient,
   ): Promise<unknown>;
 
   importSchema(
     schemaId: string,
     projectExId: string,
-    dangerousNetworkClient: NetworkClient,
+    gqlClient: IGQLClient,
   ): Promise<void>;
 
   getSchemaIdByProjectExId(
     projectExId: string,
-    networkClient: NetworkClient,
+    gqlClient: IGQLClient,
   ): Promise<string>;
 }

@@ -7,19 +7,17 @@ import type {
   ImportProjectSchemaManualMutation,
   ImportProjectSchemaManualMutationVariables,
   SupportedCustomModelDescriptorQuery,
-} from "../../../graphql/generated/types.ts";
-import type { IGQLClient } from "../../account/domain/interface/graphql-client.interface.ts";
-import { ZTypeCoreApi } from "../../shared/domain/interface/type-system.ts";
+} from "../../../../graphql/generated/types.ts";
+import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
+import { ZTypeCoreApi } from "../../../shared/domain/interface/type-system.ts";
 import {
   genExtraContext,
   type ExtractArray,
-} from "../../shared/domain/service/type-system.service.ts";
-import { getSchemaModelById } from "../../shared/infrastructure/ali-oss.ts";
-import { logger } from "../../shared/infrastructure/logger.ts";
-import type { ICrdtSchemaService } from "./interface/crdt-schema.interface.ts";
+} from "../../../shared/domain/service/type-system.service.ts";
+import { getSchemaModelById } from "../../../shared/infrastructure/ali-oss.ts";
+import { logger } from "../../../shared/infrastructure/logger.ts";
+import type { ICrdtSchemaService } from "../interface/crdt-schema.interface.ts";
 import { Crdt } from "@functorz/crdt-helper";
-import type { NetworkClient } from "../../account/domain/entity/network-client.entity.ts";
-import type { INetworkService } from "../../account/domain/interface/network-service.interface.ts";
 import { fromUint8Array } from "js-base64";
 
 const PROJECT_APP_DETAIL_FRAGMENT = gql`
@@ -226,8 +224,6 @@ export class CrdtSchemaService implements ICrdtSchemaService {
     return ZTypeCoreApi.withEnabledFeatures<T>([], function_);
   };
 
-  constructor(private readonly networkService: INetworkService) {}
-
   private async getAFCustomCodeTemplates(
     gqlClient: IGQLClient,
   ): Promise<AfCustomCodeTemplates> {
@@ -263,10 +259,9 @@ export class CrdtSchemaService implements ICrdtSchemaService {
 
   async getSchemaGraph(
     schemaId: string,
-    networkClient: NetworkClient,
+    gqlClient: IGQLClient,
   ): Promise<unknown> {
     const crdtModel = await this.getCrdtModelBySchema(schemaId);
-    const gqlClient = this.networkService.gqlClient(networkClient);
     const data = await this.getSupportedCustomModelDescriptor(gqlClient);
     const codeTemplates = await this.getAFCustomCodeTemplates(gqlClient);
     return this.withEnabledFeatures(() =>
@@ -281,10 +276,9 @@ export class CrdtSchemaService implements ICrdtSchemaService {
   async importSchema(
     schemaId: string,
     projectExId: string,
-    networkClient: NetworkClient,
+    gqlClient: IGQLClient,
   ): Promise<void> {
     const crdtModel = await this.getCrdtModelBySchema(schemaId);
-    const gqlClient = this.networkService.gqlClient(networkClient);
     await gqlClient.gqlRequest<
       ImportProjectSchemaManualMutation,
       ImportProjectSchemaManualMutationVariables
@@ -303,9 +297,8 @@ export class CrdtSchemaService implements ICrdtSchemaService {
 
   private async fetchAppDetailByExId(
     projectExId: string,
-    networkClient: NetworkClient,
+    gqlClient: IGQLClient,
   ): Promise<FetchAppDetailByExIdQuery_fetchAppDetailByExId_Project> {
-    const gqlClient = this.networkService.gqlClient(networkClient);
     const data = await gqlClient.gqlRequest<
       FetchAppDetailByExIdQuery,
       FetchAppDetailByExIdQueryVariables
@@ -322,11 +315,11 @@ export class CrdtSchemaService implements ICrdtSchemaService {
 
   async getSchemaIdByProjectExId(
     projectExId: string,
-    networkClient: NetworkClient,
+    gqlClient: IGQLClient,
   ): Promise<string> {
     const appDetail = await this.fetchAppDetailByExId(
       projectExId,
-      networkClient,
+      gqlClient,
     );
     const url = appDetail.latestSchema?.crdtModelUrl;
     if (!url) {

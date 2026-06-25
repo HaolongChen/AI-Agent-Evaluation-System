@@ -120,7 +120,7 @@ export class CopilotExecutionTaskCreatedEventConsumer implements IDomainEventCon
   }
 }
 
-export class ProjectCreatedEventConsumer implements IDomainEventConsumer<ProjectCreatedEvent> {
+class ProjectCreatedEventConsumer implements IDomainEventConsumer<ProjectCreatedEvent> {
   isActive: boolean = true;
   eventName = "zionProject.created" as const;
   constructor(

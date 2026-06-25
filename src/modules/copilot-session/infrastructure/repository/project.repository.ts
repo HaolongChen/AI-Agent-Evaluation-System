@@ -8,6 +8,7 @@ import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import { copilotInputDataMapper } from "../../../dataset/infrastructure/repository/copilot-input.repository.ts";
 import type { IDomainEventBus } from "../../../shared/domain/event/domain-event.bus.ts";
 import { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
+import type { ICopilotSessionEventBus } from "../../domain/event/event-bus.interface.ts";
 import {
   type IProjectRepository,
   type ResumeProjectInfo,
@@ -84,7 +85,7 @@ export const projectDataMapper = <
 };
 
 export class ProjectRepository implements IProjectRepository {
-  constructor(private readonly eventBus: IDomainEventBus) {}
+  constructor(private readonly eventBus: ICopilotSessionEventBus) {}
 
   async getExistingIdleProjectsOfCopilotInput(
     copilotInputId: string,
@@ -129,7 +130,7 @@ export class ProjectRepository implements IProjectRepository {
       create: { id, projectName, copilotInputId, ...state },
     });
     const events = entity.events;
-    await this.eventBus.publishAll(events);
+    await this.eventBus.publishAll(events as ICopilotSessionEventBus['allEvents']);
   }
   async findById(id: string, account: Account): Promise<ProjectAggregate> {
     const project = await prisma.project.findUniqueOrThrow({

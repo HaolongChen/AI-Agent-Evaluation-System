@@ -24,12 +24,21 @@ import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import type { ICrdtSchemaService } from "../interface/crdt-schema.interface.ts";
 import type { CopilotExecutionAggregate } from "../../domain/aggregate/copilot-execution.aggregate.ts";
 import type { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
+import { CopilotToolCallHandler } from "../copilot/copilot-tool-call-handler.ts";
 
 export class ZionProjectService implements IZionProjectService {
-  constructor(
+  constructor (
     private readonly networkService: INetworkService,
     private readonly crdtSchemaService: ICrdtSchemaService,
-  ) {}
+  )
+  {
+  }
+
+  copilotToolCallHandler (): CopilotToolCallHandler
+  {
+    return new CopilotToolCallHandler(this);
+  }
+
   async createSafeCopilotSession(
     project: ProjectAggregate,
     copilotExecutionAggregate: CopilotExecutionAggregate,
@@ -50,18 +59,20 @@ export class ZionProjectService implements IZionProjectService {
     return this.crdtSchemaService.importSchema(
       schemaId,
       projectExId,
-      dangerousNetworkClient,
+      this.networkService.gqlClient(dangerousNetworkClient),
     );
   }
   async getSchemaGraph(
     projectExId: string,
     networkClient: NetworkClient,
-  ): Promise<unknown> {
+  ): Promise<unknown>
+  {
+    const gqlClient = this.networkService.gqlClient(networkClient);
     const schemaId = await this.crdtSchemaService.getSchemaIdByProjectExId(
       projectExId,
-      networkClient,
+      gqlClient,
     );
-    return this.crdtSchemaService.getSchemaGraph(schemaId, networkClient);
+    return this.crdtSchemaService.getSchemaGraph(schemaId, gqlClient);
   }
 
   private async getLatestSession(

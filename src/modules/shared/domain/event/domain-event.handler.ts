@@ -1,12 +1,26 @@
-import type { IDomainEvent } from "./domain-event.interface.ts";
+import type { DomainEvent } from "./domain-event.interface.ts";
 
-export type DomainEventHandler<
-  Event extends IDomainEvent<Name>,
-  Name extends string,
-> = (event: Event) => Promise<void> | void;
-
-export interface IDomainEventConsumer<Event extends IDomainEvent> {
-  eventName: Event["name"];
-  handler: (event: Event) => Promise<void> | void;
+export interface IDomainEventHandler<Event extends DomainEvent
+  >
+{
+  handler ( event: Event ): Promise<void> | void;
   isActive: boolean;
+}
+
+export interface IDomainEventConsumer<T extends DomainEvent> extends IDomainEventHandler<T> {
+  readonly eventName: T['name'];
+}
+
+
+export class DomainEventConsumer<T extends DomainEvent = DomainEvent> implements IDomainEventConsumer<T>
+{
+  constructor(
+    readonly eventName: T[ 'name' ],
+    readonly handler: IDomainEventHandler<T>[ 'handler' ],
+    public isActive: boolean = true
+  )
+  {
+
+  }
+
 }

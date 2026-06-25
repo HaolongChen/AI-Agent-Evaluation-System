@@ -1,6 +1,5 @@
 import type { InputJsonValue } from "@prisma/client/runtime/client";
 import { prisma } from "../../../../config/prisma.ts";
-import type { IDomainEventBus } from "../../../shared/domain/event/domain-event.bus.ts";
 import type { CopilotExecutionAggregate } from "../../domain/aggregate/copilot-execution.aggregate.ts";
 import type {
   CopilotExecutionInfo,
@@ -8,14 +7,15 @@ import type {
 } from "../../domain/interface/copilot-repository.interface.ts";
 import type { CopilotExecutionLog } from "../../domain/value-object/copilot-execution-log.ts";
 import type { ICopilotRepositoryService } from "../interface/copilot-repository-service.interface.ts";
+import type { ICopilotSessionEventBus } from "../../domain/event/event-bus.interface.ts";
 
 export class CopilotRepository implements ICopilotRepository {
-  constructor(private readonly eventBus: IDomainEventBus) {}
+  constructor(private readonly eventBus: ICopilotSessionEventBus) {}
   async save(entity: CopilotExecutionAggregate): Promise<void> {
     const { id, copilotServerId } = entity.getData();
     await prisma.copilotOutput.create({ data: { id, copilotServerId } });
     const events = entity.events;
-    await this.eventBus.publishAll(events);
+    await this.eventBus.publishAll(events as ICopilotSessionEventBus['allEvents']);
   }
   async findById(id: string): Promise<CopilotExecutionAggregate> {
     throw new Error("Method not implemented.");

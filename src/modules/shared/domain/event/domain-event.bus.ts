@@ -1,15 +1,13 @@
-import type { IDomainEventConsumer } from "./domain-event.handler.ts";
-import type { IDomainEvent } from "./domain-event.interface.ts";
+import type { DomainEventConsumer } from "./domain-event.handler.ts";
+import { DomainEventService, type DomainEvent } from "./domain-event.interface.ts";
 
-export interface IDomainEventBus<Name extends [...string[]] = string[]> {
-  publish<T extends IDomainEvent<Name[number]>>(event: T): Promise<void>;
+export interface IDomainEventBus<T extends unknown[]> {
+  publish( event: {[K in keyof T]: DomainEvent<T[K]>}[keyof T]): Promise<void>;
 
-  publishAll<T extends IDomainEvent<Name[number]>>(
-    events: T[],
+  publishAll<D extends DomainEvent[]>(
+    events: D
   ): Promise<void[]>;
   subscribe(
-    consumer: {
-      [Key in Name[number]]: IDomainEventConsumer<IDomainEvent<Key>>;
-    }[Name[number]],
+    consumer: {[K in keyof T]: DomainEventConsumer<DomainEvent<T[K]>>}[keyof T]
   ): void;
 }

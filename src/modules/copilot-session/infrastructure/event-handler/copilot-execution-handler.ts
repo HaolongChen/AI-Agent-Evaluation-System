@@ -17,7 +17,6 @@ import type { ICopilotRepository } from "../../domain/interface/copilot-reposito
 export class CopilotSessionCreatedEventConsumer implements IDomainEventConsumer<CopilotSessionCreatedEvent> {
   constructor(
     private readonly copilotNetwork: ICopilotNetworkService,
-    private readonly projectService: IZionProjectService,
     private readonly copilotRepositoryService: ICopilotRepositoryService,
     private readonly copilotToolCallHandler: CopilotToolCallHandler,
   ) {}
@@ -92,9 +91,9 @@ export class CopilotExecutionTaskCreatedEventConsumer implements IDomainEventCon
     private readonly subscribe: (
       eventConsumer: IDomainEventConsumer<ProjectCreatedEvent>,
     ) => void,
-    private readonly projectService: IZionProjectService,
-    private readonly copilotNetwork: ICopilotNetworkService,
-    private readonly copilotRepository: ICopilotRepository,
+    protected readonly projectService: IZionProjectService,
+    protected readonly copilotNetwork: ICopilotNetworkService,
+    protected readonly copilotRepository: ICopilotRepository,
   ) {}
   handler: IDomainEventConsumer<CopilotExecutionTaskCreatedEvent>["handler"] =
     async (event: CopilotExecutionTaskCreatedEvent) => {
@@ -102,11 +101,23 @@ export class CopilotExecutionTaskCreatedEventConsumer implements IDomainEventCon
         new ProjectCreatedEventConsumer(
           event,
           this.projectService,
-          this.copilotNetwork,
           this.copilotRepository,
         ),
       );
     };
+  static enableSubscription(
+    consumer: CopilotExecutionTaskCreatedEventConsumer,
+    subscribe: (
+      eventConsumer: IDomainEventConsumer<ProjectCreatedEvent>,
+    ) => void,
+  ) {
+    return new CopilotExecutionTaskCreatedEventConsumer(
+      subscribe,
+      consumer.projectService,
+      consumer.copilotNetwork,
+      consumer.copilotRepository,
+    );
+  }
 }
 
 export class ProjectCreatedEventConsumer implements IDomainEventConsumer<ProjectCreatedEvent> {
@@ -115,7 +126,6 @@ export class ProjectCreatedEventConsumer implements IDomainEventConsumer<Project
   constructor(
     private readonly context: CopilotExecutionTaskCreatedEvent,
     private readonly projectService: IZionProjectService,
-    private readonly copilotNetwork: ICopilotNetworkService,
     private readonly copilotRepository: ICopilotRepository,
   ) {}
   handler = async (event: ProjectCreatedEvent) => {

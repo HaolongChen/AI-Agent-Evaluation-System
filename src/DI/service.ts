@@ -58,7 +58,6 @@ export const infrastructureServiceBundle: InfrastructureServiceBundle = {
 
 export const createApplicationServiceBundle = (
   repository: RepositoryInjectionType,
-  copilotExecutionPool: CopilotExecutionPool,
 ): ApplicationServiceBundle => {
   return {
     accountApplicationService: new AccountApplicationService(
@@ -75,7 +74,6 @@ export const createApplicationServiceBundle = (
       infrastructureServiceBundle.zionProjectService,
       repository.projectRepository,
       repository.copilotRepository,
-      copilotExecutionPool.register.bind(copilotExecutionPool),
     ),
   };
 };

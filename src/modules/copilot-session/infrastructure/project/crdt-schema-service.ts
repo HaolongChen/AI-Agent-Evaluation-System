@@ -317,10 +317,7 @@ export class CrdtSchemaService implements ICrdtSchemaService {
     projectExId: string,
     gqlClient: IGQLClient,
   ): Promise<string> {
-    const appDetail = await this.fetchAppDetailByExId(
-      projectExId,
-      gqlClient,
-    );
+    const appDetail = await this.fetchAppDetailByExId(projectExId, gqlClient);
     const url = appDetail.latestSchema?.crdtModelUrl;
     if (!url) {
       throw new Error("No schema linked to this project");

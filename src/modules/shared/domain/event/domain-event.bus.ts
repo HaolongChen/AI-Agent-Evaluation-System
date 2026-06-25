@@ -1,15 +1,15 @@
 import type { IDomainEventConsumer } from "./domain-event.handler.ts";
-import type { IDomainEvent } from "./domain-event.interface.ts";
+import type { EventMap } from "./domain-event.interface.ts";
 
-export interface IDomainEventBus<Name extends [...string[]] = string[]> {
-  publish<T extends IDomainEvent<Name[number]>>(event: T): Promise<void>;
+export interface IDomainEventBus<Em extends EventMap> {
+  publish(event: Em[keyof Em]): Promise<void>;
 
-  publishAll<T extends IDomainEvent<Name[number]>>(
-    events: T[],
-  ): Promise<void[]>;
-  subscribe(
-    consumer: {
-      [Key in Name[number]]: IDomainEventConsumer<IDomainEvent<Key>>;
-    }[Name[number]],
+  publishAll(events: Em[keyof Em][]): Promise<void[]>;
+  subscribe<T extends keyof Em>(
+    consumer: [T] extends [infer U]
+      ? U extends keyof Em
+        ? IDomainEventConsumer<Em, U>
+        : never
+      : never,
   ): void;
 }

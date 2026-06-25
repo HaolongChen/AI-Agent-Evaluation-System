@@ -11,10 +11,10 @@ import { CopilotExecutionEventBus } from "../copilot/copilot-execution-event-bus
 import type { CopilotToolCallHandler } from "../copilot/copilot-tool-call-handler.ts";
 import type { CopilotExecutionTaskCreatedEvent } from "../../domain/event/copilot-execution-task-created.event.ts";
 import type { ProjectCreatedEvent } from "../../domain/event/project-created.event.ts";
-import type { IDomainEventConsumer } from "../../../shared/domain/event/domain-event.handler.ts";
 import type { ICopilotRepository } from "../../domain/interface/copilot-repository.interface.ts";
+import type { CopilotSessionEventConsumer } from "../../domain/event/event-map.ts";
 
-export class CopilotSessionCreatedEventConsumer implements IDomainEventConsumer<CopilotSessionCreatedEvent> {
+export class CopilotSessionCreatedEventConsumer implements CopilotSessionEventConsumer<"copilot.session.started"> {
   constructor(
     private readonly copilotNetwork: ICopilotNetworkService,
     private readonly copilotRepositoryService: ICopilotRepositoryService,
@@ -84,18 +84,18 @@ export class CopilotSessionCreatedEventConsumer implements IDomainEventConsumer<
   };
 }
 
-export class CopilotExecutionTaskCreatedEventConsumer implements IDomainEventConsumer<CopilotExecutionTaskCreatedEvent> {
+export class CopilotExecutionTaskCreatedEventConsumer implements CopilotSessionEventConsumer<"copilot.executionTask.created"> {
   isActive: boolean = true;
   eventName = "copilot.executionTask.created" as const;
   constructor(
     private readonly subscribe: (
-      eventConsumer: IDomainEventConsumer<ProjectCreatedEvent>,
+      eventConsumer: CopilotSessionEventConsumer<"zionProject.created">,
     ) => void,
     protected readonly projectService: IZionProjectService,
     protected readonly copilotNetwork: ICopilotNetworkService,
     protected readonly copilotRepository: ICopilotRepository,
   ) {}
-  handler: IDomainEventConsumer<CopilotExecutionTaskCreatedEvent>["handler"] =
+  handler: CopilotSessionEventConsumer<"copilot.executionTask.created">["handler"] =
     async (event: CopilotExecutionTaskCreatedEvent) => {
       this.subscribe(
         new ProjectCreatedEventConsumer(
@@ -108,7 +108,7 @@ export class CopilotExecutionTaskCreatedEventConsumer implements IDomainEventCon
   static enableSubscription(
     consumer: CopilotExecutionTaskCreatedEventConsumer,
     subscribe: (
-      eventConsumer: IDomainEventConsumer<ProjectCreatedEvent>,
+      eventConsumer: CopilotSessionEventConsumer<"zionProject.created">,
     ) => void,
   ) {
     return new CopilotExecutionTaskCreatedEventConsumer(
@@ -120,7 +120,7 @@ export class CopilotExecutionTaskCreatedEventConsumer implements IDomainEventCon
   }
 }
 
-class ProjectCreatedEventConsumer implements IDomainEventConsumer<ProjectCreatedEvent> {
+class ProjectCreatedEventConsumer implements CopilotSessionEventConsumer<"zionProject.created"> {
   isActive: boolean = true;
   eventName = "zionProject.created" as const;
   constructor(

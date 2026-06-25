@@ -1,30 +1,21 @@
-import type { IDomainEventConsumer } from "../../shared/domain/event/domain-event.handler.ts";
-import { EventBus } from "../../shared/infrastructure/event-bus.ts";
-import type { CopilotExecutionTaskCreatedEvent } from "../domain/event/copilot-execution-task-created.event.ts";
-import type { CopilotSessionCreatedEvent } from "../domain/event/copilot-session-created.ts";
-import type { ProjectCreatedEvent } from "../domain/event/project-created.event.ts";
-import type { ProjectDeletedEvent } from "../domain/event/project-deleted.event.ts";
+import type {
+  CopilotSessionEventBus,
+  CopilotSessionEventConsumer,
+} from "../domain/event/event-map.ts";
 import { CopilotExecutionTaskCreatedEventConsumer } from "../infrastructure/event-handler/copilot-execution-handler.ts";
 
 export class CopilotSessionEventRegistrationService {
   constructor(
-    private readonly copilotExecutionTaskCreatedEventConsumer: IDomainEventConsumer<CopilotExecutionTaskCreatedEvent>,
-    private readonly copilotSessionCreatedEventConsumer: IDomainEventConsumer<CopilotSessionCreatedEvent>,
-    private readonly projectDeletedEventConsumer: IDomainEventConsumer<ProjectDeletedEvent>,
+    private readonly copilotExecutionTaskCreatedEventConsumer: CopilotSessionEventConsumer<"copilot.executionTask.created">,
+    private readonly copilotSessionCreatedEventConsumer: CopilotSessionEventConsumer<"copilot.session.started">,
+    private readonly projectDeletedEventConsumer: CopilotSessionEventConsumer<"zionProject.deleted">,
   ) {}
-  registerEventBus() {
-    const eventBus = new EventBus(
-      "copilot.executionTask.created",
-      "copilot.session.started",
-      "zionProject.created",
-      "zionProject.deleted",
-    );
-
+  registerEventBus(eventBus: CopilotSessionEventBus) {
     const newCopilotExecutionTaskCreatedEventConsumer =
       CopilotExecutionTaskCreatedEventConsumer.enableSubscription(
         this
           .copilotExecutionTaskCreatedEventConsumer as CopilotExecutionTaskCreatedEventConsumer,
-        (eventConsumer: IDomainEventConsumer<ProjectCreatedEvent>) => {
+        (eventConsumer: CopilotSessionEventConsumer<"zionProject.created">) => {
           eventBus.subscribe(eventConsumer);
         },
       );

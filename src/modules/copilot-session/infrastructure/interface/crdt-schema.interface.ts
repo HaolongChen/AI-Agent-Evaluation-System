@@ -1,10 +1,7 @@
 import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
 
 export interface ICrdtSchemaService {
-  getSchemaGraph(
-    schemaId: string,
-    gqlClient: IGQLClient,
-  ): Promise<unknown>;
+  getSchemaGraph(schemaId: string, gqlClient: IGQLClient): Promise<unknown>;
 
   importSchema(
     schemaId: string,

@@ -1,11 +1,11 @@
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
-import type { IDomainEventConsumer } from "../../../shared/domain/event/domain-event.handler.ts";
 import { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
+import type { CopilotSessionEventConsumer } from "../../domain/event/event-map.ts";
 import type { ProjectCreationTaskCreated } from "../../domain/event/project-created.event.ts";
 import type { IProjectRepository } from "../../domain/interface/project-repository.interface.ts";
 import type { IZionProjectService } from "../../domain/interface/project-service.interface.ts";
 
-export class ProjectCreationTaskCreatedEventConsumer implements IDomainEventConsumer<ProjectCreationTaskCreated> {
+export class ProjectCreationTaskCreatedEventConsumer implements CopilotSessionEventConsumer<"zionProject.creationTask.created"> {
   isActive: boolean = true;
   constructor(
     private readonly projectService: IZionProjectService,

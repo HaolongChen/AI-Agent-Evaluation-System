@@ -45,7 +45,7 @@ import type { EventMap } from "../domain/event/domain-event.interface.ts";
 //   };
 // }
 
-export class EventBus<Em extends EventMap> implements IDomainEventBus<Em> {
+export class EventBus<Em extends EventMap = EventMap> implements IDomainEventBus<Em> {
   async publish(event: Em[keyof Em]): Promise<void> {
     const consumers = this.consumerMap.get(event.name as keyof Em) || [];
     const persistentConsumers: IDomainEventConsumer<Em, keyof Em>[] = [];

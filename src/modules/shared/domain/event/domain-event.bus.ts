@@ -1,7 +1,7 @@
 import type { IDomainEventConsumer } from "./domain-event.handler.ts";
 import type { EventMap } from "./domain-event.interface.ts";
 
-export interface IDomainEventBus<Em extends EventMap> {
+export interface IDomainEventBus<Em extends EventMap = EventMap> {
   publish(event: Em[keyof Em]): Promise<void>;
 
   publishAll(events: Em[keyof Em][]): Promise<void[]>;

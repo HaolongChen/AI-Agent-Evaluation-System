@@ -5,11 +5,10 @@ import { LoginService } from "../modules/account/infrastructure/login.ts";
 import { NetworkService } from "../modules/account/infrastructure/network.ts";
 import { CopilotExecutionUseCase } from "../modules/copilot-session/application/copilot-execution-lifecycle.ts";
 import type { IZionProjectService } from "../modules/copilot-session/domain/interface/project-service.interface.ts";
-import type { CopilotExecutionPool } from "../modules/copilot-session/domain/interface/copilot-execution-pool.ts";
 import { CopilotNetworkService } from "../modules/copilot-session/infrastructure/copilot/copilot-network.ts";
-import { CrdtSchemaService } from "../modules/copilot-session/infrastructure/crdt-schema-service.ts";
 import type { ICopilotNetworkService } from "../modules/copilot-session/infrastructure/interface/copilot-network.interface.ts";
 import type { ICrdtSchemaService } from "../modules/copilot-session/infrastructure/interface/crdt-schema.interface.ts";
+import { CrdtSchemaService } from "../modules/copilot-session/infrastructure/project/crdt-schema-service.ts";
 import { ZionProjectService } from "../modules/copilot-session/infrastructure/project/project.service.ts";
 import { GetCopilotInputByFiltersUseCase } from "../modules/dataset/application/copilot-input.ts";
 import { GetCopilotServerUseCase } from "../modules/dataset/application/copilot-server.ts";
@@ -38,7 +37,7 @@ export type ApplicationServiceBundle = {
 
 const networkService = new NetworkService();
 const loginService = new LoginService();
-const crdtSchemaService = new CrdtSchemaService(networkService);
+const crdtSchemaService = new CrdtSchemaService();
 const copilotNetworkService = new CopilotNetworkService(networkService);
 const zionProjectService = new ZionProjectService(
   networkService,
@@ -71,7 +70,6 @@ export const createApplicationServiceBundle = (
       copilotInputRepository: baseRepositoryBundle.copilotInputRepository,
     }),
     copilotExecutionUseCase: new CopilotExecutionUseCase(
-      infrastructureServiceBundle.zionProjectService,
       repository.projectRepository,
       repository.copilotRepository,
     ),

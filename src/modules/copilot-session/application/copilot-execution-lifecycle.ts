@@ -5,11 +5,9 @@ import { CopilotExecutionAggregate } from "../domain/aggregate/copilot-execution
 import { ProjectAggregate } from "../domain/aggregate/project.aggregate.ts";
 import type { ICopilotRepository } from "../domain/interface/copilot-repository.interface.ts";
 import type { IProjectRepository } from "../domain/interface/project-repository.interface.ts";
-import type { IZionProjectService } from "../domain/interface/project-service.interface.ts";
 
 export class CopilotExecutionUseCase {
   constructor(
-    private readonly projectService: IZionProjectService,
     private readonly projectRepository: IProjectRepository,
     private readonly copilotRepository: ICopilotRepository,
   ) {}
@@ -35,11 +33,8 @@ export class CopilotExecutionUseCase {
         copilotServer,
         activeProject.id,
       );
-      await this.projectService.createSafeCopilotSession(
-        projectAggregate,
-        copilotExecutionAggregate,
-      );
-      return this.copilotRepository.save(copilotExecutionAggregate);
+      await this.copilotRepository.save(copilotExecutionAggregate);
+      await this.projectRepository.save(projectAggregate);
     } else {
       const projectAggregate = new ProjectAggregate(copilotInput, account);
       projectAggregate.createProject({});

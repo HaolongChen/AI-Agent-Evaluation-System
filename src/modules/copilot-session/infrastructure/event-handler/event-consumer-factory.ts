@@ -14,7 +14,10 @@ import {
   CopilotExecutionTaskCreatedEventConsumer,
   CopilotSessionCreatedEventConsumer,
 } from "./copilot-execution-handler.ts";
-import { ProjectCreationTaskCreatedEventConsumer } from "./project-handler.ts";
+import {
+  ProjectCreationTaskCreatedEventConsumer,
+  ProjectDeletedEventConsumer,
+} from "./project-handler.ts";
 
 export class EventConsumerFactory implements IEventConsumerFactory {
   constructor(
@@ -57,5 +60,9 @@ export class EventConsumerFactory implements IEventConsumerFactory {
       this.copilotRepositoryService,
       copilotToolCallHandler,
     );
+  }
+
+  buildProjectDeletedEventConsumer(): CopilotSessionEventConsumer<"zionProject.deleted"> {
+    return new ProjectDeletedEventConsumer(this.projectService);
   }
 }

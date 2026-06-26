@@ -8,7 +8,7 @@ export class CopilotExecutionTaskCreatedEvent implements IDomainEvent {
   constructor(
     readonly data: {
       copilotExecution: CopilotExecutionAggregate;
-      projectId: string;
+      copilotInputId: string;
     },
   ) {}
 }

@@ -14,4 +14,6 @@ export interface IEventConsumerFactory {
   ): CopilotSessionEventConsumer<"zionProject.creationTask.created">;
 
   buildCopilotSessionCreatedEventConsumer(): CopilotSessionEventConsumer<"copilot.session.started">;
+
+  buildProjectDeletedEventConsumer(): CopilotSessionEventConsumer<"zionProject.deleted">;
 }

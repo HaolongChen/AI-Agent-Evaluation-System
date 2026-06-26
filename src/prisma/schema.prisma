@@ -33,6 +33,7 @@ enum EvaluatorType {
 enum ProjectStatus {
   creating
   active
+  busy
   deleted
   failed
 }

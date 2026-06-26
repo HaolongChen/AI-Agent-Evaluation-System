@@ -6,8 +6,8 @@ import { typeDefs, resolvers } from "./graphql/schema.ts";
 import { logger } from "./modules/shared/infrastructure/logger.ts";
 import type { GraphQLContext } from "./config/graphql.ts";
 import {
-	createApplicationServiceBundle,
-	infrastructureServiceBundle,
+  createApplicationServiceBundle,
+  infrastructureServiceBundle,
 } from "./DI/service.ts";
 import { NetworkClient } from "./modules/account/domain/entity/network-client.entity.ts";
 import { createRepositoryBundle } from "./DI/repository.ts";
@@ -16,9 +16,9 @@ import type { CopilotSessionEventMap } from "./modules/copilot-session/domain/ev
 
 const app = express();
 const server = new ApolloServer<GraphQLContext>({
-	typeDefs,
-	resolvers,
-	introspection: true,
+  typeDefs,
+  resolvers,
+  introspection: true,
 });
 
 await server.start();
@@ -26,46 +26,46 @@ await server.start();
 const copilotSessionEventBus = new EventBus<CopilotSessionEventMap>();
 const repositoryBundle = createRepositoryBundle(copilotSessionEventBus);
 const applicationServiceBundle =
-	createApplicationServiceBundle(repositoryBundle);
+  createApplicationServiceBundle(repositoryBundle);
 const dangerousAccount =
-	await applicationServiceBundle.accountApplicationService.loginWithUsername(
-		process.env.DANGEROUS_USERNAME,
-		process.env.DANGEROUS_PASSWORD,
-		NetworkClient.createDefault(),
-	);
+  await applicationServiceBundle.accountApplicationService.loginWithUsername(
+    process.env.DANGEROUS_USERNAME,
+    process.env.DANGEROUS_PASSWORD,
+    NetworkClient.createDefault(),
+  );
 applicationServiceBundle.copilotSessionEventRegistrationService.registerEventBus(
-	copilotSessionEventBus,
-	dangerousAccount,
+  copilotSessionEventBus,
+  dangerousAccount,
 );
 
 app.use(
-	"/graphql",
-	cors(),
-	express.json(),
-	express.urlencoded({ extended: true }),
-	expressMiddleware(server, {
-		context: async () => {
-			return {
-				copilotSessionEventBus,
-				account:
-					await applicationServiceBundle.accountApplicationService.loginWithPhoneNumber(
-						process.env.FUNCTORZ_PHONE_NUMBER,
-						process.env.FUNCTORZ_PASSWORD,
-						NetworkClient.createDefault(),
-					),
-				repositoryBundle,
-				infrastructureServiceBundle,
-				applicationServiceBundle,
-			};
-		},
-	}),
+  "/graphql",
+  cors(),
+  express.json(),
+  express.urlencoded({ extended: true }),
+  expressMiddleware(server, {
+    context: async () => {
+      return {
+        copilotSessionEventBus,
+        account:
+          await applicationServiceBundle.accountApplicationService.loginWithPhoneNumber(
+            process.env.FUNCTORZ_PHONE_NUMBER,
+            process.env.FUNCTORZ_PASSWORD,
+            NetworkClient.createDefault(),
+          ),
+        repositoryBundle,
+        infrastructureServiceBundle,
+        applicationServiceBundle,
+      };
+    },
+  }),
 );
 app.get("/health", (_request: express.Request, result: express.Response) => {
-	result.send("server is healthy");
+  result.send("server is healthy");
 });
 
 app.listen({ port: process.env.PORT }, () => {
-	logger.info(
-		`🚀 Server ready at http://localhost:${process.env.PORT}/graphql`,
-	);
+  logger.info(
+    `🚀 Server ready at http://localhost:${process.env.PORT}/graphql`,
+  );
 });

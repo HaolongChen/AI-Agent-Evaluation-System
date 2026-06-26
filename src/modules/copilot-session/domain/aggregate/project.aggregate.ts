@@ -49,6 +49,26 @@ export class ProjectAggregate extends AggregateRoot<
     this.setData({ state: { status: "active", projectExId } });
   }
 
+  acquire(): string {
+    if (this.state.status === "active") {
+      this.setData({
+        state: { status: "busy", projectExId: this.state.projectExId },
+      });
+      return this.state.projectExId;
+    }
+    throw new Error("Project is not active");
+  }
+
+  release() {
+    if (this.state.status === "busy") {
+      this.setData({
+        state: { status: "active", projectExId: this.state.projectExId },
+      });
+    } else {
+      throw new Error("Project is not busy");
+    }
+  }
+
   createProject(config: z.input<typeof projectConfigSchema>) {
     this.setData({ state: { status: "creating" } });
     const zionProject = new ZionProject({

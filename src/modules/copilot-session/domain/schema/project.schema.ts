@@ -30,7 +30,7 @@ type DiscriminatedProject =
   | { status: "creating" }
   | { status: "deleted" }
   | {
-      status: "active";
+      status: "active" | "busy";
       projectExId: string;
     }
   | {

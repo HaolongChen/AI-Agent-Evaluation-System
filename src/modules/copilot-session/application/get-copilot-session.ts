@@ -24,11 +24,10 @@ export class GetCopilotSessionUseCase {
     copilotServer: CopilotServerEntity,
     project: ProjectAggregate,
   ): CopilotOutputAggregate {
-    const copilotExecution = new CopilotExecutionAggregate(
+    const copilotExecution = CopilotExecutionAggregate.reconcile(
       copilotServer,
-      output.project.id,
+      project,
     );
-    copilotExecution.importProject(project);
     return new CopilotOutputAggregate(
       copilotExecution,
       new CopilotExecutionLog(output),
@@ -50,11 +49,10 @@ export class GetCopilotSessionUseCase {
     copilotServer: CopilotServerEntity,
     project: ProjectAggregate,
   ): CopilotExecutionAggregate {
-    const copilotExecution = new CopilotExecutionAggregate(
+    const copilotExecution = CopilotExecutionAggregate.reconcile(
       copilotServer,
-      output.project.id,
+      project,
     );
-    copilotExecution.importProject(project);
     copilotExecution.start(output.copilotSessionExId);
     return copilotExecution;
   }

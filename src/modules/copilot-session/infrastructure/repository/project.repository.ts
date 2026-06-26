@@ -93,22 +93,6 @@ export class ProjectRepository implements IProjectRepository {
       where: {
         copilotInputId,
         status: "active",
-        OR: [
-          {
-            copilotOutputs: {
-              none: {},
-            },
-          },
-          {
-            copilotOutputs: {
-              every: {
-                status: {
-                  in: ["completed"],
-                },
-              },
-            },
-          },
-        ],
       },
       include: {
         copilotOutputs: true,

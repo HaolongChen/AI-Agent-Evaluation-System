@@ -2,6 +2,7 @@ import type { NetworkClient } from "../../../account/domain/entity/network-clien
 import { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
 import type { CopilotSessionEventConsumer } from "../../domain/event/event-map.ts";
 import type { ProjectCreationTaskCreated } from "../../domain/event/project-created.event.ts";
+import type { ProjectDeletedEvent } from "../../domain/event/project-deleted.event.ts";
 import type { IProjectRepository } from "../../domain/interface/project-repository.interface.ts";
 import type { IZionProjectService } from "../../domain/interface/project-service.interface.ts";
 
@@ -34,5 +35,17 @@ export class ProjectCreationTaskCreatedEventConsumer implements CopilotSessionEv
       event.data.account,
     );
     return this.projectRepository.save(createdProject);
+  };
+}
+
+export class ProjectDeletedEventConsumer implements CopilotSessionEventConsumer<"zionProject.deleted"> {
+  isActive: boolean = true;
+  constructor(private readonly projectService: IZionProjectService) {}
+  eventName = "zionProject.deleted" as const;
+  handler = async (event: ProjectDeletedEvent) => {
+    return this.projectService.deleteProjectInZion(
+      event.data.projectExId,
+      event.data.network,
+    );
   };
 }

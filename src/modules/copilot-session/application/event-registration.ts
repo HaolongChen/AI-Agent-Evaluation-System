@@ -24,5 +24,8 @@ export class CopilotSessionEventRegistrationService {
     const copilotSessionCreatedEventConsumer =
       this.eventConsumerFactory.buildCopilotSessionCreatedEventConsumer();
     eventBus.subscribe(copilotSessionCreatedEventConsumer);
+    const projectDeletedEventConsumer =
+      this.eventConsumerFactory.buildProjectDeletedEventConsumer();
+    eventBus.subscribe(projectDeletedEventConsumer);
   }
 }

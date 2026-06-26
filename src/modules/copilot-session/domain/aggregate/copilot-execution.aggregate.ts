@@ -17,14 +17,16 @@ export class CopilotExecutionAggregate extends AggregateRoot<
   public readonly network: NetworkClient = NetworkClient.createDefault();
   public project: ProjectAggregate | undefined;
 
-  constructor(copilotServer: CopilotServerEntity, projectId: string) {
+  constructor(
+    copilotServer: CopilotServerEntity,
+    readonly copilotInputId: string,
+  ) {
     const entity = new Entity<
       typeof copilotExecutionSchema,
       CopilotExecutionMetadata
     >(
       {
         copilotServerId: copilotServer.getData("id"),
-        projectId,
       },
       copilotExecutionSchema,
       { state: { status: "pending" } },
@@ -32,52 +34,60 @@ export class CopilotExecutionAggregate extends AggregateRoot<
     super(entity, {});
     this.network.setWebSocketUrl(copilotServer.getData("wsEndpoint"));
     this.network.setGraphQLUrl(copilotServer.getData("gqlEndpoint"));
-    this.addEvent(
-      new CopilotExecutionTaskCreatedEvent({
-        copilotExecution: this,
-        projectId,
-      }),
-    );
   }
 
   get state() {
     return this.getData("state");
   }
 
+  static reconcile(
+    copilotServer: CopilotServerEntity,
+    project: ProjectAggregate,
+  ) {
+    const copilotExecution = new CopilotExecutionAggregate(
+      copilotServer,
+      project.getData("copilotInputId"),
+    );
+    copilotExecution.importProject(project);
+    return copilotExecution;
+  }
+
   static createExecutionTask(
     copilotServer: CopilotServerEntity,
-    projectId: string,
+    copilotInputId: string,
   ): CopilotExecutionAggregate {
     const copilotExecution = new CopilotExecutionAggregate(
       copilotServer,
-      projectId,
+      copilotInputId,
     );
     copilotExecution.addEvent(
-      new CopilotExecutionTaskCreatedEvent({ copilotExecution, projectId }),
+      new CopilotExecutionTaskCreatedEvent({
+        copilotExecution,
+        copilotInputId,
+      }),
     );
     return copilotExecution;
   }
 
-  importProject(project: ProjectAggregate) {
-    if (project.getData("id") !== this.getData("projectId")) {
+  protected importProject(project: ProjectAggregate) {
+    if (project.getData("copilotInputId") !== this.copilotInputId) {
       throw new Error("Project ID mismatch.");
     }
     this.project = project;
   }
 
   verifyActivatedProject(project: ProjectAggregate): string {
-    if (project.state.status !== "active") {
-      throw new Error(
-        "Project must be completed before setting up environment.",
-      );
-    }
-    if (project.getData("id") !== this.getData("projectId")) {
+    if (
+      project.getData("copilotInputId") !== this.copilotInputId &&
+      project.state.status === "active"
+    ) {
       throw new Error(
         "Project ID mismatch between CopilotExecutionAggregate and ProjectAggregate.",
       );
     }
+    const projectExId = project.acquire();
     this.project = project;
-    return project.state.projectExId;
+    return projectExId;
   }
 
   start(copilotSessionExId: string) {
@@ -98,6 +108,6 @@ export class CopilotExecutionAggregate extends AggregateRoot<
         project,
       }),
     );
-    this.project = undefined;
+    // this.project = undefined;
   }
 }

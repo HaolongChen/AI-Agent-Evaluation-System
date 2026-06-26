@@ -36,6 +36,7 @@ export type EvaluatorType = (typeof EvaluatorType)[keyof typeof EvaluatorType];
 export const ProjectStatus = {
   creating: "creating",
   active: "active",
+  busy: "busy",
   deleted: "deleted",
   failed: "failed",
 } as const;

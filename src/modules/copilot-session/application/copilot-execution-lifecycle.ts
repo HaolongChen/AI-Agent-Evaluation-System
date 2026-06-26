@@ -17,34 +17,28 @@ export class CopilotExecutionUseCase {
     copilotServer: CopilotServerEntity,
     account: Account,
   ) {
+    await this.copilotRepository.save(
+      CopilotExecutionAggregate.createExecutionTask(
+        copilotServer,
+        copilotInput.getData("id"),
+      ),
+    );
     const activeProjects =
       await this.projectRepository.getExistingIdleProjectsOfCopilotInput(
         copilotInput.getData("id"),
       );
-    if (activeProjects.length > 0) {
-      const activeProject = activeProjects[0];
-      const projectAggregate = ProjectAggregate.complete(
-        activeProject.projectExId,
-        activeProject.id,
-        copilotInput,
-        account,
-      );
-      const copilotExecutionAggregate = new CopilotExecutionAggregate(
-        copilotServer,
-        activeProject.id,
-      );
-      await this.copilotRepository.save(copilotExecutionAggregate);
-      await this.projectRepository.save(projectAggregate);
-    } else {
-      const projectAggregate = new ProjectAggregate(copilotInput, account);
-      projectAggregate.createProject({});
-      const copilotExecutionAggregate =
-        CopilotExecutionAggregate.createExecutionTask(
-          copilotServer,
-          projectAggregate.getData("id"),
-        );
-      await this.copilotRepository.save(copilotExecutionAggregate);
-      await this.projectRepository.save(projectAggregate);
+    const project =
+      activeProjects.length > 0
+        ? ProjectAggregate.complete(
+            activeProjects[0].projectExId,
+            activeProjects[0].id,
+            copilotInput,
+            account,
+          )
+        : new ProjectAggregate(copilotInput, account);
+    if (project.state.status === "pending") {
+      project.createProject({});
     }
+    await this.projectRepository.save(project);
   }
 }

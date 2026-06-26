@@ -57,7 +57,8 @@ export class CopilotRepositoryService implements ICopilotRepositoryService {
       where: { id },
       data: {
         project: {
-          connect: { projectExId },
+          connect: { projectExId, status: "active" },
+          update: { status: "busy" },
         },
       },
     });
@@ -82,6 +83,13 @@ export class CopilotRepositoryService implements ICopilotRepositoryService {
           set: tasks as InputJsonValue[],
         },
       },
+    });
+  }
+
+  async complete(copilotSessionExId: string) {
+    await prisma.copilotOutput.update({
+      where: { copilotSessionExId, status: "running" },
+      data: { status: "completed", project: { update: { status: "active" } } },
     });
   }
 }

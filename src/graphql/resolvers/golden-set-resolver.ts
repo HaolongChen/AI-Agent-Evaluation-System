@@ -175,9 +175,10 @@ export const goldenSetResolver = {
       arguments_: MutationCreateGoldenSetWithSchemaIdArguments,
       context: GraphQLContext,
     ): Promise<GoldenSet> => {
-      const goldenSet = await context.applicationServiceBundle.createGoldenSetUseCase.execute(
-        arguments_.input.schemaId,
-      );
+      const goldenSet =
+        await context.applicationServiceBundle.createGoldenSetUseCase.execute(
+          arguments_.input.schemaId,
+        );
       return goldenSetDataMapper(goldenSet);
     },
 
@@ -190,7 +191,10 @@ export const goldenSetResolver = {
       const crdtSchemaLifecycle =
         zionInjection.crdtSchemaLifecycleFactory.create(arguments_.projectExId);
       const schemaId = await crdtSchemaLifecycle.getSchemaId();
-      const goldenSet = await context.applicationServiceBundle.createGoldenSetUseCase.execute(schemaId);
+      const goldenSet =
+        await context.applicationServiceBundle.createGoldenSetUseCase.execute(
+          schemaId,
+        );
       return goldenSetDataMapper(goldenSet);
     },
 
@@ -240,12 +244,15 @@ export const goldenSetResolver = {
         const result = await zionDatabase.query(fetchProjectId);
         const results = await Promise.allSettled(
           result.rows.map(async ({ id }) => {
-            const response = await context.infrastructureServiceBundle.networkService.gqlClient(networkClient).gqlRequest<
-              FixAliPayDataBindingMutation,
-              FixAliPayDataBindingMutationVariables
-            >(GQL_FIX_ALIPAY_DATA_BINDING, {
-              projectId: id,
-            });
+            const response =
+              await context.infrastructureServiceBundle.networkService
+                .gqlClient(networkClient)
+                .gqlRequest<
+                  FixAliPayDataBindingMutation,
+                  FixAliPayDataBindingMutationVariables
+                >(GQL_FIX_ALIPAY_DATA_BINDING, {
+                  projectId: id,
+                });
             return `Project ID: ${id}, Response: ${JSON.stringify(response)}`;
           }),
         );

@@ -75,9 +75,13 @@ export class CopilotSessionCreatedEventConsumer implements CopilotSessionEventCo
       handler.publish,
     );
     copilotExecutionEventBus.subscribeToMessageSentEvent(
-      async (event: CopilotInputEvent) => {
-        if (event.message.copilotMessageType === "TERMINATE") {
+      async (inputEvent: CopilotInputEvent) => {
+        if (inputEvent.message.copilotMessageType === "TERMINATE") {
           unsubscribe();
+          event.data.project.release();
+          return this.copilotRepositoryService.complete(
+            event.data.copilotSessionExId,
+          );
         }
       },
     );

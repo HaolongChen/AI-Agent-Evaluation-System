@@ -63,7 +63,6 @@ export const infrastructureServiceBundle: InfrastructureServiceBundle = {
 
 export const createApplicationServiceBundle = (
   repository: RepositoryInjectionType,
-  dangerousAccount: Account,
 ): ApplicationServiceBundle => {
   return {
     accountApplicationService: new AccountApplicationService(
@@ -82,7 +81,6 @@ export const createApplicationServiceBundle = (
     ),
     copilotSessionEventRegistrationService: new CopilotSessionEventRegistrationService(
       copilotSessionEventConsumerFactory(repository),
-      dangerousAccount,
     ),
   };
 };

@@ -6,11 +6,10 @@ import type { CopilotSessionEventBus } from "../domain/event/event-map.ts";
 export class CopilotSessionEventRegistrationService {
 	constructor(
 		private readonly eventConsumerFactory: IEventConsumerFactory,
-		private readonly dangerousAccount: Account,
 	) {}
-	registerEventBus(eventBus: CopilotSessionEventBus) {
+	registerEventBus(eventBus: CopilotSessionEventBus, dangerousAccount: Account): void {
 		const networkClient = NetworkClient.createDefault();
-		this.dangerousAccount.acquireNetwork(networkClient);
+		dangerousAccount.acquireNetwork(networkClient);
 		const copilotExecutionTaskCreatedEventConsumer =
 			this.eventConsumerFactory.buildCopilotExecutionTaskCreatedEventConsumer(
 				eventBus,

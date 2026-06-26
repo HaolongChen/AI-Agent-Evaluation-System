@@ -30,7 +30,11 @@ export class AccountApplicationService {
     networkClient: NetworkClient,
   ): Promise<Account> {
     const gqlClient = this.networkService.gqlClient(networkClient);
-    const account = await this.loginService.loginWithUsername(username, password, gqlClient);
+    const account = await this.loginService.loginWithUsername(
+      username,
+      password,
+      gqlClient,
+    );
     account.acquireNetwork(networkClient);
     return account;
   }

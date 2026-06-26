@@ -1,5 +1,3 @@
-import { repository } from "../../DI/repository.ts";
-import { ExecuteCopilotUseCase } from "../../modules/copilot-session/application/execution-service.ts";
 import { GenerateRubricUseCase } from "../../modules/rubrics/application/generate-rubric.ts";
 import type { RubricAggregate } from "../../modules/rubrics/domain/aggregate/rubric.aggregate.ts";
 
@@ -11,11 +9,6 @@ import type {
   QueryGetRubricByIdArgs as QueryGetRubricByIdArguments,
   Rubric,
 } from "../generated/resolvers-types.ts";
-import { CreateProjectUseCase } from "../../modules/copilot-session/application/create-project.ts";
-import { GetCopilotInputByFiltersUseCase } from "../../modules/dataset/application/copilot-input.ts";
-import { GetCopilotServerUseCase } from "../../modules/dataset/application/copilot-server.ts";
-import { createZionInjectionBundle } from "../../DI/zion.ts";
-import { CopilotExecutionLifecycle } from "../../modules/copilot-session/application/copilot-execution-lifecycle.ts";
 import { DeleteZionProjectUseCase } from "../../modules/copilot-session/application/delete-zion-project.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-session/domain/entity/copilot-output.entity.ts";
 import type { GraphQLContext } from "../../config/graphql.ts";
@@ -53,8 +46,11 @@ export const rubricResolver = {
     getRubricById: async (
       _: unknown,
       arguments_: QueryGetRubricByIdArguments,
+      context: GraphQLContext,
     ): Promise<Rubric> => {
-      const rubric = await repository.rubricRepository.findById(arguments_.id);
+      const rubric = await context.repositoryBundle.rubricRepository.findById(
+        arguments_.id,
+      );
       return toGraphqlRubric(rubric.getAllData());
     },
     //   getRubricByContext: async (
@@ -91,34 +87,20 @@ export const rubricResolver = {
       arguments_: MutationExecuteCopilotByGoldenSetAndCopilotServerArguments,
       context: GraphQLContext,
     ): Promise<CopilotOutput[]> => {
-      const zionInjection = await createZionInjectionBundle();
-      const copilotInputUseCase = new GetCopilotInputByFiltersUseCase({
-        copilotInputRepository: repository.copilotInputRepository,
-      });
-      const copilotInputs = await copilotInputUseCase.execute({
-        goldenSetId: arguments_.goldenSetId,
-      });
-      const copilotServerUseCase = new GetCopilotServerUseCase(
-        repository.copilotServerRepository,
-        zionInjection.account,
-      );
-      const copilotServer = await copilotServerUseCase.execute();
-      const copilotExecutionLifecycleUseCase = new CopilotExecutionLifecycle(
-        new CreateProjectUseCase({
-          projectRepository: repository.projectRepository,
-          ZionProjectService: zionInjection.zionProjectService,
-        }),
-        new ExecuteCopilotUseCase({
-          copilotSessionSetupFactory: zionInjection.copilotSessionSetupFactory,
-          projectRepository: repository.projectRepository,
-        }),
-        new DeleteZionProjectUseCase(zionInjection.zionProjectService),
-      );
+      const copilotInputs =
+        await context.applicationServiceBundle.getCopilotInputByFiltersUseCase.execute(
+          {
+            goldenSetId: arguments_.goldenSetId,
+          },
+        );
+      const copilotServer =
+        await context.applicationServiceBundle.getCopilotServerUseCase.execute();
       const projects = await Promise.all(
         copilotInputs.map(async (copilotInput) =>
-          copilotExecutionLifecycleUseCase.execute(
+          context.applicationServiceBundle.copilotExecutionUseCase.execute(
             copilotInput,
-            copilotServer.getData("id"),
+            copilotServer,
+            context.account,
           ),
         ),
       );
@@ -138,21 +120,12 @@ export const rubricResolver = {
         );
       const copilotServer =
         await context.applicationServiceBundle.getCopilotServerUseCase.execute();
-      const copilotExecutionLifecycleUseCase = new CopilotExecutionLifecycle(
-        new CreateProjectUseCase({
-          projectRepository: repository.projectRepository,
-          ZionProjectService: zionInjection.zionProjectService,
-        }),
-        new ExecuteCopilotUseCase({
-          copilotSessionSetupFactory: zionInjection.copilotSessionSetupFactory,
-          projectRepository: repository.projectRepository,
-        }),
-        new DeleteZionProjectUseCase(zionInjection.zionProjectService),
-      );
-      const project = await copilotExecutionLifecycleUseCase.execute(
-        copilotInput,
-        copilotServer.getData("id"),
-      );
+      const project =
+        await context.applicationServiceBundle.copilotExecutionUseCase.execute(
+          copilotInput,
+          copilotServer,
+          context.account,
+        );
       return toGraphqlCopilotOutput(project.getEntity("copilotOutput")!);
     },
     generateRubric: async (

@@ -50,7 +50,7 @@ export class ZionProjectService implements IZionProjectService {
     return this.crdtSchemaService.importSchema(
       schemaId,
       projectExId,
-      dangerousNetworkClient,
+      this.networkService.gqlClient(dangerousNetworkClient),
     );
   }
   async getSchemaGraph(
@@ -59,9 +59,12 @@ export class ZionProjectService implements IZionProjectService {
   ): Promise<unknown> {
     const schemaId = await this.crdtSchemaService.getSchemaIdByProjectExId(
       projectExId,
-      networkClient,
+      this.networkService.gqlClient(networkClient),
     );
-    return this.crdtSchemaService.getSchemaGraph(schemaId, networkClient);
+    return this.crdtSchemaService.getSchemaGraph(
+      schemaId,
+      this.networkService.gqlClient(networkClient),
+    );
   }
 
   private async getLatestSession(

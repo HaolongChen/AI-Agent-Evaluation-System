@@ -1,13 +1,9 @@
-import type { Account } from "../../account/domain/aggregate/account.aggregate.ts";
-import type { NetworkAccount } from "../../account/domain/service/account.service.ts";
+import type { Account } from "../../account/domain/entity/account.entity.ts";
 import { UserInputEntity } from "../domain/entity/user-input.entity.ts";
 import type { IUserInputRepository } from "../domain/interface/user-input.interface.ts";
 
 export class CreateUserInputUseCase {
-  constructor(
-    private readonly repository: IUserInputRepository,
-    private readonly networkAccountService: NetworkAccount,
-  ) {}
+  constructor(private readonly repository: IUserInputRepository) {}
 
   async execute(content: string, account: Account) {
     const userInputEntity = new UserInputEntity({

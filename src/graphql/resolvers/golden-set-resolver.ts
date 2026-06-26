@@ -1,5 +1,4 @@
 import { Client } from "pg";
-import { repository } from "../../DI/repository.ts";
 import { CreateGoldenSetUseCase } from "../../modules/dataset/application/create-golden-set.ts";
 import { CreateUserInputUseCase } from "../../modules/dataset/application/create-user-input.ts";
 import {
@@ -32,10 +31,10 @@ import { logger } from "../../modules/shared/infrastructure/logger.ts";
 import type { GoldenSetEntity } from "../../modules/dataset/domain/entity/golden-set.entity.ts";
 import type { UserInputEntity } from "../../modules/dataset/domain/entity/user-input.entity.ts";
 import type { CopilotInputAggregate } from "../../modules/dataset/domain/aggregate/copilot-input.aggregate.ts";
-import { createZionInjectionBundle } from "../../DI/zion.ts";
 import { GetCopilotSessionUseCase } from "../../modules/copilot-session/application/get-copilot-session.ts";
 import { toGraphqlCopilotOutput } from "./rubric-resolver.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-session/domain/entity/copilot-output.entity.ts";
+import type { GraphQLContext } from "../../config/graphql.ts";
 
 // const copilotTypeMapper = {
 //   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -107,21 +106,20 @@ export const goldenSetResolver = {
     getCopilotInput: async (
       _: unknown,
       arguments_: QueryGetCopilotInputArguments,
+      context: GraphQLContext,
     ): Promise<CopilotInputWithCopilotSessions[]> => {
-      const getCopilotInputByFiltersUseCase =
-        new GetCopilotInputByFiltersUseCase({
-          copilotInputRepository: repository.copilotInputRepository,
-        });
       const copilotInputs =
-        await getCopilotInputByFiltersUseCase.execute(arguments_);
-      const copilotSessionUseCase = new GetCopilotSessionUseCase({
-        projectRepository: repository.projectRepository,
-      });
+        await context.applicationServiceBundle.getCopilotInputByFiltersUseCase.execute(
+          arguments_,
+        );
       const copilotSessions = await Promise.all(
         copilotInputs.map(async (input) => {
           return {
             input: input,
-            output: await copilotSessionUseCase.execute(input),
+            output:
+              await context.applicationServiceBundle.getCopilotSessionUseCase.execute(
+                input,
+              ),
           };
         }),
       );
@@ -136,15 +134,18 @@ export const goldenSetResolver = {
     getUserInputById: async (
       _: unknown,
       arguments_: QueryGetUserInputByIdArguments,
+      context: GraphQLContext,
     ): Promise<UserInput> => {
-      const userInput = await repository.userInputRepository.findById(
-        arguments_.id,
-      );
+      const userInput =
+        await context.repositoryBundle.userInputRepository.findById(
+          arguments_.id,
+        );
       return userInputDataMapper(userInput.getData());
     },
 
-    getUserInputs: async (): Promise<UserInput[]> => {
-      const userInputs = await repository.userInputRepository.getAll();
+    getUserInputs: async (context: GraphQLContext): Promise<UserInput[]> => {
+      const userInputs =
+        await context.repositoryBundle.userInputRepository.getAll();
       return userInputs.map((userInput) => {
         return userInputDataMapper(userInput.getData());
       });
@@ -153,19 +154,23 @@ export const goldenSetResolver = {
     getGoldenSetById: async (
       _: unknown,
       arguments_: QueryGetGoldenSetByIdArguments,
+      context: GraphQLContext,
     ): Promise<GoldenSet> => {
-      const goldenSet = await repository.goldenSetRepository.findById(
-        arguments_.id,
-      );
+      const goldenSet =
+        await context.repositoryBundle.goldenSetRepository.findById(
+          arguments_.id,
+        );
       return goldenSetDataMapper(goldenSet.getData());
     },
     getGoldenSetBySchemaId: async (
       _: unknown,
       arguments_: QueryGetGoldenSetBySchemaIdArguments,
+      context: GraphQLContext,
     ): Promise<GoldenSet[]> => {
-      const goldenSet = await repository.goldenSetRepository.findBySchemaId(
-        arguments_.schemaId,
-      );
+      const goldenSet =
+        await context.repositoryBundle.goldenSetRepository.findBySchemaId(
+          arguments_.schemaId,
+        );
       return [goldenSetDataMapper(goldenSet.getData())];
     },
   },
@@ -174,9 +179,10 @@ export const goldenSetResolver = {
     createGoldenSetWithSchemaId: async (
       _: unknown,
       arguments_: MutationCreateGoldenSetWithSchemaIdArguments,
+      context: GraphQLContext,
     ): Promise<GoldenSet> => {
       const createGoldenSetUseCase = new CreateGoldenSetUseCase(
-        repository.goldenSetRepository,
+        context.repositoryBundle.goldenSetRepository,
       );
       const goldenSet = await createGoldenSetUseCase.execute(
         arguments_.input.schemaId,
@@ -187,13 +193,14 @@ export const goldenSetResolver = {
     createGoldenSetWithProjectExId: async (
       _: unknown,
       arguments_: MutationCreateGoldenSetWithProjectExIdArguments,
+      context: GraphQLContext,
     ): Promise<GoldenSet> => {
       const zionInjection = await createZionInjectionBundle();
       const crdtSchemaLifecycle =
         zionInjection.crdtSchemaLifecycleFactory.create(arguments_.projectExId);
       const schemaId = await crdtSchemaLifecycle.getSchemaId();
       const createGoldenSetUseCase = new CreateGoldenSetUseCase(
-        repository.goldenSetRepository,
+        context.repositoryBundle.goldenSetRepository,
       );
       const goldenSet = await createGoldenSetUseCase.execute(schemaId);
       return goldenSetDataMapper(goldenSet);
@@ -202,30 +209,25 @@ export const goldenSetResolver = {
     createUserInput: async (
       _: unknown,
       arguments_: MutationCreateUserInputArguments,
+      context: GraphQLContext,
     ): Promise<UserInput> => {
-      const zionInjection = await createZionInjectionBundle();
-      const createUserInputUseCase = new CreateUserInputUseCase(
-        repository.userInputRepository,
-        zionInjection.account,
-      );
-      const userInput = await createUserInputUseCase.execute(
-        arguments_.input.content,
-      );
+      const userInput =
+        await context.applicationServiceBundle.createUserInputUseCase.execute(
+          arguments_.input.content,
+          context.account,
+        );
       return userInputDataMapper(userInput);
     },
     linkGoldenSetToUserInput: async (
       _: unknown,
       arguments_: MutationLinkGoldenSetToUserInputArguments,
+      context: GraphQLContext,
     ): Promise<CopilotInput[]> => {
-      const formCopilotInputUseCase = new BuildCopilotInputUseCase({
-        copilotInputRepository: repository.copilotInputRepository,
-        goldenSetRepository: repository.goldenSetRepository,
-        userInputRepository: repository.userInputRepository,
-      });
-      const copilotInputs = await formCopilotInputUseCase.execute(
-        arguments_.context.goldenSetId,
-        arguments_.context.userInputId,
-      );
+      const copilotInputs =
+        await context.applicationServiceBundle.buildCopilotInputUseCase.execute(
+          arguments_.context.goldenSetId,
+          arguments_.context.userInputId,
+        );
       return copilotInputs.map((copilotInput) =>
         copilotInputDataMapper(copilotInput.getAllData()),
       );
@@ -234,9 +236,9 @@ export const goldenSetResolver = {
     runCrdtTest: async (
       _: unknown,
       arguments_: { number: number },
+      context: GraphQLContext,
     ): Promise<string> => {
       try {
-        const zionInjection = await createZionInjectionBundle();
         const zionDatabase = new Client({
           connectionString: process.env.DATABASE_URL_PRODUCTION,
         });
@@ -245,7 +247,7 @@ export const goldenSetResolver = {
           name: "fetch-project-ids",
           text: `SELECT id FROM project ORDER BY id DESC LIMIT ${arguments_.number}`,
         };
-        const gqlClient = zionInjection.account.gqlClient;
+        const gqlClient = context.account.gqlClient;
         const result = await zionDatabase.query(fetchProjectId);
         const results = await Promise.allSettled(
           result.rows.map(async ({ id }) => {

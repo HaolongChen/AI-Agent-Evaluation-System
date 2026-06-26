@@ -4,24 +4,25 @@ import type { IEventConsumerFactory } from "../domain/event/event-consumer-facto
 import type { CopilotSessionEventBus } from "../domain/event/event-map.ts";
 
 export class CopilotSessionEventRegistrationService {
-	constructor(
-		private readonly eventConsumerFactory: IEventConsumerFactory,
-	) {}
-	registerEventBus(eventBus: CopilotSessionEventBus, dangerousAccount: Account): void {
-		const networkClient = NetworkClient.createDefault();
-		dangerousAccount.acquireNetwork(networkClient);
-		const copilotExecutionTaskCreatedEventConsumer =
-			this.eventConsumerFactory.buildCopilotExecutionTaskCreatedEventConsumer(
-				eventBus,
-			);
-		eventBus.subscribe(copilotExecutionTaskCreatedEventConsumer);
-		const projectCreationTaskCreatedEventConsumer =
-			this.eventConsumerFactory.buildProjectCreationTaskCreatedEventConsumer(
-				networkClient,
-			);
-		eventBus.subscribe(projectCreationTaskCreatedEventConsumer);
-		const copilotSessionCreatedEventConsumer =
-			this.eventConsumerFactory.buildCopilotSessionCreatedEventConsumer();
-		eventBus.subscribe(copilotSessionCreatedEventConsumer);
-	}
+  constructor(private readonly eventConsumerFactory: IEventConsumerFactory) {}
+  registerEventBus(
+    eventBus: CopilotSessionEventBus,
+    dangerousAccount: Account,
+  ): void {
+    const networkClient = NetworkClient.createDefault();
+    dangerousAccount.acquireNetwork(networkClient);
+    const copilotExecutionTaskCreatedEventConsumer =
+      this.eventConsumerFactory.buildCopilotExecutionTaskCreatedEventConsumer(
+        eventBus,
+      );
+    eventBus.subscribe(copilotExecutionTaskCreatedEventConsumer);
+    const projectCreationTaskCreatedEventConsumer =
+      this.eventConsumerFactory.buildProjectCreationTaskCreatedEventConsumer(
+        networkClient,
+      );
+    eventBus.subscribe(projectCreationTaskCreatedEventConsumer);
+    const copilotSessionCreatedEventConsumer =
+      this.eventConsumerFactory.buildCopilotSessionCreatedEventConsumer();
+    eventBus.subscribe(copilotSessionCreatedEventConsumer);
+  }
 }

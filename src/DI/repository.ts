@@ -14,8 +14,14 @@ import type { ICopilotServerRepository } from "../modules/dataset/domain/interfa
 import { CopilotServerRepository } from "../modules/dataset/infrastructure/repository/copilot-server.repository.ts";
 import type { ICopilotRepository } from "../modules/copilot-session/domain/interface/copilot-repository.interface.ts";
 import type { IDomainEventBus } from "../modules/shared/domain/event/domain-event.bus.ts";
-import { ProjectRepository, ProjectRepositoryService } from "../modules/copilot-session/infrastructure/repository/project.repository.ts";
-import { CopilotRepository, CopilotRepositoryService } from "../modules/copilot-session/infrastructure/repository/copilot.repository.ts";
+import {
+  ProjectRepository,
+  ProjectRepositoryService,
+} from "../modules/copilot-session/infrastructure/repository/project.repository.ts";
+import {
+  CopilotRepository,
+  CopilotRepositoryService,
+} from "../modules/copilot-session/infrastructure/repository/copilot.repository.ts";
 export const baseRepositoryBundle = {
   goldenSetRepository: new GoldenSetRepository(),
   userInputRepository: new UserInputRepository(),

@@ -1,4 +1,5 @@
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
+import type { IEventConsumerFactory } from "../../domain/event/event-consumer-factory.interface.ts";
 import type {
   CopilotSessionEventBus,
   CopilotSessionEventConsumer,
@@ -15,7 +16,7 @@ import {
 } from "./copilot-execution-handler.ts";
 import { ProjectCreationTaskCreatedEventConsumer } from "./project-handler.ts";
 
-export class EventConsumerFactory {
+export class EventConsumerFactory implements IEventConsumerFactory {
   constructor(
     private readonly projectService: IZionProjectService,
     private readonly copilotNetworkService: ICopilotNetworkService,

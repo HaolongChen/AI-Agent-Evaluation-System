@@ -1,27 +1,28 @@
-import type {
-  CopilotSessionEventBus,
-  CopilotSessionEventConsumer,
-} from "../domain/event/event-map.ts";
-import { CopilotExecutionTaskCreatedEventConsumer } from "../infrastructure/event-handler/copilot-execution-handler.ts";
+import type { Account } from "../../account/domain/entity/account.entity.ts";
+import { NetworkClient } from "../../account/domain/entity/network-client.entity.ts";
+import type { IEventConsumerFactory } from "../domain/event/event-consumer-factory.interface.ts";
+import type { CopilotSessionEventBus } from "../domain/event/event-map.ts";
 
 export class CopilotSessionEventRegistrationService {
-  constructor(
-    private readonly copilotExecutionTaskCreatedEventConsumer: CopilotSessionEventConsumer<"copilot.executionTask.created">,
-    private readonly copilotSessionCreatedEventConsumer: CopilotSessionEventConsumer<"copilot.session.started">,
-    private readonly projectDeletedEventConsumer: CopilotSessionEventConsumer<"zionProject.deleted">,
-  ) {}
-  registerEventBus(eventBus: CopilotSessionEventBus) {
-    const newCopilotExecutionTaskCreatedEventConsumer =
-      CopilotExecutionTaskCreatedEventConsumer.enableSubscription(
-        this
-          .copilotExecutionTaskCreatedEventConsumer as CopilotExecutionTaskCreatedEventConsumer,
-        (eventConsumer: CopilotSessionEventConsumer<"zionProject.created">) => {
-          eventBus.subscribe(eventConsumer);
-        },
-      );
-    eventBus.subscribe(newCopilotExecutionTaskCreatedEventConsumer);
-    eventBus.subscribe(this.copilotSessionCreatedEventConsumer);
-    eventBus.subscribe(this.projectDeletedEventConsumer);
-    return eventBus;
-  }
+	constructor(
+		private readonly eventConsumerFactory: IEventConsumerFactory,
+		private readonly dangerousAccount: Account,
+	) {}
+	registerEventBus(eventBus: CopilotSessionEventBus) {
+		const networkClient = NetworkClient.createDefault();
+		this.dangerousAccount.acquireNetwork(networkClient);
+		const copilotExecutionTaskCreatedEventConsumer =
+			this.eventConsumerFactory.buildCopilotExecutionTaskCreatedEventConsumer(
+				eventBus,
+			);
+		eventBus.subscribe(copilotExecutionTaskCreatedEventConsumer);
+		const projectCreationTaskCreatedEventConsumer =
+			this.eventConsumerFactory.buildProjectCreationTaskCreatedEventConsumer(
+				networkClient,
+			);
+		eventBus.subscribe(projectCreationTaskCreatedEventConsumer);
+		const copilotSessionCreatedEventConsumer =
+			this.eventConsumerFactory.buildCopilotSessionCreatedEventConsumer();
+		eventBus.subscribe(copilotSessionCreatedEventConsumer);
+	}
 }

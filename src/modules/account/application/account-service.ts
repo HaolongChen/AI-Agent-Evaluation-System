@@ -15,11 +15,13 @@ export class AccountApplicationService {
     networkClient: NetworkClient,
   ): Promise<Account> {
     const gqlClient = this.networkService.gqlClient(networkClient);
-    return this.loginService.loginWithPhoneNumber(
+    const account = await this.loginService.loginWithPhoneNumber(
       phoneNumber,
       password,
       gqlClient,
     );
+    account.acquireNetwork(networkClient);
+    return account;
   }
 
   async loginWithUsername(
@@ -28,6 +30,8 @@ export class AccountApplicationService {
     networkClient: NetworkClient,
   ): Promise<Account> {
     const gqlClient = this.networkService.gqlClient(networkClient);
-    return this.loginService.loginWithUsername(username, password, gqlClient);
+    const account = await this.loginService.loginWithUsername(username, password, gqlClient);
+    account.acquireNetwork(networkClient);
+    return account;
   }
 }

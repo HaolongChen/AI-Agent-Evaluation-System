@@ -9,7 +9,6 @@ import type {
   QueryGetRubricByIdArgs as QueryGetRubricByIdArguments,
   Rubric,
 } from "../generated/resolvers-types.ts";
-import { DeleteZionProjectUseCase } from "../../modules/copilot-session/application/delete-zion-project.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-session/domain/entity/copilot-output.entity.ts";
 import type { GraphQLContext } from "../../config/graphql.ts";
 

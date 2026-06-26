@@ -14,38 +14,35 @@ import type { ICrdtSchemaService } from "../modules/copilot-session/infrastructu
 import { CrdtSchemaService } from "../modules/copilot-session/infrastructure/project/crdt-schema-service.ts";
 import { ZionProjectService } from "../modules/copilot-session/infrastructure/project/project.service.ts";
 import {
-  BuildCopilotInputUseCase,
-  GetCopilotInputByFiltersUseCase,
+	BuildCopilotInputUseCase,
+	GetCopilotInputByFiltersUseCase,
 } from "../modules/dataset/application/copilot-input.ts";
 import { GetCopilotServerUseCase } from "../modules/dataset/application/copilot-server.ts";
 import { CreateGoldenSetUseCase } from "../modules/dataset/application/create-golden-set.ts";
 import { CreateUserInputUseCase } from "../modules/dataset/application/create-user-input.ts";
 import {
-  baseRepositoryBundle,
-  type RepositoryInjectionType,
+	baseRepositoryBundle,
+	type RepositoryInjectionType,
 } from "./repository.ts";
 
-export type DomainServiceBundle = {
-  networkService: INetworkService;
-  loginService: ILoginService;
-};
-
 export type InfrastructureServiceBundle = {
-  zionProjectService: IZionProjectService;
-  copilotNetworkService: ICopilotNetworkService;
-  crdtSchemaService: ICrdtSchemaService;
+	networkService: INetworkService;
+	loginService: ILoginService;
+	zionProjectService: IZionProjectService;
+	copilotNetworkService: ICopilotNetworkService;
+	crdtSchemaService: ICrdtSchemaService;
 };
 
 export type ApplicationServiceBundle = {
-  accountApplicationService: AccountApplicationService;
-  getCopilotServerUseCase: GetCopilotServerUseCase;
-  getCopilotInputByFiltersUseCase: GetCopilotInputByFiltersUseCase;
-  copilotExecutionUseCase: CopilotExecutionUseCase;
-  copilotSessionEventRegistrationService: CopilotSessionEventRegistrationService;
-  getCopilotSessionUseCase: GetCopilotSessionUseCase;
-  buildCopilotInputUseCase: BuildCopilotInputUseCase;
-  createGoldenSetUseCase: CreateGoldenSetUseCase;
-  createUserInputUseCase: CreateUserInputUseCase;
+	accountApplicationService: AccountApplicationService;
+	getCopilotServerUseCase: GetCopilotServerUseCase;
+	getCopilotInputByFiltersUseCase: GetCopilotInputByFiltersUseCase;
+	copilotExecutionUseCase: CopilotExecutionUseCase;
+	copilotSessionEventRegistrationService: CopilotSessionEventRegistrationService;
+	getCopilotSessionUseCase: GetCopilotSessionUseCase;
+	buildCopilotInputUseCase: BuildCopilotInputUseCase;
+	createGoldenSetUseCase: CreateGoldenSetUseCase;
+	createUserInputUseCase: CreateUserInputUseCase;
 };
 
 const networkService = new NetworkService();
@@ -53,68 +50,65 @@ const loginService = new LoginService();
 const crdtSchemaService = new CrdtSchemaService();
 const copilotNetworkService = new CopilotNetworkService(networkService);
 const zionProjectService = new ZionProjectService(
-  networkService,
-  crdtSchemaService,
+	networkService,
+	crdtSchemaService,
 );
 
 const copilotSessionEventConsumerFactory = (
-  repository: RepositoryInjectionType,
+	repository: RepositoryInjectionType,
 ) =>
-  new EventConsumerFactory(
-    zionProjectService,
-    copilotNetworkService,
-    baseRepositoryBundle.copilotRepositoryService,
-    repository.copilotRepository,
-    repository.projectRepository,
-  );
-
-const domainServiceBundle: DomainServiceBundle = {
-  networkService,
-  loginService,
-};
+	new EventConsumerFactory(
+		zionProjectService,
+		copilotNetworkService,
+		baseRepositoryBundle.copilotRepositoryService,
+		repository.copilotRepository,
+		repository.projectRepository,
+	);
 
 export const infrastructureServiceBundle: InfrastructureServiceBundle = {
-  zionProjectService,
-  copilotNetworkService,
-  crdtSchemaService,
+	networkService,
+	loginService,
+	zionProjectService,
+	copilotNetworkService,
+	crdtSchemaService,
 };
 
 export const createApplicationServiceBundle = (
-  repository: RepositoryInjectionType,
+	repository: RepositoryInjectionType,
 ): ApplicationServiceBundle => {
-  return {
-    accountApplicationService: new AccountApplicationService(
-      domainServiceBundle.networkService,
-      domainServiceBundle.loginService,
-    ),
-    getCopilotServerUseCase: new GetCopilotServerUseCase(
-      baseRepositoryBundle.copilotServerRepository,
-    ),
-    getCopilotInputByFiltersUseCase: new GetCopilotInputByFiltersUseCase({
-      copilotInputRepository: baseRepositoryBundle.copilotInputRepository,
-    }),
-    copilotExecutionUseCase: new CopilotExecutionUseCase(
-      repository.projectRepository,
-      repository.copilotRepository,
-    ),
-    copilotSessionEventRegistrationService:
-      new CopilotSessionEventRegistrationService(
-        copilotSessionEventConsumerFactory(repository),
-      ),
-    getCopilotSessionUseCase: new GetCopilotSessionUseCase({
-      projectRepository: repository.projectRepository,
-      copilotRepository: repository.copilotRepository,
-    }),
-    buildCopilotInputUseCase: new BuildCopilotInputUseCase({
-      copilotInputRepository: baseRepositoryBundle.copilotInputRepository,
-      goldenSetRepository: baseRepositoryBundle.goldenSetRepository,
-      userInputRepository: baseRepositoryBundle.userInputRepository,
-    }),
-    createGoldenSetUseCase: new CreateGoldenSetUseCase(
-      baseRepositoryBundle.goldenSetRepository,
-    ),
-    createUserInputUseCase: new CreateUserInputUseCase(
-      baseRepositoryBundle.userInputRepository,
-    ),
-  };
+	return {
+		accountApplicationService: new AccountApplicationService(
+			infrastructureServiceBundle.networkService,
+			infrastructureServiceBundle.loginService,
+		),
+		getCopilotServerUseCase: new GetCopilotServerUseCase(
+			baseRepositoryBundle.copilotServerRepository,
+		),
+		getCopilotInputByFiltersUseCase: new GetCopilotInputByFiltersUseCase({
+			copilotInputRepository: baseRepositoryBundle.copilotInputRepository,
+		}),
+		copilotExecutionUseCase: new CopilotExecutionUseCase(
+			repository.projectRepository,
+			repository.copilotRepository,
+		),
+		copilotSessionEventRegistrationService:
+			new CopilotSessionEventRegistrationService(
+				copilotSessionEventConsumerFactory(repository),
+			),
+		getCopilotSessionUseCase: new GetCopilotSessionUseCase({
+			projectRepository: repository.projectRepository,
+			copilotRepository: repository.copilotRepository,
+		}),
+		buildCopilotInputUseCase: new BuildCopilotInputUseCase({
+			copilotInputRepository: baseRepositoryBundle.copilotInputRepository,
+			goldenSetRepository: baseRepositoryBundle.goldenSetRepository,
+			userInputRepository: baseRepositoryBundle.userInputRepository,
+		}),
+		createGoldenSetUseCase: new CreateGoldenSetUseCase(
+			baseRepositoryBundle.goldenSetRepository,
+		),
+		createUserInputUseCase: new CreateUserInputUseCase(
+			baseRepositoryBundle.userInputRepository,
+		),
+	};
 };

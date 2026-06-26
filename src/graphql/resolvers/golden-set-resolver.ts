@@ -1,10 +1,4 @@
 import { Client } from "pg";
-import { CreateGoldenSetUseCase } from "../../modules/dataset/application/create-golden-set.ts";
-import { CreateUserInputUseCase } from "../../modules/dataset/application/create-user-input.ts";
-import {
-  BuildCopilotInputUseCase,
-  GetCopilotInputByFiltersUseCase,
-} from "../../modules/dataset/application/copilot-input.ts";
 import {
   type CopilotInput,
   // CopilotType,
@@ -31,10 +25,10 @@ import { logger } from "../../modules/shared/infrastructure/logger.ts";
 import type { GoldenSetEntity } from "../../modules/dataset/domain/entity/golden-set.entity.ts";
 import type { UserInputEntity } from "../../modules/dataset/domain/entity/user-input.entity.ts";
 import type { CopilotInputAggregate } from "../../modules/dataset/domain/aggregate/copilot-input.aggregate.ts";
-import { GetCopilotSessionUseCase } from "../../modules/copilot-session/application/get-copilot-session.ts";
 import { toGraphqlCopilotOutput } from "./rubric-resolver.ts";
 import type { CopilotOutputEntity } from "../../modules/copilot-session/domain/entity/copilot-output.entity.ts";
 import type { GraphQLContext } from "../../config/graphql.ts";
+import { NetworkClient } from "../../modules/account/domain/entity/network-client.entity.ts";
 
 // const copilotTypeMapper = {
 //   dataModelBuilder: CopilotType.DataModelBuilder,
@@ -181,10 +175,7 @@ export const goldenSetResolver = {
       arguments_: MutationCreateGoldenSetWithSchemaIdArguments,
       context: GraphQLContext,
     ): Promise<GoldenSet> => {
-      const createGoldenSetUseCase = new CreateGoldenSetUseCase(
-        context.repositoryBundle.goldenSetRepository,
-      );
-      const goldenSet = await createGoldenSetUseCase.execute(
+      const goldenSet = await context.applicationServiceBundle.createGoldenSetUseCase.execute(
         arguments_.input.schemaId,
       );
       return goldenSetDataMapper(goldenSet);
@@ -199,10 +190,7 @@ export const goldenSetResolver = {
       const crdtSchemaLifecycle =
         zionInjection.crdtSchemaLifecycleFactory.create(arguments_.projectExId);
       const schemaId = await crdtSchemaLifecycle.getSchemaId();
-      const createGoldenSetUseCase = new CreateGoldenSetUseCase(
-        context.repositoryBundle.goldenSetRepository,
-      );
-      const goldenSet = await createGoldenSetUseCase.execute(schemaId);
+      const goldenSet = await context.applicationServiceBundle.createGoldenSetUseCase.execute(schemaId);
       return goldenSetDataMapper(goldenSet);
     },
 
@@ -247,11 +235,12 @@ export const goldenSetResolver = {
           name: "fetch-project-ids",
           text: `SELECT id FROM project ORDER BY id DESC LIMIT ${arguments_.number}`,
         };
-        const gqlClient = context.account.gqlClient;
+        const networkClient = NetworkClient.createDefault();
+        context.account.acquireNetwork(networkClient);
         const result = await zionDatabase.query(fetchProjectId);
         const results = await Promise.allSettled(
           result.rows.map(async ({ id }) => {
-            const response = await gqlClient.gqlRequest<
+            const response = await context.infrastructureServiceBundle.networkService.gqlClient(networkClient).gqlRequest<
               FixAliPayDataBindingMutation,
               FixAliPayDataBindingMutationVariables
             >(GQL_FIX_ALIPAY_DATA_BINDING, {

@@ -7,10 +7,12 @@ import { CopilotSessionCreatedEvent } from "../event/copilot-session-created.ts"
 import {
   copilotExecutionSchema,
   type CopilotExecutionMetadata,
+  type CopilotExecutionStatus,
 } from "../schema/copilot.schema.ts";
 import type { ProjectAggregate } from "./project.aggregate.ts";
 
 // TODO: should be divided into two aggregates: CopilotExecutionAggregate and CopilotSessionAggregate
+// pending -> add project -> create session -> running -> complete
 export class CopilotExecutionAggregate extends AggregateRoot<
   typeof copilotExecutionSchema,
   CopilotExecutionMetadata
@@ -111,4 +113,106 @@ export class CopilotExecutionAggregate extends AggregateRoot<
     );
     // this.project = undefined;
   }
+}
+
+
+export class CopilotExecutionAggregateV2 extends AggregateRoot<
+	typeof copilotExecutionSchema,
+	CopilotExecutionMetadata<"pending">
+> {
+	public readonly network: NetworkClient = NetworkClient.createDefault();
+
+	constructor(
+		copilotServer: CopilotServerEntity,
+		readonly copilotInputId: string,
+	) {
+		const entity = new Entity<
+			typeof copilotExecutionSchema,
+			CopilotExecutionMetadata<"pending">
+		>(
+			{
+				copilotServerId: copilotServer.getData("id"),
+			},
+			copilotExecutionSchema,
+			{  status: "pending", state: undefined } ,
+		);
+		super(entity, {});
+		this.network.setWebSocketUrl(copilotServer.getData("wsEndpoint"));
+		this.network.setGraphQLUrl(copilotServer.getData("gqlEndpoint"));
+	}
+
+	get state() {
+		return this.getData("state");
+	}
+
+	static reconcile(
+		copilotServer: CopilotServerEntity,
+		project: ProjectAggregate,
+	) {
+		const copilotExecution = new CopilotExecutionAggregate(
+			copilotServer,
+			project.getData("copilotInputId"),
+		);
+		copilotExecution.importProject(project);
+		return copilotExecution;
+	}
+
+	static createExecutionTask(
+		copilotServer: CopilotServerEntity,
+		copilotInputId: string,
+	): CopilotExecutionAggregate {
+		const copilotExecution = new CopilotExecutionAggregate(
+			copilotServer,
+			copilotInputId,
+		);
+		copilotExecution.addEvent(
+			new CopilotExecutionTaskCreatedEvent({
+				copilotExecution,
+				copilotInputId,
+			}),
+		);
+		return copilotExecution;
+	}
+
+	protected importProject(project: ProjectAggregate) {
+		if (project.getData("copilotInputId") !== this.copilotInputId) {
+			throw new Error("Project ID mismatch.");
+		}
+		this.project = project;
+	}
+
+	verifyActivatedProject(project: ProjectAggregate): string {
+		if (
+			project.getData("copilotInputId") !== this.copilotInputId &&
+			project.state.status === "active"
+		) {
+			throw new Error(
+				"Project ID mismatch between CopilotExecutionAggregate and ProjectAggregate.",
+			);
+		}
+		const projectExId = project.acquire();
+		this.project = project;
+		return projectExId;
+	}
+
+	start(copilotSessionExId: string) {
+		const project = this.project;
+		if (!project) {
+			throw new Error(
+				"Project must be set before starting CopilotExecutionAggregate.",
+			);
+		}
+		this.setData({
+			state: { status: "running", copilotSessionExId },
+		});
+		project.account.acquireNetwork(this.network);
+		this.addEvent(
+			new CopilotSessionCreatedEvent({
+				copilotSessionExId,
+				copilotNetwork: this.network,
+				project,
+			}),
+		);
+		// this.project = undefined;
+	}
 }

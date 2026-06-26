@@ -10,6 +10,7 @@ import {
 } from "../schema/copilot.schema.ts";
 import type { ProjectAggregate } from "./project.aggregate.ts";
 
+// TODO: should be divided into two aggregates: CopilotExecutionAggregate and CopilotSessionAggregate
 export class CopilotExecutionAggregate extends AggregateRoot<
   typeof copilotExecutionSchema,
   CopilotExecutionMetadata

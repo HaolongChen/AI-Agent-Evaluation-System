@@ -133,8 +133,12 @@ class ProjectCreatedEventConsumer implements CopilotSessionEventConsumer<"zionPr
     private readonly copilotRepository: ICopilotRepository,
   ) {}
   handler = async (event: ProjectCreatedEvent) => {
-    if (this.context.data.projectId !== event.data.project.getData("id")) {
+    if (this.context.data.copilotInputId !== event.data.project.getData("copilotInputId")) {
       return;
+    }
+    if ( this.context.data.copilotExecution.state.status !== "pending" || event.data.project.state.status !== "active" )
+    {
+      throw new Error(`Invalid state for copilot execution or project. Copilot execution status: ${this.context.data.copilotExecution.state.status}, Project status: ${event.data.project.state.status}`);
     }
     await this.projectService.createSafeCopilotSession(
       event.data.project,

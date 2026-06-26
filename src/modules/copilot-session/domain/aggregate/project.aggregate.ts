@@ -88,14 +88,16 @@ export class ProjectAggregate extends AggregateRoot<
     );
   }
 
-  delete() {
+  delete(): boolean {
     if (this.state.status === "active") {
       const projectExId = this.state.projectExId;
       this.setData({ state: { status: "deleted" } });
       this.addEvent(
         new ProjectDeletedEvent({ projectExId, network: this.network }),
       );
+      return true;
     }
+    return false;
   }
 
   static complete(

@@ -16,6 +16,7 @@ import {
 import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import { ProjectDeletedEvent } from "../event/project-deleted.event.ts";
 
+// pending -> creating zion project -> importing schema if applicable -> active
 export class ProjectAggregate extends AggregateRoot<
   typeof projectSchema,
   ProjectMetadata,

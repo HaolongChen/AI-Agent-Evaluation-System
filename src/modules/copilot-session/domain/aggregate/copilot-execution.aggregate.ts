@@ -1,13 +1,13 @@
 import { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
+import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/copilot-input.aggregate.ts";
 import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
+import type { UserInputEntity } from "../../../dataset/domain/entity/user-input.entity.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
-import { Entity } from "../../../shared/domain/entity/entity.ts";
+import { Entity, type EntityMetadata } from "../../../shared/domain/entity/entity.ts";
 import { CopilotExecutionTaskCreatedEvent } from "../event/copilot-execution-task-created.event.ts";
 import { CopilotSessionCreatedEvent } from "../event/copilot-session-created.ts";
 import {
   copilotExecutionSchema,
-  type CopilotExecutionMetadata,
-  type CopilotExecutionStatus,
 } from "../schema/copilot.schema.ts";
 import type { ProjectAggregate } from "./project.aggregate.ts";
 
@@ -15,26 +15,28 @@ import type { ProjectAggregate } from "./project.aggregate.ts";
 // pending -> add project -> create session -> running -> complete
 export class CopilotExecutionAggregate extends AggregateRoot<
   typeof copilotExecutionSchema,
-  CopilotExecutionMetadata
+  EntityMetadata,
+  { userInput: UserInputEntity, copilotServer: CopilotServerEntity}
 > {
   public readonly network: NetworkClient = NetworkClient.createDefault();
   public project: ProjectAggregate | undefined;
 
-  constructor(
+  constructor (
     copilotServer: CopilotServerEntity,
-    readonly copilotInputId: string,
+    userInput: UserInputEntity,
+    projectExId: string,
+    id?: string,
   ) {
     const entity = new Entity<
       typeof copilotExecutionSchema,
-      CopilotExecutionMetadata
+      EntityMetadata
     >(
       {
-        copilotServerId: copilotServer.getData("id"),
+        projectExId,
       },
-      copilotExecutionSchema,
-      { state: { status: "pending" } },
+      copilotExecutionSchema, {id}
     );
-    super(entity, {});
+    super(entity, {copilotServer, userInput});
     this.network.setWebSocketUrl(copilotServer.getData("wsEndpoint"));
     this.network.setGraphQLUrl(copilotServer.getData("gqlEndpoint"));
   }

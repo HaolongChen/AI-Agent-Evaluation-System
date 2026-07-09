@@ -71,6 +71,7 @@ model copilotInput {
   userInput userInput @relation(fields: [userInputId], references: [id])
 
   projects  project[] @relation("project_copilotInput")
+  copilotExecutionTasks copilotExecutionTask[]
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@unique([goldenSetId, userInputId], map: "idx_schema_user_input")
@@ -83,14 +84,15 @@ model copilotServer {
   wsEndpoint     String          @map("wsEndpoint") // e.g., 'https://zionbackend.functorz.work/api/subscription'
   gqlEndpoint    String          @map("gqlEndpoint") // e.g., 'https://zionbackend.functorz.work/api/graphql'
   createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  copilotExecutionTasks copilotExecutionTask[]
   copilotOutputs copilotOutput[]
 }
 
 model project {
   id             String        @id @default(uuid())
-  status         ProjectStatus @default(creating)
+  status         ProjectStatus @default(active)
   copilotInputId String        @map("copilot_input_id") // corresponds to the copilotInputId in the copilotInput table for traceability
-  projectExId    String?       @unique @map("project_ex_id")
+  projectExId    String       @unique @map("project_ex_id")
   projectName    String        @map("project_name")
   createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   createdBy      String        @default("unknown") @map("created_by") // userId or "system" for system-generated projects
@@ -102,10 +104,21 @@ model project {
   @@index([copilotInputId], map: "idx_project_copilot_input_id")
 }
 
+model copilotExecutionTask {
+  id                 String                 @id @default(uuid())
+  copilotServerId       String                 @map("copilot_server_id")
+  copilotInputId        String                 @map("copilot_input_id")
+  copilotServer  copilotServer          @relation(fields: [copilotServerId], references: [id])
+  copilotInput   copilotInput           @relation(fields: [copilotInputId], references: [id])
+  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([copilotServerId, copilotInputId], map: "idx_copilot_execution_task_lookup")
+}
+
 model copilotOutput {
   id                 String                 @id @default(uuid())
   status             CopilotExecutionStatus @default(pending)
-  copilotSessionExId String?                @unique
+  copilotSessionExId String                @unique
   editableText       String?                @map("output_content") // copilot output
   aiResponse         String?                @map("ai_response") // AI response
   tasks              Json[]                 @map("tasks") // array of tasks extracted from the copilot output, useful for evaluation agents to understand what the copilot is trying to do
@@ -113,8 +126,8 @@ model copilotOutput {
 
   copilotServerId String        @map("copilot_server_id")
   copilotServer   copilotServer @relation(fields: [copilotServerId], references: [id])
-  projectExId     String?
-  project         project?      @relation(fields: [projectExId], references: [projectExId])
+  projectExId     String
+  project         project      @relation(fields: [projectExId], references: [projectExId])
 
   rubrics rubric[] @relation("copilotOutput_rubric")
 }

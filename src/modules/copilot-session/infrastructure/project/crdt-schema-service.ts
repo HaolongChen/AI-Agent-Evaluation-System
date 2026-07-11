@@ -205,10 +205,12 @@ type AfCustomCodeTemplates = Exclude<
 
 type SupportedCustomModelDescriptor =
   | {
-      [K in keyof Exclude<
-        SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"],
-        null
-      >]: K extends "__typename"
+      [
+        K in keyof Exclude<
+          SupportedCustomModelDescriptorQuery["supportedCustomModelDescriptor"],
+          null
+        >
+      ]: K extends "__typename"
         ? "SupportedCustomModelDescriptor"
         : (unknown | null)[] | null;
     }

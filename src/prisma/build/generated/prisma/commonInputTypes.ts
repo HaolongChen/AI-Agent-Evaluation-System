@@ -113,8 +113,7 @@ export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
 
 export type EnumProjectStatusFilter<$PrismaModel = never> = {
   equals?:
-    | $Enums.ProjectStatus
-    | Prisma.EnumProjectStatusFieldRefInput<$PrismaModel>;
+    $Enums.ProjectStatus | Prisma.EnumProjectStatusFieldRefInput<$PrismaModel>;
   in?:
     | $Enums.ProjectStatus[]
     | Prisma.ListEnumProjectStatusFieldRefInput<$PrismaModel>;
@@ -122,14 +121,12 @@ export type EnumProjectStatusFilter<$PrismaModel = never> = {
     | $Enums.ProjectStatus[]
     | Prisma.ListEnumProjectStatusFieldRefInput<$PrismaModel>;
   not?:
-    | Prisma.NestedEnumProjectStatusFilter<$PrismaModel>
-    | $Enums.ProjectStatus;
+    Prisma.NestedEnumProjectStatusFilter<$PrismaModel> | $Enums.ProjectStatus;
 };
 
 export type EnumProjectStatusWithAggregatesFilter<$PrismaModel = never> = {
   equals?:
-    | $Enums.ProjectStatus
-    | Prisma.EnumProjectStatusFieldRefInput<$PrismaModel>;
+    $Enums.ProjectStatus | Prisma.EnumProjectStatusFieldRefInput<$PrismaModel>;
   in?:
     | $Enums.ProjectStatus[]
     | Prisma.ListEnumProjectStatusFieldRefInput<$PrismaModel>;
@@ -301,8 +298,7 @@ export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
 
 export type EnumAgentNameTypeFilter<$PrismaModel = never> = {
   equals?:
-    | $Enums.AgentNameType
-    | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
+    $Enums.AgentNameType | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
   in?:
     | $Enums.AgentNameType[]
     | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
@@ -310,14 +306,12 @@ export type EnumAgentNameTypeFilter<$PrismaModel = never> = {
     | $Enums.AgentNameType[]
     | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
   not?:
-    | Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel>
-    | $Enums.AgentNameType;
+    Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel> | $Enums.AgentNameType;
 };
 
 export type EnumAgentNameTypeWithAggregatesFilter<$PrismaModel = never> = {
   equals?:
-    | $Enums.AgentNameType
-    | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
+    $Enums.AgentNameType | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
   in?:
     | $Enums.AgentNameType[]
     | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
@@ -334,8 +328,7 @@ export type EnumAgentNameTypeWithAggregatesFilter<$PrismaModel = never> = {
 
 export type EnumEvaluatorTypeFilter<$PrismaModel = never> = {
   equals?:
-    | $Enums.EvaluatorType
-    | Prisma.EnumEvaluatorTypeFieldRefInput<$PrismaModel>;
+    $Enums.EvaluatorType | Prisma.EnumEvaluatorTypeFieldRefInput<$PrismaModel>;
   in?:
     | $Enums.EvaluatorType[]
     | Prisma.ListEnumEvaluatorTypeFieldRefInput<$PrismaModel>;
@@ -343,8 +336,7 @@ export type EnumEvaluatorTypeFilter<$PrismaModel = never> = {
     | $Enums.EvaluatorType[]
     | Prisma.ListEnumEvaluatorTypeFieldRefInput<$PrismaModel>;
   not?:
-    | Prisma.NestedEnumEvaluatorTypeFilter<$PrismaModel>
-    | $Enums.EvaluatorType;
+    Prisma.NestedEnumEvaluatorTypeFilter<$PrismaModel> | $Enums.EvaluatorType;
 };
 
 export type JsonNullableFilter<$PrismaModel = never> =
@@ -370,17 +362,11 @@ export type JsonNullableFilterBase<$PrismaModel = never> = {
   string_starts_with?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   string_ends_with?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   array_starts_with?:
-    | runtime.InputJsonValue
-    | Prisma.JsonFieldRefInput<$PrismaModel>
-    | null;
+    runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   array_ends_with?:
-    | runtime.InputJsonValue
-    | Prisma.JsonFieldRefInput<$PrismaModel>
-    | null;
+    runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   array_contains?:
-    | runtime.InputJsonValue
-    | Prisma.JsonFieldRefInput<$PrismaModel>
-    | null;
+    runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   lt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>;
   lte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>;
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>;
@@ -393,8 +379,7 @@ export type JsonNullableFilterBase<$PrismaModel = never> = {
 
 export type EnumEvaluatorTypeWithAggregatesFilter<$PrismaModel = never> = {
   equals?:
-    | $Enums.EvaluatorType
-    | Prisma.EnumEvaluatorTypeFieldRefInput<$PrismaModel>;
+    $Enums.EvaluatorType | Prisma.EnumEvaluatorTypeFieldRefInput<$PrismaModel>;
   in?:
     | $Enums.EvaluatorType[]
     | Prisma.ListEnumEvaluatorTypeFieldRefInput<$PrismaModel>;
@@ -435,17 +420,11 @@ export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
   string_starts_with?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   string_ends_with?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   array_starts_with?:
-    | runtime.InputJsonValue
-    | Prisma.JsonFieldRefInput<$PrismaModel>
-    | null;
+    runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   array_ends_with?:
-    | runtime.InputJsonValue
-    | Prisma.JsonFieldRefInput<$PrismaModel>
-    | null;
+    runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   array_contains?:
-    | runtime.InputJsonValue
-    | Prisma.JsonFieldRefInput<$PrismaModel>
-    | null;
+    runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   lt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>;
   lte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>;
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>;
@@ -573,8 +552,7 @@ export type NestedIntNullableFilter<$PrismaModel = never> = {
 
 export type NestedEnumProjectStatusFilter<$PrismaModel = never> = {
   equals?:
-    | $Enums.ProjectStatus
-    | Prisma.EnumProjectStatusFieldRefInput<$PrismaModel>;
+    $Enums.ProjectStatus | Prisma.EnumProjectStatusFieldRefInput<$PrismaModel>;
   in?:
     | $Enums.ProjectStatus[]
     | Prisma.ListEnumProjectStatusFieldRefInput<$PrismaModel>;
@@ -582,8 +560,7 @@ export type NestedEnumProjectStatusFilter<$PrismaModel = never> = {
     | $Enums.ProjectStatus[]
     | Prisma.ListEnumProjectStatusFieldRefInput<$PrismaModel>;
   not?:
-    | Prisma.NestedEnumProjectStatusFilter<$PrismaModel>
-    | $Enums.ProjectStatus;
+    Prisma.NestedEnumProjectStatusFilter<$PrismaModel> | $Enums.ProjectStatus;
 };
 
 export type NestedEnumProjectStatusWithAggregatesFilter<$PrismaModel = never> =
@@ -762,8 +739,7 @@ export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
 
 export type NestedEnumAgentNameTypeFilter<$PrismaModel = never> = {
   equals?:
-    | $Enums.AgentNameType
-    | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
+    $Enums.AgentNameType | Prisma.EnumAgentNameTypeFieldRefInput<$PrismaModel>;
   in?:
     | $Enums.AgentNameType[]
     | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
@@ -771,8 +747,7 @@ export type NestedEnumAgentNameTypeFilter<$PrismaModel = never> = {
     | $Enums.AgentNameType[]
     | Prisma.ListEnumAgentNameTypeFieldRefInput<$PrismaModel>;
   not?:
-    | Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel>
-    | $Enums.AgentNameType;
+    Prisma.NestedEnumAgentNameTypeFilter<$PrismaModel> | $Enums.AgentNameType;
 };
 
 export type NestedEnumAgentNameTypeWithAggregatesFilter<$PrismaModel = never> =
@@ -796,8 +771,7 @@ export type NestedEnumAgentNameTypeWithAggregatesFilter<$PrismaModel = never> =
 
 export type NestedEnumEvaluatorTypeFilter<$PrismaModel = never> = {
   equals?:
-    | $Enums.EvaluatorType
-    | Prisma.EnumEvaluatorTypeFieldRefInput<$PrismaModel>;
+    $Enums.EvaluatorType | Prisma.EnumEvaluatorTypeFieldRefInput<$PrismaModel>;
   in?:
     | $Enums.EvaluatorType[]
     | Prisma.ListEnumEvaluatorTypeFieldRefInput<$PrismaModel>;
@@ -805,8 +779,7 @@ export type NestedEnumEvaluatorTypeFilter<$PrismaModel = never> = {
     | $Enums.EvaluatorType[]
     | Prisma.ListEnumEvaluatorTypeFieldRefInput<$PrismaModel>;
   not?:
-    | Prisma.NestedEnumEvaluatorTypeFilter<$PrismaModel>
-    | $Enums.EvaluatorType;
+    Prisma.NestedEnumEvaluatorTypeFilter<$PrismaModel> | $Enums.EvaluatorType;
 };
 
 export type NestedEnumEvaluatorTypeWithAggregatesFilter<$PrismaModel = never> =
@@ -854,17 +827,11 @@ export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
   string_starts_with?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   string_ends_with?: string | Prisma.StringFieldRefInput<$PrismaModel>;
   array_starts_with?:
-    | runtime.InputJsonValue
-    | Prisma.JsonFieldRefInput<$PrismaModel>
-    | null;
+    runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   array_ends_with?:
-    | runtime.InputJsonValue
-    | Prisma.JsonFieldRefInput<$PrismaModel>
-    | null;
+    runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   array_contains?:
-    | runtime.InputJsonValue
-    | Prisma.JsonFieldRefInput<$PrismaModel>
-    | null;
+    runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   lt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>;
   lte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>;
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>;

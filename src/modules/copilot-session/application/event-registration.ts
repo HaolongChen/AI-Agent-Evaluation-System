@@ -16,11 +16,6 @@ export class CopilotSessionEventRegistrationService {
         eventBus,
       );
     eventBus.subscribe(copilotExecutionTaskCreatedEventConsumer);
-    const projectCreationTaskCreatedEventConsumer =
-      this.eventConsumerFactory.buildProjectCreationTaskCreatedEventConsumer(
-        networkClient,
-      );
-    eventBus.subscribe(projectCreationTaskCreatedEventConsumer);
     const copilotSessionCreatedEventConsumer =
       this.eventConsumerFactory.buildCopilotSessionCreatedEventConsumer();
     eventBus.subscribe(copilotSessionCreatedEventConsumer);

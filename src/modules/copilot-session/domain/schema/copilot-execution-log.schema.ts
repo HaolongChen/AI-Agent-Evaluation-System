@@ -5,6 +5,4 @@ export type CopilotExecutionLogType = {
 };
 
 export type ResponsePolicyEnum =
-  | "HumanInputMessage"
-  | "OperationMessage"
-  | "TerminateMessage";
+  "HumanInputMessage" | "OperationMessage" | "TerminateMessage";

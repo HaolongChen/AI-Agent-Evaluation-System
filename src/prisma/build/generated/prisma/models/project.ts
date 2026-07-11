@@ -299,8 +299,7 @@ export type projectUncheckedCreateInput = {
 export type projectUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
-    | Prisma.EnumProjectStatusFieldUpdateOperationsInput
-    | $Enums.ProjectStatus;
+    Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus;
   projectExId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectName?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -312,8 +311,7 @@ export type projectUpdateInput = {
 export type projectUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
-    | Prisma.EnumProjectStatusFieldUpdateOperationsInput
-    | $Enums.ProjectStatus;
+    Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus;
   copilotInputId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectExId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectName?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -335,8 +333,7 @@ export type projectCreateManyInput = {
 export type projectUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
-    | Prisma.EnumProjectStatusFieldUpdateOperationsInput
-    | $Enums.ProjectStatus;
+    Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus;
   projectExId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectName?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -346,8 +343,7 @@ export type projectUpdateManyMutationInput = {
 export type projectUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
-    | Prisma.EnumProjectStatusFieldUpdateOperationsInput
-    | $Enums.ProjectStatus;
+    Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus;
   copilotInputId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectExId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectName?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -447,8 +443,7 @@ export type projectUpdateManyWithoutCopilotInputNestedInput = {
   createMany?: Prisma.projectCreateManyCopilotInputInputEnvelope;
   set?: Prisma.projectWhereUniqueInput | Prisma.projectWhereUniqueInput[];
   disconnect?:
-    | Prisma.projectWhereUniqueInput
-    | Prisma.projectWhereUniqueInput[];
+    Prisma.projectWhereUniqueInput | Prisma.projectWhereUniqueInput[];
   delete?: Prisma.projectWhereUniqueInput | Prisma.projectWhereUniqueInput[];
   connect?: Prisma.projectWhereUniqueInput | Prisma.projectWhereUniqueInput[];
   update?:
@@ -458,8 +453,7 @@ export type projectUpdateManyWithoutCopilotInputNestedInput = {
     | Prisma.projectUpdateManyWithWhereWithoutCopilotInputInput
     | Prisma.projectUpdateManyWithWhereWithoutCopilotInputInput[];
   deleteMany?:
-    | Prisma.projectScalarWhereInput
-    | Prisma.projectScalarWhereInput[];
+    Prisma.projectScalarWhereInput | Prisma.projectScalarWhereInput[];
 };
 
 export type projectUncheckedUpdateManyWithoutCopilotInputNestedInput = {
@@ -479,8 +473,7 @@ export type projectUncheckedUpdateManyWithoutCopilotInputNestedInput = {
   createMany?: Prisma.projectCreateManyCopilotInputInputEnvelope;
   set?: Prisma.projectWhereUniqueInput | Prisma.projectWhereUniqueInput[];
   disconnect?:
-    | Prisma.projectWhereUniqueInput
-    | Prisma.projectWhereUniqueInput[];
+    Prisma.projectWhereUniqueInput | Prisma.projectWhereUniqueInput[];
   delete?: Prisma.projectWhereUniqueInput | Prisma.projectWhereUniqueInput[];
   connect?: Prisma.projectWhereUniqueInput | Prisma.projectWhereUniqueInput[];
   update?:
@@ -490,8 +483,7 @@ export type projectUncheckedUpdateManyWithoutCopilotInputNestedInput = {
     | Prisma.projectUpdateManyWithWhereWithoutCopilotInputInput
     | Prisma.projectUpdateManyWithWhereWithoutCopilotInputInput[];
   deleteMany?:
-    | Prisma.projectScalarWhereInput
-    | Prisma.projectScalarWhereInput[];
+    Prisma.projectScalarWhereInput | Prisma.projectScalarWhereInput[];
 };
 
 export type EnumProjectStatusFieldUpdateOperationsInput = {
@@ -651,8 +643,7 @@ export type projectUpdateToOneWithWhereWithoutCopilotOutputsInput = {
 export type projectUpdateWithoutCopilotOutputsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
-    | Prisma.EnumProjectStatusFieldUpdateOperationsInput
-    | $Enums.ProjectStatus;
+    Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus;
   projectExId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectName?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -663,8 +654,7 @@ export type projectUpdateWithoutCopilotOutputsInput = {
 export type projectUncheckedUpdateWithoutCopilotOutputsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
-    | Prisma.EnumProjectStatusFieldUpdateOperationsInput
-    | $Enums.ProjectStatus;
+    Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus;
   copilotInputId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectExId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectName?: Prisma.StringFieldUpdateOperationsInput | string;
@@ -684,8 +674,7 @@ export type projectCreateManyCopilotInputInput = {
 export type projectUpdateWithoutCopilotInputInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
-    | Prisma.EnumProjectStatusFieldUpdateOperationsInput
-    | $Enums.ProjectStatus;
+    Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus;
   projectExId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectName?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -696,8 +685,7 @@ export type projectUpdateWithoutCopilotInputInput = {
 export type projectUncheckedUpdateWithoutCopilotInputInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
-    | Prisma.EnumProjectStatusFieldUpdateOperationsInput
-    | $Enums.ProjectStatus;
+    Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus;
   projectExId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectName?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -708,8 +696,7 @@ export type projectUncheckedUpdateWithoutCopilotInputInput = {
 export type projectUncheckedUpdateManyWithoutCopilotInputInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
-    | Prisma.EnumProjectStatusFieldUpdateOperationsInput
-    | $Enums.ProjectStatus;
+    Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus;
   projectExId?: Prisma.StringFieldUpdateOperationsInput | string;
   projectName?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1340,9 +1327,9 @@ export interface projectDelegate<
       Prisma.Extends<"skip", Prisma.Keys<T>>,
       Prisma.Extends<"take", Prisma.Keys<T>>
     >,
-    OrderByArg extends Prisma.True extends HasSelectOrTake
+    OrderByArg extends (Prisma.True extends HasSelectOrTake
       ? { orderBy: projectGroupByArgs["orderBy"] }
-      : { orderBy?: projectGroupByArgs["orderBy"] },
+      : { orderBy?: projectGroupByArgs["orderBy"] }),
     OrderFields extends Prisma.ExcludeUnderscoreKeys<
       Prisma.Keys<Prisma.MaybeTupleToUnion<T["orderBy"]>>
     >,
@@ -1350,8 +1337,8 @@ export interface projectDelegate<
     ByValid extends Prisma.Has<ByFields, OrderFields>,
     HavingFields extends Prisma.GetHavingFields<T["having"]>,
     HavingValid extends Prisma.Has<ByFields, HavingFields>,
-    ByEmpty extends T["by"] extends never[] ? Prisma.True : Prisma.False,
-    InputErrors extends ByEmpty extends Prisma.True
+    ByEmpty extends (T["by"] extends never[] ? Prisma.True : Prisma.False),
+    InputErrors extends (ByEmpty extends Prisma.True
       ? `Error: "by" must not be empty.`
       : HavingValid extends Prisma.False
         ? {
@@ -1392,7 +1379,7 @@ export interface projectDelegate<
                   [P in OrderFields]: P extends ByFields
                     ? never
                     : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
-                }[OrderFields],
+                }[OrderFields]),
   >(
     args: Prisma.SubsetIntersection<T, projectGroupByArgs, OrderByArg> &
       InputErrors,
@@ -1452,13 +1439,9 @@ export interface Prisma__projectClient<
    */
   then<TResult1 = T, TResult2 = never>(
     onfulfilled?:
-      | ((value: T) => TResult1 | PromiseLike<TResult1>)
-      | undefined
-      | null,
+      ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
     onrejected?:
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-      | undefined
-      | null,
+      ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
   ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
   /**
    * Attaches a callback for only the rejection of the Promise.
@@ -1467,9 +1450,7 @@ export interface Prisma__projectClient<
    */
   catch<TResult = never>(
     onrejected?:
-      | ((reason: any) => TResult | PromiseLike<TResult>)
-      | undefined
-      | null,
+      ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
   ): runtime.Types.Utils.JsPromise<T | TResult>;
   /**
    * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1985,8 +1966,7 @@ export type project$copilotOutputsArgs<
   take?: number;
   skip?: number;
   distinct?:
-    | Prisma.CopilotOutputScalarFieldEnum
-    | Prisma.CopilotOutputScalarFieldEnum[];
+    Prisma.CopilotOutputScalarFieldEnum | Prisma.CopilotOutputScalarFieldEnum[];
 };
 
 /**

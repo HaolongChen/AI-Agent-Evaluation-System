@@ -13,6 +13,7 @@ import type { ProjectTypeOfCopilotExecution } from "../domain/schema/copilot.sch
 export class ProjectApplicationService {
   constructor(
     private readonly projectService: IZionProjectService,
+    private readonly dangerousAccount: Account,
     private readonly repository: {
       projectRepository: IProjectRepository;
       copilotRepository: ICopilotRepository;
@@ -24,11 +25,22 @@ export class ProjectApplicationService {
   async createProject(projectAggregate: ProjectAggregate, account: Account) {
     const projectNetwork = NetworkClient.createDefault();
     account.acquireNetwork(projectNetwork);
+    const zionProject = projectAggregate.configureZionProject({});
     const projectExId = await this.projectService.createProjectInZion(
-      projectAggregate.configureZionProject({}),
+      zionProject,
       account.getData("organizationExId"),
       projectNetwork,
     );
+    const schemaId = zionProject.getData("schemaId");
+    if (schemaId) {
+      const dangerousNetworkClient = NetworkClient.createDefault();
+      this.dangerousAccount.acquireNetwork(dangerousNetworkClient);
+      await this.projectService.importSchemaById(
+        schemaId,
+        projectExId,
+        dangerousNetworkClient,
+      );
+    }
     projectAggregate.projectCreated(projectExId, account, projectNetwork);
     return this.repository.projectRepository.save(projectAggregate);
   }

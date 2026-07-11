@@ -248,9 +248,7 @@ export type copilotInputScalarWhereWithAggregatesInput = {
   goldenSetId?: Prisma.StringWithAggregatesFilter<"copilotInput"> | string;
   userInputId?: Prisma.StringWithAggregatesFilter<"copilotInput"> | string;
   createdAt?:
-    | Prisma.DateTimeWithAggregatesFilter<"copilotInput">
-    | Date
-    | string;
+    Prisma.DateTimeWithAggregatesFilter<"copilotInput"> | Date | string;
 };
 
 export type copilotInputCreateInput = {
@@ -362,8 +360,7 @@ export type copilotInputCreateNestedManyWithoutGoldenSetInput = {
     | Prisma.copilotInputCreateOrConnectWithoutGoldenSetInput[];
   createMany?: Prisma.copilotInputCreateManyGoldenSetInputEnvelope;
   connect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
 };
 
 export type copilotInputUncheckedCreateNestedManyWithoutGoldenSetInput = {
@@ -379,8 +376,7 @@ export type copilotInputUncheckedCreateNestedManyWithoutGoldenSetInput = {
     | Prisma.copilotInputCreateOrConnectWithoutGoldenSetInput[];
   createMany?: Prisma.copilotInputCreateManyGoldenSetInputEnvelope;
   connect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
 };
 
 export type copilotInputUpdateManyWithoutGoldenSetNestedInput = {
@@ -399,17 +395,13 @@ export type copilotInputUpdateManyWithoutGoldenSetNestedInput = {
     | Prisma.copilotInputUpsertWithWhereUniqueWithoutGoldenSetInput[];
   createMany?: Prisma.copilotInputCreateManyGoldenSetInputEnvelope;
   set?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   disconnect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   delete?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   connect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   update?:
     | Prisma.copilotInputUpdateWithWhereUniqueWithoutGoldenSetInput
     | Prisma.copilotInputUpdateWithWhereUniqueWithoutGoldenSetInput[];
@@ -417,8 +409,7 @@ export type copilotInputUpdateManyWithoutGoldenSetNestedInput = {
     | Prisma.copilotInputUpdateManyWithWhereWithoutGoldenSetInput
     | Prisma.copilotInputUpdateManyWithWhereWithoutGoldenSetInput[];
   deleteMany?:
-    | Prisma.copilotInputScalarWhereInput
-    | Prisma.copilotInputScalarWhereInput[];
+    Prisma.copilotInputScalarWhereInput | Prisma.copilotInputScalarWhereInput[];
 };
 
 export type copilotInputUncheckedUpdateManyWithoutGoldenSetNestedInput = {
@@ -437,17 +428,13 @@ export type copilotInputUncheckedUpdateManyWithoutGoldenSetNestedInput = {
     | Prisma.copilotInputUpsertWithWhereUniqueWithoutGoldenSetInput[];
   createMany?: Prisma.copilotInputCreateManyGoldenSetInputEnvelope;
   set?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   disconnect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   delete?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   connect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   update?:
     | Prisma.copilotInputUpdateWithWhereUniqueWithoutGoldenSetInput
     | Prisma.copilotInputUpdateWithWhereUniqueWithoutGoldenSetInput[];
@@ -455,8 +442,7 @@ export type copilotInputUncheckedUpdateManyWithoutGoldenSetNestedInput = {
     | Prisma.copilotInputUpdateManyWithWhereWithoutGoldenSetInput
     | Prisma.copilotInputUpdateManyWithWhereWithoutGoldenSetInput[];
   deleteMany?:
-    | Prisma.copilotInputScalarWhereInput
-    | Prisma.copilotInputScalarWhereInput[];
+    Prisma.copilotInputScalarWhereInput | Prisma.copilotInputScalarWhereInput[];
 };
 
 export type copilotInputCreateNestedManyWithoutUserInputInput = {
@@ -472,8 +458,7 @@ export type copilotInputCreateNestedManyWithoutUserInputInput = {
     | Prisma.copilotInputCreateOrConnectWithoutUserInputInput[];
   createMany?: Prisma.copilotInputCreateManyUserInputInputEnvelope;
   connect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
 };
 
 export type copilotInputUncheckedCreateNestedManyWithoutUserInputInput = {
@@ -489,8 +474,7 @@ export type copilotInputUncheckedCreateNestedManyWithoutUserInputInput = {
     | Prisma.copilotInputCreateOrConnectWithoutUserInputInput[];
   createMany?: Prisma.copilotInputCreateManyUserInputInputEnvelope;
   connect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
 };
 
 export type copilotInputUpdateManyWithoutUserInputNestedInput = {
@@ -509,17 +493,13 @@ export type copilotInputUpdateManyWithoutUserInputNestedInput = {
     | Prisma.copilotInputUpsertWithWhereUniqueWithoutUserInputInput[];
   createMany?: Prisma.copilotInputCreateManyUserInputInputEnvelope;
   set?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   disconnect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   delete?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   connect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   update?:
     | Prisma.copilotInputUpdateWithWhereUniqueWithoutUserInputInput
     | Prisma.copilotInputUpdateWithWhereUniqueWithoutUserInputInput[];
@@ -527,8 +507,7 @@ export type copilotInputUpdateManyWithoutUserInputNestedInput = {
     | Prisma.copilotInputUpdateManyWithWhereWithoutUserInputInput
     | Prisma.copilotInputUpdateManyWithWhereWithoutUserInputInput[];
   deleteMany?:
-    | Prisma.copilotInputScalarWhereInput
-    | Prisma.copilotInputScalarWhereInput[];
+    Prisma.copilotInputScalarWhereInput | Prisma.copilotInputScalarWhereInput[];
 };
 
 export type copilotInputUncheckedUpdateManyWithoutUserInputNestedInput = {
@@ -547,17 +526,13 @@ export type copilotInputUncheckedUpdateManyWithoutUserInputNestedInput = {
     | Prisma.copilotInputUpsertWithWhereUniqueWithoutUserInputInput[];
   createMany?: Prisma.copilotInputCreateManyUserInputInputEnvelope;
   set?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   disconnect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   delete?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   connect?:
-    | Prisma.copilotInputWhereUniqueInput
-    | Prisma.copilotInputWhereUniqueInput[];
+    Prisma.copilotInputWhereUniqueInput | Prisma.copilotInputWhereUniqueInput[];
   update?:
     | Prisma.copilotInputUpdateWithWhereUniqueWithoutUserInputInput
     | Prisma.copilotInputUpdateWithWhereUniqueWithoutUserInputInput[];
@@ -565,8 +540,7 @@ export type copilotInputUncheckedUpdateManyWithoutUserInputNestedInput = {
     | Prisma.copilotInputUpdateManyWithWhereWithoutUserInputInput
     | Prisma.copilotInputUpdateManyWithWhereWithoutUserInputInput[];
   deleteMany?:
-    | Prisma.copilotInputScalarWhereInput
-    | Prisma.copilotInputScalarWhereInput[];
+    Prisma.copilotInputScalarWhereInput | Prisma.copilotInputScalarWhereInput[];
 };
 
 export type copilotInputCreateNestedOneWithoutProjectsInput = {
@@ -683,12 +657,10 @@ export type copilotInputUpdateManyWithWhereWithoutGoldenSetInput = {
 
 export type copilotInputScalarWhereInput = {
   AND?:
-    | Prisma.copilotInputScalarWhereInput
-    | Prisma.copilotInputScalarWhereInput[];
+    Prisma.copilotInputScalarWhereInput | Prisma.copilotInputScalarWhereInput[];
   OR?: Prisma.copilotInputScalarWhereInput[];
   NOT?:
-    | Prisma.copilotInputScalarWhereInput
-    | Prisma.copilotInputScalarWhereInput[];
+    Prisma.copilotInputScalarWhereInput | Prisma.copilotInputScalarWhereInput[];
   id?: Prisma.StringFilter<"copilotInput"> | string;
   goldenSetId?: Prisma.StringFilter<"copilotInput"> | string;
   userInputId?: Prisma.StringFilter<"copilotInput"> | string;
@@ -946,8 +918,7 @@ export type CopilotInputCountOutputTypeSelect<
 > = {
   projects?: boolean | CopilotInputCountOutputTypeCountProjectsArgs;
   copilotExecutionTasks?:
-    | boolean
-    | CopilotInputCountOutputTypeCountCopilotExecutionTasksArgs;
+    boolean | CopilotInputCountOutputTypeCountCopilotExecutionTasksArgs;
 };
 
 /**
@@ -996,8 +967,7 @@ export type copilotInputSelect<
     userInput?: boolean | Prisma.userInputDefaultArgs<ExtArgs>;
     projects?: boolean | Prisma.copilotInput$projectsArgs<ExtArgs>;
     copilotExecutionTasks?:
-      | boolean
-      | Prisma.copilotInput$copilotExecutionTasksArgs<ExtArgs>;
+      boolean | Prisma.copilotInput$copilotExecutionTasksArgs<ExtArgs>;
     _count?: boolean | Prisma.CopilotInputCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["copilotInput"]
@@ -1055,8 +1025,7 @@ export type copilotInputInclude<
   userInput?: boolean | Prisma.userInputDefaultArgs<ExtArgs>;
   projects?: boolean | Prisma.copilotInput$projectsArgs<ExtArgs>;
   copilotExecutionTasks?:
-    | boolean
-    | Prisma.copilotInput$copilotExecutionTasksArgs<ExtArgs>;
+    boolean | Prisma.copilotInput$copilotExecutionTasksArgs<ExtArgs>;
   _count?: boolean | Prisma.CopilotInputCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type copilotInputIncludeCreateManyAndReturn<
@@ -1568,9 +1537,9 @@ export interface copilotInputDelegate<
       Prisma.Extends<"skip", Prisma.Keys<T>>,
       Prisma.Extends<"take", Prisma.Keys<T>>
     >,
-    OrderByArg extends Prisma.True extends HasSelectOrTake
+    OrderByArg extends (Prisma.True extends HasSelectOrTake
       ? { orderBy: copilotInputGroupByArgs["orderBy"] }
-      : { orderBy?: copilotInputGroupByArgs["orderBy"] },
+      : { orderBy?: copilotInputGroupByArgs["orderBy"] }),
     OrderFields extends Prisma.ExcludeUnderscoreKeys<
       Prisma.Keys<Prisma.MaybeTupleToUnion<T["orderBy"]>>
     >,
@@ -1578,8 +1547,8 @@ export interface copilotInputDelegate<
     ByValid extends Prisma.Has<ByFields, OrderFields>,
     HavingFields extends Prisma.GetHavingFields<T["having"]>,
     HavingValid extends Prisma.Has<ByFields, HavingFields>,
-    ByEmpty extends T["by"] extends never[] ? Prisma.True : Prisma.False,
-    InputErrors extends ByEmpty extends Prisma.True
+    ByEmpty extends (T["by"] extends never[] ? Prisma.True : Prisma.False),
+    InputErrors extends (ByEmpty extends Prisma.True
       ? `Error: "by" must not be empty.`
       : HavingValid extends Prisma.False
         ? {
@@ -1620,7 +1589,7 @@ export interface copilotInputDelegate<
                   [P in OrderFields]: P extends ByFields
                     ? never
                     : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
-                }[OrderFields],
+                }[OrderFields]),
   >(
     args: Prisma.SubsetIntersection<T, copilotInputGroupByArgs, OrderByArg> &
       InputErrors,
@@ -1710,13 +1679,9 @@ export interface Prisma__copilotInputClient<
    */
   then<TResult1 = T, TResult2 = never>(
     onfulfilled?:
-      | ((value: T) => TResult1 | PromiseLike<TResult1>)
-      | undefined
-      | null,
+      ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
     onrejected?:
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-      | undefined
-      | null,
+      ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
   ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
   /**
    * Attaches a callback for only the rejection of the Promise.
@@ -1725,9 +1690,7 @@ export interface Prisma__copilotInputClient<
    */
   catch<TResult = never>(
     onrejected?:
-      | ((reason: any) => TResult | PromiseLike<TResult>)
-      | undefined
-      | null,
+      ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
   ): runtime.Types.Utils.JsPromise<T | TResult>;
   /**
    * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -1856,8 +1819,7 @@ export type copilotInputFindFirstArgs<
    * Filter by unique combinations of copilotInputs.
    */
   distinct?:
-    | Prisma.CopilotInputScalarFieldEnum
-    | Prisma.CopilotInputScalarFieldEnum[];
+    Prisma.CopilotInputScalarFieldEnum | Prisma.CopilotInputScalarFieldEnum[];
 };
 
 /**
@@ -1915,8 +1877,7 @@ export type copilotInputFindFirstOrThrowArgs<
    * Filter by unique combinations of copilotInputs.
    */
   distinct?:
-    | Prisma.CopilotInputScalarFieldEnum
-    | Prisma.CopilotInputScalarFieldEnum[];
+    Prisma.CopilotInputScalarFieldEnum | Prisma.CopilotInputScalarFieldEnum[];
 };
 
 /**
@@ -1974,8 +1935,7 @@ export type copilotInputFindManyArgs<
    * Filter by unique combinations of copilotInputs.
    */
   distinct?:
-    | Prisma.CopilotInputScalarFieldEnum
-    | Prisma.CopilotInputScalarFieldEnum[];
+    Prisma.CopilotInputScalarFieldEnum | Prisma.CopilotInputScalarFieldEnum[];
 };
 
 /**
@@ -2017,8 +1977,7 @@ export type copilotInputCreateManyArgs<
    * The data used to create many copilotInputs.
    */
   data:
-    | Prisma.copilotInputCreateManyInput
-    | Prisma.copilotInputCreateManyInput[];
+    Prisma.copilotInputCreateManyInput | Prisma.copilotInputCreateManyInput[];
   skipDuplicates?: boolean;
 };
 
@@ -2041,8 +2000,7 @@ export type copilotInputCreateManyAndReturnArgs<
    * The data used to create many copilotInputs.
    */
   data:
-    | Prisma.copilotInputCreateManyInput
-    | Prisma.copilotInputCreateManyInput[];
+    Prisma.copilotInputCreateManyInput | Prisma.copilotInputCreateManyInput[];
   skipDuplicates?: boolean;
   /**
    * Choose, which related nodes to fetch as well

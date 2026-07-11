@@ -167,8 +167,7 @@ export type copilotOutputGroupByArgs<
     | Prisma.copilotOutputOrderByWithAggregationInput
     | Prisma.copilotOutputOrderByWithAggregationInput[];
   by:
-    | Prisma.CopilotOutputScalarFieldEnum[]
-    | Prisma.CopilotOutputScalarFieldEnum;
+    Prisma.CopilotOutputScalarFieldEnum[] | Prisma.CopilotOutputScalarFieldEnum;
   having?: Prisma.copilotOutputScalarWhereWithAggregatesInput;
   take?: number;
   skip?: number;
@@ -196,8 +195,9 @@ export type GetCopilotOutputGroupByPayload<T extends copilotOutputGroupByArgs> =
   Prisma.PrismaPromise<
     Array<
       Prisma.PickEnumerable<CopilotOutputGroupByOutputType, T["by"]> & {
-        [P in keyof T &
-          keyof CopilotOutputGroupByOutputType]: P extends "_count"
+        [
+          P in keyof T & keyof CopilotOutputGroupByOutputType
+        ]: P extends "_count"
           ? T[P] extends boolean
             ? number
             : Prisma.GetScalarType<T[P], CopilotOutputGroupByOutputType[P]>
@@ -304,21 +304,14 @@ export type copilotOutputScalarWhereWithAggregatesInput = {
     | Prisma.EnumCopilotExecutionStatusWithAggregatesFilter<"copilotOutput">
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?:
-    | Prisma.StringWithAggregatesFilter<"copilotOutput">
-    | string;
+    Prisma.StringWithAggregatesFilter<"copilotOutput"> | string;
   editableText?:
-    | Prisma.StringNullableWithAggregatesFilter<"copilotOutput">
-    | string
-    | null;
+    Prisma.StringNullableWithAggregatesFilter<"copilotOutput"> | string | null;
   aiResponse?:
-    | Prisma.StringNullableWithAggregatesFilter<"copilotOutput">
-    | string
-    | null;
+    Prisma.StringNullableWithAggregatesFilter<"copilotOutput"> | string | null;
   tasks?: Prisma.JsonNullableListFilter<"copilotOutput">;
   createdAt?:
-    | Prisma.DateTimeWithAggregatesFilter<"copilotOutput">
-    | Date
-    | string;
+    Prisma.DateTimeWithAggregatesFilter<"copilotOutput"> | Date | string;
   copilotServerId?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string;
   projectExId?: Prisma.StringWithAggregatesFilter<"copilotOutput"> | string;
 };
@@ -356,9 +349,7 @@ export type copilotOutputUpdateInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -374,9 +365,7 @@ export type copilotOutputUncheckedUpdateInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -404,9 +393,7 @@ export type copilotOutputUpdateManyMutationInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -419,9 +406,7 @@ export type copilotOutputUncheckedUpdateManyInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -461,11 +446,9 @@ export type JsonNullableListFilterBase<$PrismaModel = never> = {
     | null;
   has?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | null;
   hasEvery?:
-    | runtime.InputJsonValue[]
-    | Prisma.ListJsonFieldRefInput<$PrismaModel>;
+    runtime.InputJsonValue[] | Prisma.ListJsonFieldRefInput<$PrismaModel>;
   hasSome?:
-    | runtime.InputJsonValue[]
-    | Prisma.ListJsonFieldRefInput<$PrismaModel>;
+    runtime.InputJsonValue[] | Prisma.ListJsonFieldRefInput<$PrismaModel>;
   isEmpty?: boolean;
 };
 
@@ -981,9 +964,7 @@ export type copilotOutputUpdateWithoutRubricsInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -998,9 +979,7 @@ export type copilotOutputUncheckedUpdateWithoutRubricsInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1026,9 +1005,7 @@ export type copilotOutputUpdateWithoutCopilotServerInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1043,9 +1020,7 @@ export type copilotOutputUncheckedUpdateWithoutCopilotServerInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1060,9 +1035,7 @@ export type copilotOutputUncheckedUpdateManyWithoutCopilotServerInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1087,9 +1060,7 @@ export type copilotOutputUpdateWithoutProjectInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1104,9 +1075,7 @@ export type copilotOutputUncheckedUpdateWithoutProjectInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1121,9 +1090,7 @@ export type copilotOutputUncheckedUpdateManyWithoutProjectInput = {
     | $Enums.CopilotExecutionStatus;
   copilotSessionExId?: Prisma.StringFieldUpdateOperationsInput | string;
   editableText?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
+    Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   aiResponse?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   tasks?: Prisma.copilotOutputUpdatetasksInput | runtime.InputJsonValue[];
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1782,9 +1749,9 @@ export interface copilotOutputDelegate<
       Prisma.Extends<"skip", Prisma.Keys<T>>,
       Prisma.Extends<"take", Prisma.Keys<T>>
     >,
-    OrderByArg extends Prisma.True extends HasSelectOrTake
+    OrderByArg extends (Prisma.True extends HasSelectOrTake
       ? { orderBy: copilotOutputGroupByArgs["orderBy"] }
-      : { orderBy?: copilotOutputGroupByArgs["orderBy"] },
+      : { orderBy?: copilotOutputGroupByArgs["orderBy"] }),
     OrderFields extends Prisma.ExcludeUnderscoreKeys<
       Prisma.Keys<Prisma.MaybeTupleToUnion<T["orderBy"]>>
     >,
@@ -1792,8 +1759,8 @@ export interface copilotOutputDelegate<
     ByValid extends Prisma.Has<ByFields, OrderFields>,
     HavingFields extends Prisma.GetHavingFields<T["having"]>,
     HavingValid extends Prisma.Has<ByFields, HavingFields>,
-    ByEmpty extends T["by"] extends never[] ? Prisma.True : Prisma.False,
-    InputErrors extends ByEmpty extends Prisma.True
+    ByEmpty extends (T["by"] extends never[] ? Prisma.True : Prisma.False),
+    InputErrors extends (ByEmpty extends Prisma.True
       ? `Error: "by" must not be empty.`
       : HavingValid extends Prisma.False
         ? {
@@ -1834,7 +1801,7 @@ export interface copilotOutputDelegate<
                   [P in OrderFields]: P extends ByFields
                     ? never
                     : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
-                }[OrderFields],
+                }[OrderFields]),
   >(
     args: Prisma.SubsetIntersection<T, copilotOutputGroupByArgs, OrderByArg> &
       InputErrors,
@@ -1908,13 +1875,9 @@ export interface Prisma__copilotOutputClient<
    */
   then<TResult1 = T, TResult2 = never>(
     onfulfilled?:
-      | ((value: T) => TResult1 | PromiseLike<TResult1>)
-      | undefined
-      | null,
+      ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
     onrejected?:
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-      | undefined
-      | null,
+      ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
   ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
   /**
    * Attaches a callback for only the rejection of the Promise.
@@ -1923,9 +1886,7 @@ export interface Prisma__copilotOutputClient<
    */
   catch<TResult = never>(
     onrejected?:
-      | ((reason: any) => TResult | PromiseLike<TResult>)
-      | undefined
-      | null,
+      ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
   ): runtime.Types.Utils.JsPromise<T | TResult>;
   /**
    * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
@@ -2059,8 +2020,7 @@ export type copilotOutputFindFirstArgs<
    * Filter by unique combinations of copilotOutputs.
    */
   distinct?:
-    | Prisma.CopilotOutputScalarFieldEnum
-    | Prisma.CopilotOutputScalarFieldEnum[];
+    Prisma.CopilotOutputScalarFieldEnum | Prisma.CopilotOutputScalarFieldEnum[];
 };
 
 /**
@@ -2118,8 +2078,7 @@ export type copilotOutputFindFirstOrThrowArgs<
    * Filter by unique combinations of copilotOutputs.
    */
   distinct?:
-    | Prisma.CopilotOutputScalarFieldEnum
-    | Prisma.CopilotOutputScalarFieldEnum[];
+    Prisma.CopilotOutputScalarFieldEnum | Prisma.CopilotOutputScalarFieldEnum[];
 };
 
 /**
@@ -2177,8 +2136,7 @@ export type copilotOutputFindManyArgs<
    * Filter by unique combinations of copilotOutputs.
    */
   distinct?:
-    | Prisma.CopilotOutputScalarFieldEnum
-    | Prisma.CopilotOutputScalarFieldEnum[];
+    Prisma.CopilotOutputScalarFieldEnum | Prisma.CopilotOutputScalarFieldEnum[];
 };
 
 /**
@@ -2220,8 +2178,7 @@ export type copilotOutputCreateManyArgs<
    * The data used to create many copilotOutputs.
    */
   data:
-    | Prisma.copilotOutputCreateManyInput
-    | Prisma.copilotOutputCreateManyInput[];
+    Prisma.copilotOutputCreateManyInput | Prisma.copilotOutputCreateManyInput[];
   skipDuplicates?: boolean;
 };
 
@@ -2244,8 +2201,7 @@ export type copilotOutputCreateManyAndReturnArgs<
    * The data used to create many copilotOutputs.
    */
   data:
-    | Prisma.copilotOutputCreateManyInput
-    | Prisma.copilotOutputCreateManyInput[];
+    Prisma.copilotOutputCreateManyInput | Prisma.copilotOutputCreateManyInput[];
   skipDuplicates?: boolean;
   /**
    * Choose, which related nodes to fetch as well

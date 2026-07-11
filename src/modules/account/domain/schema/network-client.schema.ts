@@ -37,10 +37,10 @@ export type ZedVersionPresentation = keyof typeof ZED_VERSION_HEADER_KEY;
 export type SessionIdPresentation = keyof typeof SESSION_ID_HEADER_KEY;
 export type AuthorizationPresentation = keyof typeof AUTHORIZATION_HEADER_KEY;
 export type NetworkClientHeaders = {
-  [key in
-    | ZedVersionPresentation
-    | SessionIdPresentation
-    | AuthorizationPresentation]: string | undefined;
+  [
+    key in
+      ZedVersionPresentation | SessionIdPresentation | AuthorizationPresentation
+  ]: string | undefined;
 };
 
 export type HeaderKeyFrom<T extends keyof NetworkClientHeaders> =

@@ -136,8 +136,7 @@ export type GetEvaluationSessionAggregateType<
   T extends EvaluationSessionAggregateArgs,
 > = {
   [P in keyof T & keyof AggregateEvaluationSession]: P extends
-    | "_count"
-    | "count"
+    "_count" | "count"
     ? T[P] extends true
       ? number
       : Prisma.GetScalarType<T[P], AggregateEvaluationSession[P]>
@@ -181,8 +180,9 @@ export type GetEvaluationSessionGroupByPayload<
 > = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<EvaluationSessionGroupByOutputType, T["by"]> & {
-      [P in keyof T &
-        keyof EvaluationSessionGroupByOutputType]: P extends "_count"
+      [
+        P in keyof T & keyof EvaluationSessionGroupByOutputType
+      ]: P extends "_count"
         ? T[P] extends boolean
           ? number
           : Prisma.GetScalarType<T[P], EvaluationSessionGroupByOutputType[P]>
@@ -193,17 +193,14 @@ export type GetEvaluationSessionGroupByPayload<
 
 export type evaluationSessionWhereInput = {
   AND?:
-    | Prisma.evaluationSessionWhereInput
-    | Prisma.evaluationSessionWhereInput[];
+    Prisma.evaluationSessionWhereInput | Prisma.evaluationSessionWhereInput[];
   OR?: Prisma.evaluationSessionWhereInput[];
   NOT?:
-    | Prisma.evaluationSessionWhereInput
-    | Prisma.evaluationSessionWhereInput[];
+    Prisma.evaluationSessionWhereInput | Prisma.evaluationSessionWhereInput[];
   id?: Prisma.StringFilter<"evaluationSession"> | string;
   rubricId?: Prisma.StringFilter<"evaluationSession"> | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFilter<"evaluationSession">
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFilter<"evaluationSession"> | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFilter<"evaluationSession"> | string;
   createdAt?: Prisma.DateTimeFilter<"evaluationSession"> | Date | string;
   metadata?: Prisma.JsonNullableFilter<"evaluationSession">;
@@ -232,12 +229,10 @@ export type evaluationSessionWhereUniqueInput = Prisma.AtLeast<
     id?: string;
     evaluatorId_rubricId_evaluatorType?: Prisma.evaluationSessionEvaluatorIdRubricIdEvaluatorTypeCompoundUniqueInput;
     AND?:
-      | Prisma.evaluationSessionWhereInput
-      | Prisma.evaluationSessionWhereInput[];
+      Prisma.evaluationSessionWhereInput | Prisma.evaluationSessionWhereInput[];
     OR?: Prisma.evaluationSessionWhereInput[];
     NOT?:
-      | Prisma.evaluationSessionWhereInput
-      | Prisma.evaluationSessionWhereInput[];
+      Prisma.evaluationSessionWhereInput | Prisma.evaluationSessionWhereInput[];
     rubricId?: Prisma.StringFilter<"evaluationSession"> | string;
     evaluatorType?:
       | Prisma.EnumEvaluatorTypeFilter<"evaluationSession">
@@ -283,9 +278,7 @@ export type evaluationSessionScalarWhereWithAggregatesInput = {
     | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringWithAggregatesFilter<"evaluationSession"> | string;
   createdAt?:
-    | Prisma.DateTimeWithAggregatesFilter<"evaluationSession">
-    | Date
-    | string;
+    Prisma.DateTimeWithAggregatesFilter<"evaluationSession"> | Date | string;
   metadata?: Prisma.JsonNullableWithAggregatesFilter<"evaluationSession">;
   analysis?: Prisma.JsonNullableWithAggregatesFilter<"evaluationSession">;
 };
@@ -315,8 +308,7 @@ export type evaluationSessionUncheckedCreateInput = {
 export type evaluationSessionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -329,8 +321,7 @@ export type evaluationSessionUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -351,8 +342,7 @@ export type evaluationSessionCreateManyInput = {
 export type evaluationSessionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -363,8 +353,7 @@ export type evaluationSessionUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -634,8 +623,7 @@ export type evaluationSessionScalarWhereInput = {
   id?: Prisma.StringFilter<"evaluationSession"> | string;
   rubricId?: Prisma.StringFilter<"evaluationSession"> | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFilter<"evaluationSession">
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFilter<"evaluationSession"> | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFilter<"evaluationSession"> | string;
   createdAt?: Prisma.DateTimeFilter<"evaluationSession"> | Date | string;
   metadata?: Prisma.JsonNullableFilter<"evaluationSession">;
@@ -694,8 +682,7 @@ export type evaluationSessionUpdateToOneWithWhereWithoutEvaluationRecordsInput =
 export type evaluationSessionUpdateWithoutEvaluationRecordsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -707,8 +694,7 @@ export type evaluationSessionUncheckedUpdateWithoutEvaluationRecordsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   rubricId?: Prisma.StringFieldUpdateOperationsInput | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -727,8 +713,7 @@ export type evaluationSessionCreateManyRubricInput = {
 export type evaluationSessionUpdateWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -739,8 +724,7 @@ export type evaluationSessionUpdateWithoutRubricInput = {
 export type evaluationSessionUncheckedUpdateWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -751,8 +735,7 @@ export type evaluationSessionUncheckedUpdateWithoutRubricInput = {
 export type evaluationSessionUncheckedUpdateManyWithoutRubricInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string;
   evaluatorType?:
-    | Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput
-    | $Enums.EvaluatorType;
+    Prisma.EnumEvaluatorTypeFieldUpdateOperationsInput | $Enums.EvaluatorType;
   evaluatorId?: Prisma.StringFieldUpdateOperationsInput | string;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   metadata?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
@@ -772,8 +755,7 @@ export type EvaluationSessionCountOutputTypeSelect<
     runtime.Types.Extensions.DefaultArgs,
 > = {
   evaluationRecords?:
-    | boolean
-    | EvaluationSessionCountOutputTypeCountEvaluationRecordsArgs;
+    boolean | EvaluationSessionCountOutputTypeCountEvaluationRecordsArgs;
 };
 
 /**
@@ -813,11 +795,9 @@ export type evaluationSessionSelect<
     analysis?: boolean;
     rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>;
     evaluationRecords?:
-      | boolean
-      | Prisma.evaluationSession$evaluationRecordsArgs<ExtArgs>;
+      boolean | Prisma.evaluationSession$evaluationRecordsArgs<ExtArgs>;
     _count?:
-      | boolean
-      | Prisma.EvaluationSessionCountOutputTypeDefaultArgs<ExtArgs>;
+      boolean | Prisma.EvaluationSessionCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["evaluationSession"]
 >;
@@ -885,11 +865,9 @@ export type evaluationSessionInclude<
 > = {
   rubric?: boolean | Prisma.rubricDefaultArgs<ExtArgs>;
   evaluationRecords?:
-    | boolean
-    | Prisma.evaluationSession$evaluationRecordsArgs<ExtArgs>;
+    boolean | Prisma.evaluationSession$evaluationRecordsArgs<ExtArgs>;
   _count?:
-    | boolean
-    | Prisma.EvaluationSessionCountOutputTypeDefaultArgs<ExtArgs>;
+    boolean | Prisma.EvaluationSessionCountOutputTypeDefaultArgs<ExtArgs>;
 };
 export type evaluationSessionIncludeCreateManyAndReturn<
   ExtArgs extends runtime.Types.Extensions.InternalArgs =
@@ -1411,9 +1389,9 @@ export interface evaluationSessionDelegate<
       Prisma.Extends<"skip", Prisma.Keys<T>>,
       Prisma.Extends<"take", Prisma.Keys<T>>
     >,
-    OrderByArg extends Prisma.True extends HasSelectOrTake
+    OrderByArg extends (Prisma.True extends HasSelectOrTake
       ? { orderBy: evaluationSessionGroupByArgs["orderBy"] }
-      : { orderBy?: evaluationSessionGroupByArgs["orderBy"] },
+      : { orderBy?: evaluationSessionGroupByArgs["orderBy"] }),
     OrderFields extends Prisma.ExcludeUnderscoreKeys<
       Prisma.Keys<Prisma.MaybeTupleToUnion<T["orderBy"]>>
     >,
@@ -1421,8 +1399,8 @@ export interface evaluationSessionDelegate<
     ByValid extends Prisma.Has<ByFields, OrderFields>,
     HavingFields extends Prisma.GetHavingFields<T["having"]>,
     HavingValid extends Prisma.Has<ByFields, HavingFields>,
-    ByEmpty extends T["by"] extends never[] ? Prisma.True : Prisma.False,
-    InputErrors extends ByEmpty extends Prisma.True
+    ByEmpty extends (T["by"] extends never[] ? Prisma.True : Prisma.False),
+    InputErrors extends (ByEmpty extends Prisma.True
       ? `Error: "by" must not be empty.`
       : HavingValid extends Prisma.False
         ? {
@@ -1463,7 +1441,7 @@ export interface evaluationSessionDelegate<
                   [P in OrderFields]: P extends ByFields
                     ? never
                     : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
-                }[OrderFields],
+                }[OrderFields]),
   >(
     args: Prisma.SubsetIntersection<
       T,
@@ -1532,13 +1510,9 @@ export interface Prisma__evaluationSessionClient<
    */
   then<TResult1 = T, TResult2 = never>(
     onfulfilled?:
-      | ((value: T) => TResult1 | PromiseLike<TResult1>)
-      | undefined
-      | null,
+      ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null,
     onrejected?:
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-      | undefined
-      | null,
+      ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
   ): runtime.Types.Utils.JsPromise<TResult1 | TResult2>;
   /**
    * Attaches a callback for only the rejection of the Promise.
@@ -1547,9 +1521,7 @@ export interface Prisma__evaluationSessionClient<
    */
   catch<TResult = never>(
     onrejected?:
-      | ((reason: any) => TResult | PromiseLike<TResult>)
-      | undefined
-      | null,
+      ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null,
   ): runtime.Types.Utils.JsPromise<T | TResult>;
   /**
    * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The

@@ -9,9 +9,9 @@ import { CopilotMessageHandler } from "../copilot/copilot-message-handler.ts";
 import { CopilotExecutionEventBus } from "../copilot/copilot-execution-event-bus.ts";
 import type { CopilotToolCallHandler } from "../copilot/copilot-tool-call-handler.ts";
 import type { CopilotExecutionTaskCreatedEvent } from "../../domain/event/copilot-execution-task-created.event.ts";
-import type { ProjectCreatedEvent } from "../../domain/event/project-created.event.ts";
 import type { CopilotSessionEventConsumer } from "../../domain/event/event-map.ts";
 import type { ProjectApplicationService } from "../../application/project-service.ts";
+import { ProjectCreatedEventConsumer } from "./project-handler.ts";
 
 export class CopilotSessionCreatedEventConsumer implements CopilotSessionEventConsumer<"copilot.session.started"> {
   constructor(
@@ -115,25 +115,4 @@ export class CopilotExecutionTaskCreatedEventConsumer implements CopilotSessionE
       consumer.projectApplicationService,
     );
   }
-}
-
-class ProjectCreatedEventConsumer implements CopilotSessionEventConsumer<"zionProject.created"> {
-  isActive: boolean = true;
-  eventName = "zionProject.created" as const;
-  constructor(
-    private readonly context: CopilotExecutionTaskCreatedEvent,
-    private readonly projectApplicationService: ProjectApplicationService,
-  ) {}
-  handler = async (event: ProjectCreatedEvent) => {
-    if (
-      this.context.data.getData("copilotInputId") !== event.data.copilotInputId
-    ) {
-      return;
-    }
-    await this.projectApplicationService.createCopilotSession(
-      this.context.data,
-      event.data,
-    );
-    this.isActive = false;
-  };
 }

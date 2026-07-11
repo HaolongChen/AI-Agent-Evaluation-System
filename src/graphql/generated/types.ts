@@ -20,11 +20,9 @@ export type AfCodeToolArgsInput = {
   codeBlockOutput: unknown;
   humanInputMessage?: CopilotHumanInputMessageInput | undefined;
   toolCallBatchExecErrorMessage?:
-    | CopilotToolCallBatchExecErrorMessageInput
-    | undefined;
+    CopilotToolCallBatchExecErrorMessageInput | undefined;
   toolCallBatchResponseMessage?:
-    | CopilotToolCallBatchResponseMessageInput
-    | undefined;
+    CopilotToolCallBatchResponseMessageInput | undefined;
 };
 
 export const ColumnType = {
@@ -59,11 +57,9 @@ export type CopilotArgsInput = {
   taskRevertSuccessMessage?: CopilotTaskRevertSuccessMessageInput | undefined;
   terminateMessage?: CopilotTerminateMessageInput | undefined;
   toolCallBatchExecErrorMessage?:
-    | CopilotToolCallBatchExecErrorMessageInput
-    | undefined;
+    CopilotToolCallBatchExecErrorMessageInput | undefined;
   toolCallBatchResponseMessage?:
-    | CopilotToolCallBatchResponseMessageInput
-    | undefined;
+    CopilotToolCallBatchResponseMessageInput | undefined;
 };
 
 export type CopilotFeedbackMessageInput = {
@@ -173,11 +169,9 @@ export type LogToolArgsInput = {
   humanInputMessage?: CopilotHumanInputMessageInput | undefined;
   requestCreatedAt: string;
   toolCallBatchExecErrorMessage?:
-    | CopilotToolCallBatchExecErrorMessageInput
-    | undefined;
+    CopilotToolCallBatchExecErrorMessageInput | undefined;
   toolCallBatchResponseMessage?:
-    | CopilotToolCallBatchResponseMessageInput
-    | undefined;
+    CopilotToolCallBatchResponseMessageInput | undefined;
   traceId: string;
 };
 
@@ -249,22 +243,18 @@ export type PromptOptimizerToolArgsInput = {
   systemPromptSchemaPath: Array<DiffPathComponentInput | undefined>;
   systemPromptValueBindings: Array<unknown>;
   toolCallBatchExecErrorMessage?:
-    | CopilotToolCallBatchExecErrorMessageInput
-    | undefined;
+    CopilotToolCallBatchExecErrorMessageInput | undefined;
   toolCallBatchResponseMessage?:
-    | CopilotToolCallBatchResponseMessageInput
-    | undefined;
+    CopilotToolCallBatchResponseMessageInput | undefined;
 };
 
 export type SetDataBindingToolArgsInput = {
   humanInputMessage?: CopilotHumanInputMessageInput | undefined;
   schemaPath: Array<DiffPathComponentInput | undefined>;
   toolCallBatchExecErrorMessage?:
-    | CopilotToolCallBatchExecErrorMessageInput
-    | undefined;
+    CopilotToolCallBatchExecErrorMessageInput | undefined;
   toolCallBatchResponseMessage?:
-    | CopilotToolCallBatchResponseMessageInput
-    | undefined;
+    CopilotToolCallBatchResponseMessageInput | undefined;
 };
 
 export type OrganizationFragment = {

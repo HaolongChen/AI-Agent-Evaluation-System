@@ -4,7 +4,10 @@ import { copilotExecutionTaskSchema } from "../schema/copilot-execution-task.sch
 export class CopilotExecutionTaskEntity extends Entity<
   typeof copilotExecutionTaskSchema
 > {
-  constructor(data: { copilotInputId: string; copilotServerId: string }) {
-    super(data, copilotExecutionTaskSchema, {});
+  constructor(
+    data: { copilotInputId: string; copilotServerId: string },
+    id?: string,
+  ) {
+    super(data, copilotExecutionTaskSchema, { id });
   }
 }

@@ -44,7 +44,6 @@ export const ProjectStatus = {
 export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus];
 
 export const CopilotExecutionStatus = {
-  pending: "pending",
   running: "running",
   completed: "completed",
   failed: "failed",

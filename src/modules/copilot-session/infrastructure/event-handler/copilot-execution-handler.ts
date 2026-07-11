@@ -59,7 +59,7 @@ export class CopilotSessionCreatedEventConsumer implements CopilotSessionEventCo
     const humanInputMessageEvent = new CopilotInputEvent(
       "CopilotHumanInputMessage",
       {
-        content: event.data.project.getEntity("copilotInput").userInput,
+        content: event.data.userInputContent,
         context: null,
       },
     );

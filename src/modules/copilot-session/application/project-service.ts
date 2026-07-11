@@ -52,7 +52,7 @@ export class ProjectApplicationService {
     );
     return new CopilotExecutionAggregate(
       copilotServer,
-      copilotInput.getEntity("userInput"),
+      copilotInput.userInput,
       projectACL.projectExId,
     );
   }

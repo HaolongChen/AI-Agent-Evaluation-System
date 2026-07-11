@@ -1,6 +1,5 @@
 import { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
 import type { CopilotServerEntity } from "../../../dataset/domain/entity/copilot-server.entity.ts";
-import type { UserInputEntity } from "../../../dataset/domain/entity/user-input.entity.ts";
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import {
   Entity,
@@ -14,22 +13,23 @@ import { copilotExecutionSchema } from "../schema/copilot.schema.ts";
 export class CopilotExecutionAggregate extends AggregateRoot<
   typeof copilotExecutionSchema,
   EntityMetadata,
-  { userInput: UserInputEntity; copilotServer: CopilotServerEntity }
+  { copilotServer: CopilotServerEntity }
 > {
   constructor(
     copilotServer: CopilotServerEntity,
-    userInput: UserInputEntity,
+    userInputContent: string,
     projectExId: string,
     id?: string,
   ) {
     const entity = new Entity<typeof copilotExecutionSchema, EntityMetadata>(
       {
         projectExId,
+        userInputContent,
       },
       copilotExecutionSchema,
       { id },
     );
-    super(entity, { copilotServer, userInput });
+    super(entity, { copilotServer });
   }
 
   // get state() {
@@ -112,6 +112,7 @@ export class CopilotExecutionAggregate extends AggregateRoot<
         copilotNetwork: this.configureNetwork(copilotNetwork),
         projectExId: this.getData("projectExId"),
         projectNetwork,
+        userInputContent: this.getData("userInputContent"),
       }),
     );
     // this.project = undefined;

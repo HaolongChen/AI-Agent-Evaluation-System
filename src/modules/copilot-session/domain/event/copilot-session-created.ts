@@ -11,6 +11,7 @@ export class CopilotSessionCreatedEvent implements IDomainEvent {
       copilotNetwork: NetworkClient;
       projectExId: string;
       projectNetwork: NetworkClient;
+      userInputContent: string;
     },
   ) {}
 }

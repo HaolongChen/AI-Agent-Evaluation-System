@@ -10,6 +10,7 @@ export type CopilotExecutionStatus =
   | "failed";
 export const copilotExecutionSchema = z.object({
   projectExId: z.string(),
+  userInputContent: z.string(),
   copilotSessionExId: z.string().optional(),
   status: z
     .enum(["pending", "initializing", "running", "completed", "failed"])

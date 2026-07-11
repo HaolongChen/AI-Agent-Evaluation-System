@@ -23,6 +23,7 @@ export const zionProjectSchema = z
 export const projectSchema = z.object({
   copilotInputId: z.string(),
   projectName: z.string(),
+  projectExId: z.string().optional(),
 });
 
 type DiscriminatedProject =

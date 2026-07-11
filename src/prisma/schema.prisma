@@ -39,7 +39,6 @@ enum ProjectStatus {
 }
 
 enum CopilotExecutionStatus {
-  pending
   running
   completed
   failed
@@ -117,7 +116,7 @@ model copilotExecutionTask {
 
 model copilotOutput {
   id                 String                 @id @default(uuid())
-  status             CopilotExecutionStatus @default(pending)
+  status             CopilotExecutionStatus @default(running)
   copilotSessionExId String                @unique
   editableText       String?                @map("output_content") // copilot output
   aiResponse         String?                @map("ai_response") // AI response

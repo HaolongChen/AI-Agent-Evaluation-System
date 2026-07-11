@@ -2,6 +2,7 @@ import type { CopilotInputAggregate } from "../../../dataset/domain/aggregate/co
 import { AggregateRoot } from "../../../shared/domain/aggregate/aggregate-root.ts";
 import { Entity } from "../../../shared/domain/entity/entity.ts";
 import {
+  projectConfigSchema,
   projectSchema,
   type ProjectMetadata,
 } from "../schema/project.schema.ts";
@@ -9,6 +10,8 @@ import { NetworkClient } from "../../../account/domain/entity/network-client.ent
 import { ProjectCreatedEvent } from "../event/project-created.event.ts";
 import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import { ProjectDeletedEvent } from "../event/project-deleted.event.ts";
+import { ZionProject } from "../entity/zion-project.entity.ts";
+import type { z } from "zod";
 
 // pending -> creating zion project -> importing schema if applicable -> active
 export class ProjectAggregate extends AggregateRoot<
@@ -30,17 +33,32 @@ export class ProjectAggregate extends AggregateRoot<
     );
   }
 
-  projectCreated(projectExId: string, account: Account) {
-    const projectNetwork = NetworkClient.createDefault();
-    account.acquireNetwork(projectNetwork);
+  projectCreated(
+    projectExId: string,
+    account: Account,
+    projectNetwork: NetworkClient,
+  ) {
     this.setData({ projectExId });
     this.addEvent(
       new ProjectCreatedEvent({
         projectExId,
         copilotInputId: this.getData("copilotInputId"),
         projectNetwork,
+        account,
       }),
     );
+  }
+
+  configureZionProject(
+    config: z.input<typeof projectConfigSchema>,
+  ): ZionProject {
+    return new ZionProject({
+      ...config,
+      schemaId: this.getEntity("copilotInput")
+        .getEntity("goldenSet")
+        .getData("schemaId"),
+      projectName: this.getEntity("copilotInput").projectName,
+    });
   }
 
   get state() {

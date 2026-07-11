@@ -20,28 +20,13 @@ import { createZionProject, GQL_DELETE_PROJECT } from "./project-manager.ts";
 import type { IGQLClient } from "../../../account/domain/interface/graphql-client.interface.ts";
 import type { INetworkService } from "../../../account/domain/interface/network-service.interface.ts";
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
-import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import type { ICrdtSchemaService } from "../interface/crdt-schema.interface.ts";
-import type { CopilotExecutionAggregate } from "../../domain/aggregate/copilot-execution.aggregate.ts";
-import type { ProjectAggregate } from "../../domain/aggregate/project.aggregate.ts";
 
 export class ZionProjectService implements IZionProjectService {
   constructor(
     private readonly networkService: INetworkService,
     private readonly crdtSchemaService: ICrdtSchemaService,
   ) {}
-  async createSafeCopilotSession(
-    project: ProjectAggregate,
-    copilotExecutionAggregate: CopilotExecutionAggregate,
-  ): Promise<void> {
-    const projectExId =
-      copilotExecutionAggregate.verifyActivatedProject(project);
-    const copilotSessionExId = await this.createCopilotSession(
-      projectExId,
-      copilotExecutionAggregate.network,
-    );
-    copilotExecutionAggregate.start(copilotSessionExId);
-  }
   async importSchemaById(
     schemaId: string,
     projectExId: string,
@@ -102,12 +87,11 @@ export class ZionProjectService implements IZionProjectService {
 
   async createProjectInZion(
     project: ZionProject,
-    account: Account,
+    organizationExId: string,
     networkClient: NetworkClient,
   ): Promise<string> {
     const gqlClient = this.networkService.gqlClient(networkClient);
     const wsClient = this.networkService.wsClient(networkClient);
-    const organizationExId = account.getData("organizationExId");
     return createZionProject(gqlClient, wsClient, organizationExId, project);
   }
   async deleteProjectInZion(

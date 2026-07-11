@@ -1,13 +1,10 @@
-import type { Account } from "../../../account/domain/entity/account.entity.ts";
 import type { NetworkClient } from "../../../account/domain/entity/network-client.entity.ts";
-import type { CopilotExecutionAggregate } from "../aggregate/copilot-execution.aggregate.ts";
-import type { ProjectAggregate } from "../aggregate/project.aggregate.ts";
 import type { ZionProject } from "../entity/zion-project.entity.ts";
 
 export interface IZionProjectService {
   createProjectInZion(
     zionProject: ZionProject,
-    account: Account,
+    organizationExId: string,
     networkClient: NetworkClient,
   ): Promise<string>;
 
@@ -31,9 +28,4 @@ export interface IZionProjectService {
     projectExId: string,
     networkClient: NetworkClient,
   ): Promise<string>;
-
-  createSafeCopilotSession(
-    project: ProjectAggregate,
-    copilotExecutionAggregate: CopilotExecutionAggregate,
-  ): Promise<void>;
 }

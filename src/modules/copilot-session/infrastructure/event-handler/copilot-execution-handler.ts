@@ -1,7 +1,6 @@
 /* eslint-disable unicorn/no-null */
 import { CopilotSessionCreatedEvent } from "../../domain/event/copilot-session-created.ts";
 import type { ICopilotNetworkService } from "../interface/copilot-network.interface.ts";
-import type { IZionProjectService } from "../../domain/interface/project-service.interface.ts";
 import { CopilotInputEvent } from "../copilot/copilot-event.ts";
 import { CopilotExecutionLog } from "../../domain/value-object/copilot-execution-log.ts";
 import type { ICopilotRepositoryService } from "../interface/copilot-repository-service.interface.ts";
@@ -11,8 +10,8 @@ import { CopilotExecutionEventBus } from "../copilot/copilot-execution-event-bus
 import type { CopilotToolCallHandler } from "../copilot/copilot-tool-call-handler.ts";
 import type { CopilotExecutionTaskCreatedEvent } from "../../domain/event/copilot-execution-task-created.event.ts";
 import type { ProjectCreatedEvent } from "../../domain/event/project-created.event.ts";
-import type { ICopilotRepository } from "../../domain/interface/copilot-repository.interface.ts";
 import type { CopilotSessionEventConsumer } from "../../domain/event/event-map.ts";
+import type { ProjectApplicationService } from "../../application/project-service.ts";
 
 export class CopilotSessionCreatedEventConsumer implements CopilotSessionEventConsumer<"copilot.session.started"> {
   constructor(
@@ -54,7 +53,8 @@ export class CopilotSessionCreatedEventConsumer implements CopilotSessionEventCo
       this.onExecutionLogUpdated(event.data.copilotSessionExId),
     );
     const copilotToolCallRunner = this.copilotToolCallHandler.setStaticProject(
-      event.data.project,
+      event.data.projectExId,
+      event.data.copilotNetwork,
     );
     const humanInputMessageEvent = new CopilotInputEvent(
       "CopilotHumanInputMessage",
@@ -78,7 +78,6 @@ export class CopilotSessionCreatedEventConsumer implements CopilotSessionEventCo
       async (inputEvent: CopilotInputEvent) => {
         if (inputEvent.message.copilotMessageType === "TERMINATE") {
           unsubscribe();
-          event.data.project.release();
           return this.copilotRepositoryService.complete(
             event.data.copilotSessionExId,
           );
@@ -95,18 +94,13 @@ export class CopilotExecutionTaskCreatedEventConsumer implements CopilotSessionE
     private readonly subscribe: (
       eventConsumer: CopilotSessionEventConsumer<"zionProject.created">,
     ) => void,
-    protected readonly projectService: IZionProjectService,
     protected readonly copilotNetwork: ICopilotNetworkService,
-    protected readonly copilotRepository: ICopilotRepository,
+    protected readonly projectApplicationService: ProjectApplicationService,
   ) {}
   handler: CopilotSessionEventConsumer<"copilot.executionTask.created">["handler"] =
     async (event: CopilotExecutionTaskCreatedEvent) => {
       this.subscribe(
-        new ProjectCreatedEventConsumer(
-          event,
-          this.projectService,
-          this.copilotRepository,
-        ),
+        new ProjectCreatedEventConsumer(event, this.projectApplicationService),
       );
     };
   static enableSubscription(
@@ -117,9 +111,8 @@ export class CopilotExecutionTaskCreatedEventConsumer implements CopilotSessionE
   ) {
     return new CopilotExecutionTaskCreatedEventConsumer(
       subscribe,
-      consumer.projectService,
       consumer.copilotNetwork,
-      consumer.copilotRepository,
+      consumer.projectApplicationService,
     );
   }
 }
@@ -129,29 +122,18 @@ class ProjectCreatedEventConsumer implements CopilotSessionEventConsumer<"zionPr
   eventName = "zionProject.created" as const;
   constructor(
     private readonly context: CopilotExecutionTaskCreatedEvent,
-    private readonly projectService: IZionProjectService,
-    private readonly copilotRepository: ICopilotRepository,
+    private readonly projectApplicationService: ProjectApplicationService,
   ) {}
   handler = async (event: ProjectCreatedEvent) => {
     if (
-      this.context.data.copilotInputId !==
-      event.data.project.getData("copilotInputId")
+      this.context.data.getData("copilotInputId") !== event.data.copilotInputId
     ) {
       return;
     }
-    if (
-      this.context.data.copilotExecution.state.status !== "pending" ||
-      event.data.project.state.status !== "active"
-    ) {
-      throw new Error(
-        `Invalid state for copilot execution or project. Copilot execution status: ${this.context.data.copilotExecution.state.status}, Project status: ${event.data.project.state.status}`,
-      );
-    }
-    await this.projectService.createSafeCopilotSession(
-      event.data.project,
-      this.context.data.copilotExecution,
+    await this.projectApplicationService.createCopilotSession(
+      this.context.data,
+      event.data,
     );
-    await this.copilotRepository.save(this.context.data.copilotExecution);
     this.isActive = false;
   };
 }

@@ -86,22 +86,30 @@ export class CopilotExecutionAggregate extends AggregateRoot<
   //   return projectExId;
   // }
 
+  isRunning(): boolean {
+    return !!this.getData("copilotSessionExId");
+  }
+
+  configureNetwork(network: NetworkClient): NetworkClient {
+    network.setWebSocketUrl(
+      this.getEntity("copilotServer").getData("wsEndpoint"),
+    );
+    network.setGraphQLUrl(
+      this.getEntity("copilotServer").getData("gqlEndpoint"),
+    );
+    return network;
+  }
+
   start(
     copilotSessionExId: string,
     projectNetwork: NetworkClient,
     copilotNetwork: NetworkClient,
   ) {
     this.setData({ copilotSessionExId });
-    copilotNetwork.setWebSocketUrl(
-      this.getEntity("copilotServer").getData("wsEndpoint"),
-    );
-    copilotNetwork.setGraphQLUrl(
-      this.getEntity("copilotServer").getData("gqlEndpoint"),
-    );
     this.addEvent(
       new CopilotSessionCreatedEvent({
         copilotSessionExId,
-        copilotNetwork,
+        copilotNetwork: this.configureNetwork(copilotNetwork),
         projectExId: this.getData("projectExId"),
         projectNetwork,
       }),
